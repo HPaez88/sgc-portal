@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlmodel import Session, select, func
 
 from backend.database import create_db_and_tables, get_session
@@ -35,6 +37,10 @@ app = FastAPI(
     version="3.1.0",
     lifespan=lifespan,
 )
+
+# Serve static frontend in production
+if os.getenv("ENVIRONMENT") == "production":
+    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
 
 # CORS
 raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
@@ -204,6 +210,8 @@ def obtener_catalogos():
 
 @app.get("/", tags=["Root"])
 def root():
+    if os.getenv("ENVIRONMENT") == "production":
+        return FileResponse("frontend/dist/index.html")
     return {
         "mensaje": "Portal SGC OOMAPASC de Cajeme — API v3.1",
         "version": "3.1.0",
