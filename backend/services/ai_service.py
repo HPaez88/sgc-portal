@@ -43,6 +43,14 @@ def _call_ollama(prompt: str, context: str) -> str:
     """Hace una llamada a Ollama y devuelve el texto crudo."""
     client = get_ai_client()
     model = os.getenv("OLLAMA_MODEL", "qwen3:8b")
+    
+    # Verificar si estamos en producción sin Ollama
+    if os.getenv("ENVIRONMENT") == "production":
+        raise HTTPException(
+            status_code=503,
+            detail="IA no disponible en producción. Esta función requiere Ollama instalado localmente.",
+        )
+    
     try:
         response = client.chat.completions.create(
             model=model,
@@ -56,8 +64,10 @@ def _call_ollama(prompt: str, context: str) -> str:
     except Exception as exc:
         raise HTTPException(
             status_code=503,
-            detail=f"Error conectando con Ollama ({model}). Verifica que esté corriendo. Detalle: {str(exc)}",
+            detail=f"Error conectando con Ollama ({model}). Detalle: {str(exc)}",
         )
+
+    raise HTTPException(status_code=503, detail="IA no disponible")
 
 
 # ──────────────────────────────────────────────────────────────
