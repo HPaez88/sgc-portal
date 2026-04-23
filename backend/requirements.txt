@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+sqlalchemy
+python-docx
+openpyxl
+openai>=1.0
+python-multipart
+python-dotenv
