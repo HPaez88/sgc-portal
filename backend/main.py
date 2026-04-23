@@ -81,7 +81,7 @@ def get_dashboard(session: Session = Depends(get_session)):
     hoy = datetime.now()
     ac_en_tiempo = 0
     ac_fuera_tiempo = 0
-    for ac in ac_abiertas:
+    for ac in ac_abiertos:
         dias_limite = 180  # 6 meses máximo
         if (hoy - ac.fecha_apertura).days > dias_limite:
             ac_fuera_tiempo += 1
