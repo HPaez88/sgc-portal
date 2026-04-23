@@ -63,7 +63,7 @@ const PlanForm = () => {
 
     try {
       // Endpoint del Backend de FastAPI (MVP Phase 1)
-      const response = await fetch(getApiUrl('/api/v1/planes/nuevo'), {
+      const response = await fetch(getApiUrl('/api/v1/planes-mejora'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

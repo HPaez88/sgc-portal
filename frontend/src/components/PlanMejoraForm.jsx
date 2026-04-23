@@ -22,7 +22,7 @@ const PlanMejoraForm = ({ onSuccess }) => {
   ]);
 
   useEffect(() => {
-    fetch(getApiUrl('/api/v1/catalogos')
+    fetch(getApiUrl('/api/v1/catalogos'))
       .then(r => r.json())
       .then(d => {
         setCatalogos({
