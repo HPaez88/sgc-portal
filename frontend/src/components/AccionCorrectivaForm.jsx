@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from '../config';
+import { getApiUrl } from '../config';
 
 const emptyForm = {
   proceso: '', area: '', origen: '', num_auditoria: '',
@@ -27,7 +27,7 @@ const [catalogos, setCatalogos] = useState({
   ]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/v1/catalogos`)
+    fetch(getApiUrl('/api/v1/catalogos'))
       .then(r => r.json())
       .then(d => {
         setCatalogos({
@@ -48,7 +48,7 @@ const [catalogos, setCatalogos] = useState({
     setAiLoading(true);
     setStatus({ type: '', msg: '' });
     try {
-      const resp = await fetch(`${API_BASE}/api/v1/ai/generar-ac`, {
+      const resp = await fetch(getApiUrl('/api/v1/ai/generar-ac'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ descripcion: descripcionNC }),
@@ -114,7 +114,7 @@ const [catalogos, setCatalogos] = useState({
     };
 
     try {
-      const resp = await fetch(`${API_BASE}/api/v1/acciones-correctivas`, {
+      const resp = await fetch(getApiUrl('/api/v1/acciones-correctivas'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

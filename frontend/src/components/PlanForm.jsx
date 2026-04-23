@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiUrl } from '../config';
 
 const PlanForm = () => {
   const [formData, setFormData] = useState({
@@ -62,7 +63,7 @@ const PlanForm = () => {
 
     try {
       // Endpoint del Backend de FastAPI (MVP Phase 1)
-      const response = await fetch('http://localhost:8000/api/v1/planes/nuevo', {
+      const response = await fetch(getApiUrl('/api/v1/planes/nuevo'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

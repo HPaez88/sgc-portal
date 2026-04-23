@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from '../config';
+import { getApiUrl } from '../config';
 
 const emptyForm = {
   titulo_mejora: '', gerencia_coordinacion: '', categoria_mejora: '',
@@ -22,7 +22,7 @@ const PlanMejoraForm = ({ onSuccess }) => {
   ]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/v1/catalogos`)
+    fetch(getApiUrl('/api/v1/catalogos')
       .then(r => r.json())
       .then(d => {
         setCatalogos({
@@ -48,7 +48,7 @@ const PlanMejoraForm = ({ onSuccess }) => {
     setAiLoading(true);
     setStatus({ type: '', msg: '' });
     try {
-      const resp = await fetch(`${API_BASE}/api/v1/ai/generar-pm`, {
+      const resp = await fetch(getApiUrl('/api/v1/ai/generar-pm'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ descripcion: descripcionSA }),
@@ -97,7 +97,7 @@ const PlanMejoraForm = ({ onSuccess }) => {
     };
 
     try {
-      const resp = await fetch(`${API_BASE}/api/v1/planes-mejora`, {
+      const resp = await fetch(getApiUrl('/api/v1/planes-mejora'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

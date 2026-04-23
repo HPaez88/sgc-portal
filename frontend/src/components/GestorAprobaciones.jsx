@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from '../config';
+import { getApiUrl } from '../config';
 
 const ESTADOS = {
   BORRADOR: { label: 'Borrador', badgeClass: 'badge-borrador' },
@@ -28,8 +28,8 @@ const GestorAprobaciones = () => {
     setError('');
     try {
       const [acResp, pmResp] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/acciones-correctivas`),
-        fetch(`${API_BASE}/api/v1/planes-mejora`),
+        fetch(getApiUrl('/api/v1/acciones-correctivas')),
+        fetch(getApiUrl('/api/v1/planes-mejora')),
       ]);
       if (acResp.ok) setAcList(await acResp.json());
       if (pmResp.ok) setPmList(await pmResp.json());
@@ -45,7 +45,7 @@ const GestorAprobaciones = () => {
   const fetchHistorial = async (item, tipo) => {
     try {
       const path = tipo === 'AC' ? 'acciones-correctivas' : 'planes-mejora';
-      const resp = await fetch(`${API_BASE}/api/v1/${path}/${item.id}/historial`);
+      const resp = await fetch(getApiUrl(`/api/v1/${path}/${item.id}/historial`));
       if (resp.ok) setHistorial(await resp.json());
     } catch { setHistorial([]); }
   };
@@ -76,7 +76,7 @@ const GestorAprobaciones = () => {
     setActionLoading(true);
     const path = tipo === 'AC' ? 'acciones-correctivas' : 'planes-mejora';
     try {
-      const resp = await fetch(`${API_BASE}/api/v1/${path}/${item.id}/estado`, {
+      const resp = await fetch(getApiUrl(`/api/v1/${path}/${item.id}/estado`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: nuevoEstado, comentarios_revision: comentarios }),
@@ -101,7 +101,7 @@ const GestorAprobaciones = () => {
     setExportLoading(true);
     const path = tipo === 'AC' ? 'acciones-correctivas' : 'planes-mejora';
     try {
-      const resp = await fetch(`${API_BASE}/api/v1/${path}/${item.id}/exportar-word`);
+      const resp = await fetch(getApiUrl(`/api/v1/${path}/${item.id}/exportar-word`));
       if (resp.ok) {
         const blob = await resp.blob();
         const url = URL.createObjectURL(blob);

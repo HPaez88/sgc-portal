@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from '../config';
+import { getApiUrl } from '../config';
 
 const ESTADO_LABELS = {
   BORRADOR: 'Borrador',
@@ -17,7 +17,7 @@ const Dashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const resp = await fetch(`${API_BASE}/api/v1/dashboard`);
+      const resp = await fetch(getApiUrl('/api/v1/dashboard'));
       if (resp.ok) setData(await resp.json());
       else setError('No se pudo cargar el dashboard.');
     } catch {
