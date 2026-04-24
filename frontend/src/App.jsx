@@ -36,6 +36,7 @@ import {
   Check
 } from 'lucide-react';
 import { getApiUrl } from './config';
+import { AGENTS, callAgent, parseAgentResponse, generatePrompt } from './agents';
 import { AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, getColorNivel, getNivelRiesgo, getEstadoColor, getRolColor, INDICADORES, getIndicadoresByArea } from './catalogs';
 import { useLocalStorage, useFormValidation } from './hooks';
 
@@ -441,16 +442,36 @@ function App() {
             )}
 
             {/* ACCIONES CORRECTIVAS */}
-            {activeTab === 'ac' && <AccionCorrectivaView />}
+            {activeTab === 'ac' && <AccionCorrectivaView 
+              accionesCorrectivas={accionesCorrectivas} 
+              setAccionesCorrectivas={setAccionesCorrectivas}
+              evidencias={evidencias}
+              setEvidencias={setEvidencias}
+              usuarios={usuarios}
+              puedeTodasAreas={puedeTodasAreas}
+              areaUsuario={areaUsuario}
+            />}
 
 {/* PLANES DE MEJORA */}
-            {activeTab === 'pm' && <PlanMejoraView />}
+            {activeTab === 'pm' && <PlanMejoraView 
+              planesMejora={planesMejora} 
+              setPlanesMejora={setPlanesMejora}
+              usuarios={usuarios}
+              puedeTodasAreas={puedeTodasAreas}
+              areaUsuario={areaUsuario}
+            />}
 
             {/* INDICADORES */}
             {activeTab === 'indicadores' && <IndicadoresView />}
 
             {/* MATRIZ DE RIESGOS */}
-            {activeTab === 'riesgos' && <RiesgosView />}
+            {activeTab === 'riesgos' && <RiesgosView 
+              riesgos={riesgos}
+              setRiesgos={setRiesgos}
+              usuarios={usuarios}
+              puedeTodasAreas={puedeTodasAreas}
+              areaUsuario={areaUsuario}
+            />}
 
             {/* DOCUMENTOS */}
             {activeTab === 'documents' && <DocumentosView />}
@@ -545,22 +566,22 @@ function App() {
   );
 }
 
-function AccionCorrectivaView() {
+function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, evidencias, setEvidencias, usuarios, puedeTodasAreas, areaUsuario }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generando, setGenerando] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errores, setErrores] = useState({});
   
-  const usuarioActual = usuarios && usuarios.length > 0 ? usuarios[0] : null;
-  const puedeTodasAreas = usuarioActual?.rol === 'Admin' || usuarioActual?.rol === 'Auditor' || usuarioActual?.rol === 'Super Admin';
-  const areaUsuario = usuarioActual?.area || '';
+  const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
+  const esAdmin = usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Auditor' || usuarioLogueado?.rol === 'Super Admin';
+  const areaDefault = esAdmin ? '' : (areaUsuario || usuarioLogueado?.area || '');
   
   const [formData, setFormData] = useState({
     codigo: `AC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
     fecha_deteccion: new Date().toISOString().split('T')[0],
     proceso: '',
-    area: puedeTodasAreas ? '' : areaUsuario,
+    area: areaDefault,
     origen: '',
     num_auditoria: '',
     indicador_ref: '',
@@ -1077,7 +1098,7 @@ Sé profesional, específico y orientado a la solución inmediata.`;
   );
 }
 
-function PlanMejoraView() {
+function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generando, setGenerando] = useState(false);
@@ -1085,14 +1106,13 @@ function PlanMejoraView() {
   const [errores, setErrores] = useState({});
   const [mostrarModalIA, setMostrarModalIA] = useState(false);
   
-  const usuarioActual = usuarios && usuarios.length > 0 ? usuarios[0] : null;
-  const puedeTodasAreas = usuarioActual?.rol === 'Admin' || usuarioActual?.rol === 'Auditor' || usuarioActual?.rol === 'Super Admin';
-  const areaUsuario = usuarioActual?.area || '';
+  const esAdmin = usuarios?.some(u => u?.rol === 'Admin' || u?.rol === 'Auditor' || u?.rol === 'Super Admin');
+  const areaDefault = esAdmin ? '' : (areaUsuario || '');
   
   const [formData, setFormData] = useState({
     codigo: `PM-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
     fecha_elaboracion: new Date().toISOString().split('T')[0],
-    area: puedeTodasAreas ? '' : areaUsuario,
+    area: areaDefault,
     proceso: '',
     situacion_actual: '',
     situacion_deseada: '',
@@ -1997,7 +2017,7 @@ function IndicadoresView() {
   );
 }
 
-function RiesgosView() {
+function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasAreas, areaUsuario }) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevoRiesgo, setNuevoRiesgo] = useState({ 
     riesgo: '', causa: '', efecto: '', probabilidad: 2, impacto: 2, 
@@ -2005,16 +2025,13 @@ function RiesgosView() {
     plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN'
   });
 
-  const [riesgos, setRiesgos] = useState([
-    { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo', area: 'Operación', direccion: 'Dir. Técnica', proceso: 'Producción', plan_accion: 'Mejorar monitoreo de cloro', fecha_termino: '2026-06-30', evaluacion: 'En proceso', estado_plan: 'EN_PROCESO' },
-    { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Técnica', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
-    { id: 3, riesgo: 'Quejas de clientes', causa: 'Atención lenta', efecto: 'Inconformidad', probabilidad: 3, impacto: 2, control: 'Capacitación', tipo: 'Riesgo', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Capacitación en atención', fecha_termino: '2026-05-15', evaluacion: 'Bueno', estado_plan: 'COMPLETADO' },
-    { id: 4, riesgo: 'Cortocircuito', causa: 'Cables viejas', efecto: 'Incendio', probabilidad: 1, impacto: 5, control: 'Renovación', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Administrativa', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
-    { id: 5, riesgo: 'Clientes nuevos', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Campaña de promo', fecha_termino: '2026-07-01', evaluacion: '', estado_plan: 'EN_PROCESO' },
-  ]);
-
-  const getNivel = (prob, imp) => getNivelRiesgo(prob, imp);
-  const getColor = (nivel) => getColor(nivel);
+  const getNivel = (prob, imp) => prob * imp;
+  const getColor = (nivel) => {
+    if (nivel >= 15) return "bg-red-600 text-white";
+    if (nivel >= 10) return "bg-orange-500 text-white";
+    if (nivel >= 5) return "bg-yellow-400 text-black";
+    return "bg-green-400 text-black";
+  };
 
   const agregarRiesgo = () => {
     if (!nuevoRiesgo.riesgo) return;
