@@ -1529,7 +1529,7 @@ function SettingsView() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-8 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Total Usuarios</p>
           <p className="text-2xl font-bold text-[#002855]">{usuarios.length}</p>
@@ -1541,6 +1541,10 @@ function SettingsView() {
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Admins</p>
           <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.rol === 'Admin').length}</p>
+        </div>
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+          <p className="text-xs text-blue-600">Auditores</p>
+          <p className="text-2xl font-bold text-blue-700">{usuarios.filter(u => u.rol === 'Auditor').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Encargados</p>
@@ -1793,8 +1797,9 @@ function SettingsView() {
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-1">Rol</label>
                 <select value={nuevoUsuario.rol} onChange={(e) => setNuevoUsuario({...nuevoUsuario, rol: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
-                  <option value="Usuario">Usuario (Solo ver indicators/evidencias)</option>
-                  <option value="Encargado">Encargado (Indicadores, evidencias, AC/PM de su área)</option>
+                  <option value="Usuario">Usuario (Ver + indicators/evidencias)</option>
+                  <option value="Encargado">Encargado (Su área: AC, PM, indicadores)</option>
+                  <option value="Auditor">Auditor (Crear AC/PM cualquier área, ver resultados)</option>
                   <option value="Admin">Admin (Compañeros SGC - todas las áreas)</option>
                 </select>
               </div>

@@ -59,11 +59,12 @@ export const ORIGENES_AC = ['Auditoría', 'Indicador', 'Queja', 'Otra'];
 
 export const ESTADOS_AC = ['BORRADOR', 'EN_REVISION', 'APROBADO', 'CERRADO'];
 
-export const ROLES = ['Super Admin', 'Admin', 'Encargado', 'Usuario'];
+export const ROLES = ['Super Admin', 'Admin', 'Auditor', 'Encargado', 'Usuario'];
 
 export const ROL_HIERARCHY = {
-  'Super Admin': 4,
-  'Admin': 3,
+  'Super Admin': 5,
+  'Admin': 4,
+  'Auditor': 3,
   'Encargado': 2,
   'Usuario': 1
 };
@@ -114,6 +115,7 @@ export const getRolColor = (rol) => {
   switch(rol) {
     case 'Super Admin': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
     case 'Admin': return 'bg-purple-100 text-purple-700';
+    case 'Auditor': return 'bg-blue-100 text-blue-700';
     case 'Encargado': return 'bg-cyan-100 text-cyan-700';
     default: return 'bg-slate-100 text-slate-600';
   }
