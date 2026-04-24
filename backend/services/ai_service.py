@@ -70,43 +70,67 @@ def _call_ai(prompt: str, context: str) -> str:
 # GENERADORES: Acción Correctiva
 # ─────────────────────────────────────────────────────────────────────────────
 
-AC_CONTEXT = f"""Eres un experto en sistemas de gestión de calidad ISO 9001.
-Generas documentos de Acción Correctiva completos en JSON.
-Año actual: {YEAR}
+AC_CONTEXT = f"""Eres un experto en sistemas de gestión de calidad ISO 9001 especializado en análisis de causa raíz.
 
-Campos requeridos:
-- area: una de {AREAS[:10]}
-- proceso: uno de {PROCESOS}
-- direccion: una de ['TÉCNICA', 'COMERCIAL', 'ADMINISTRATIVA']
-- origen: uno de {ORIGENES_AC}
-- descripcion_no_conformidad: descripción clara del problema
-- evidencia: hechos objetivos
-- causa_raiz: análisis de causa raíz (técnica de las 6M)
-- acciones: array de {{descripcion, responsable, fecha_termino}}
-- estado: 'BORRADOR'
+Tu tarea es generar una ACCIÓN CORRECTIVA completa y profesional.
 
-Responde SOLO con JSON válido, sin markdown."""
+año actual: {YEAR}
+
+PROCESO DE ANÁLISIS (sigue estos pasos):
+1. Analiza la descripción de la No Conformidad
+2. Identifica la evidencia mencionada
+3. Generate MINIMO 4 posibles causas usando la técnica 6M (Método, Maquina, Material, Mano de obra, Medio ambiente, Medición)
+4. Selecciona la causa raíz más probable
+5. Genera acciones inmediatas de contención
+6. Genera plan de actividades de corrección
+
+RESPONDE ÚNICAMENTE CON JSON válido, sin texto adicional, sin markdown.
+Todos los campos deben estar llenos con contenido realista y específico."""
 
 
 def generar_ac_completo(descripcion: str) -> dict:
     """Genera una Acción Correctiva completa con IA."""
-    prompt = f"""Genera una Acción Correctiva completa.
+    from datetime import datetime, timedelta
+    
+    # Calcular fecha límite (30 días después)
+    fecha_limite = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+    
+    prompt = f"""Genera una ACCIÓN CORRECTIVA completa y detallada para esta No Conformidad:
 
 No Conformidad: {descripcion}
 
-Responde con JSON:
+Sigue este formato EXACTO de JSON (todos los campos obligatorios):
+
 {{
-  "area": "",
-  "proceso": "",
-  "direccion": "",
-  "origen": "",
-  "descripcion_no_conformidad": "",
-  "evidencia": "",
-  "causa_raiz": "",
-  "titulo": "",
-  "acciones": [{{"descripcion": "", "responsable": "", "fecha_termino": "YYYY-MM-DD"}}],
+  "proceso": "Uno de: {PROCESOS}",
+  "area": "Una de: {AREAS[0:15]}",
+  "origen": "Uno de: {ORIGENES_AC}",
+  "direccion": "Una de: TECNICA, COMERCIAL, ADMINISTRATIVA",
+  "descripcion_no_conformidad": "Descripción clara del problema encontrado (minimo 50 caracteres)",
+  "evidencia": "Hechos objetivos que fundamentan la NC (minimo 30 caracteres)",
+  "impacta_otros_procesos": false,
+  "procesos_afectados": "",
+  
+  "equipo_trabajo": "[{{\\"nombre\\":\\"Responsable de área\\",\\"rol\\":\\"Analista\\"}}]",
+  "accion_contenedora": "Acción inmediata tomada para contener el problema (minimo 30 caracteres)",
+  "actividades_contenedoras": "[{{\\"descripcion\\":\\"Acción de contención\\",\\"responsable\\":\\"Nombre\\",\\"fecha_termino\\":\\"{fecha_limite}\\"}}]",
+  "causas": "[{{\\"causa\\":\\"Posible causa 1 (Método)\\",\\"categoria\\":\\"Método\\",\\"puntuacion\\":3}},{{\\"causa\\":\\"Posible causa 2 (Maquinaria)\\",\\"categoria\\":\\"Máquina\\",\\"puntuacion\\":2}},{{\\"causa\\":\\"Posible causa 3 (Material)\\",\\"categoria\\":\\"Material\\",\\"puntuacion\\":1}}]",
+  "causa_raiz_seleccionada": "Causa raíz mas probable justificada (minimo 30 caracteres)",
+  "actualiza_matriz_riesgos": false,
+  "descripcion_riesgo": "",
+  "requiere_cambio_sgc": "NO",
+  
+  "actividades": "[{{\\"descripcion\\":\\"Actividad 1 de corrección\\",\\"tipo\\":\\"Corrección\\",\\"responsable\\":\\"Responsable\\",\\"fecha_termino\\":\\"{fecha_limite}\\",\\"evidencia\\":\\"Evidencia requeridas\\",\\"estado\\":\\"Pendiente\\"}},{{\\"descripcion\\":\\"Actividad 2 de verificación\\",\\"tipo\\":\\"Verificación\\",\\"responsable\\":\\"Auditor\\",\\"fecha_termino\\":\\"{fecha_limite}\\",\\"evidencia\\":\\"Evidencia de verificación\\",\\"estado\\":\\"Pendiente\\"}}]",
+  
   "estado": "BORRADOR"
-}}"""
+}}
+
+IMPORTANTE: 
+- Responde SOLO con JSON válido
+- No omitas ningún campo
+- Usa comillas dobles para strings
+- Los arrays deben tener estructura JSON válida
+- Las fechas deben ser en formato YYYY-MM-DD"""
     
     raw = _call_ai(prompt, AC_CONTEXT)
     return _extraer_json(raw)
@@ -128,45 +152,62 @@ def sugerir_con_ia(descripcion: str, tipo: str) -> str:
 # GENERADORES: Plan de Mejora
 # ─────────────────────────────────────────────────────────────────────────────
 
-PM_CONTEXT = f"""Eres un experto en sistemas de gestión de calidad ISO 9001.
-Generas documentos de Plan de Mejora completos en JSON.
-Año actual: {YEAR}
+PM_CONTEXT = f"""Eres un experto en sistemas de gestión de calidad ISO 9001 especializado en mejora continua.
 
-Campos requeridos:
-- gerencia_coordinacion: una de {AREAS}
-- categoria_mejora: una de {CATEGORIAS_MEJORA}
-- periodo_mejora: uno de ['1er. Cuatri', '2do. Cuatri', '3er. Cuatri']
-- origen: uno de {ORIGENES_PM}
-- titulo_mejora: título corto
-- descripcion_situacion_actual: descripción actual
-- situacion_deseada: estado wanted
-- beneficios: beneficios esperados
-- responsables: responsables
-- actividades: array de {{descripcion, indicador, evidencia, responsable, fecha_termino}}
+Tu tarea es generar un PLAN DE MEJORA completo y profesional.
 
-Responde SOLO con JSON válido."""
+año actual: {YEAR}
+
+PROCESO DE MEJORA (sigue estos pasos):
+1. Analiza la situación actual
+2. Define la situación deseada (objetivo medible)
+3. Identifica los beneficios esperados
+4. Genera actividades específicas con indicadores
+5. Asigna responsables y fechas
+
+RESPONDE ÚNICAMENTE CON JSON válido, sin texto adicional, sin markdown.
+Todos los campos deben estar llenos con contenido realista y específico."""
 
 
 def generar_pm_completo(descripcion: str) -> dict:
     """Genera un Plan de Mejora completo con IA."""
-    prompt = f"""Genera un Plan de Mejora completo.
+    from datetime import datetime, timedelta
+    
+    # Calcular fecha límite (60 días después para planes de mejora)
+    fecha_limite = (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
+    
+    prompt = f"""Genera un PLAN DE MEJORA completo y detallado:
 
-Situación actual: {descripcion}
+Situación actual a mejorar: {descripcion}
 
-Responde con JSON:
+Sigue este formato EXACTO de JSON (todos los campos obligatorios):
+
 {{
-  "gerencia_coordinacion": "",
-  "categoria_mejora": "",
-  "periodo_mejora": "",
-  "origen": "",
-  "titulo_mejora": "",
-  "descripcion_situacion_actual": "",
-  "situacion_deseada": "",
-  "beneficios": "",
-  "responsables": "",
-  "actividades": [{{"descripcion": "", "indicador": "", "evidencia": "", "responsable": "", "fecha_termino": "YYYY-MM-DD"}}],
+  "titulo_mejora": "Título corto y descriptivo de la mejora (minimo 10 caracteres)",
+  "gerencia_coordinacion": "Una de: {AREAS[0:15]}",
+  "categoria_mejora": "Una de: {CATEGORIAS_MEJORA}",
+  "periodo_mejora": "Uno de: 1er. Cuatri, 2do. Cuatri, 3er. Cuatri",
+  "origen": "Uno de: {ORIGENES_PM}",
+  "direccion": "Una de: TECNICA, COMERCIAL, ADMINISTRATIVA",
+  
+  "descripcion_situacion_actual": "Descripción clara de la situación actual que requiere mejora (minimo 50 caracteres)",
+  "situacion_deseada": "Estado deseado y medible después de implementar la mejora (minimo 30 caracteres)",
+  "beneficios": "Beneficios esperados de la mejora (minimo 30 caracteres)",
+  
+  "responsable": "Nombre del responsable principal",
+  "integrantes": "[{{\\"nombre\\":\\"Integrante 1\\",\\"rol\\":\\"Apoyo\\"}},{{\\"nombre\\":\\"Integrante 2\\",\\"rol\\":\\"Coordinador\\"}}]",
+  
+  "actividades": "[{{\\"descripcion\\":\\"Actividad 1 de implementación\\",\\"tipo\\":\\"Implementación\\",\\"indicador\\":\\"Indicador medible\\",\\"responsable\\":\\"Responsable\\",\\"fecha_termino\\":\\"{fecha_limite}\\",\\"evidencia\\":\\"Evidencia requerida\\",\\"estado\\":\\"Pendiente\\"}},{{\\"descripcion\\":\\"Actividad 2 de seguimiento\\",\\"tipo\\":\\"Seguimiento\\",\\"indicador\\":\\"Indicador de seguimiento\\",\\"responsable\\":\\"Responsable\\",\\"fecha_termino\\":\\"{fecha_limite}\\",\\"evidencia\\":\\"Evidencia de seguimiento\\",\\"estado\\":\\"Pendiente\\"}},{{\\"descripcion\\":\\"Actividad 3 de verificación de eficacia\\",\\"tipo\\":\\"Verificación\\",\\"indicador\\":\\"Indicador de eficacia alcanzado\\",\\"responsable\\":\\"Auditor\\",\\"fecha_termino\\":\\"{fecha_limite}\\",\\"evidencia\\":\\"Evidencia de verificación\\",\\"estado\\":\\"Pendiente\\"}}]",
+  
   "estado": "BORRADOR"
-}}"""
+}}
+
+IMPORTANTE: 
+- Responde SOLO con JSON válido
+- No omitas ningún campo
+- Usa comillas dobles para strings
+- Los arrays deben tener estructura JSON válida
+- Las fechas deben ser en formato YYYY-MM-DD"""
     
     raw = _call_ai(prompt, PM_CONTEXT)
     return _extraer_json(raw)
