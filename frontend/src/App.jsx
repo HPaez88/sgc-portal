@@ -36,7 +36,7 @@ import {
   Check
 } from 'lucide-react';
 import { getApiUrl } from './config';
-import { AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, getColorNivel, getNivelRiesgo, getEstadoColor, getRolColor } from './catalogs';
+import { AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, getColorNivel, getNivelRiesgo, getEstadoColor, getRolColor, INDICADORES, getIndicadoresByArea } from './catalogs';
 import { useLocalStorage, useFormValidation } from './hooks';
 
 function App() {
@@ -356,6 +356,7 @@ function AccionCorrectivaView() {
     area: '',
     origen: '',
     num_auditoria: '',
+    indicador: '',
     descripcion_nc: '',
     posibles_causas: '',
     causa_raiz: '',
@@ -499,8 +500,8 @@ Responde en JSON:
           alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
           setSuccess(false);
           if (enviar) {
-            setFormData({
-              fecha_deteccion: '', proceso: '', area: '', origen: '', num_auditoria: '', descripcion_nc: '',
+setFormData({
+              fecha_deteccion: '', proceso: '', area: '', origen: '', num_auditoria: '', indicador: '', descripcion_nc: '',
               posibles_causas: '', causa_raiz: '', accion_contencion: '',
               actividades: [], estado: 'BORRADOR'
             });
@@ -564,6 +565,11 @@ Responde en JSON:
               </div>
               {formData.origen === 'Auditoría' && (
                 <InputField label="No. de Auditoría" name="num_auditoria" value={formData.num_auditoria} onChange={handleChange} placeholder="AUD-2026-XXX" />
+              )}
+              {formData.origen === 'Indicador' && (
+                <div>
+                  <SelectField label="Indicador" name="indicador" value={formData.indicador} onChange={handleChange} options={INDICADORES.map(i => i.nombre)} />
+                </div>
               )}
             </div>
 
@@ -1016,30 +1022,9 @@ Responde en JSON:
 function IndicadoresView() {
   const [editando, setEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
-  const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', proceso: '', meta: '', unidad: '' });
+  const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', area: '', meta: '', unidad: '' });
   
-  const procesos = [
-    'Comercialización',
-    'Comunicación',
-    'Gestión de Recursos',
-    'Mantenimiento y Calibración',
-    'Medición Análisis y Mejora',
-    'Producción',
-    'Proyectos e Infraestructura',
-    'Responsabilidad de la Dirección'
-  ];
-
-  const [indicadores, setIndicadores] = useState([
-    { id: 1, nombre: 'Turbiedad Promedio', proceso: 'Producción', meta: '< 1.0', unidad: 'NTU' },
-    { id: 2, nombre: 'Cloro Residual', proceso: 'Producción', meta: '0.5-1.5', unidad: 'mg/L' },
-    { id: 3, nombre: 'Recaudación', proceso: 'Comercialización', meta: '> 95', unidad: '%' },
-    { id: 4, nombre: 'Quejas Atendidas', proceso: 'Comunicación', meta: '< 24', unidad: 'hrs' },
-    { id: 5, nombre: 'Eficiencia de Bombas', proceso: 'Mantenimiento y Calibración', meta: '> 85', unidad: '%' },
-    { id: 6, nombre: 'NC Resueltas', proceso: 'Medición Análisis y Mejora', meta: '> 90', unidad: '%' },
-    { id: 7, nombre: 'Cumplimiento de Indicadores', proceso: 'Responsabilidad de la Dirección', meta: '> 80', unidad: '%' },
-    { id: 8, nombre: 'Proyectos Terminados', proceso: 'Proyectos e Infraestructura', meta: '> 90', unidad: '%' },
-    { id: 9, nombre: 'Capacitaciones', proceso: 'Gestión de Recursos', meta: '100', unidad: '%' },
-  ]);
+  const [indicadores, setIndicadores] = useState(INDICADORES);
   
   const [resultados, setResultados] = useState({});
   const [anioActual] = useState(2026);
@@ -1071,7 +1056,7 @@ function IndicadoresView() {
   };
 
   const getProcesoCumplimiento = (proceso) => {
-    const indicadoresProceso = indicadores.filter(i => i.proceso === proceso);
+    const indicadoresProceso = indicadores.filter(i => i.area === area);
     if (indicadoresProceso.length === 0) return 0;
     const suma = indicadoresProceso.reduce((acc, ind) => acc + getCumplimiento(ind.id), 0);
     return Math.round(suma / indicadoresProceso.length);
@@ -1083,9 +1068,9 @@ function IndicadoresView() {
   };
 
   const agregarIndicador = () => {
-    if (!nuevoIndicador.nombre || !nuevoIndicador.proceso || !nuevoIndicador.meta) return;
+    if (!nuevoIndicador.nombre || !nuevoIndicador.area || !nuevoIndicador.meta) return;
     setIndicadores(prev => [...prev, { ...nuevoIndicador, id: prev.length + 1 }]);
-    setNuevoIndicador({ nombre: '', proceso: '', meta: '', unidad: '' });
+    setNuevoIndicador({ nombre: '', area: '', meta: '', unidad: '' });
     setMostrarModal(false);
   };
 
@@ -1117,7 +1102,7 @@ function IndicadoresView() {
             <thead>
               <tr className="bg-slate-50 text-left">
                 <th className="p-3 text-sm font-semibold text-slate-600">Indicador</th>
-                <th className="p-3 text-sm font-semibold text-slate-600">Proceso</th>
+                <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
                 <th className="p-3 text-sm font-semibold text-slate-600">Meta</th>
                 <th className="p-3 text-sm font-semibold text-slate-600">Unidad</th>
                 {meses.map(m => (
@@ -1186,14 +1171,14 @@ function IndicadoresView() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Proceso</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Área</label>
                 <select 
-                  value={nuevoIndicador.proceso}
-                  onChange={(e) => setNuevoIndicador({...nuevoIndicador, proceso: e.target.value})}
+                  value={nuevoIndicador.area}
+                  onChange={(e) => setNuevoIndicador({...nuevoIndicador, area: e.target.value})}
                   className="w-full p-2.5 border border-slate-200 rounded-lg"
                 >
                   <option value="">Seleccionar...</option>
-                  {procesos.map(p => <option key={p} value={p}>{p}</option>)}
+                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -1291,7 +1276,7 @@ function RiesgosView() {
               <th className="p-3 text-sm font-semibold text-slate-600">Riesgo/Oportunidad</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Dirección</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Proceso</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Prob.</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Imp.</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Nivel</th>

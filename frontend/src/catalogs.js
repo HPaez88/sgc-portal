@@ -57,6 +57,23 @@ export const PROCESOS = [
 
 export const ORIGENES_AC = ['Auditoría', 'Indicador', 'Queja', 'Otra'];
 
+export const INDICADORES = [
+  { id: 1, nombre: 'Turbiedad Promedio', area: 'Plantas Potabilizadoras', meta: '< 1.0', unidad: 'NTU' },
+  { id: 2, nombre: 'Cloro Residual', area: 'Plantas Potabilizadoras', meta: '0.5-1.5', unidad: 'mg/L' },
+  { id: 3, nombre: 'Recaudación', area: 'Contabilidad', meta: '> 95', unidad: '%' },
+  { id: 4, nombre: 'Quejas Atendidas', area: 'Atención Ciudadana', meta: '< 24', unidad: 'hrs' },
+  { id: 5, nombre: 'Eficiencia de Bombas', area: 'Mantenimiento de Redes', meta: '> 85', unidad: '%' },
+  { id: 6, nombre: 'NC Resueltas', area: 'Sistema de Gestión de Calidad', meta: '> 90', unidad: '%' },
+  { id: 7, nombre: 'Cumplimiento de Indicadores', area: 'Sistema de Gestión de Calidad', meta: '> 80', unidad: '%' },
+  { id: 8, nombre: 'Proyectos Terminados', area: 'Proyectos e Infraestructura', meta: '> 90', unidad: '%' },
+  { id: 9, nombre: 'Capacitaciones', area: 'Recursos Humanos', meta: '100', unidad: '%' },
+  { id: 10, nombre: 'Lectura de Medidores', area: 'Verificación Y Lectura', meta: '> 98', unidad: '%' },
+  { id: 11, nombre: 'Tiempo de Respuesta', area: 'Línea OOMAPASC', meta: '< 15', unidad: 'min' },
+  { id: 12, nombre: 'Contratos Activos', area: 'Contratos y Servicios', meta: '> 90', unidad: '%' },
+];
+
+export const getIndicadoresByArea = (area) => INDICADORES.filter(i => i.area === area);
+
 export const ESTADOS_AC = ['BORRADOR', 'EN_REVISION', 'APROBADO', 'CERRADO'];
 
 export const ROLES = ['Super Admin', 'Admin', 'Auditor', 'Encargado', 'Usuario'];
