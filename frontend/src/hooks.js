@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(() => {
@@ -11,7 +11,7 @@ export function useLocalStorage(key, initialValue) {
     }
   });
 
-  const setValue = (value) => {
+  const setValue = useCallback((value) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
@@ -19,44 +19,50 @@ export function useLocalStorage(key, initialValue) {
     } catch (error) {
       console.error('Error saving to localStorage:', error);
     }
-  };
+  }, [key, storedValue]);
 
   return [storedValue, setValue];
 }
 
-export function useFormValidation(initialData, validationRules) {
+export function useFormValidation(initialData = {}, validationRules = {}) {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
-  const validate = (data = initialData) => {
+  const validate = useCallback((data = initialData) => {
     const newErrors = {};
     
     Object.keys(validationRules).forEach(field => {
       const rules = validationRules[field];
       const value = data[field];
+      const val = value == null ? '' : String(value);
       
-      if (rules.required && (!value || value.trim() === '')) {
+      if (rules.required && val.trim() === '') {
         newErrors[field] = 'Este campo es requerido';
       }
       
-      if (rules.minLength && value && value.length < rules.minLength) {
+      if (rules.minLength && val.length < rules.minLength) {
         newErrors[field] = `Mínimo ${rules.minLength} caracteres`;
       }
       
-      if (rules.pattern && value && !rules.pattern.test(value)) {
+      if (rules.pattern && val && !rules.pattern.test(val)) {
         newErrors[field] = rules.patternMessage || 'Formato inválido';
       }
     });
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [initialData, validationRules]);
 
-  const handleBlur = (field) => {
+  const handleBlur = useCallback((field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
-  };
+  }, []);
 
-  const isValid = () => Object.keys(errors).length === 0;
+  const isValid = useCallback(() => Object.keys(errors).length === 0, [errors]);
 
-  return { errors, touched, validate, handleBlur, isValid };
+  const clearErrors = useCallback(() => {
+    setErrors({});
+    setTouched({});
+  }, []);
+
+  return { errors, touched, validate, handleBlur, isValid, clearErrors };
 }
