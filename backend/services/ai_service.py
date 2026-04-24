@@ -31,8 +31,8 @@ def get_ai_client() -> OpenAI:
 
 
 def get_model() -> str:
-    """Modelo de Groq (actualizado abril 2026)."""
-    return "llama-3.1-8b-versatile"
+    """Modelo de Groq disponibles."""
+    return "llama-3.1-8b-instant"
 
 
 def _extraer_json(raw: str) -> dict:
