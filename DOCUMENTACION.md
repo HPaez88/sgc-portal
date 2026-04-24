@@ -7,7 +7,7 @@
 
 **Nombre:** Portal SGC (Sistema de Gestión de Calidad)  
 **Organización:** OOMAPASC de Cajeme (Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme)  
-**Versión:** 4.1.0  
+**Versión:** 4.2.1  
 **Tecnología:** React + Vite (Frontend with localStorage persistence)  
 **URL en producción:** https://sgc-portal-933s.onrender.com  
 **Repositorio GitHub:** https://github.com/HPaez88/sgc-portal
@@ -21,31 +21,31 @@
 | Módulo | Estado | Notas |
 |--------|---------|-------|
 | Dashboard | ✅ | Stats con trend indicadores |
-| Acciones Correctivas (AC) | ✅ | Formulario 3 pasos, IA Groq, validación, localStorage |
-| Planes de Mejora (PM) | ✅ | Formulario 3 pasos, IA Groq, localStorage |
-| Indicadores | ✅ | Vista mensual y trimestral, semáforo,localStorage |
+| Acciones Correctivas (AC) | ✅ | Formulario 3 pasos, IA Agente, permisos por rol, campos ISO completos |
+| Planes de Mejora (PM) | ✅ | Formulario 3 pasos, IA Agente, permisos por rol, campos ISO completos |
+| Indicadores | ✅ | Vista mensual y trimestral, semáforo, por proceso |
 | Matriz de Riesgos | ✅ | Con plan de acción y evaluación, localStorage |
 | Gestión de Usuarios | ✅ | CRUD completo con roles, localStorage |
 | Configuración | ✅ | Catálogos editables (Áreas, Direcciones, Procesos) |
 | Aprobaciones | ✅ | Workflow de aprobación completo |
 | Documentos | ✅ | Catálogo, exportar, CRUD |
 | Auditorías | ✅ | Registro completo de auditorías |
-| Evidencias | ✅ | Sistema de evidencia por AC/PM (basic) |
+| Evidencias | ✅ | Sistema de evidencia por AC/PM |
 
-### 🟡 MEJORAS IMPLEMENTADAS v4.1.0
-- localStorage funciona correctamente
-- Módulos Documents y Audits completados
-- Persistencia de datos real
+### 🟡 MEJORAS IMPLEMENTADAS v4.2.1
+- Permisos por rol (Usuario/Encargado solo su área, Admin/Auditor todas)
+- Campos ISO completos en AC (clasificacion, tipo_accion, evidencia_contencion)
+- Campos ISO completos en PM (just_beneficios, impacto_esperado, presupuesto)
+- Prompt de IA estilo "agente" (ISO 9001 experto)
+- Matriz arreglada (columna duplicada corregida)
 
-### 🔴 PENDIENTE / NO IMPLEMENTADO
+### 🔴 PENDIENTE
 
 | Módulo | Estado | Notas |
 |--------|---------|-------|
-| Backend API | 🔴 | No hay server - localStorage |
-| Autenticación/Login real | 🔴 | Solo simulado |
-| Export documentos | 🔴 | Solo txt basic |
+| Backend API (Supabase) | 🔴 | próximo paso |
+| Formatos Excel | 🔴 | Matching completo con formatos Excel |
 | Notificaciones email | 🔴 | No implementado |
-| Gráficos charts | 🔴 | No implementado |
 
 ---
 

@@ -552,14 +552,15 @@ function AccionCorrectivaView() {
   const [success, setSuccess] = useState(false);
   const [errores, setErrores] = useState({});
   
-  const usuarioActual = usuarios?.find(u => u.rol === 'Admin' || u.rol === 'Auditor') ? null : usuarios?.[0];
+  const usuarioActual = usuarios && usuarios.length > 0 ? usuarios[0] : null;
   const puedeTodasAreas = usuarioActual?.rol === 'Admin' || usuarioActual?.rol === 'Auditor' || usuarioActual?.rol === 'Super Admin';
+  const areaUsuario = usuarioActual?.area || '';
   
   const [formData, setFormData] = useState({
     codigo: `AC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
     fecha_deteccion: new Date().toISOString().split('T')[0],
     proceso: '',
-    area: puedeTodasAreas ? '' : usuarioActual?.area || '',
+    area: puedeTodasAreas ? '' : areaUsuario,
     origen: '',
     num_auditoria: '',
     indicador_ref: '',
@@ -754,7 +755,7 @@ Sé profesional, específico y orientado a la solución inmediata.`;
         codigo: `AC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
         fecha_deteccion: new Date().toISOString().split('T')[0],
         proceso: '',
-        area: puedeTodasAreas ? '' : usuarioActual?.area || '',
+        area: puedeTodasAreas ? '' : areaUsuario,
         origen: '',
         num_auditoria: '',
         indicador_ref: '',
@@ -1084,13 +1085,14 @@ function PlanMejoraView() {
   const [errores, setErrores] = useState({});
   const [mostrarModalIA, setMostrarModalIA] = useState(false);
   
-  const usuarioActual = usuarios?.find(u => u.rol === 'Admin' || u.rol === 'Auditor') ? null : usuarios?.[0];
+  const usuarioActual = usuarios && usuarios.length > 0 ? usuarios[0] : null;
   const puedeTodasAreas = usuarioActual?.rol === 'Admin' || usuarioActual?.rol === 'Auditor' || usuarioActual?.rol === 'Super Admin';
+  const areaUsuario = usuarioActual?.area || '';
   
   const [formData, setFormData] = useState({
     codigo: `PM-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
     fecha_elaboracion: new Date().toISOString().split('T')[0],
-    area: puedeTodasAreas ? '' : usuarioActual?.area || '',
+    area: puedeTodasAreas ? '' : areaUsuario,
     proceso: '',
     situacion_actual: '',
     situacion_deseada: '',
@@ -1291,7 +1293,7 @@ Sé específico, práctico y orientado a resultados. El equipo solo dará la ide
         setFormData({
           codigo: `PM-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
           fecha_elaboracion: new Date().toISOString().split('T')[0],
-          area: puedeTodasAreas ? '' : usuarioActual?.area || '',
+          area: puedeTodasAreas ? '' : areaUsuario,
           proceso: '',
           situacion_actual: '',
           situacion_deseada: '',
@@ -2928,6 +2930,45 @@ function AuditoriasView() {
   ]);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevaAud, setNuevaAud] = useState({ numero: '', tipo: 'Interna', area: '', fecha_inicio: '', fecha_fin: '' });
+  const [verInformes, setVerInformes] = useState(false);
+
+  const informesPorAnio = {
+    '2025': [
+      { nombre: '01 Informe Responsabilidad Dirección', archivo: '01 informe auditoria responsabilidad por la dirección.pdf' },
+      { nombre: '02 Informe MAM', archivo: '02 INFORME DE AUDITORIA 2 MAM.pdf' },
+      { nombre: '03 MC', archivo: '03 INFORME 03 MC.pdf' },
+      { nombre: '04 Comunicación', archivo: '04 Informa 04 comunicación.pdf' },
+      { nombre: '05 Producción', archivo: '05 INFORME 05 PRODUCCION.pdf' },
+      { nombre: '06 Comercialización', archivo: '06 INFORME 06 COMERCIALIZACION.pdf' },
+    ],
+    '2024': [
+      { nombre: '01 Responsabilidad Dirección', archivo: '01 INFORME DE AUDITORIA 1 2024 RESPONSABILIDAD DE LA DIRECCIÓN.pdf' },
+      { nombre: '02 Gestión Recursos', archivo: '02 INFORME AUD GR.pdf' },
+      { nombre: '03 Comunicación', archivo: '03 INFORME AUD 3 PROCESO COMUNICACIÓN.pdf' },
+      { nombre: '04 Producción', archivo: '04 INFORME PRODUCCION 04.pdf' },
+      { nombre: '05 Proyectos', archivo: '05 INFORME PROYECTOS 05.pdf' },
+      { nombre: '06 MAM', archivo: '06 informe 06 mam.pdf' },
+      { nombre: '07 MC', archivo: '07 Informe Auditoria 7 MC.pdf' },
+      { nombre: '08 Comercialización', archivo: '08 INFORME AUDITORIA 08 COMERCIALIZACION.pdf' },
+      { nombre: '09 Comunicación', archivo: '09 Informe 9 Comunicacion.pdf' },
+      { nombre: '10 Producción', archivo: '10 Informe de Auditoría 10 Producción.pdf' },
+      { nombre: '11 Comercialización', archivo: '11 informe 11 comercializacion.pdf' },
+      { nombre: '12 Gestión Recursos', archivo: '12 Informe de Auditoría 12 Gestión de Recursos.pdf' },
+    ],
+    '2023': [
+      { nombre: '01 Responsabilidad Dirección', archivo: '01 INFORME RESPONSABILIDAD DE LA DIRECCION.pdf' },
+      { nombre: '02 Medición Análisis', archivo: '02 INFORME AUDITORIA AL PROCESO MEDICION ANALISIS Y MEJORA 02-2023.pdf' },
+      { nombre: '03 Comunicación', archivo: '03 Informe de Auditoría 03 COMUNICACION.pdf' },
+      { nombre: '04 Comercialización', archivo: '04 Informe Auditoria 04 Comercialización.pdf' },
+      { nombre: '05 MAM', archivo: '05 Informe Aud 05 Mtto y Calibracion.pdf' },
+      { nombre: '06 Gestión Recursos', archivo: '06 INFORME DE AUDITORIA 6 GESTION DE RECURSOS.pdf' },
+      { nombre: '07 Producción', archivo: '07 Informe Aud 07 Producción.pdf' },
+      { nombre: '08 Proyectos', archivo: '08 INFORME 08 PROYECTOS.pdf' },
+      { nombre: '09 MAM', archivo: '09 OOMRSC-16  Rev 12  INFORME DE AUDITORIA MAM.pdf' },
+      { nombre: '10 Producción', archivo: '10 Informe de Auditoría 10.pdf' },
+      { nombre: '11 Comercial', archivo: '11 Informe Comercial 11.pdf' },
+    ]
+  };
 
   const getEstadoColor = (estado) => {
     const colors = { 'COMPLETADA': 'bg-emerald-100 text-emerald-700', 'EN_PROCESO': 'bg-blue-100 text-blue-700', 'PROGRAMADA': 'bg-amber-100 text-amber-700', 'CANCELADA': 'bg-red-100 text-red-600' };
