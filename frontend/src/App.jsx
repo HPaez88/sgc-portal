@@ -1458,6 +1458,14 @@ function SettingsView() {
   const [nuevaArea, setNuevaArea] = useState('');
   const [nuevaDireccion, setNuevaDireccion] = useState('');
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
+  const [editandoUsuario, setEditandoUsuario] = useState({ show: false, user: null });
+  
+  const guardarEdicionUsuario = () => {
+    if (editandoUsuario.user) {
+      setUsuarios(usuarios.map(u => u.id === editandoUsuario.user.id ? editandoUsuario.user : u));
+      setEditandoUsuario({ show: false, user: null });
+    }
+  };
   
   const agregarProceso = () => {
     if (nuevoProceso && !procesos.includes(nuevoProceso)) {
@@ -1612,7 +1620,9 @@ function SettingsView() {
                 </td>
                 <td className="p-3">
                   <div className="flex gap-2">
-                    <button onClick={() => { const newPass = prompt('Nueva contraseña para ' + u.nombre + ':'); if (newPass) setUsuarios(usuarios.map(x => x.id === u.id ? {...x, password: newPass} : x)); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded" title="Cambiar contraseña">
+                    <button onClick={() => { 
+                      setEditandoUsuario({...u, show: true }); 
+                    }} className="p-2 text-blue-500 hover:bg-blue-50 rounded" title="Editar usuario">
                       <Edit size={16} />
                     </button>
                     {u.rol !== 'Super Admin' ? (
@@ -1811,6 +1821,60 @@ function SettingsView() {
             <div className="flex gap-3 mt-6">
               <button onClick={() => setMostrarModalUser(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
               <button onClick={agregarUsuario} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Usuario */}
+      {editandoUsuario.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="font-bold text-[#002855] mb-4">Editar Usuario</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Nombre Completo</label>
+                <input value={editandoUsuario.user.nombre} onChange={(e) => setEditandoUsuario({...editandoUsuario, user: {...editandoUsuario.user, nombre: e.target.value}})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Email</label>
+                <input type="email" value={editandoUsuario.user.email} onChange={(e) => setEditandoUsuario({...editandoUsuario, user: {...editandoUsuario.user, email: e.target.value}})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Teléfono</label>
+                <input value={editandoUsuario.user.telefono} onChange={(e) => setEditandoUsuario({...editandoUsuario, user: {...editandoUsuario.user, telefono: e.target.value}})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="644XXXXXXX" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Área</label>
+                <select value={editandoUsuario.user.area} onChange={(e) => setEditandoUsuario({...editandoUsuario, user: {...editandoUsuario.user, area: e.target.value}})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  {areas.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Dirección</label>
+                <select value={editandoUsuario.user.direccion} onChange={(e) => setEditandoUsuario({...editandoUsuario, user: {...editandoUsuario.user, direccion: e.target.value}})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  {direcciones.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Rol</label>
+                <select value={editandoUsuario.user.rol} onChange={(e) => setEditandoUsuario({...editandoUsuario, user: {...editandoUsuario.user, rol: e.target.value}})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="Usuario">Usuario</option>
+                  <option value="Encargado">Encargado</option>
+                  <option value="Auditor">Auditor</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Nueva Contraseña</label>
+                <input type="password" value={editandoUsuario.user.newPassword || ''} onChange={(e) => setEditandoUsuario({...editandoUsuario, user: {...editandoUsuario.user, newPassword: e.target.value}})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Nueva contraseña..." />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setEditandoUsuario({ show: false, user: null })} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button onClick={guardarEdicionUsuario} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Guardar Cambios</button>
             </div>
           </div>
         </div>
