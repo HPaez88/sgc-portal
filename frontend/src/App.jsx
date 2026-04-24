@@ -1448,9 +1448,7 @@ function SettingsView() {
     'Medición Análisis y Mejora', 'Producción', 'Proyectos e Infraestructura', 'Responsabilidad de la Dirección'
   ]);
   
-  const [areas, setAreas] = useState([
-    'Operación', 'Mantenimiento', 'Comercialización', 'Calidad', 'Administración'
-  ]);
+  const [areas, setAreas] = useState(AREAS);
   
   const [direcciones, setDirecciones] = useState([
     'Dir. General', 'Dir. Técnica', 'Dir. Administrativa', 'Dir. Órganos de Control Interno', 'Dir. Comercial', 'Dir. Jurídica', 'Dir. Programas Sociales y Cultura del Agua'
@@ -1504,11 +1502,11 @@ function SettingsView() {
   };
   
   const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Operación', rol: 'Admin', direccion: 'Dir. Técnica' },
-    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Comercialización', rol: 'Usuario', direccion: 'Dir. Comercial' },
-    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento', rol: 'Encargado', direccion: 'Dir. Técnica' },
-    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Administración', rol: 'Usuario', direccion: 'Dir. Administrativa' },
-    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Calidad', rol: 'Encargado', direccion: 'Dir. General' },
+    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Control de Calidad', rol: 'Admin', direccion: 'Dir. Técnica', password: 'admin123' },
+    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Atención Ciudadana', rol: 'Usuario', direccion: 'Dir. Comercial', password: '' },
+    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento de Redes', rol: 'Encargado', direccion: 'Dir. Técnica', password: '' },
+    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Contabilidad', rol: 'Usuario', direccion: 'Dir. Administrativa', password: '' },
+    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Sistema de Gestión de Calidad', rol: 'Encargado', direccion: 'Dir. General', password: '' },
   ]);
 
   const agregarUsuario = () => {
