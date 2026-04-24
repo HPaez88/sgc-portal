@@ -35,7 +35,7 @@ def get_ai_client() -> OpenAI:
 def get_model() -> str:
     """Retorna el modelo según el proveedor."""
     if os.getenv("GROQ_API_KEY"):
-        return "llama-3.1-70b-versatile"
+        return "llama-3.2-3b-versatile"
     return os.getenv("OLLAMA_MODEL", "qwen3:8b")
 
 
