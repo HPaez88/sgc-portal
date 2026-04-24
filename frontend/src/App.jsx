@@ -14,25 +14,11 @@ import {
   Droplet,
   CheckCircle2,
   Clock,
-  FileEdit
+  FileEdit,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
-import Dashboard from './components/Dashboard';
-import AccionCorrectivaForm from './components/AccionCorrectivaForm';
-import PlanMejoraForm from './components/PlanMejoraForm';
-import GestorAprobaciones from './components/GestorAprobaciones';
-
-const COLORES = {
-  azul: '#2A78B0',
-  azulOscuro: '#002855',
-  cyan: '#06b6d4',
-  verde: '#10b981',
-  rojo: '#ef4444',
-  naranja: '#f59e0b',
-  blanco: '#ffffff',
-  grisClaro: '#f8fafc',
-  grisBorde: '#e5e7eb',
-  texto: '#475569',
-};
+import { getApiUrl } from './config';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -59,6 +45,29 @@ function App() {
     { id: 2, title: 'Procedimiento de Saneamiento', status: 'En Revisión', date: '20 Abr 2026', author: 'Lic. García', type: 'Proceso' },
     { id: 3, title: 'Registro de Mantenimiento de Bombas', status: 'Borrador', date: '18 Abr 2026', author: 'Ing. Martínez', type: 'Registro' },
   ];
+
+  const StatCard = ({ title, value, icon: Icon, trend, trendUp }) => (
+    <div className="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer relative overflow-hidden">
+      <div className="absolute -right-6 -top-6 bg-cyan-50/50 w-24 h-24 rounded-full group-hover:scale-150 transition-transform duration-500 ease-out"></div>
+      <div className="flex items-center justify-between relative z-10">
+        <div>
+          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-[#002855]">{value}</h3>
+        </div>
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md group-hover:rotate-6 transition-transform duration-300">
+          <Icon size={24} />
+        </div>
+      </div>
+      {trend && (
+        <div className="mt-4 flex items-center text-sm relative z-10">
+          <span className={trendUp ? 'text-emerald-500 font-medium' : 'text-amber-500 font-medium'}>
+            {trend}
+          </span>
+          <span className="text-slate-400 ml-2">vs mes anterior</span>
+        </div>
+      )}
+    </div>
+  );
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -201,21 +210,78 @@ function App() {
               </div>
             </div>
 
-            {/* Vistas dinámicas */}
-            {activeTab === 'dashboard' ? (
-              <Dashboard />
-            ) : activeTab === 'ac' ? (
-              <div className="max-w-4xl mx-auto">
-                <AccionCorrectivaForm onSuccess={() => {}} />
+            {/* Dashboard View */}
+            {activeTab === 'dashboard' && (
+              <div className="space-y-8">
+                {/* Stat Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                  <div className="animate-slide-up" style={{animationDelay: '100ms'}}>
+                    <StatCard title="Documentos Activos" value="1,248" icon={FileText} trend="+12" trendUp={true} />
+                  </div>
+                  <div className="animate-slide-up" style={{animationDelay: '200ms'}}>
+                    <StatCard title="Auditorías Pendientes" value="3" icon={ClipboardCheck} trend="-1" trendUp={true} />
+                  </div>
+                  <div className="animate-slide-up" style={{animationDelay: '300ms'}}>
+                    <StatCard title="No Conformidades" value="5" icon={AlertTriangle} trend="+2" trendUp={false} />
+                  </div>
+                  <div className="animate-slide-up" style={{animationDelay: '400ms'}}>
+                    <StatCard title="Procesos Actualizados" value="98%" icon={CheckCircle2} trend="+5%" trendUp={true} />
+                  </div>
+                </div>
+
+                {/* Recent Documents */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-slide-up" style={{animationDelay: '500ms'}}>
+                  <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h2 className="text-lg font-bold text-[#002855] flex items-center gap-2">
+                      <Clock size={20} className="text-cyan-500" />
+                      Actividad Reciente
+                    </h2>
+                    <button className="text-sm font-medium text-cyan-600 hover:text-cyan-700 transition-colors">
+                      Ver todo
+                    </button>
+                  </div>
+                  
+                  <div className="divide-y divide-slate-100">
+                    {recentDocuments.map((doc, index) => (
+                      <div 
+                        key={doc.id} 
+                        className="p-6 hover:bg-slate-50/80 transition-colors duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:bg-cyan-100 transition-all">
+                            <FileText size={20} />
+                          </div>
+                          <div>
+                            <h4 className="text-[#002855] font-semibold group-hover:text-cyan-600 transition-colors">
+                              {doc.title}
+                            </h4>
+                            <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-slate-500">
+                              <span>{doc.type}</span>
+                              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                              <span>{doc.author}</span>
+                              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                              <span>Modificado: {doc.date}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-2 sm:mt-0">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(doc.status)}`}>
+                            {doc.status}
+                          </span>
+                          <button className="p-2 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                            <FileEdit size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            ) : activeTab === 'pm' ? (
-              <div className="max-w-4xl mx-auto">
-                <PlanMejoraForm onSuccess={() => {}} />
-              </div>
-            ) : activeTab === 'gestor' ? (
-              <GestorAprobaciones />
-            ) : (
-              // Placeholder para otras secciones
+            )}
+
+            {/* Placeholder for other tabs - exact same style as reference */}
+            {activeTab !== 'dashboard' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
                   {(() => {
