@@ -23,7 +23,8 @@ import {
   Plus,
   Trash2,
   Loader2,
-  Target
+  Target,
+  AlertOctagon
 } from 'lucide-react';
 import { getApiUrl } from './config';
 
@@ -41,10 +42,10 @@ function App() {
     { id: 'ac', label: 'Acciones Correctivas', icon: AlertTriangle },
     { id: 'pm', label: 'Planes de Mejora', icon: CheckCircle2 },
     { id: 'indicadores', label: 'Indicadores', icon: Target },
+    { id: 'riesgos', label: 'Matriz de Riesgos', icon: AlertOctagon },
     { id: 'gestor', label: 'Aprobaciones', icon: FileEdit },
     { id: 'documents', label: 'Documentos', icon: FileText },
     { id: 'audits', label: 'Auditorías', icon: ClipboardCheck },
-    { id: 'nc', label: 'No Conformidades', icon: AlertTriangle },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
@@ -286,7 +287,10 @@ function App() {
             {/* INDICADORES */}
             {activeTab === 'indicadores' && <IndicadoresView />}
 
-            {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'gestor' && (
+            {/* MATRIZ DE RIESGOS */}
+            {activeTab === 'riesgos' && <RiesgosView />}
+
+            {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'riesgos' && activeTab !== 'gestor' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
                   {(() => {
@@ -1064,6 +1068,168 @@ function IndicadoresView() {
             <div className="flex gap-3 mt-6">
               <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
               <button onClick={agregarIndicador} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RiesgosView() {
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [nuevoRiesgo, setNuevoRiesgo] = useState({ riesgo: '', causa: '', efecto: '', probabilidad: 2, impacto: 2, control: '', tipo: 'Riesgo' });
+  
+  const procesos = [
+    'Comercialización', 'Comunicación', 'Gestión de Recursos', 'Mantenimiento y Calibración',
+    'Medición Análisis y Mejora', 'Producción', 'Proyectos e Infraestructura', 'Responsabilidad de la Dirección'
+  ];
+
+  const [riesgos, setRiesgos] = useState([
+    { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo' },
+    { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo' },
+    { id: 3, riesgo: 'Quejas de clientes', causa: 'Atención lenta', efecto: 'Inconformidad', probabilidad: 3, impacto: 2, control: 'Capacitación', tipo: 'Riesgo' },
+    { id: 4, riesgo: 'Cortocircuito', causa: 'Cables viejas', efecto: 'Incendio', probabilidad: 1, impacto: 5, control: 'Renovación', tipo: 'Riesgo' },
+    { id: 5, riesgo: 'Clientes neuen', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad' },
+  ]);
+
+  const getNivel = (prob, imp) => prob * imp;
+  const getColorNivel = (nivel) => {
+    if (nivel >= 15) return 'bg-red-600 text-white';
+    if (nivel >= 8) return 'bg-amber-500 text-white';
+    return 'bg-emerald-500 text-white';
+  };
+
+  const agregarRiesgo = () => {
+    if (!nuevoRiesgo.riesgo) return;
+    setRiesgos(prev => [...prev, { ...nuevoRiesgo, id: prev.length + 1 }]);
+    setNuevoRiesgo({ riesgo: '', causa: '', efecto: '', probabilidad: 2, impacto: 2, control: '', tipo: 'Riesgo' });
+    setMostrarModal(false);
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
+          <p className="text-xs text-red-600">Riesgos Altos</p>
+          <p className="text-2xl font-bold text-red-700">{riesgos.filter(r => r.tipo === 'Riesgo' && getNivel(r.probabilidad, r.impacto) >= 10).length}</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
+          <p className="text-xs text-amber-600">Riesgos Medios</p>
+          <p className="text-2xl font-bold text-amber-700">{riesgos.filter(r => r.tipo === 'Riesgo' && getNivel(r.probabilidad, r.impacto) >= 5 && getNivel(r.probabilidad, r.impacto) < 10).length}</p>
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+          <p className="text-xs text-emerald-600">Riesgos Bajos</p>
+          <p className="text-2xl font-bold text-emerald-700">{riesgos.filter(r => r.tipo === 'Riesgo' && getNivel(r.probabilidad, r.impacto) < 5).length}</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+          <p className="text-xs text-blue-600">Oportunidades</p>
+          <p className="text-2xl font-bold text-blue-700">{riesgos.filter(r => r.tipo === 'Oportunidad').length}</p>
+        </div>
+      </div>
+
+      {/* Tabla */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-bold text-[#002855]">Matriz de Riesgos y Oportunidades</h2>
+          <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600">
+            <Plus size={16} /> Nuevo
+          </button>
+        </div>
+        
+        <table className="w-full">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="p-3 text-sm font-semibold text-slate-600">Riesgo/Oportunidad</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Causa</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Efecto</th>
+              <th className="p-3 text-sm font-semibold text-slate-600 text-center">Prob.</th>
+              <th className="p-3 text-sm font-semibold text-slate-600 text-center">Imp.</th>
+              <th className="p-3 text-sm font-semibold text-slate-600 text-center">Nivel</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Control</th>
+            </tr>
+          </thead>
+          <tbody>
+            {riesgos.map(r => {
+              const nivel = getNivel(r.probabilidad, r.impacto);
+              return (
+                <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50/50">
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${r.tipo === 'Oportunidad' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                      {r.riesgo}
+                    </span>
+                  </td>
+                  <td className="p-3 text-sm text-slate-600">{r.causa}</td>
+                  <td className="p-3 text-sm text-slate-600">{r.efecto}</td>
+                  <td className="p-3 text-center">
+                    <select 
+                      value={r.probabilidad}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setRiesgos(prev => prev.map(x => x.id === r.id ? {...x, probabilidad: val} : x));
+                      }}
+                      className="p-1 text-center text-sm border border-slate-200 rounded"
+                    >
+                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </td>
+                  <td className="p-3 text-center">
+                    <select 
+                      value={r.impacto}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setRiesgos(prev => prev.map(x => x.id === r.id ? {...x, impacto: val} : x));
+                      }}
+                      className="p-1 text-center text-sm border border-slate-200 rounded"
+                    >
+                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </td>
+                  <td className="p-3 text-center">
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${getColorNivel(nivel)}`}>
+                      {nivel}
+                    </span>
+                  </td>
+                  <td className="p-3 text-sm text-slate-600">{r.control}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal */}
+      {mostrarModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h3 className="font-bold text-[#002855] mb-4">Nuevo Riesgo / Oportunidad</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Tipo</label>
+                <select value={nuevoRiesgo.tipo} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, tipo: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="Riesgo">Riesgo</option>
+                  <option value="Oportunidad">Oportunidad</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Riesgo / Oportunidad</label>
+                <input value={nuevoRiesgo.riesgo} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, riesgo: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Descripción..." />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Probabilidad (1-5)</label>
+                  <input type="number" min="1" max="5" value={nuevoRiesgo.probabilidad} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, probabilidad: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Impacto (1-5)</label>
+                  <input type="number" min="1" max="5" value={nuevoRiesgo.impacto} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, impacto: parseInt(e.target.value)})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button onClick={agregarRiesgo} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Agregar</button>
             </div>
           </div>
         </div>
