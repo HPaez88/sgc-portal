@@ -108,28 +108,38 @@ function App() {
       <aside 
         className={`${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed inset-y-0 left-0 z-50 w-72 bg-[#001f42] text-slate-300 transition-all duration-400 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl`}
+        } fixed inset-y-0 left-0 z-50 bg-[#001f42] text-slate-300 transition-all duration-300 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl ${
+          sidebarCollapsed ? 'w-16' : 'w-72'
+        }`}
       >
-        <div className="h-24 flex items-center px-8 bg-[#00152e] relative overflow-hidden">
-          <div className="absolute right-0 top-0 opacity-10">
+        <div className={`h-20 flex items-center bg-[#00152e] relative overflow-hidden ${sidebarCollapsed ? 'justify-center px-2' : 'px-6'}`}>
+          <div className="absolute right-0 top-0 opacity-10 pointer-events-none">
             <Droplet size={120} className="text-cyan-400 -mt-10 -mr-10" />
           </div>
-          <div className="flex items-center gap-3 relative z-10">
+          {sidebarCollapsed ? (
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
               <Droplet size={24} className="text-white" fill="currentColor" />
             </div>
-            <div>
-              <span className="block text-xl font-bold tracking-wide text-white leading-tight">OOMAPASC</span>
-              <span className="block text-xs text-cyan-400 font-medium tracking-wider">PORTAL SGC</span>
+          ) : (
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                <Droplet size={24} className="text-white" fill="currentColor" />
+              </div>
+              <div>
+                <span className="block text-xl font-bold tracking-wide text-white leading-tight">OOMAPASC</span>
+                <span className="block text-xs text-cyan-400 font-medium tracking-wider">PORTAL SGC</span>
+              </div>
             </div>
-          </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden absolute right-6 text-slate-400 hover:text-white transition-colors">
+          )}
+          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden absolute right-4 text-slate-400 hover:text-white transition-colors">
             <X size={24} />
           </button>
         </div>
         
-        <nav className="flex-1 mt-8 px-4 space-y-2 overflow-y-auto">
-          <p className="px-4 text-xs font-semibold text-slate-500 tracking-widest uppercase mb-4">Menú Principal</p>
+        <nav className={`flex-1 overflow-y-auto overflow-x-hidden ${sidebarCollapsed ? 'px-2' : 'px-4'} py-4`}>
+          {!sidebarCollapsed && (
+            <p className="px-2 text-xs font-semibold text-slate-500 tracking-widest uppercase mb-4">Menú</p>
+          )}
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -138,32 +148,43 @@ function App() {
                 key={item.id}
                 onClick={() => {
                   setActiveTab(item.id);
-                  setIsSidebarOpen(false);
+                  if (window.innerWidth < 768) setIsSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group ${
+                className={`w-full flex items-center rounded-xl transition-all duration-300 group ${sidebarCollapsed ? 'justify-center py-3' : 'px-4 py-3.5'} ${
                   isActive 
-                    ? 'bg-gradient-to-r from-cyan-500/10 to-transparent text-cyan-400 font-semibold border-l-4 border-cyan-400' 
-                    : 'hover:bg-white/5 hover:text-white border-l-4 border-transparent'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-transparent text-cyan-400 font-semibold border-l-4 border-cyan-400' 
+                    : 'hover:bg-white/10 hover:text-white border-l-4 border-transparent'
                 }`}
+                title={sidebarCollapsed ? item.label : undefined}
               >
-                <div className="flex items-center space-x-3">
-                  <Icon size={20} className={isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-300 transition-colors'} />
-                  <span>{item.label}</span>
-                </div>
-                {isActive && <ChevronRight size={16} className="text-cyan-400 animate-pulse" />}
+                <Icon size={20} className={isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-300'} />
+                {!sidebarCollapsed && (
+                  <>
+                    <span className="ml-3">{item.label}</span>
+                    {isActive && <ChevronRight size={16} className="ml-auto text-cyan-400" />}
+                  </>
+                )}
               </button>
             );
           })}
         </nav>
 
-        <div className="p-4 m-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer">
-           <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold shadow-inner">
-             A
-           </div>
-           <div>
-             <p className="text-sm font-medium text-white">Admin. SGC</p>
-             <p className="text-xs text-cyan-300">Calidad y Procesos</p>
-           </div>
+<div className={`p-3 mx-2 mb-2 rounded-xl bg-white/5 border border-white/10 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+           {sidebarCollapsed ? (
+             <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold">
+               A
+             </div>
+           ) : (
+             <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold">
+                 A
+               </div>
+               <div>
+                 <p className="text-sm font-medium text-white">Admin. SGC</p>
+                 <p className="text-xs text-cyan-300">En línea</p>
+               </div>
+             </div>
+           )}
         </div>
       </aside>
 
@@ -176,12 +197,12 @@ function App() {
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f8fafc]">
         
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/50 flex items-center justify-between px-6 lg:px-10 z-30 sticky top-0">
+<header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/50 flex items-center justify-between px-6 lg:px-10 z-30 sticky top-0">
           <div className="flex items-center">
             <button 
-              onClick={() => { const sidebar = document.querySelector('aside'); if (sidebar) { sidebar.classList.toggle('w-72'); sidebar.classList.toggle('w-20'); }}} 
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
               className="mr-2 p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors hover:text-cyan-600"
-              title="Alternar menú lateral"
+              title={sidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}
             >
               <Menu size={24} />
             </button>
