@@ -1,5 +1,5 @@
 """
-services/ai_service.py — Integración IA con Ollama (qwen3:8b)
+services/ai_service.py — Integración IA con Groq (producción) u Ollama (desarrollo)
 Genera documentos SGC completos en JSON estructurado.
 """
 import os
@@ -19,10 +19,24 @@ YEAR = datetime.utcnow().year
 
 
 def get_ai_client() -> OpenAI:
+    """Retorna cliente de IA según la configuración."""
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        return OpenAI(
+            base_url="https://api.groq.com/openai/v1",
+            api_key=groq_key,
+        )
     return OpenAI(
         base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
         api_key="ollama",
     )
+
+
+def get_model() -> str:
+    """Retorna el modelo según el proveedor."""
+    if os.getenv("GROQ_API_KEY"):
+        return "llama-3.1-70b-versatile"
+    return os.getenv("OLLAMA_MODEL", "qwen3:8b")
 
 
 def _extraer_json(raw: str) -> dict:
@@ -30,25 +44,23 @@ def _extraer_json(raw: str) -> dict:
     Extrae el primer bloque JSON de la respuesta del modelo.
     Maneja los <think>...</think> tags de qwen3 y texto libre antes/después del JSON.
     """
-    # Remover bloques <think>...</think>
     raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL)
-    # Extraer primer bloque JSON
     match = re.search(r"\{[\s\S]*\}", raw)
     if not match:
         raise ValueError(f"La IA no devolvió un JSON válido. Respuesta: {raw[:300]}")
     return json.loads(match.group(0))
 
 
-def _call_ollama(prompt: str, context: str) -> str:
-    """Hace una llamada a Ollama y devuelve el texto crudo."""
+def _call_ai(prompt: str, context: str) -> str:
+    """Hace una llamada a la IA (Groq u Ollama) y devuelve el texto."""
     client = get_ai_client()
-    model = os.getenv("OLLAMA_MODEL", "qwen3:8b")
+    model = get_model()
     
-    # Verificar si estamos en producción sin Ollama
-    if os.getenv("ENVIRONMENT") == "production":
+    # Verificar si hay IA disponible
+    if not os.getenv("GROQ_API_KEY") and not os.getenv("OLLAMA_BASE_URL"):
         raise HTTPException(
             status_code=503,
-            detail="IA no disponible en producción. Esta función requiere Ollama instalado localmente.",
+            detail="IA no configurada. Agrega GROQ_API_KEY o configura Ollama.",
         )
     
     try:
@@ -64,10 +76,8 @@ def _call_ollama(prompt: str, context: str) -> str:
     except Exception as exc:
         raise HTTPException(
             status_code=503,
-            detail=f"Error conectando con Ollama ({model}). Detalle: {str(exc)}",
+            detail=f"Error con IA ({model}): {str(exc)}",
         )
-
-    raise HTTPException(status_code=503, detail="IA no disponible")
 
 
 # ──────────────────────────────────────────────────────────────
@@ -139,7 +149,7 @@ Devuelve exactamente este JSON (sin texto extra):
   ]
 }}"""
 
-    raw = _call_ollama(prompt, context)
+    raw = _call_ai(prompt, context)
     data = _extraer_json(raw)
 
     # Validar y normalizar campos obligatorios
@@ -223,7 +233,7 @@ Devuelve exactamente este JSON (sin texto extra):
   ]
 }}"""
 
-    raw = _call_ollama(prompt, context)
+    raw = _call_ai(prompt, context)
     data = _extraer_json(raw)
 
     # Validar y normalizar campos obligatorios
@@ -254,7 +264,7 @@ def sugerir_con_ia(descripcion: str, tipo: str) -> str:
         )
         prompt = f"Situación actual: '{descripcion}'\n\nSituación deseada:"
 
-    raw = _call_ollama(prompt, context)
+    raw = _call_ai(prompt, context)
     # Limpiar thinking tags
     raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
     return raw

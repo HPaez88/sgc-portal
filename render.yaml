@@ -10,7 +10,7 @@ services:
       - key: DATABASE_URL
         value: sqlite:///./sgc_portal.db
       - key: ALLOWED_ORIGINS
-        value: "https://sgc-portal.onrender.com"
+        value: "https://sgc-portal-933s.onrender.com"
       - key: ENVIRONMENT
         value: production
     autoDeploy: true
