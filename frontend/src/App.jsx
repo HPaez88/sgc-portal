@@ -24,7 +24,11 @@ import {
   Trash2,
   Loader2,
   Target,
-  AlertOctagon
+  AlertOctagon,
+  Users,
+  Phone,
+  Mail,
+  Building
 } from 'lucide-react';
 import { getApiUrl } from './config';
 
@@ -290,7 +294,10 @@ function App() {
             {/* MATRIZ DE RIESGOS */}
             {activeTab === 'riesgos' && <RiesgosView />}
 
-            {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'riesgos' && activeTab !== 'gestor' && (
+            {/* CONFIGURACIÓN */}
+            {activeTab === 'settings' && <SettingsView />}
+
+            {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'riesgos' && activeTab !== 'settings' && activeTab !== 'gestor' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
                   {(() => {
@@ -1230,6 +1237,175 @@ function RiesgosView() {
             <div className="flex gap-3 mt-6">
               <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
               <button onClick={agregarRiesgo} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SettingsView() {
+  const [mostrarModalUser, setMostrarModalUser] = useState(false);
+  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario' });
+  
+  const procesos = [
+    'Comercialización', 'Comunicación', 'Gestión de Recursos', 'Mantenimiento y Calibración',
+    'Medición Análisis y Mejora', 'Producción', 'Proyectos e Infraestructura', 'Responsabilidad de la Dirección'
+  ];
+
+  const [usuarios, setUsuarios] = useState([
+    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Producción', rol: 'Encargado' },
+    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Comunicación', rol: 'Usuario' },
+    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento y Calibración', rol: 'Encargado' },
+    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Comercialización', rol: 'Usuario' },
+    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Medición Análisis y Mejora', rol: 'Encargado' },
+  ]);
+
+  const agregarUsuario = () => {
+    if (!nuevoUsuario.nombre || !nuevoUsuario.email || !nuevoUsuario.area) return;
+    setUsuarios(prev => [...prev, { ...nuevoUsuario, id: prev.length + 1 }]);
+    setNuevoUsuario({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario' });
+    setMostrarModalUser(false);
+  };
+
+  const eliminarUsuario = (id) => {
+    setUsuarios(prev => prev.filter(u => u.id !== id));
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500">Total Usuarios</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuarios.length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500">Encargados</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.rol === 'Encargado').length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500">Áreas Activas</p>
+          <p className="text-2xl font-bold text-[#002855]">{procesos.length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500">Con Email</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.email).length}</p>
+        </div>
+      </div>
+
+      {/* Usuarios */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-bold text-[#002855] flex items-center gap-2">
+            <Users size={20} className="text-cyan-500" />
+            Gestión de Usuarios
+          </h2>
+          <button onClick={() => setMostrarModalUser(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600">
+            <Plus size={16} /> Nuevo Usuario
+          </button>
+        </div>
+        
+        <table className="w-full">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="p-3 text-sm font-semibold text-slate-600">Nombre</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Email</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Teléfono</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Área/Proceso</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Rol</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {usuarios.map(u => (
+              <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50/50">
+                <td className="p-3 font-medium text-[#002855]">{u.nombre}</td>
+                <td className="p-3 text-sm text-slate-600">{u.email}</td>
+                <td className="p-3 text-sm text-slate-600">{u.telefono}</td>
+                <td className="p-3 text-sm text-slate-600">{u.area}</td>
+                <td className="p-3">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${u.rol === 'Encargado' ? 'bg-cyan-100 text-cyan-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {u.rol}
+                  </span>
+                </td>
+                <td className="p-3">
+                  <button onClick={() => eliminarUsuario(u.id)} className="p-2 text-red-500 hover:bg-red-50 rounded">
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Procesos/Áreas */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <h2 className="font-bold text-[#002855] flex items-center gap-2">
+            <Building size={20} className="text-cyan-500" />
+            Procesos del Organismo
+          </h2>
+        </div>
+        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {procesos.map(p => (
+            <div key={p} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+              <CheckCircle2 size={16} className="text-emerald-500" />
+              <span className="text-sm text-slate-700">{p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Ideas Futures */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <h3 className="font-semibold text-amber-800 mb-2">Ideas para Desarrollo Future</h3>
+        <ul className="text-sm text-amber-700 space-y-1">
+          <li>• Chatbot para WhatsApp/Telegram por área</li>
+          <li>• Notificaciones por correo electrónico automáticas</li>
+          <li>• Sistema de alertas por vencimiento de indicadores</li>
+          <li>• Dashboard personalizado por usuario</li>
+        </ul>
+      </div>
+
+      {/* Modal Nuevo Usuario */}
+      {mostrarModalUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="font-bold text-[#002855] mb-4">Nuevo Usuario</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Nombre Completo</label>
+                <input value={nuevoUsuario.nombre} onChange={(e) => setNuevoUsuario({...nuevoUsuario, nombre: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Nombre..." />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Email</label>
+                <input type="email" value={nuevoUsuario.email} onChange={(e) => setNuevoUsuario({...nuevoUsuario, email: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="correo@oomapasc.gob.mx" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Teléfono</label>
+                <input value={nuevoUsuario.telefono} onChange={(e) => setNuevoUsuario({...nuevoUsuario, telefono: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="644XXXXXXX" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Área/Proceso</label>
+                <select value={nuevoUsuario.area} onChange={(e) => setNuevoUsuario({...nuevoUsuario, area: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  {procesos.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Rol</label>
+                <select value={nuevoUsuario.rol} onChange={(e) => setNuevoUsuario({...nuevoUsuario, rol: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="Usuario">Usuario</option>
+                  <option value="Encargado">Encargado (Gerente)</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setMostrarModalUser(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button onClick={agregarUsuario} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Agregar</button>
             </div>
           </div>
         </div>
