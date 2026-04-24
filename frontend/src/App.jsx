@@ -1334,7 +1334,7 @@ function RiesgosView() {
                       }}
                       className="p-1 text-center text-sm border border-slate-200 rounded"
                     >
-                      {[1,2,3,4,5].map(n => <option key={n} value={n}</option>)}
+                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                   </td>
                   <td className="p-3 text-center">
