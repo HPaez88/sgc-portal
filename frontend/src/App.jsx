@@ -16,7 +16,14 @@ import {
   Clock,
   FileEdit,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Sparkles,
+  Save,
+  Send,
+  Plus,
+  Trash2,
+  Loader2,
+  Target
 } from 'lucide-react';
 import { getApiUrl } from './config';
 
@@ -33,6 +40,7 @@ function App() {
     { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
     { id: 'ac', label: 'Acciones Correctivas', icon: AlertTriangle },
     { id: 'pm', label: 'Planes de Mejora', icon: CheckCircle2 },
+    { id: 'indicadores', label: 'Indicadores', icon: Target },
     { id: 'gestor', label: 'Aprobaciones', icon: FileEdit },
     { id: 'documents', label: 'Documentos', icon: FileText },
     { id: 'audits', label: 'Auditorías', icon: ClipboardCheck },
@@ -43,7 +51,7 @@ function App() {
   const recentDocuments = [
     { id: 1, title: 'Manual de Calidad del Agua v3.0', status: 'Aprobado', date: '23 Abr 2026', author: 'Ing. López', type: 'Manual' },
     { id: 2, title: 'Procedimiento de Saneamiento', status: 'En Revisión', date: '20 Abr 2026', author: 'Lic. García', type: 'Proceso' },
-    { id: 3, title: 'Registro de Mantenimiento de Bombas', status: 'Borrador', date: '18 Abr 2026', author: 'Ing. Martínez', type: 'Registro' },
+    { id: 3, title: ' Registro de Mantenimiento de Bombas', status: 'Borrador', date: '18 Abr 2026', author: 'Ing. Martínez', type: 'Registro' },
   ];
 
   const StatCard = ({ title, value, icon: Icon, trend, trendUp }) => (
@@ -89,7 +97,6 @@ function App() {
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } fixed inset-y-0 left-0 z-50 w-72 bg-[#001f42] text-slate-300 transition-transform duration-400 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl`}
       >
-        {/* Logo Area */}
         <div className="h-24 flex items-center px-8 bg-[#00152e] relative overflow-hidden">
           <div className="absolute right-0 top-0 opacity-10">
             <Droplet size={120} className="text-cyan-400 -mt-10 -mr-10" />
@@ -108,7 +115,6 @@ function App() {
           </button>
         </div>
         
-        {/* Navegación */}
         <nav className="flex-1 mt-8 px-4 space-y-2 overflow-y-auto">
           <p className="px-4 text-xs font-semibold text-slate-500 tracking-widest uppercase mb-4">Menú Principal</p>
           {navItems.map((item) => {
@@ -137,7 +143,6 @@ function App() {
           })}
         </nav>
 
-        {/* User Profile */}
         <div className="p-4 m-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer">
            <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold shadow-inner">
              A
@@ -149,7 +154,6 @@ function App() {
         </div>
       </aside>
 
-      {/* Overlay para móviles */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-[#001f42]/40 backdrop-blur-sm z-40 md:hidden transition-opacity"
@@ -157,10 +161,8 @@ function App() {
         />
       )}
 
-      {/* Contenido Principal */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f8fafc]">
         
-        {/* Header */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/50 flex items-center justify-between px-6 lg:px-10 z-30 sticky top-0">
           <div className="flex items-center">
             <button 
@@ -193,11 +195,9 @@ function App() {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
           
           <div className="max-w-7xl mx-auto space-y-8">
-            {/* Título */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 animate-fade-in-up">
               <div>
                 <h1 className="text-3xl font-extrabold text-[#002855] tracking-tight">
@@ -210,10 +210,8 @@ function App() {
               </div>
             </div>
 
-            {/* Dashboard View */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8">
-                {/* Stat Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                   <div className="animate-slide-up" style={{animationDelay: '100ms'}}>
                     <StatCard title="Documentos Activos" value="1,248" icon={FileText} trend="+12" trendUp={true} />
@@ -229,7 +227,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Recent Documents */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-slide-up" style={{animationDelay: '500ms'}}>
                   <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h2 className="text-lg font-bold text-[#002855] flex items-center gap-2">
@@ -280,8 +277,16 @@ function App() {
               </div>
             )}
 
-            {/* Placeholder for other tabs - exact same style as reference */}
-            {activeTab !== 'dashboard' && (
+            {/* ACCIONES CORRECTIVAS */}
+            {activeTab === 'ac' && <AccionCorrectivaView />}
+
+{/* PLANES DE MEJORA */}
+            {activeTab === 'pm' && <PlanMejoraView />}
+
+            {/* INDICADORES */}
+            {activeTab === 'indicadores' && <IndicadoresView />}
+
+            {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'gestor' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
                   {(() => {
@@ -299,7 +304,6 @@ function App() {
         </main>
       </div>
 
-      {/* Animaciones CSS */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -317,6 +321,696 @@ function App() {
           animation: fadeInUp 0.5s ease-out forwards;
         }
       `}} />
+    </div>
+  );
+}
+
+function AccionCorrectivaView() {
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [generando, setGenerando] = useState(false);
+  const [formData, setFormData] = useState({
+    codigo: '',
+    fecha_deteccion: '',
+    area: '',
+    proceso: '',
+    descripcion_nc: '',
+    tipo_nc: '',
+    categoria: '',
+    posibles_causas: '',
+    causa_raiz: '',
+    accion_contencion: '',
+    actividades: [],
+    estado: 'BORRADOR'
+  });
+
+  const areas = ['Dirección', 'Calidad', 'Operación', 'Mantenimiento', 'Comercial', 'Administración'];
+  const procesos = ['Captación', 'Potabilización', 'Distribución', 'Cobro', 'Atención al Cliente', 'Mantenimiento'];
+  const tipos_nc = ['No Conformidad Mayor', 'No Conformidad Menor', 'Observación', 'Oportunidad de Mejora'];
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const agregarActividad = () => {
+    setFormData(prev => ({
+      ...prev,
+      actividades: [...prev.actividades, { descripcion: '', responsable: '', fecha_limite: '', estado: 'PENDIENTE' }]
+    }));
+  };
+
+  const actualizarActividad = (index, field, value) => {
+    const nuevas = [...formData.actividades];
+    nuevas[index][field] = value;
+    setFormData(prev => ({ ...prev, actividades: nuevas }));
+  };
+
+  const eliminarActividad = (index) => {
+    const nuevas = formData.actividades.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, actividades: nuevas }));
+  };
+
+  const generarConIA = async () => {
+    if (!formData.descripcion_nc) {
+      alert('Describe la No Conformidad primero');
+      return;
+    }
+    setGenerando(true);
+    try {
+      const resp = await fetch(getApiUrl('/api/v1/ai/generar-ac'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descripcion: formData.descripcion_nc })
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        setFormData(prev => ({
+          ...prev,
+          posibles_causas: data.data.posibles_causas || '',
+          causa_raiz: data.data.causa_raiz || '',
+          accion_contencion: data.data.accion_contencion || '',
+          actividades: data.data.actividades?.length ? data.data.actividades : prev.actividades
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setGenerando(false);
+    }
+  };
+
+  const guardar = async (enviar = false) => {
+    setLoading(true);
+    try {
+      const payload = { ...formData, estado: enviar ? 'EN_REVISION' : 'BORRADOR' };
+      const resp = await fetch(getApiUrl('/api/v1/acciones-correctivas'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
+        if (enviar) {
+          setFormData({
+            codigo: '', fecha_deteccion: '', area: '', proceso: '', descripcion_nc: '',
+            tipo_nc: '', categoria: '', posibles_causas: '', causa_raiz: '', accion_contencion: '',
+            actividades: [], estado: 'BORRADOR'
+          });
+          setStep(1);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in-up">
+      {/* Steps */}
+      <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex gap-4">
+        {['1. Describir', '2. Analizar', '3. Plan de Acción'].map((label, idx) => (
+          <button
+            key={idx}
+            onClick={() => setStep(idx + 1)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              step === idx + 1 
+                ? 'bg-cyan-500 text-white shadow-md' 
+                : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-6 space-y-6">
+        {step === 1 && (
+          <div className="space-y-6">
+            <SectionTitle icon="📋" title="Datos del Documento" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InputField label="Código" name="codigo" value={formData.codigo} onChange={handleChange} placeholder="AC-2026-001" />
+              <InputField label="Fecha Detección" name="fecha_deteccion" type="date" value={formData.fecha_deteccion} onChange={handleChange} />
+              <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={areas} />
+              <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={procesos} />
+              <SelectField label="Tipo de NC" name="tipo_nc" value={formData.tipo_nc} onChange={handleChange} options={tipos_nc} />
+            </div>
+
+            <SectionTitle icon="⚠️" title="Descripción de la No Conformidad" required />
+            <textarea
+              name="descripcion_nc"
+              value={formData.descripcion_nc}
+              onChange={handleChange}
+              placeholder="Describe la no conformidad detectada..."
+              className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
+            />
+
+            <button
+              onClick={generarConIA}
+              disabled={generando || !formData.descripcion_nc}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+              Generar con IA
+            </button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-6">
+            <SectionTitle icon="🔍" title="Análisis de Causa Raíz (6M)" required />
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Posibles Causas</label>
+              <textarea
+                name="posibles_causas"
+                value={formData.posibles_causas}
+                onChange={handleChange}
+                placeholder="Lista las posibles causas (Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)..."
+                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Causa Raíz Identificada</label>
+              <textarea
+                name="causa_raiz"
+                value={formData.causa_raiz}
+                onChange={handleChange}
+                placeholder="¿Cuál es la causa raíz?"
+                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Acción de Contención</label>
+              <textarea
+                name="accion_contencion"
+                value={formData.accion_contencion}
+                onChange={handleChange}
+                placeholder="¿Qué acción inmediata se tomó para contener el problema?"
+                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+              />
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-6">
+            <SectionTitle icon="📋" title="Plan de Actividades" required />
+            
+            <div className="space-y-4">
+              {formData.actividades.map((act, idx) => (
+                <div key={idx} className="p-4 border border-slate-200 rounded-xl space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-slate-500">Actividad {idx + 1}</span>
+                    <button onClick={() => eliminarActividad(idx)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <textarea
+                    value={act.descripcion}
+                    onChange={(e) => actualizarActividad(idx, 'descripcion', e.target.value)}
+                    placeholder="Descripción de la actividad..."
+                    className="w-full p-3 border border-slate-200 rounded-lg resize-none min-h-[60px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={act.responsable}
+                      onChange={(e) => actualizarActividad(idx, 'responsable', e.target.value)}
+                      placeholder="Responsable"
+                      className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                    <input
+                      type="date"
+                      value={act.fecha_limite}
+                      onChange={(e) => actualizarActividad(idx, 'fecha_limite', e.target.value)}
+                      className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              <button
+                onClick={agregarActividad}
+                className="flex items-center gap-2 w-full p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 hover:border-cyan-500 hover:text-cyan-500 transition-all"
+              >
+                <Plus size={18} />
+                Agregar Actividad
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-between pt-6 border-t border-slate-200">
+          <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium disabled:opacity-50 transition-all">
+            Anterior
+          </button>
+          <div className="flex gap-3">
+            <button onClick={() => guardar(false)} disabled={loading} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-all">
+              <Save size={18} />
+              Guardar Borrador
+            </button>
+            {step < 3 ? (
+              <button onClick={() => setStep(s => Math.min(3, s + 1))} className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500 text-white hover:bg-cyan-600 rounded-xl font-medium shadow-md shadow-cyan-500/20 transition-all">
+                Siguiente
+              </button>
+            ) : (
+              <button onClick={() => guardar(true)} disabled={loading} className="flex items-center gap-2 px-6 py-2.5 bg-[#002855] text-white hover:bg-[#00152e] rounded-xl font-medium shadow-lg shadow-blue-900/20 transition-all">
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                Enviar a Revisión
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlanMejoraView() {
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [generando, setGenerando] = useState(false);
+  const [formData, setFormData] = useState({
+    codigo: '',
+    fecha_elaboracion: '',
+    area: '',
+    proceso: '',
+    situacion_actual: '',
+    situacion_deseada: '',
+    beneficios: '',
+    equipo_trabajo: '',
+    actividades: [],
+    estado: 'BORRADOR'
+  });
+
+  const areas = ['Dirección', 'Calidad', 'Operación', 'Mantenimiento', 'Comercial', 'Administración'];
+  const procesos = ['Captación', 'Potabilización', 'Distribución', 'Cobro', 'Atención al Cliente', 'Mantenimiento'];
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const agregarActividad = () => {
+    setFormData(prev => ({
+      ...prev,
+      actividades: [...prev.actividades, { actividad: '', indicador: '', meta: '', responsable: '', fecha_inicio: '', fecha_fin: '', estado: 'PENDIENTE' }]
+    }));
+  };
+
+  const actualizarActividad = (index, field, value) => {
+    const nuevas = [...formData.actividades];
+    nuevas[index][field] = value;
+    setFormData(prev => ({ ...prev, actividades: nuevas }));
+  };
+
+  const eliminarActividad = (index) => {
+    const nuevas = formData.actividades.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, actividades: nuevas }));
+  };
+
+  const generarConIA = async () => {
+    if (!formData.situacion_actual || !formData.situacion_deseada) {
+      alert('Describe la situación actual y deseable primero');
+      return;
+    }
+    setGenerando(true);
+    try {
+      const resp = await fetch(getApiUrl('/api/v1/ai/generar-pm'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situacion_actual: formData.situacion_actual, situacion_deseada: formData.situacion_deseada })
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        setFormData(prev => ({
+          ...prev,
+          beneficios: data.data.beneficios || '',
+          equipo_trabajo: data.data.equipo_trabajo || '',
+          actividades: data.data.actividades?.length ? data.data.actividades : prev.actividades
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setGenerando(false);
+    }
+  };
+
+  const guardar = async (enviar = false) => {
+    setLoading(true);
+    try {
+      const payload = { ...formData, estado: enviar ? 'EN_REVISION' : 'BORRADOR' };
+      const resp = await fetch(getApiUrl('/api/v1/planes-mejora'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
+        if (enviar) {
+          setFormData({
+            codigo: '', fecha_elaboracion: '', area: '', proceso: '', situacion_actual: '',
+            situacion_deseada: '', beneficios: '', equipo_trabajo: '',
+            actividades: [], estado: 'BORRADOR'
+          });
+          setStep(1);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in-up">
+      <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex gap-4">
+        {['1. Describir', '2. Analizar', '3. Plan de Acción'].map((label, idx) => (
+          <button
+            key={idx}
+            onClick={() => setStep(idx + 1)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              step === idx + 1 
+                ? 'bg-cyan-500 text-white shadow-md' 
+                : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-6 space-y-6">
+        {step === 1 && (
+          <div className="space-y-6">
+            <SectionTitle icon="📋" title="Datos del Documento" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InputField label="Código" name="codigo" value={formData.codigo} onChange={handleChange} placeholder="PM-2026-001" />
+              <InputField label="Fecha Elaboración" name="fecha_elaboracion" type="date" value={formData.fecha_elaboracion} onChange={handleChange} />
+              <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={areas} />
+              <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={procesos} />
+            </div>
+
+            <SectionTitle icon="📈" title="Situación Actual" required />
+            <textarea
+              name="situacion_actual"
+              value={formData.situacion_actual}
+              onChange={handleChange}
+              placeholder="Describe la situación actual que desea mejorar..."
+              className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+            />
+
+            <SectionTitle icon="🎯" title="Situación Deseada" required />
+            <textarea
+              name="situacion_deseada"
+              value={formData.situacion_deseada}
+              onChange={handleChange}
+              placeholder="¿Cuál es el objetivo o situación deseada?"
+              className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+            />
+
+            <button
+              onClick={generarConIA}
+              disabled={generando || !formData.situacion_actual || !formData.situacion_deseada}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+              Generar con IA
+            </button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-6">
+            <SectionTitle icon="✨" title="Análisis y Beneficios" />
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Beneficios Esperados</label>
+              <textarea
+                name="beneficios"
+                value={formData.beneficios}
+                onChange={handleChange}
+                placeholder="¿Qué beneficios se esperan obtener con esta mejora?"
+                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Equipo de Trabajo</label>
+              <input
+                name="equipo_trabajo"
+                value={formData.equipo_trabajo}
+                onChange={handleChange}
+                placeholder="Nombres de los integrantes del equipo..."
+                className="w-full p-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+              />
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-6">
+            <SectionTitle icon="📋" title="Plan de Actividades" required />
+            
+            <div className="space-y-4">
+              {formData.actividades.map((act, idx) => (
+                <div key={idx} className="p-4 border border-slate-200 rounded-xl space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-slate-500">Actividad {idx + 1}</span>
+                    <button onClick={() => eliminarActividad(idx)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <textarea
+                    value={act.actividad}
+                    onChange={(e) => actualizarActividad(idx, 'actividad', e.target.value)}
+                    placeholder="Descripción de la actividad..."
+                    className="w-full p-3 border border-slate-200 rounded-lg resize-none min-h-[60px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={act.responsable}
+                      onChange={(e) => actualizarActividad(idx, 'responsable', e.target.value)}
+                      placeholder="Responsable"
+                      className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                    <input
+                      type="text"
+                      value={act.indicador}
+                      onChange={(e) => actualizarActividad(idx, 'indicador', e.target.value)}
+                      placeholder="Indicador"
+                      className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="date" value={act.fecha_inicio} onChange={(e) => actualizarActividad(idx, 'fecha_inicio', e.target.value)} className="p-2 border border-slate-200 rounded-lg focus:outline-none" />
+                    <input type="date" value={act.fecha_fin} onChange={(e) => actualizarActividad(idx, 'fecha_fin', e.target.value)} className="p-2 border border-slate-200 rounded-lg focus:outline-none" />
+                  </div>
+                </div>
+              ))}
+              
+              <button
+                onClick={agregarActividad}
+                className="flex items-center gap-2 w-full p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 hover:border-cyan-500 hover:text-cyan-500 transition-all"
+              >
+                <Plus size={18} />
+                Agregar Actividad
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-between pt-6 border-t border-slate-200">
+          <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium disabled:opacity-50 transition-all">
+            Anterior
+          </button>
+          <div className="flex gap-3">
+            <button onClick={() => guardar(false)} disabled={loading} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-all">
+              <Save size={18} />
+              Guardar Borrador
+            </button>
+            {step < 3 ? (
+              <button onClick={() => setStep(s => Math.min(3, s + 1))} className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500 text-white hover:bg-cyan-600 rounded-xl font-medium shadow-md shadow-cyan-500/20 transition-all">
+                Siguiente
+              </button>
+            ) : (
+              <button onClick={() => guardar(true)} disabled={loading} className="flex items-center gap-2 px-6 py-2.5 bg-[#002855] text-white hover:bg-[#00152e] rounded-xl font-medium shadow-lg shadow-blue-900/20 transition-all">
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                Enviar a Revisión
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IndicadoresView() {
+  const [loading, setLoading] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [indicadores, setIndicadores] = useState([
+    { id: 1, nombre: 'Turbiedad del Agua', proceso: 'Potabilización', tipo: 'Eficacia', unidad: 'NTU', meta: '< 1.0',Responsable: 'Ing. López' },
+    { id: 2, nombre: 'Cloro Residual', proceso: 'Distribución', tipo: 'Eficacia', unidad: 'mg/L', meta: '0.5 - 1.5',Responsable: 'Ing. García' },
+    { id: 3, nombre: 'Tiempo de Respuesta', proceso: 'Atención al Cliente', tipo: 'Eficiencia', unidad: 'horas', meta: '< 24',Responsable: 'Lic. Martínez' },
+    { id: 4, nombre: 'Consumo de Energía', proceso: 'Operación', tipo: 'Eficiencia', unidad: 'kWh/m³', meta: '< 0.5',Responsable: 'Ing. Torres' },
+    { id: 5, nombre: 'Índice de Recaudación', proceso: 'Cobro', tipo: 'Eficacia', unidad: '%', meta: '> 95%',Responsable: 'C.P. Hernández' },
+  ]);
+  const [resultados, setResultados] = useState({});
+  const [anioActual] = useState(2026);
+  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  const getMetaColor = (meta, valor) => {
+    const esMenor = meta.startsWith('<');
+    const esMayor = meta.startsWith('>');
+    const numMeta = parseFloat(meta.replace(/[<|>]/g, '').replace(/%/g, ''));
+    const numValor = parseFloat(String(valor).replace(/%/g, ''));
+    if (isNaN(numMeta) || isNaN(numValor)) return 'text-slate-500';
+    if (esMenor) return numValor <= numMeta ? 'text-emerald-600' : 'text-red-600';
+    if (esMayor) return numValor >= numMeta ? 'text-emerald-600' : 'text-red-600';
+    return numValor <= numMeta ? 'text-emerald-600' : 'text-red-600';
+  };
+
+  const guardarResultado = async (indicadorId, mes, valor) => {
+    setLoading(true);
+    try {
+      setResultados(prev => ({ ...prev, [`${indicadorId}-${mes}`]: valor }));
+      await new Promise(r => setTimeout(r, 300));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-bold text-[#002855]">Indicadores por Área - {anioActual}</h2>
+          <button className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600 transition-all">
+            <Plus size={16} />
+            Nuevo Indicador
+          </button>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-slate-50 text-left">
+                <th className="p-4 text-sm font-semibold text-slate-600">Indicador</th>
+                <th className="p-4 text-sm font-semibold text-slate-600">Proceso</th>
+                <th className="p-4 text-sm font-semibold text-slate-600">Tipo</th>
+                <th className="p-4 text-sm font-semibold text-slate-600">Unidad</th>
+                <th className="p-4 text-sm font-semibold text-slate-600">Meta</th>
+                {meses.map(m => (
+                  <th key={m} className="p-3 text-xs font-semibold text-slate-500 text-center">{m}</th>
+                ))}
+                <th className="p-4 text-sm font-semibold text-slate-600">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {indicadores.map(ind => (
+                <tr key={ind.id} className="border-t border-slate-100 hover:bg-slate-50/50">
+                  <td className="p-4 font-medium text-[#002855]">{ind.nombre}</td>
+                  <td className="p-4 text-sm text-slate-600">{ind.proceso}</td>
+                  <td className="p-4 text-sm text-slate-600">{ind.tipo}</td>
+                  <td className="p-4 text-sm text-slate-600">{ind.unidad}</td>
+                  <td className="p-4 text-sm font-medium text-slate-700">{ind.meta}</td>
+                  {meses.map(mes => {
+                    const key = `${ind.id}-${mes}`;
+                    const valor = resultados[key] || '';
+                    return (
+                      <td key={mes} className="p-2 text-center">
+                        {editando === key ? (
+                          <input
+                            type="text"
+                            value={valor}
+                            onChange={(e) => guardarResultado(ind.id, mes, e.target.value)}
+                            onBlur={() => setEditando(null)}
+                            onKeyDown={(e) => e.key === 'Enter' && setEditando(null)}
+                            autoFocus
+                            className="w-full p-1 text-center text-sm border border-cyan-500 rounded focus:outline-none"
+                          />
+                        ) : (
+                          <span 
+                            onClick={() => setEditando(key)}
+                            className={`cursor-pointer hover:bg-cyan-50 px-2 py-1 rounded block ${getMetaColor(ind.meta, valor)}`}
+                          >
+                            {valor || '-'}
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="p-4">
+                    <button className="p-2 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded transition-colors">
+                      <FileEdit size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {['Eficacia', 'Eficiencia', 'Otro'].map(tipo => (
+          <div key={tipo} className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+            <h3 className="font-semibold text-[#002855] mb-3">{tipo}</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Cumplidos</span>
+                <span className="font-medium text-emerald-600">
+                  {indicadores.filter(i => i.tipo === tipo).length}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">En Proceso</span>
+                <span className="font-medium text-amber-600">0</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ icon, title, required }) {
+  return (
+    <div className="flex items-center gap-2 pb-2 border-b-2 border-cyan-500 mb-4">
+      <span className="text-lg">{icon}</span>
+      <h3 className="text-base font-bold text-[#002855] m-0">{title}</h3>
+      {required && <span className="text-red-500">*</span>}
+    </div>
+  );
+}
+
+function InputField({ label, name, value, onChange, type = 'text', placeholder, required }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-slate-600 mb-1.5">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
+      />
     </div>
   );
 }
