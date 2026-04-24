@@ -108,7 +108,7 @@ function App() {
       <aside 
         className={`${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed inset-y-0 left-0 z-50 w-72 bg-[#001f42] text-slate-300 transition-transform duration-400 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl`}
+        } fixed inset-y-0 left-0 z-50 w-72 bg-[#001f42] text-slate-300 transition-all duration-400 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl`}
       >
         <div className="h-24 flex items-center px-8 bg-[#00152e] relative overflow-hidden">
           <div className="absolute right-0 top-0 opacity-10">
@@ -179,8 +179,9 @@ function App() {
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/50 flex items-center justify-between px-6 lg:px-10 z-30 sticky top-0">
           <div className="flex items-center">
             <button 
-              onClick={() => setIsSidebarOpen(true)} 
-              className="mr-4 md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+              onClick={() => { const sidebar = document.querySelector('aside'); if (sidebar) { sidebar.classList.toggle('w-72'); sidebar.classList.toggle('w-20'); }}} 
+              className="mr-2 p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors hover:text-cyan-600"
+              title="Alternar menú lateral"
             >
               <Menu size={24} />
             </button>
