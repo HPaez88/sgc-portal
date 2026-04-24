@@ -53,14 +53,33 @@ def _extraer_json(raw: str) -> dict:
 
 def _call_ai(prompt: str, context: str) -> str:
     """Hace una llamada a la IA (Groq u Ollama) y devuelve el texto."""
-    client = get_ai_client()
     model = get_model()
+    client = get_ai_client()
     
-    # Verificar si hay IA disponible
-    if not os.getenv("GROQ_API_KEY") and not os.getenv("OLLAMA_BASE_URL"):
+    # Si hay Groq, lo usamos directamente
+    if os.getenv("GROQ_API_KEY"):
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": context},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Error con IA ({model}): {str(exc)}",
+            )
+    
+    # Otherwise intentar Ollama si está configurado
+    ollama_url = os.getenv("OLLAMA_BASE_URL")
+    if not ollama_url or ollama_url == "http://localhost:11434/v1":
         raise HTTPException(
             status_code=503,
-            detail="IA no configurada. Agrega GROQ_API_KEY o configura Ollama.",
+            detail="IA no configurada. Agrega GROQ_API_KEY en Render o configura Ollama local.",
         )
     
     try:
