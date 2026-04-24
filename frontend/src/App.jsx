@@ -858,46 +858,99 @@ function PlanMejoraView() {
 }
 
 function IndicadoresView() {
-  const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', proceso: '', meta: '', unidad: '' });
+  
+  const procesos = [
+    'Comercialización',
+    'Comunicación',
+    'Gestión de Recursos',
+    'Mantenimiento y Calibración',
+    'Medición Análisis y Mejora',
+    'Producción',
+    'Proyectos e Infraestructura',
+    'Responsabilidad de la Dirección'
+  ];
+
   const [indicadores, setIndicadores] = useState([
-    { id: 1, nombre: 'Turbiedad del Agua', proceso: 'Potabilización', tipo: 'Eficacia', unidad: 'NTU', meta: '< 1.0',Responsable: 'Ing. López' },
-    { id: 2, nombre: 'Cloro Residual', proceso: 'Distribución', tipo: 'Eficacia', unidad: 'mg/L', meta: '0.5 - 1.5',Responsable: 'Ing. García' },
-    { id: 3, nombre: 'Tiempo de Respuesta', proceso: 'Atención al Cliente', tipo: 'Eficiencia', unidad: 'horas', meta: '< 24',Responsable: 'Lic. Martínez' },
-    { id: 4, nombre: 'Consumo de Energía', proceso: 'Operación', tipo: 'Eficiencia', unidad: 'kWh/m³', meta: '< 0.5',Responsable: 'Ing. Torres' },
-    { id: 5, nombre: 'Índice de Recaudación', proceso: 'Cobro', tipo: 'Eficacia', unidad: '%', meta: '> 95%',Responsable: 'C.P. Hernández' },
+    { id: 1, nombre: 'Turbiedad Promedio', proceso: 'Producción', meta: '< 1.0', unidad: 'NTU' },
+    { id: 2, nombre: 'Cloro Residual', proceso: 'Producción', meta: '0.5-1.5', unidad: 'mg/L' },
+    { id: 3, nombre: 'Recaudación', proceso: 'Comercialización', meta: '> 95', unidad: '%' },
+    { id: 4, nombre: 'Quejas Atendidas', proceso: 'Comunicación', meta: '< 24', unidad: 'hrs' },
+    { id: 5, nombre: 'Eficiencia de Bombas', proceso: 'Mantenimiento y Calibración', meta: '> 85', unidad: '%' },
+    { id: 6, nombre: 'NC Resueltas', proceso: 'Medición Análisis y Mejora', meta: '> 90', unidad: '%' },
+    { id: 7, nombre: 'Cumplimiento de Indicadores', proceso: 'Responsabilidad de la Dirección', meta: '> 80', unidad: '%' },
+    { id: 8, nombre: 'Proyectos Terminados', proceso: 'Proyectos e Infraestructura', meta: '> 90', unidad: '%' },
+    { id: 9, nombre: 'Capacitaciones', proceso: 'Gestión de Recursos', meta: '100', unidad: '%' },
   ]);
+  
   const [resultados, setResultados] = useState({});
   const [anioActual] = useState(2026);
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-  const getMetaColor = (meta, valor) => {
-    const esMenor = meta.startsWith('<');
+  const getCumplimiento = (indicadorId) => {
+    const valores = meses.map(m => resultados[`${indicadorId}-${m}`]).filter(v => v);
+    if (valores.length === 0) return 0;
+    const meta = indicadores.find(i => i.id === indicadorId)?.meta || '';
     const esMayor = meta.startsWith('>');
+    const esMenor = meta.startsWith('<');
     const numMeta = parseFloat(meta.replace(/[<|>]/g, '').replace(/%/g, ''));
-    const numValor = parseFloat(String(valor).replace(/%/g, ''));
-    if (isNaN(numMeta) || isNaN(numValor)) return 'text-slate-500';
-    if (esMenor) return numValor <= numMeta ? 'text-emerald-600' : 'text-red-600';
-    if (esMayor) return numValor >= numMeta ? 'text-emerald-600' : 'text-red-600';
-    return numValor <= numMeta ? 'text-emerald-600' : 'text-red-600';
+    
+    let cumplidos = 0;
+    valores.forEach(v => {
+      const num = parseFloat(String(v).replace(/%/g, ''));
+      if (isNaN(num)) return;
+      if (esMayor && num >= numMeta) cumplidos++;
+      else if (esMenor && num <= numMeta) cumplidos++;
+      else if (!esMayor && !esMenor && num >= numMeta) cumplidos++;
+    });
+    return Math.round((cumplidos / valores.length) * 100);
   };
 
-  const guardarResultado = async (indicadorId, mes, valor) => {
-    setLoading(true);
-    try {
-      setResultados(prev => ({ ...prev, [`${indicadorId}-${mes}`]: valor }));
-      await new Promise(r => setTimeout(r, 300));
-    } finally {
-      setLoading(false);
-    }
+  const getCumplimientoColor = (pct) => {
+    if (pct >= 80) return 'bg-emerald-100 text-emerald-700';
+    if (pct >= 50) return 'bg-amber-100 text-amber-700';
+    return 'bg-red-100 text-red-700';
+  };
+
+  const getProcesoCumplimiento = (proceso) => {
+    const indicadoresProceso = indicadores.filter(i => i.proceso === proceso);
+    if (indicadoresProceso.length === 0) return 0;
+    const suma = indicadoresProceso.reduce((acc, ind) => acc + getCumplimiento(ind.id), 0);
+    return Math.round(suma / indicadoresProceso.length);
+  };
+
+  const guardarResultado = (indicadorId, mes, valor) => {
+    setResultados(prev => ({ ...prev, [`${indicadorId}-${mes}`]: valor }));
+    setEditando(null);
+  };
+
+  const agregarIndicador = () => {
+    if (!nuevoIndicador.nombre || !nuevoIndicador.proceso || !nuevoIndicador.meta) return;
+    setIndicadores(prev => [...prev, { ...nuevoIndicador, id: prev.length + 1 }]);
+    setNuevoIndicador({ nombre: '', proceso: '', meta: '', unidad: '' });
+    setMostrarModal(false);
   };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {/* Resumen por Proceso */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {procesos.map(proc => (
+          <div key={proc} className={`p-4 rounded-xl border ${getProcesoCumplimiento(proc) >= 80 ? 'bg-emerald-50 border-emerald-200' : getProcesoCumplimiento(proc) >= 50 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
+            <p className="text-xs text-slate-500 mb-1 truncate">{proc}</p>
+            <p className="text-2xl font-bold text-slate-700">{getProcesoCumplimiento(proc)}%</p>
+            <p className="text-xs text-slate-500">cumplimiento</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabla de Indicadores */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <h2 className="font-bold text-[#002855]">Indicadores por Área - {anioActual}</h2>
-          <button className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600 transition-all">
+          <h2 className="font-bold text-[#002855]">Registro de Indicadores - {anioActual}</h2>
+          <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600 transition-all">
             <Plus size={16} />
             Nuevo Indicador
           </button>
@@ -907,30 +960,28 @@ function IndicadoresView() {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50 text-left">
-                <th className="p-4 text-sm font-semibold text-slate-600">Indicador</th>
-                <th className="p-4 text-sm font-semibold text-slate-600">Proceso</th>
-                <th className="p-4 text-sm font-semibold text-slate-600">Tipo</th>
-                <th className="p-4 text-sm font-semibold text-slate-600">Unidad</th>
-                <th className="p-4 text-sm font-semibold text-slate-600">Meta</th>
+                <th className="p-3 text-sm font-semibold text-slate-600">Indicador</th>
+                <th className="p-3 text-sm font-semibold text-slate-600">Proceso</th>
+                <th className="p-3 text-sm font-semibold text-slate-600">Meta</th>
+                <th className="p-3 text-sm font-semibold text-slate-600">Unidad</th>
                 {meses.map(m => (
-                  <th key={m} className="p-3 text-xs font-semibold text-slate-500 text-center">{m}</th>
+                  <th key={m} className="p-2 text-xs font-semibold text-slate-500 text-center">{m}</th>
                 ))}
-                <th className="p-4 text-sm font-semibold text-slate-600">Acciones</th>
+                <th className="p-3 text-sm font-semibold text-slate-600">% Cump.</th>
               </tr>
             </thead>
             <tbody>
               {indicadores.map(ind => (
                 <tr key={ind.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                  <td className="p-4 font-medium text-[#002855]">{ind.nombre}</td>
-                  <td className="p-4 text-sm text-slate-600">{ind.proceso}</td>
-                  <td className="p-4 text-sm text-slate-600">{ind.tipo}</td>
-                  <td className="p-4 text-sm text-slate-600">{ind.unidad}</td>
-                  <td className="p-4 text-sm font-medium text-slate-700">{ind.meta}</td>
+                  <td className="p-3 font-medium text-[#002855]">{ind.nombre}</td>
+                  <td className="p-3 text-sm text-slate-600">{ind.proceso}</td>
+                  <td className="p-3 text-sm text-slate-600">{ind.meta}</td>
+                  <td className="p-3 text-sm text-slate-600">{ind.unidad}</td>
                   {meses.map(mes => {
                     const key = `${ind.id}-${mes}`;
                     const valor = resultados[key] || '';
                     return (
-                      <td key={mes} className="p-2 text-center">
+                      <td key={mes} className="p-1 text-center">
                         {editando === key ? (
                           <input
                             type="text"
@@ -939,12 +990,12 @@ function IndicadoresView() {
                             onBlur={() => setEditando(null)}
                             onKeyDown={(e) => e.key === 'Enter' && setEditando(null)}
                             autoFocus
-                            className="w-full p-1 text-center text-sm border border-cyan-500 rounded focus:outline-none"
+                            className="w-full p-1 text-center text-xs border border-cyan-500 rounded"
                           />
                         ) : (
                           <span 
                             onClick={() => setEditando(key)}
-                            className={`cursor-pointer hover:bg-cyan-50 px-2 py-1 rounded block ${getMetaColor(ind.meta, valor)}`}
+                            className="cursor-pointer hover:bg-cyan-50 px-1 py-0.5 rounded text-xs block"
                           >
                             {valor || '-'}
                           </span>
@@ -952,10 +1003,10 @@ function IndicadoresView() {
                       </td>
                     );
                   })}
-                  <td className="p-4">
-                    <button className="p-2 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded transition-colors">
-                      <FileEdit size={16} />
-                    </button>
+                  <td className="p-2">
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getCumplimientoColor(getCumplimiento(ind.id))}`}>
+                      {getCumplimiento(ind.id)}%
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -964,25 +1015,59 @@ function IndicadoresView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {['Eficacia', 'Eficiencia', 'Otro'].map(tipo => (
-          <div key={tipo} className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-            <h3 className="font-semibold text-[#002855] mb-3">{tipo}</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Cumplidos</span>
-                <span className="font-medium text-emerald-600">
-                  {indicadores.filter(i => i.tipo === tipo).length}
-                </span>
+      {/* Modal Nuevo Indicador */}
+      {mostrarModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="font-bold text-[#002855] mb-4">Nuevo Indicador</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Nombre</label>
+                <input 
+                  value={nuevoIndicador.nombre}
+                  onChange={(e) => setNuevoIndicador({...nuevoIndicador, nombre: e.target.value})}
+                  className="w-full p-2.5 border border-slate-200 rounded-lg"
+                />
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">En Proceso</span>
-                <span className="font-medium text-amber-600">0</span>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Proceso</label>
+                <select 
+                  value={nuevoIndicador.proceso}
+                  onChange={(e) => setNuevoIndicador({...nuevoIndicador, proceso: e.target.value})}
+                  className="w-full p-2.5 border border-slate-200 rounded-lg"
+                >
+                  <option value="">Seleccionar...</option>
+                  {procesos.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Meta</label>
+                  <input 
+                    value={nuevoIndicador.meta}
+                    onChange={(e) => setNuevoIndicador({...nuevoIndicador, meta: e.target.value})}
+                    placeholder="> 90 o < 5"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Unidad</label>
+                  <input 
+                    value={nuevoIndicador.unidad}
+                    onChange={(e) => setNuevoIndicador({...nuevoIndicador, unidad: e.target.value})}
+                    placeholder="%, mg/L, etc"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg"
+                  />
+                </div>
               </div>
             </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button onClick={agregarIndicador} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Agregar</button>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
