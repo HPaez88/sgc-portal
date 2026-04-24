@@ -208,7 +208,38 @@ function App() {
           </div>
         </header>
 
-        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
+          
+          {/* Fondo animado - Burbujas flotantes */}
+          <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+            <div className="absolute inset-0">
+              {/* Burbuja 1 */}
+              <div className="absolute w-20 h-20 rounded-full bg-cyan-500/10 animate-float-1" style={{ left: '10%', bottom: '20%' }} />
+              {/* Burbuja 2 */}
+              <div className="absolute w-12 h-12 rounded-full bg-blue-500/10 animate-float-2" style={{ left: '30%', bottom: '60%' }} />
+              {/* Burbuja 3 */}
+              <div className="absolute w-16 h-16 rounded-full bg-cyan-400/10 animate-float-3" style={{ left: '60%', bottom: '30%' }} />
+              {/* Burbuja 4 */}
+              <div className="absolute w-8 h-8 rounded-full bg-blue-400/10 animate-float-1" style={{ left: '80%', bottom: '70%' }} />
+              {/* Burbuja 5 */}
+              <div className="absolute w-14 h-14 rounded-full bg-cyan-300/10 animate-float-2" style={{ left: '50%', bottom: '10%' }} />
+            </div>
+            
+            {/* Partículas sutiles */}
+            <div className="absolute inset-0">
+              <div className="absolute w-1 h-1 bg-cyan-400/30 rounded-full animate-particle-1" style={{ left: '15%', top: '20%' }} />
+              <div className="absolute w-1 h-1 bg-blue-400/30 rounded-full animate-particle-2" style={{ left: '45%', top: '40%' }} />
+              <div className="absolute w-1 h-1 bg-cyan-300/30 rounded-full animate-particle-3" style={{ left: '75%', top: '60%' }} />
+              <div className="absolute w-1 h-1 bg-blue-300/30 rounded-full animate-particle-1" style={{ left: '25%', top: '80%' }} />
+              <div className="absolute w-1 h-1 bg-cyan-500/30 rounded-full animate-particle-2" style={{ left: '85%', top: '30%' }} />
+            </div>
+            
+            {/* Gradiente radial animado */}
+            <div className="absolute inset-0 bg-gradient-radial animate-gradient" />
+          </div>
+          
+          {/* Contenido principal con z-index para estar encima del fondo */}
+          <div className="relative z-10">
           
           <div className="max-w-7xl mx-auto space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 animate-fade-in-up">
@@ -320,6 +351,7 @@ function App() {
               </div>
             )}
           </div>
+          </div>
         </main>
       </div>
 
@@ -338,6 +370,50 @@ function App() {
         }
         .animate-fade-in-up {
           animation: fadeInUp 0.5s ease-out forwards;
+        }
+        
+        /* Burbujas flotantes */
+        @keyframes float-1 {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+          50% { transform: translateY(-30px) scale(1.1); opacity: 0.5; }
+        }
+        @keyframes float-2 {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.2; }
+          50% { transform: translateY(-20px) scale(0.9); opacity: 0.4; }
+        }
+        @keyframes float-3 {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.25; }
+          50% { transform: translateY(-25px) scale(1.05); opacity: 0.45; }
+        }
+        .animate-float-1 { animation: float-1 6s ease-in-out infinite; }
+        .animate-float-2 { animation: float-2 8s ease-in-out infinite; }
+        .animate-float-3 { animation: float-3 7s ease-in-out infinite; }
+        
+        /* Partículas */
+        @keyframes particle-1 {
+          0%, 100% { transform: translateY(0); opacity: 0.3; }
+          50% { transform: translateY(-40px); opacity: 0.6; }
+        }
+        @keyframes particle-2 {
+          0%, 100% { transform: translateY(0); opacity: 0.2; }
+          50% { transform: translateY(-30px); opacity: 0.5; }
+        }
+        @keyframes particle-3 {
+          0%, 100% { transform: translateY(0); opacity: 0.25; }
+          50% { transform: translateY(-35px); opacity: 0.55; }
+        }
+        .animate-particle-1 { animation: particle-1 5s ease-in-out infinite; }
+        .animate-particle-2 { animation: particle-2 6s ease-in-out infinite; }
+        .animate-particle-3 { animation: particle-3 7s ease-in-out infinite; }
+        
+        /* Gradiente radial animado */
+        .bg-gradient-radial {
+          background: radial-gradient(ellipse at center, transparent 0%, rgba(0,40,85,0.03) 50%, transparent 100%);
+          animation: gradient-shift 10s ease-in-out infinite alternate;
+        }
+        @keyframes gradient-shift {
+          0% { transform: scale(1); opacity: 0.5; }
+          100% { transform: scale(1.2); opacity: 1; }
         }
       `}} />
     </div>
