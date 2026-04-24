@@ -1502,11 +1502,12 @@ function SettingsView() {
   };
   
   const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Control de Calidad', rol: 'Admin', direccion: 'Dir. Técnica', password: 'admin123' },
-    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Atención Ciudadana', rol: 'Usuario', direccion: 'Dir. Comercial', password: '' },
-    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento de Redes', rol: 'Encargado', direccion: 'Dir. Técnica', password: '' },
-    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Contabilidad', rol: 'Usuario', direccion: 'Dir. Administrativa', password: '' },
-    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Sistema de Gestión de Calidad', rol: 'Encargado', direccion: 'Dir. General', password: '' },
+    { id: 1, nombre: 'Lic. Héctor Manuel Páez León', email: 'hpaez@oomapasc.gob.mx', telefono: '6441894125', area: 'Sistema de Gestión de Calidad', rol: 'Super Admin', direccion: 'Dir. General', password: 'sgc2026' },
+    { id: 2, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Control de Calidad', rol: 'Admin', direccion: 'Dir. Técnica', password: '' },
+    { id: 3, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Atención Ciudadana', rol: 'Usuario', direccion: 'Dir. Comercial', password: '' },
+    { id: 4, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento de Redes', rol: 'Encargado', direccion: 'Dir. Técnica', password: '' },
+    { id: 5, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Contabilidad', rol: 'Encargado', direccion: 'Dir. Administrativa', password: '' },
+    { id: 6, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Sistema de Gestión de Calidad', rol: 'Admin', direccion: 'Dir. General', password: '' },
   ]);
 
   const agregarUsuario = () => {
@@ -1528,10 +1529,14 @@ function SettingsView() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Total Usuarios</p>
           <p className="text-2xl font-bold text-[#002855]">{usuarios.length}</p>
+        </div>
+        <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+          <p className="text-xs text-yellow-600">Super Admin</p>
+          <p className="text-2xl font-bold text-yellow-700">{usuarios.filter(u => u.rol === 'Super Admin').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Admins</p>
@@ -1582,8 +1587,13 @@ function SettingsView() {
           </thead>
           <tbody>
             {usuarios.map(u => (
-              <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                <td className="p-3 font-medium text-[#002855]">{u.nombre}</td>
+              <tr key={u.id} className={`border-t border-slate-100 hover:bg-slate-50/50 ${u.rol === 'Super Admin' ? 'bg-purple-50' : ''}`}>
+                <td className="p-3 font-medium text-[#002855]">
+                  <div className="flex items-center gap-2">
+                    {u.rol === 'Super Admin' && <span className="text-yellow-500" title="Super Admin">👑</span>}
+                    {u.nombre}
+                  </div>
+                </td>
                 <td className="p-3 text-sm text-slate-600">{u.email}</td>
                 <td className="p-3 text-sm text-slate-600">{u.telefono}</td>
                 <td className="p-3 text-sm text-slate-600">{u.area}</td>
@@ -1601,9 +1611,15 @@ function SettingsView() {
                     <button onClick={() => { const newPass = prompt('Nueva contraseña para ' + u.nombre + ':'); if (newPass) setUsuarios(usuarios.map(x => x.id === u.id ? {...x, password: newPass} : x)); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded" title="Cambiar contraseña">
                       <Edit size={16} />
                     </button>
-                    <button onClick={() => eliminarUsuario(u.id)} className="p-2 text-red-500 hover:bg-red-50 rounded">
-                      <Trash2 size={16} />
-                    </button>
+                    {u.rol !== 'Super Admin' ? (
+                      <button onClick={() => eliminarUsuario(u.id)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Eliminar">
+                        <Trash2 size={16} />
+                      </button>
+                    ) : (
+                      <span className="p-2 text-slate-300 cursor-not-allowed" title="No se puede eliminar">
+                        <Trash2 size={16} />
+                      </span>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -1777,9 +1793,9 @@ function SettingsView() {
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-1">Rol</label>
                 <select value={nuevoUsuario.rol} onChange={(e) => setNuevoUsuario({...nuevoUsuario, rol: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
-                  <option value="Usuario">Usuario</option>
-                  <option value="Encargado">Encargado (Gerente)</option>
-                  <option value="Admin">Admin (Control Total)</option>
+                  <option value="Usuario">Usuario (Solo ver indicators/evidencias)</option>
+                  <option value="Encargado">Encargado (Indicadores, evidencias, AC/PM de su área)</option>
+                  <option value="Admin">Admin (Compañeros SGC - todas las áreas)</option>
                 </select>
               </div>
               <div>

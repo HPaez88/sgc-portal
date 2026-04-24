@@ -59,7 +59,32 @@ export const ORIGENES_AC = ['Auditoría', 'Indicador', 'Queja', 'Otra'];
 
 export const ESTADOS_AC = ['BORRADOR', 'EN_REVISION', 'APROBADO', 'CERRADO'];
 
-export const ROLES = ['Usuario', 'Encargado', 'Admin'];
+export const ROLES = ['Super Admin', 'Admin', 'Encargado', 'Usuario'];
+
+export const ROL_HIERARCHY = {
+  'Super Admin': 4,
+  'Admin': 3,
+  'Encargado': 2,
+  'Usuario': 1
+};
+
+export const SUPER_ADMIN_EMAIL = 'hpaez@oomapasc.gob.mx';
+
+export const canManageUser = (currentRole, targetRole) => {
+  return ROL_HIERARCHY[currentRole] > ROL_HIERARCHY[targetRole];
+};
+
+export const canManageDocument = (role) => {
+  return ['Super Admin', 'Admin', 'Encargado'].includes(role);
+};
+
+export const canUpdateIndicator = (role) => {
+  return ['Super Admin', 'Admin', 'Encargado', 'Usuario'].includes(role);
+};
+
+export const canManageAllAreas = (role) => {
+  return ['Super Admin', 'Admin'].includes(role);
+};
 
 export const NIVELES_RIESGO = {
   ALTO: { min: 10, color: 'red' },
@@ -87,6 +112,7 @@ export const getEstadoColor = (estado) => {
 
 export const getRolColor = (rol) => {
   switch(rol) {
+    case 'Super Admin': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
     case 'Admin': return 'bg-purple-100 text-purple-700';
     case 'Encargado': return 'bg-cyan-100 text-cyan-700';
     default: return 'bg-slate-100 text-slate-600';
