@@ -1442,4 +1442,25 @@ function InputField({ label, name, value, onChange, type = 'text', placeholder, 
   );
 }
 
+function SelectField({ label, name, value, onChange, options, required }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-slate-600 mb-1.5">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
+        className="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
+      >
+        <option value="">Seleccionar...</option>
+        {options.map(opt => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 export default App;
