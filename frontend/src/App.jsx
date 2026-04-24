@@ -208,35 +208,34 @@ function App() {
           </div>
         </header>
 
-        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
-          
-          {/* Fondo animado - Burbujas flotantes */}
-          <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-            <div className="absolute inset-0">
-              {/* Burbuja 1 */}
-              <div className="absolute w-20 h-20 rounded-full bg-cyan-500/10 animate-float-1" style={{ left: '10%', bottom: '20%' }} />
-              {/* Burbuja 2 */}
-              <div className="absolute w-12 h-12 rounded-full bg-blue-500/10 animate-float-2" style={{ left: '30%', bottom: '60%' }} />
-              {/* Burbuja 3 */}
-              <div className="absolute w-16 h-16 rounded-full bg-cyan-400/10 animate-float-3" style={{ left: '60%', bottom: '30%' }} />
-              {/* Burbuja 4 */}
-              <div className="absolute w-8 h-8 rounded-full bg-blue-400/10 animate-float-1" style={{ left: '80%', bottom: '70%' }} />
-              {/* Burbuja 5 */}
-              <div className="absolute w-14 h-14 rounded-full bg-cyan-300/10 animate-float-2" style={{ left: '50%', bottom: '10%' }} />
-            </div>
+<main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
+           
+          {/* Fondo animado - Burbujas flotantes más visibles */}
+          <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
+            {/* Burbuja 1 grande */}
+            <div className="absolute w-80 h-80 rounded-full bg-gradient-to-b from-cyan-300/30 to-blue-400/30 animate-float-1" style={{ left: '-5%', top: '5%' }} />
+            {/* Burbuja 2 */}
+            <div className="absolute w-60 h-60 rounded-full bg-gradient-to-b from-blue-300/25 to-cyan-400/25 animate-float-2" style={{ right: '-2%', top: '25%' }} />
+            {/* Burbuja 3 */}
+            <div className="absolute w-40 h-40 rounded-full bg-gradient-to-b from-cyan-400/35 to-blue-500/35 animate-float-3" style={{ left: '30%', bottom: '10%' }} />
+            {/* Burbuja 4 */}
+            <div className="absolute w-32 h-32 rounded-full bg-cyan-500/40 animate-float-1" style={{ right: '25%', bottom: '30%' }} />
+            {/* Burbuja 5 */}
+            <div className="absolute w-24 h-24 rounded-full bg-blue-400/40 animate-float-2" style={{ left: '60%', bottom: '5%' }} />
             
-            {/* Partículas sutiles */}
+            {/* Partículas */}
             <div className="absolute inset-0">
-              <div className="absolute w-1 h-1 bg-cyan-400/30 rounded-full animate-particle-1" style={{ left: '15%', top: '20%' }} />
-              <div className="absolute w-1 h-1 bg-blue-400/30 rounded-full animate-particle-2" style={{ left: '45%', top: '40%' }} />
-              <div className="absolute w-1 h-1 bg-cyan-300/30 rounded-full animate-particle-3" style={{ left: '75%', top: '60%' }} />
-              <div className="absolute w-1 h-1 bg-blue-300/30 rounded-full animate-particle-1" style={{ left: '25%', top: '80%' }} />
-              <div className="absolute w-1 h-1 bg-cyan-500/30 rounded-full animate-particle-2" style={{ left: '85%', top: '30%' }} />
-            </div>
-            
-            {/* Gradiente radial animado */}
-            <div className="absolute inset-0 bg-gradient-radial animate-gradient" />
+              <div className="absolute w-3 h-3 bg-cyan-400/50 rounded-full animate-particle-1" style={{ left: '10%', top: '15%' }} />
+              <div className="absolute w-3 h-3 bg-blue-400/50 rounded-full animate-particle-2" style={{ left: '35%', top: '30%' }} />
+              <div className="absolute w-3 h-3 bg-cyan-300/50 rounded-full animate-particle-3" style={{ left: '55%', top: '20%' }} />
+              <div className="absolute w-3 h-3 bg-blue-300/50 rounded-full animate-particle-1" style={{ left: '75%', top: '40%' }} />
+              <div className="absolute w-3 h-3 bg-cyan-500/50 rounded-full animate-particle-2" style={{ left: '90%', top: '50%' }} />
+              <div className="absolute w-2 h-2 bg-white/60 rounded-full animate-particle-3" style={{ left: '20%', top: '60%' }} />
+              <div className="absolute w-2 h-2 bg-white/60 rounded-full animate-particle-1" style={{ left: '65%', top: '70%' }} />
+</div>
           </div>
+          
+          {/* Contenido principal con z-index para estar encima del fondo */}
           
           {/* Contenido principal con z-index para estar encima del fondo */}
           <div className="relative z-10">
