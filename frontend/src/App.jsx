@@ -1022,16 +1022,32 @@ Responde en JSON:
 function IndicadoresView() {
   const [editando, setEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
-  const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', area: '', meta: '', unidad: '' });
+  const [vista, setVista] = useState('mensual'); // 'mensual' or 'trimestral'
+  const [trimestre, setTrimestre] = useState(1);
+  const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', area: '', meta: '', unidad: '', formula: '' });
   
   const [indicadores, setIndicadores] = useState(INDICADORES);
   
   const [resultados, setResultados] = useState({});
   const [anioActual] = useState(2026);
+  
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-  const getCumplimiento = (indicadorId) => {
-    const valores = meses.map(m => resultados[`${indicadorId}-${m}`]).filter(v => v);
+  
+  const trimestresMap = {
+    1: ['Ene', 'Feb', 'Mar'],
+    2: ['Abr', 'May', 'Jun'],
+    3: ['Jul', 'Ago', 'Sep'],
+    4: ['Oct', 'Nov', 'Dic']
+  };
+  
+  const getSemaphoreColor = (pct) => {
+    if (pct >= 80) return { bg: 'bg-emerald-500', text: 'text-white', icon: '🟢' };
+    if (pct >= 50) return { bg: 'bg-amber-500', text: 'text-white', icon: '🟡' };
+    return { bg: 'bg-red-500', text: 'text-white', icon: '🔴' };
+  };
+  
+  const getCumplimiento = (indicadorId, mesesEval) => {
+    const valores = mesesEval.map(m => resultados[`${indicadorId}-${m}`]).filter(v => v && v !== '');
     if (valores.length === 0) return 0;
     const meta = indicadores.find(i => i.id === indicadorId)?.meta || '';
     const esMayor = meta.startsWith('>');
@@ -1040,7 +1056,7 @@ function IndicadoresView() {
     
     let cumplidos = 0;
     valores.forEach(v => {
-      const num = parseFloat(String(v).replace(/%/g, ''));
+      const num = parseFloat(String(v).replace(/%/g, '').replace(/,/g, ''));
       if (isNaN(num)) return;
       if (esMayor && num >= numMeta) cumplidos++;
       else if (esMenor && num <= numMeta) cumplidos++;
@@ -1048,115 +1064,234 @@ function IndicadoresView() {
     });
     return Math.round((cumplidos / valores.length) * 100);
   };
-
-  const getCumplimientoColor = (pct) => {
-    if (pct >= 80) return 'bg-emerald-100 text-emerald-700';
-    if (pct >= 50) return 'bg-amber-100 text-amber-700';
-    return 'bg-red-100 text-red-700';
+  
+  const getCumpTrimestral = (indicadorId, trim) => {
+    const mesesTrim = trimestre === 1 ? ['Ene', 'Feb', 'Mar'] : 
+                      trimestre === 2 ? ['Abr', 'May', 'Jun'] :
+                      trimestre === 3 ? ['Jul', 'Ago', 'Sep'] : ['Oct', 'Nov', 'Dic'];
+    return getCumplimiento(indicadorId, mesesTrim);
   };
-
-  const getProcesoCumplimiento = (proceso) => {
-    const indicadoresProceso = indicadores.filter(i => i.area === area);
-    if (indicadoresProceso.length === 0) return 0;
-    const suma = indicadoresProceso.reduce((acc, ind) => acc + getCumplimiento(ind.id), 0);
-    return Math.round(suma / indicadoresProceso.length);
+  
+  const getAreaCumplimiento = (area, mesesEval) => {
+    const indicadoresArea = indicadores.filter(i => i.area === area);
+    if (indicadoresArea.length === 0) return 0;
+    const suma = indicadoresArea.reduce((acc, ind) => acc + getCumplimiento(ind.id, mesesEval), 0);
+    return Math.round(suma / indicadoresArea.length);
   };
-
+  
+  const getAreaTrimestralCump = (area, trim) => {
+    const mesesTrim = trim === 1 ? ['Ene', 'Feb', 'Mar'] : 
+                  trim === 2 ? ['Abr', 'May', 'Jun'] :
+                  trim === 3 ? ['Jul', 'Ago', 'Sep'] : ['Oct', 'Nov', 'Dic'];
+    return getAreaCumplimiento(area, mesesTrim);
+  };
+  
   const guardarResultado = (indicadorId, mes, valor) => {
-    setResultados(prev => ({ ...prev, [`${indicadorId}-${mes}`]: valor }));
+    setResultados(prev => ({ ...prev, [`${indicadorId}-${mes}-${anioActual}`]: valor }));
     setEditando(null);
   };
-
+  
+  const getValor = (indicadorId, mes) => {
+    return resultados[`${indicadorId}-${mes}-${anioActual}`] || '';
+  };
+  
   const agregarIndicador = () => {
     if (!nuevoIndicador.nombre || !nuevoIndicador.area || !nuevoIndicador.meta) return;
     setIndicadores(prev => [...prev, { ...nuevoIndicador, id: prev.length + 1 }]);
-    setNuevoIndicador({ nombre: '', area: '', meta: '', unidad: '' });
+    setNuevoIndicador({ nombre: '', area: '', meta: '', unidad: '', formula: '' });
     setMostrarModal(false);
   };
 
+  // Calculate area statistics for summary cards
+  const areaStats = AREAS.map(area => {
+    const inds = indicadores.filter(i => i.area === area);
+    if (inds.length === 0) return { area, cumplimiento: 0, count: 0 };
+    const cumpleTotal = inds.reduce((acc, ind) => {
+      return acc + getCumplimiento(ind.id, meses);
+    }, 0);
+    return { area, cumplimiento: Math.round(cumpleTotal / inds.length), count: inds.length };
+  }).filter(a => a.count > 0);
+
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Resumen por Proceso */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {procesos.map(proc => (
-          <div key={proc} className={`p-4 rounded-xl border ${getProcesoCumplimiento(proc) >= 80 ? 'bg-emerald-50 border-emerald-200' : getProcesoCumplimiento(proc) >= 50 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
-            <p className="text-xs text-slate-500 mb-1 truncate">{proc}</p>
-            <p className="text-2xl font-bold text-slate-700">{getProcesoCumplimiento(proc)}%</p>
-            <p className="text-xs text-slate-500">cumplimiento</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabla de Indicadores */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <h2 className="font-bold text-[#002855]">Registro de Indicadores - {anioActual}</h2>
-          <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600 transition-all">
-            <Plus size={16} />
-            Nuevo Indicador
+      {/* Vista Toggle */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setVista('mensual')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${vista === 'mensual' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-600'}`}
+          >
+            📅 Mensual
+          </button>
+          <button 
+            onClick={() => setVista('trimestral')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${vista === 'trimestral' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-600'}`}
+          >
+            📊 Trimestral
           </button>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 text-left">
-                <th className="p-3 text-sm font-semibold text-slate-600">Indicador</th>
-                <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
-                <th className="p-3 text-sm font-semibold text-slate-600">Meta</th>
-                <th className="p-3 text-sm font-semibold text-slate-600">Unidad</th>
-                {meses.map(m => (
-                  <th key={m} className="p-2 text-xs font-semibold text-slate-500 text-center">{m}</th>
-                ))}
-                <th className="p-3 text-sm font-semibold text-slate-600">% Cump.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {indicadores.map(ind => (
-                <tr key={ind.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                  <td className="p-3 font-medium text-[#002855]">{ind.nombre}</td>
-                  <td className="p-3 text-sm text-slate-600">{ind.proceso}</td>
-                  <td className="p-3 text-sm text-slate-600">{ind.meta}</td>
-                  <td className="p-3 text-sm text-slate-600">{ind.unidad}</td>
-                  {meses.map(mes => {
-                    const key = `${ind.id}-${mes}`;
-                    const valor = resultados[key] || '';
-                    return (
-                      <td key={mes} className="p-1 text-center">
-                        {editando === key ? (
-                          <input
-                            type="text"
-                            value={valor}
-                            onChange={(e) => guardarResultado(ind.id, mes, e.target.value)}
-                            onBlur={() => setEditando(null)}
-                            onKeyDown={(e) => e.key === 'Enter' && setEditando(null)}
-                            autoFocus
-                            className="w-full p-1 text-center text-xs border border-cyan-500 rounded"
-                          />
-                        ) : (
-                          <span 
-                            onClick={() => setEditando(key)}
-                            className="cursor-pointer hover:bg-cyan-50 px-1 py-0.5 rounded text-xs block"
-                          >
-                            {valor || '-'}
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td className="p-2">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getCumplimientoColor(getCumplimiento(ind.id))}`}>
-                      {getCumplimiento(ind.id)}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {vista === 'trimestral' && (
+          <div className="flex gap-2">
+            {[1, 2, 3, 4].map(t => (
+              <button 
+                key={t}
+                onClick={() => setTrimestre(t)}
+                className={`px-3 py-1 rounded text-sm ${trimestre === t ? 'bg-cyan-500 text-white' : 'bg-slate-100'}`}
+              >
+                T{t}
+              </button>
+            ))}
+          </div>
+        )}
+        <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600">
+          <Plus size={16} />
+          Nuevo Indicador
+        </button>
       </div>
 
-      {/* Modal Nuevo Indicador */}
+      {vista === 'mensual' ? (
+        <>
+          {/* Resumen por Área */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {areaStats.map(stat => {
+              const sem = getSemaphoreColor(stat.cumplimiento);
+              return (
+                <div key={stat.area} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/10 border-${sem.bg.replace('bg-', 'border-')}`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500 truncate flex-1">{stat.area}</p>
+                    <span className="text-lg">{sem.icon}</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${sem.text}`}>{stat.cumplimiento}%</p>
+                  <p className="text-xs text-slate-500">{stat.count} indicadores</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Tabla Mensual */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+              <h2 className="font-bold text-[#002855]"> Indicadores {anioActual} - Captura Mensual</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 text-left">
+                    <th className="p-3 text-sm font-semibold text-slate-600">Indicador</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Meta</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Und.</th>
+                    {meses.map(m => (
+                      <th key={m} className="p-2 text-xs font-semibold text-slate-500 text-center">{m}</th>
+                    ))}
+                    <th className="p-3 text-sm font-semibold text-slate-600">% Cump.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {indicadores.map(ind => {
+                    const cump = getCumplimiento(ind.id, meses);
+                    const sem = getSemaphoreColor(cump);
+                    return (
+                      <tr key={ind.id} className="border-t border-slate-100 hover:bg-slate-50/50">
+                        <td className="p-3 font-medium text-[#002855]">{ind.nombre}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.area}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.meta}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.unidad}</td>
+                        {meses.map(mes => {
+                          const key = `${ind.id}-${mes}`;
+                          const valor = getValor(ind.id, mes);
+                          return (
+                            <td key={mes} className="p-1 text-center">
+                              {editando === key ? (
+                                <input type="text" value={valor} onChange={(e) => guardarResultado(ind.id, mes, e.target.value)} onBlur={() => setEditando(null)} onKeyDown={(e) => e.key === 'Enter' && setEditando(null)} autoFocus className="w-full p-1 text-center text-xs border border-cyan-500 rounded" />
+                              ) : (
+                                <span onClick={() => setEditando(key)} className="cursor-pointer hover:bg-cyan-50 px-1 py-0.5 rounded text-xs block">{valor || '-'}</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="p-2">
+                          <span className={`px-2 py-1 rounded text-xs font-bold text-white ${sem.bg}`}>
+                            {cump}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Vista Trimestral - Resumen por Trimestre */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {areaStats.map(stat => {
+              const cump = getAreaTrimestralCump(stat.area, trimestre);
+              const sem = getSemaphoreColor(cump);
+              return (
+                <div key={stat.area} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/20`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500 truncate flex-1">{stat.area}</p>
+                    <span className="text-lg">{sem.icon}</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${sem.text}`}>{cump}%</p>
+                  <p className="text-xs text-slate-500">T{trimestre} {anioActual}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Tabla Trimestral */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+              <h2 className="font-bold text-[#002855]">Indicadores Trimestre {trimestre} ({trimestresMap[trimestre].join('-')})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 text-left">
+                    <th className="p-3 text-sm font-semibold text-slate-600">Indicador</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Meta</th>
+                    {trimestresMap[trimestre].map(m => (
+                      <th key={m} className="p-2 text-xs font-semibold text-slate-500 text-center">{m}</th>
+                    ))}
+                    <th className="p-3 text-sm font-semibold text-slate-600">% Trim.</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Semáforo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {indicadores.map(ind => {
+                    const cump = getCumpTrimestral(ind.id, trimestre);
+                    const sem = getSemaphoreColor(cump);
+                    const mesesTrim = trimestresMap[trimestre];
+                    return (
+                      <tr key={ind.id} className="border-t border-slate-100 hover:bg-slate-50/50">
+                        <td className="p-3 font-medium text-[#002855]">{ind.nombre}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.area}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.meta}</td>
+                        {mesesTrim.map(mes => (
+                          <td key={mes} className="p-2 text-center text-sm">
+                            {getValor(ind.id, mes) || '-'}
+                          </td>
+                        ))}
+                        <td className="p-2">
+                          <span className={`px-2 py-1 rounded text-xs font-bold text-white ${sem.bg}`}>
+                            {cump}%
+                          </span>
+                        </td>
+                        <td className="p-2 text-2xl">{sem.icon}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+{/* Modal Nuevo Indicador */}
       {mostrarModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
