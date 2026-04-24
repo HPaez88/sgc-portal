@@ -7,8 +7,8 @@
 
 **Nombre:** Portal SGC (Sistema de Gestión de Calidad)  
 **Organización:** OOMAPASC de Cajeme (Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme)  
-**Versión:** 4.0.0  
-**Tecnología:** React + Vite (Frontend only - sin backend real aún)  
+**Versión:** 4.1.0  
+**Tecnología:** React + Vite (Frontend with localStorage persistence)  
 **URL en producción:** https://sgc-portal-933s.onrender.com  
 **Repositorio GitHub:** https://github.com/HPaez88/sgc-portal
 
@@ -21,24 +21,31 @@
 | Módulo | Estado | Notas |
 |--------|---------|-------|
 | Dashboard | ✅ | Stats con trend indicadores |
-| Acciones Correctivas (AC) | ✅ | Formulario 3 pasos, IA Groq, validación |
-| Planes de Mejora (PM) | ✅ | Formulario 3 pasos, IA Groq |
-| Indicadores | ✅ | Vista mensual y trimestral, semáforo |
-| Matriz de Riesgos | ✅ | Con plan de acción y evaluación |
-| Gestión de Usuarios | ✅ | CRUD completo con roles |
+| Acciones Correctivas (AC) | ✅ | Formulario 3 pasos, IA Groq, validación, localStorage |
+| Planes de Mejora (PM) | ✅ | Formulario 3 pasos, IA Groq, localStorage |
+| Indicadores | ✅ | Vista mensual y trimestral, semáforo,localStorage |
+| Matriz de Riesgos | ✅ | Con plan de acción y evaluación, localStorage |
+| Gestión de Usuarios | ✅ | CRUD completo con roles, localStorage |
 | Configuración | ✅ | Catálogos editables (Áreas, Direcciones, Procesos) |
-| Aprobaciones | ✅ | Workflow de aprobación |
+| Aprobaciones | ✅ | Workflow de aprobación completo |
+| Documentos | ✅ | Catálogo, exportar, CRUD |
+| Auditorías | ✅ | Registro completo de auditorías |
+| Evidencias | ✅ | Sistema de evidencia por AC/PM (basic) |
+
+### 🟡 MEJORAS IMPLEMENTADAS v4.1.0
+- localStorage funciona correctamente
+- Módulos Documents y Audits completados
+- Persistencia de datos real
 
 ### 🔴 PENDIENTE / NO IMPLEMENTADO
 
 | Módulo | Estado | Notas |
 |--------|---------|-------|
-| Backend API | 🔴 | No hay server - todo client-side (localStorage) |
+| Backend API | 🔴 | No hay server - localStorage |
 | Autenticación/Login real | 🔴 | Solo simulado |
-| Base de datos | 🔴 | Solo localStorage (se borra al recargar) |
-| Export documentos | 🔴 | No implementado |
+| Export documentos | 🔴 | Solo txt basic |
 | Notificaciones email | 🔴 | No implementado |
-| Auditorías | 🔴 | Solo UI placeholder |
+| Gráficos charts | 🔴 | No implementado |
 
 ---
 

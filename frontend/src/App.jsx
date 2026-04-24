@@ -45,6 +45,36 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [accionesCorrectivas, setAccionesCorrectivas] = useLocalStorage('sgc-acciones-correctivas', []);
+  const [planesMejora, setPlanesMejora] = useLocalStorage('sgc-planes-mejora', []);
+  const [indicadoresData, setIndicadoresData] = useLocalStorage('sgc-indicadores-data', {});
+  const [usuarios, setUsuarios] = useLocalStorage('sgc-usuarios', [
+    { id: 1, nombre: 'Lic. Héctor Manuel Páez León', email: 'hpaez@oomapasc.gob.mx', telefono: '6441894125', area: 'Sistema de Gestión de Calidad', rol: 'Super Admin', direccion: 'Dir. General', password: 'sgc2026' },
+    { id: 2, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Control de Calidad', rol: 'Admin', direccion: 'Dir. Técnica', password: '' },
+    { id: 3, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Atención Ciudadana', rol: 'Usuario', direccion: 'Dir. Comercial', password: '' },
+    { id: 4, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento de Redes', rol: 'Encargado', direccion: 'Dir. Técnica', password: '' },
+    { id: 5, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Contabilidad', rol: 'Encargado', direccion: 'Dir. Administrativa', password: '' },
+    { id: 6, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Sistema de Gestión de Calidad', rol: 'Admin', direccion: 'Dir. General', password: '' },
+  ]);
+  const [riesgos, setRiesgos] = useLocalStorage('sgc-riesgos', [
+    { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo', area: 'Operación', direccion: 'Dir. Técnica', proceso: 'Producción', plan_accion: 'Mejorar monitoreo de cloro', fecha_termino: '2026-06-30', evaluacion: 'En proceso', estado_plan: 'EN_PROCESO' },
+    { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Técnica', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
+    { id: 3, riesgo: 'Quejas de clientes', causa: 'Atención lenta', efecto: 'Inconformidad', probabilidad: 3, impacto: 2, control: 'Capacitación', tipo: 'Riesgo', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Capacitación en atención', fecha_termino: '2026-05-15', evaluacion: 'Bueno', estado_plan: 'COMPLETADO' },
+    { id: 4, riesgo: 'Cortocircuito', causa: 'Cables viejas', efecto: 'Incendio', probabilidad: 1, impacto: 5, control: 'Renovación', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Administrativa', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
+    { id: 5, riesgo: 'Clientes nuevos', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Campaña de promo', fecha_termino: '2026-07-01', evaluacion: '', estado_plan: 'EN_PROCESO' },
+  ]);
+  const [seguimientos, setSeguimientos] = useLocalStorage('sgc-seguimientos', []);
+  const [documentos, setDocumentos] = useLocalStorage('sgc-documentos', [
+    { id: 1, titulo: 'Manual de Calidad del Agua v3.0', tipo: 'Manual', estado: 'APROBADO', area: 'Sistema de Gestión de Calidad', version: '3.0', fecha: '2026-01-15', autor: 'Ing. Juan López' },
+    { id: 2, titulo: 'Procedimiento de Saneamiento', tipo: 'Procedimiento', estado: 'EN_REVISION', area: 'Alcantarillado y Saneamiento', version: '1.2', fecha: '2026-03-20', autor: 'Lic. García' },
+    { id: 3, titulo: 'Registro de Mantenimiento de Bombas', tipo: 'Registro', estado: 'BORRADOR', area: 'Mantenimiento de Redes', version: '2.0', fecha: '2026-04-18', autor: 'Ing. Martínez' },
+  ]);
+  const [auditorias, setAuditorias] = useLocalStorage('sgc-auditorias', [
+    { id: 1, numero: 'AUD-2026-001', tipo: 'Interna', area: 'Sistema de Gestión de Calidad', fecha_inicio: '2026-01-15', fecha_fin: '2026-01-17', estado: 'COMPLETADA', hallazgos: 3, no_conformidades: 1 },
+    { id: 2, numero: 'AUD-2026-002', tipo: 'Interna', area: 'Control de Calidad', fecha_inicio: '2026-02-20', fecha_fin: '2026-02-22', estado: 'COMPLETADA', hallazgos: 2, no_conformidades: 0 },
+  ]);
+  const [evidencias, setEvidencias] = useLocalStorage('sgc-evidencias', []);
+
   useEffect(() => {
     setIsLoaded(true);
   }, []);
@@ -279,64 +309,132 @@ function App() {
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                   <div className="animate-slide-up" style={{animationDelay: '100ms'}}>
-                    <StatCard title="Documentos Activos" value="1,248" icon={FileText} trend="+12" trendUp={true} />
+                    <StatCard title="Documentos Activos" value={documentos?.length || 5} icon={FileText} trend="+2" trendUp={true} />
                   </div>
                   <div className="animate-slide-up" style={{animationDelay: '200ms'}}>
-                    <StatCard title="Auditorías Pendientes" value="3" icon={ClipboardCheck} trend="-1" trendUp={true} />
+                    <StatCard title="Auditorías Pendientes" value={(auditorias || []).filter(a => a.estado === 'PROGRAMADA').length} icon={ClipboardCheck} trend="+1" trendUp={false} />
                   </div>
                   <div className="animate-slide-up" style={{animationDelay: '300ms'}}>
-                    <StatCard title="No Conformidades" value="5" icon={AlertTriangle} trend="+2" trendUp={false} />
+                    <StatCard title="No Conformidades" value={(accionesCorrectivas || []).filter(a => a.estado === 'EN_REVISION' || a.estado === 'BORRADOR').length} icon={AlertTriangle} trend="+1" trendUp={false} />
                   </div>
                   <div className="animate-slide-up" style={{animationDelay: '400ms'}}>
-                    <StatCard title="Procesos Actualizados" value="98%" icon={CheckCircle2} trend="+5%" trendUp={true} />
+                    <StatCard title="Planes de Mejora" value={(planesMejora || []).length} icon={CheckCircle2} trend="+1" trendUp={true} />
                   </div>
                 </div>
 
+                {/* Gráficos de Cumplimiento por Área */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Gráfico de Barras - Cumplimiento por Área */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+                      <TrendingUp size={20} className="text-cyan-500" />
+                      Cumplimiento por Área
+                    </h3>
+                    <div className="space-y-3">
+                      {['Sistema de Gestión de Calidad', 'Control de Calidad', 'Recursos Humanos', 'Mantenimiento de Redes', 'Atención Ciudadana'].map(area => {
+                        const random = Math.floor(Math.random() * 40) + 60;
+                        const color = random >= 80 ? 'bg-emerald-500' : random >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                        return (
+                          <div key={area} className="flex items-center gap-3">
+                            <span className="text-xs text-slate-500 w-32 truncate">{area}</span>
+                            <div className="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                              <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${random}%` }}></div>
+                            </div>
+                            <span className="text-xs font-medium text-slate-600 w-10">{random}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Gráfico Circular - Distribución de Estados */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+                      <AlertOctagon size={20} className="text-cyan-500" />
+                      Estados AC/PM
+                    </h3>
+                    <div className="flex items-center justify-center gap-8">
+                      <div className="relative w-32 h-32">
+                        <svg viewBox="0 0 36 36" className="w-32 h-32 -rotate-90">
+                          <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#e2e8f0" strokeWidth="3" />
+                          <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#10b981" strokeWidth="3" strokeDasharray="40 60" />
+                          <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#f59e0b" strokeWidth="3" strokeDasharray="25 75" strokeDashoffset="-40" />
+                          <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#ef4444" strokeWidth="3" strokeDasharray="35 65" strokeDashoffset="-65" />
+                        </svg>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-emerald-500 rounded"></span>
+                          <span className="text-sm text-slate-600">Aprobados ({Math.floor(Math.random() * 3) + 1})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-amber-500 rounded"></span>
+                          <span className="text-sm text-slate-600">En Revisión ({Math.floor(Math.random() * 3) + 1})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-red-500 rounded"></span>
+                          <span className="text-sm text-slate-600">Pendientes ({Math.floor(Math.random() * 3) + 1})</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabla de Acciones Recientes */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-slide-up" style={{animationDelay: '500ms'}}>
                   <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h2 className="text-lg font-bold text-[#002855] flex items-center gap-2">
                       <Clock size={20} className="text-cyan-500" />
-                      Actividad Reciente
+                      Acciones Correctivas Recientes
                     </h2>
-                    <button className="text-sm font-medium text-cyan-600 hover:text-cyan-700 transition-colors">
+                    <button onClick={() => setActiveTab('ac')} className="text-sm font-medium text-cyan-600 hover:text-cyan-700 transition-colors">
                       Ver todo
                     </button>
                   </div>
                   
                   <div className="divide-y divide-slate-100">
-                    {recentDocuments.map((doc, index) => (
-                      <div 
-                        key={doc.id} 
-                        className="p-6 hover:bg-slate-50/80 transition-colors duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:bg-cyan-100 transition-all">
-                            <FileText size={20} />
+                    {(() => {
+                      const recentAC = (accionesCorrectivas || []).slice(-3).reverse();
+                      if (recentAC.length === 0) {
+                        return (
+                          <div className="p-6 text-center text-slate-500">
+                            No hay acciones correctivas registradas. Crea una nueva para ver el historial.
                           </div>
-                          <div>
-                            <h4 className="text-[#002855] font-semibold group-hover:text-cyan-600 transition-colors">
-                              {doc.title}
-                            </h4>
-                            <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-slate-500">
-                              <span>{doc.type}</span>
-                              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                              <span>{doc.author}</span>
-                              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                              <span>Modificado: {doc.date}</span>
+                        );
+                      }
+                      return recentAC.map((doc, index) => (
+                        <div 
+                          key={doc.id || index} 
+                          className="p-6 hover:bg-slate-50/80 transition-colors duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:bg-cyan-100 transition-all">
+                              <AlertTriangle size={20} />
+                            </div>
+                            <div>
+                              <h4 className="text-[#002855] font-semibold group-hover:text-cyan-600 transition-colors">
+                                {doc.descripcion_nc?.substring(0, 50) || 'Sin descripción'}...
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-slate-500">
+                                <span>{doc.area}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span>{doc.proceso}</span>
+                              </div>
                             </div>
                           </div>
+                          
+                          <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-2 sm:mt-0">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                              doc.estado === 'APROBADO' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                              doc.estado === 'EN_REVISION' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                              'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}>
+                              {doc.estado || 'BORRADOR'}
+                            </span>
+                          </div>
                         </div>
-                        
-                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-2 sm:mt-0">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(doc.status)}`}>
-                            {doc.status}
-                          </span>
-                          <button className="p-2 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                            <FileEdit size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>
@@ -354,8 +452,14 @@ function App() {
             {/* MATRIZ DE RIESGOS */}
             {activeTab === 'riesgos' && <RiesgosView />}
 
-            {/* CONFIGURACIÓN */}
-            {activeTab === 'settings' && <SettingsView />}
+            {/* DOCUMENTOS */}
+            {activeTab === 'documents' && <DocumentosView />}
+            
+            {/* AUDITORÍAS */}
+            {activeTab === 'audits' && <AuditoriasView />}
+            
+            {/* GESTOR DE APROBACIONES */}
+            {activeTab === 'gestor' && <GestorAprobacionesView />}
 
             {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'riesgos' && activeTab !== 'settings' && activeTab !== 'gestor' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up">
@@ -583,36 +687,25 @@ Responde en JSON:
       return;
     }
     
-    setLoading(true);
-    try {
-      const payload = { ...formData, estado: enviar ? 'EN_REVISION' : 'BORRADOR' };
-      const resp = await fetch(getApiUrl('/api/v1/acciones-correctivas'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+    const nuevaAC = {
+      ...formData,
+      id: Date.now(),
+      estado: enviar ? 'EN_REVISION' : 'BORRADOR',
+      fecha_creacion: new Date().toISOString().split('T')[0]
+    };
+    
+    setAccionesCorrectivas(prev => [...prev, nuevaAC]);
+    setSuccess(true);
+    setTimeout(() => {
+      alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
+      setSuccess(false);
+      setFormData({
+        fecha_deteccion: '', proceso: '', area: '', origen: '', num_auditoria: '', indicador: '', descripcion_nc: '',
+        posibles_causas: '', causa_raiz: '', accion_contencion: '',
+        actividades: [], estado: 'BORRADOR'
       });
-      const data = await resp.json();
-      if (data.ok) {
-        setSuccess(true);
-        setTimeout(() => {
-          alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
-          setSuccess(false);
-          if (enviar) {
-setFormData({
-              fecha_deteccion: '', proceso: '', area: '', origen: '', num_auditoria: '', indicador: '', descripcion_nc: '',
-              posibles_causas: '', causa_raiz: '', accion_contencion: '',
-              actividades: [], estado: 'BORRADOR'
-            });
-            setStep(1);
-          }
-        }, 500);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error al guardar. Intenta de nuevo.');
-    } finally {
-      setLoading(false);
-    }
+      setStep(1);
+    }, 500);
   };
 
   const handleNext = () => {
@@ -691,6 +784,58 @@ setFormData({
               {generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
               {generando ? 'Generando...' : 'Generar con IA'}
             </button>
+
+            {/* Sección de Evidencias */}
+            <div className="mt-6 p-4 bg-slate-50 rounded-xl">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-slate-700 flex items-center gap-2">
+                  <FileUp size={18} />
+                  Evidencias (Fotos/Documentos)
+                </h4>
+                <label className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500 text-white text-sm rounded-lg cursor-pointer hover:bg-cyan-600 transition-colors">
+                  <FileUp size={14} />
+                  Adjuntar
+                  <input type="file" multiple className="hidden" onChange={(e) => {
+                    const files = Array.from(e.target.files);
+                    files.forEach(file => {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setEvidencias(prev => [...prev, {
+                          id: Date.now() + Math.random(),
+                          nombre: file.name,
+                          tipo: file.type,
+                          data: reader.result,
+                          fecha: new Date().toISOString().split('T')[0],
+                          documento: 'AC'
+                        }]);
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }} />
+                </label>
+              </div>
+              {(evidencias || []).filter(e => e.documento === 'AC').length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {(evidencias || []).filter(e => e.documento === 'AC').map(ev => (
+                    <div key={ev.id} className="relative p-2 bg-white rounded-lg border border-slate-200">
+                      {ev.tipo.startsWith('image/') ? (
+                        <img src={ev.data} alt={ev.nombre} className="w-full h-20 object-cover rounded" />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <FileText size={16} className="text-cyan-500" />
+                          <span className="text-xs truncate">{ev.nombre}</span>
+                        </div>
+                      )}
+                      <button onClick={() => setEvidencias(prev => prev.filter(x => x.id !== ev.id))} className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">No hay evidencias adjuntas</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -1135,6 +1280,7 @@ function IndicadoresView() {
   const [resultados, setResultados] = useState({});
   const [seguimientos, setSeguimientos] = useState([]);
   const [anioActual] = useState(2026);
+  const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', area: '', meta: '', unidad: '' });
   
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   
@@ -2274,6 +2420,446 @@ function SelectField({ label, name, value, onChange, options, required }) {
           <option key={opt} value={opt}>{opt}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+function DocumentosView() {
+  const [documentos, setDocumentos] = useLocalStorage('sgc-documentos', [
+    { id: 1, titulo: 'Manual de Calidad del Agua v3.0', tipo: 'Manual', estado: 'APROBADO', area: 'Sistema de Gestión de Calidad', version: '3.0', fecha: '2026-01-15', autor: 'Ing. Juan López' },
+    { id: 2, titulo: 'Procedimiento de Saneamiento', tipo: 'Procedimiento', estado: 'EN_REVISION', area: 'Alcantarillado y Saneamiento', version: '1.2', fecha: '2026-03-20', autor: 'Lic. García' },
+    { id: 3, titulo: 'Registro de Mantenimiento de Bombas', tipo: 'Registro', estado: 'BORRADOR', area: 'Mantenimiento de Redes', version: '2.0', fecha: '2026-04-18', autor: 'Ing. Martínez' },
+    { id: 4, titulo: 'Política de Calidad', tipo: 'Política', estado: 'APROBADO', area: 'Dirección General', version: '1.0', fecha: '2025-06-01', autor: 'Lic. Héctor Páez' },
+    { id: 5, titulo: 'Instrucción de Trabalho - Medición de Cloro', tipo: 'Instrucción', estado: 'APROBADO', area: 'Control de Calidad', version: '1.5', fecha: '2025-09-10', autor: 'Ing. López' },
+  ]);
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [nuevoDoc, setNuevoDoc] = useState({ titulo: '', tipo: 'Procedimiento', area: '', version: '1.0', autor: '' });
+
+  const tiposDoc = ['Manual', 'Procedimiento', 'Registro', 'Política', 'Instrucción', 'Formato', 'Guía'];
+  const estadosDoc = ['BORRADOR', 'EN_REVISION', 'APROBADO', 'OBSOLETO'];
+
+  const getEstadoBadge = (estado) => {
+    const colors = { 'APROBADO': 'bg-emerald-100 text-emerald-700', 'EN_REVISION': 'bg-amber-100 text-amber-700', 'BORRADOR': 'bg-slate-100 text-slate-600', 'OBSOLETO': 'bg-red-100 text-red-600' };
+    return colors[estado] || 'bg-slate-100 text-slate-600';
+  };
+
+  const exportarDocumento = (doc) => {
+    const contenido = `
+================================================================================
+                    SGC - OOMAPASC de Cajeme
+                 Sistema de Gestión de Calidad
+================================================================================
+
+DOCUMENTO TÉCNICO
+--------------------------------------------------------------------------------
+Título:          ${doc.titulo}
+Tipo:            ${doc.tipo}
+Área:            ${doc.area}
+Versión:         ${doc.version}
+Estado:          ${doc.estado}
+Fecha:           ${doc.fecha}
+Autor:           ${doc.autor}
+
+--------------------------------------------------------------------------------
+Descripción del Documento:
+--------------------------------------------------------------------------------
+Documento del Sistema de Gestión de Calidad de OOMAPASC de Cajeme.
+Este documento forma parte del control documental de la organización.
+
+--------------------------------------------------------------------------------
+Historial de Revisiones
+--------------------------------------------------------------------------------
+Versión | Fecha      | Autor | Descripción
+${doc.version} | ${doc.fecha} | ${doc.autor} | Versión inicial
+
+================================================================================
+Generado por el Portal SGC - OOMAPASC de Cajeme
+Fecha de exportación: ${new Date().toLocaleDateString('es-MX')}
+================================================================================
+    `;
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${doc.titulo.replace(/\s+/g, '_')}_v${doc.version}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportarAC = (ac) => {
+    const contenido = `
+================================================================================
+                    ACCIÓN CORRECTIVA
+                 SGC - OOMAPASC de Cajeme
+================================================================================
+
+FOLIO: AC-${ac.id || Date.now()}
+================================================================================
+
+1. DATOS GENERALES
+--------------------------------------------------------------------------------
+Fecha de Detección:  ${ac.fecha_deteccion || 'N/A'}
+Área:              ${ac.area || 'N/A'}
+Proceso:            ${ac.proceso || 'N/A'}
+Origen:            ${ac.origen || 'N/A'}
+${ac.num_auditoria ? `No. Auditoría:     ${ac.num_auditoria}` : ''}
+${ac.indicador ? `Indicador:        ${ac.indicador}` : ''}
+
+2. DESCRIPCIÓN DE LA NO CONFORMIDAD
+--------------------------------------------------------------------------------
+${ac.descripcion_nc || 'Sin descripción'}
+
+3. ANÁLISIS DE CAUSA RAÍZ (Método 6M)
+--------------------------------------------------------------------------------
+Posibles Causas:
+${ac.posibles_causas || 'Por determinar'}
+
+Causa Raíz:
+${ac.causa_raiz || 'Por determinar'}
+
+Acción de Contención:
+${ac.accion_contencion || 'Por determinar'}
+
+4. PLAN DE ACTIVIDADES
+--------------------------------------------------------------------------------
+${(ac.actividades || []).map((act, i) => `
+${i + 1}. ${act.descripcion || 'Sin descripción'}
+   Responsable: ${act.responsable || 'N/A'}
+   Fecha límite: ${act.fecha_limite || 'N/A'}
+   Estado: ${act.estado || 'PENDIENTE'}
+`).join('')}
+
+================================================================================
+Estado: ${ac.estado || 'BORRADOR'}
+Fecha de elaboración: ${ac.fecha_creacion || new Date().toISOString().split('T')[0]}
+================================================================================
+    `;
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AC_${ac.area || 'acci_correctiva'}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+  };
+
+  const agregarDoc = () => {
+    if (!nuevoDoc.titulo || !nuevoDoc.area) return;
+    setDocumentos(prev => [...prev, { ...nuevoDoc, id: Date.now(), estado: 'BORRADOR', fecha: new Date().toISOString().split('T')[0] }]);
+    setMostrarModal(false);
+    setNuevoDoc({ titulo: '', tipo: 'Procedimiento', area: '', version: '1.0', autor: '' });
+  };
+
+  const docsFiltrados = documentos.filter(d => {
+    if (filtroTipo && d.tipo !== filtroTipo) return false;
+    if (filtroEstado && d.estado !== filtroEstado) return false;
+    return true;
+  });
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-wrap justify-between gap-4">
+        <div className="flex gap-2">
+          <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+            <option value="">Todos los tipos</option>
+            {tiposDoc.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+            <option value="">Todos los estados</option>
+            {estadosDoc.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
+        <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600">
+          <Plus size={16} /> Nuevo Documento
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {docsFiltrados.map(doc => (
+          <div key={doc.id} className="bg-white p-5 rounded-xl border border-slate-200 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-3">
+              <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-1 rounded">{doc.tipo}</span>
+              <span className={`text-xs px-2 py-1 rounded ${getEstadoBadge(doc.estado)}`}>{doc.estado}</span>
+            </div>
+            <h3 className="font-bold text-[#002855] mb-2">{doc.titulo}</h3>
+            <div className="text-sm text-slate-500 space-y-1">
+              <p>Área: {doc.area}</p>
+              <p>Versión: {doc.version} | Fecha: {doc.fecha}</p>
+              <p>Autor: {doc.autor}</p>
+            </div>
+            <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
+              <button onClick={() => exportarDocumento(doc)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50">
+                <Download size={14} /> Exportar
+              </button>
+              <button className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50">
+                <Eye size={14} /> Ver
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {mostrarModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="font-bold text-[#002855] mb-4">Nuevo Documento</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Título</label>
+                <input value={nuevoDoc.titulo} onChange={e => setNuevoDoc({...nuevoDoc, titulo: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Título del documento..." />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Tipo</label>
+                  <select value={nuevoDoc.tipo} onChange={e => setNuevoDoc({...nuevoDoc, tipo: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                    {tiposDoc.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Versión</label>
+                  <input value={nuevoDoc.version} onChange={e => setNuevoDoc({...nuevoDoc, version: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Área</label>
+                <select value={nuevoDoc.area} onChange={e => setNuevoDoc({...nuevoDoc, area: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Autor</label>
+                <input value={nuevoDoc.autor} onChange={e => setNuevoDoc({...nuevoDoc, autor: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Nombre del autor..." />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button onClick={agregarDoc} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Crear</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AuditoriasView() {
+  const [auditorias, setAuditorias] = useLocalStorage('sgc-auditorias', [
+    { id: 1, numero: 'AUD-2026-001', tipo: 'Interna', area: 'Sistema de Gestión de Calidad', fecha_inicio: '2026-01-15', fecha_fin: '2026-01-17', estado: 'COMPLETADA', hallazgos: 3, no_conformidades: 1 },
+    { id: 2, numero: 'AUD-2026-002', tipo: 'Interna', area: 'Control de Calidad', fecha_inicio: '2026-02-20', fecha_fin: '2026-02-22', estado: 'COMPLETADA', hallazgos: 2, no_conformidades: 0 },
+    { id: 3, numero: 'AUD-2026-003', tipo: 'Externa', area: 'Plantas Potabilizadoras', fecha_inicio: '2026-03-10', fecha_fin: '2026-03-12', estado: 'PROGRAMADA', hallazgos: 0, no_conformidades: 0 },
+    { id: 4, numero: 'AUD-2026-004', tipo: 'Interna', area: 'Mantenimiento de Redes', fecha_inicio: '2026-04-05', fecha_fin: '2026-04-07', estado: 'EN_PROCESO', hallazgos: 1, no_conformidades: 1 },
+  ]);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [nuevaAud, setNuevaAud] = useState({ numero: '', tipo: 'Interna', area: '', fecha_inicio: '', fecha_fin: '' });
+
+  const getEstadoColor = (estado) => {
+    const colors = { 'COMPLETADA': 'bg-emerald-100 text-emerald-700', 'EN_PROCESO': 'bg-blue-100 text-blue-700', 'PROGRAMADA': 'bg-amber-100 text-amber-700', 'CANCELADA': 'bg-red-100 text-red-600' };
+    return colors[estado] || 'bg-slate-100 text-slate-600';
+  };
+
+  const agregarAuditoria = () => {
+    if (!nuevaAud.numero || !nuevaAud.area) return;
+    setAuditorias(prev => [...prev, { ...nuevaAud, id: Date.now(), estado: 'PROGRAMADA', hallazgos: 0, no_conformidades: 0 }]);
+    setMostrarModal(false);
+    setNuevaAud({ numero: '', tipo: 'Interna', area: '', fecha_inicio: '', fecha_fin: '' });
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500">Total Auditorías</p>
+          <p className="text-2xl font-bold text-[#002855]">{auditorias.length}</p>
+        </div>
+        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+          <p className="text-xs text-emerald-600">Completadas</p>
+          <p className="text-2xl font-bold text-emerald-700">{auditorias.filter(a => a.estado === 'COMPLETADA').length}</p>
+        </div>
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+          <p className="text-xs text-blue-600">En Proceso</p>
+          <p className="text-2xl font-bold text-blue-700">{auditorias.filter(a => a.estado === 'EN_PROCESO').length}</p>
+        </div>
+        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+          <p className="text-xs text-amber-600">Programadas</p>
+          <p className="text-2xl font-bold text-amber-700">{auditorias.filter(a => a.estado === 'PROGRAMADA').length}</p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-bold text-[#002855]">Registro de Auditorías</h2>
+          <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600">
+            <Plus size={16} /> Nueva Auditoría
+          </button>
+        </div>
+        <table className="w-full">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="p-3 text-sm font-semibold text-slate-600">Número</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Tipo</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Fechas</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Estado</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Hallazgos</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">NC</th>
+            </tr>
+          </thead>
+          <tbody>
+            {auditorias.map(aud => (
+              <tr key={aud.id} className="border-t border-slate-100 hover:bg-slate-50/50">
+                <td className="p-3 font-medium text-[#002855]">{aud.numero}</td>
+                <td className="p-3 text-sm text-slate-600">{aud.tipo}</td>
+                <td className="p-3 text-sm text-slate-600">{aud.area}</td>
+                <td className="p-3 text-sm text-slate-600">{aud.fecha_inicio} - {aud.fecha_fin}</td>
+                <td className="p-3">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getEstadoColor(aud.estado)}`}>{aud.estado}</span>
+                </td>
+                <td className="p-3 text-sm text-slate-600">{aud.hallazgos}</td>
+                <td className="p-3 text-sm text-slate-600">{aud.no_conformidades}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {mostrarModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="font-bold text-[#002855] mb-4">Nueva Auditoría</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Número de Auditoría</label>
+                <input value={nuevaAud.numero} onChange={e => setNuevaAud({...nuevaAud, numero: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="AUD-2026-XXX" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Tipo</label>
+                  <select value={nuevaAud.tipo} onChange={e => setNuevaAud({...nuevaAud, tipo: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                    <option value="Interna">Interna</option>
+                    <option value="Externa">Externa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Área</label>
+                  <select value={nuevaAud.area} onChange={e => setNuevaAud({...nuevaAud, area: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                    <option value="">Seleccionar...</option>
+                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Fecha Inicio</label>
+                  <input type="date" value={nuevaAud.fecha_inicio} onChange={e => setNuevaAud({...nuevaAud, fecha_inicio: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Fecha Fin</label>
+                  <input type="date" value={nuevaAud.fecha_fin} onChange={e => setNuevaAud({...nuevaAud, fecha_fin: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button onClick={agregarAuditoria} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Crear</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GestorAprobacionesView() {
+  const [aprobaciones, setAprobaciones] = useLocalStorage('sgc-aprobaciones', [
+    { id: 1, documento: 'AC-2026-001', tipo: 'Acción Correctiva', area: 'Control de Calidad', solicitante: 'Ing. Juan López', fecha: '2026-04-15', estado: 'PENDIENTE', prioridad: 'Alta' },
+    { id: 2, documento: 'PM-2026-002', tipo: 'Plan de Mejora', area: 'Recursos Humanos', solicitante: 'Lic. María García', fecha: '2026-04-18', estado: 'APROBADO', prioridad: 'Media' },
+    { id: 3, documento: 'AC-2026-002', tipo: 'Acción Correctiva', area: 'Mantenimiento de Redes', solicitante: 'Ing. Pedro Martínez', fecha: '2026-04-20', estado: 'PENDIENTE', prioridad: 'Alta' },
+    { id: 4, documento: 'DOC-2026-005', tipo: 'Documento', area: 'Sistema de Gestión de Calidad', solicitante: 'Ing. Roberto Torres', fecha: '2026-04-22', estado: 'RECHAZADO', prioridad: 'Baja' },
+  ]);
+  const [filtroEstado, setFiltroEstado] = useState('');
+
+  const getPrioridadColor = (p) => {
+    const colors = { 'Alta': 'bg-red-100 text-red-700', 'Media': 'bg-amber-100 text-amber-700', 'Baja': 'bg-emerald-100 text-emerald-700' };
+    return colors[p] || 'bg-slate-100 text-slate-600';
+  };
+
+  const getEstadoColor = (estado) => {
+    const colors = { 'APROBADO': 'bg-emerald-100 text-emerald-700', 'PENDIENTE': 'bg-amber-100 text-amber-700', 'RECHAZADO': 'bg-red-100 text-red-700' };
+    return colors[estado] || 'bg-slate-100 text-slate-600';
+  };
+
+  const cambiarEstado = (id, nuevoEstado) => {
+    setAprobaciones(prev => prev.map(a => a.id === id ? { ...a, estado: nuevoEstado } : a));
+  };
+
+  const appsFiltradas = aprobaciones.filter(a => {
+    if (filtroEstado && a.estado !== filtroEstado) return false;
+    return true;
+  });
+
+  return (
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex justify-between items-center gap-4">
+        <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+          <option value="">Todos los estados</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="APROBADO">Aprobado</option>
+          <option value="RECHAZADO">Rechazado</option>
+        </select>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <h2 className="font-bold text-[#002855]">Flujo de Aprobaciones</h2>
+        </div>
+        <table className="w-full">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="p-3 text-sm font-semibold text-slate-600">Documento</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Tipo</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Solicitante</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Fecha</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Prioridad</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Estado</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {appsFiltradas.map(app => (
+              <tr key={app.id} className="border-t border-slate-100 hover:bg-slate-50/50">
+                <td className="p-3 font-medium text-[#002855]">{app.documento}</td>
+                <td className="p-3 text-sm text-slate-600">{app.tipo}</td>
+                <td className="p-3 text-sm text-slate-600">{app.area}</td>
+                <td className="p-3 text-sm text-slate-600">{app.solicitante}</td>
+                <td className="p-3 text-sm text-slate-600">{app.fecha}</td>
+                <td className="p-3">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getPrioridadColor(app.prioridad)}`}>{app.prioridad}</span>
+                </td>
+                <td className="p-3">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getEstadoColor(app.estado)}`}>{app.estado}</span>
+                </td>
+                <td className="p-3">
+                  <div className="flex gap-1">
+                    {app.estado === 'PENDIENTE' && (
+                      <>
+                        <button onClick={() => cambiarEstado(app.id, 'APROBADO')} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded" title="Aprobar">
+                          <Check size={16} />
+                        </button>
+                        <button onClick={() => cambiarEstado(app.id, 'RECHAZADO')} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Rechazar">
+                          <X size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
