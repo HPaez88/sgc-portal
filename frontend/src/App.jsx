@@ -41,6 +41,7 @@ import { useLocalStorage, useFormValidation } from './hooks';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoaded, setIsLoaded] = useState(false);
 
