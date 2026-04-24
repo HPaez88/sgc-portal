@@ -1120,16 +1120,20 @@ Responde en JSON:
 function IndicadoresView() {
   const [editando, setEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalCaptura, setMostrarModalCaptura] = useState(false);
   const [mostrarModalSeguimiento, setMostrarModalSeguimiento] = useState(false);
   const [indicadorNoCumple, setIndicadorNoCumple] = useState(null);
-  const [vista, setVista] = useState('mensual'); // 'mensual' or 'trimestral'
+  const [indicadorCaptura, setIndicadorCaptura] = useState(null);
+  const [valorCaptura, setValorCaptura] = useState('');
+  const [mesCaptura, setMesCaptura] = useState('Ene');
+  const [vista, setVista] = useState('mensual');
   const [trimestre, setTrimestre] = useState(1);
-  const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', area: '', meta: '', unidad: '', formula: '' });
+  const [filtroArea, setFiltroArea] = useState('');
+  const [filtroProceso, setFiltroProceso] = useState('');
   
   const [indicadores] = useState(INDICADORES);
-  
   const [resultados, setResultados] = useState({});
-  const [seguimientos, setSeguimientos] = useState([]);  // {indicadorId, tipo, fecha, descripcion}
+  const [seguimientos, setSeguimientos] = useState([]);
   const [anioActual] = useState(2026);
   
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -1140,6 +1144,17 @@ function IndicadoresView() {
     3: ['Jul', 'Ago', 'Sep'],
     4: ['Oct', 'Nov', 'Dic']
   };
+  
+  // Listas únicas
+  const areasUnicas = [...new Set(indicadores.map(i => i.area))].sort();
+  const procesosUnicos = [...new Set(indicadores.map(i => i.proceso))].sort();
+  
+  // Indicadores filtrados
+  const indicadoresFiltrados = indicadores.filter(ind => {
+    if (filtroArea && ind.area !== filtroArea) return false;
+    if (filtroProceso && ind.proceso !== filtroProceso) return false;
+    return true;
+  });
   
   const getSemaphoreColor = (pct) => {
     if (pct >= 80) return { bg: 'bg-emerald-500', text: 'text-white', icon: '🟢' };
@@ -1232,8 +1247,8 @@ function IndicadoresView() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Vista Toggle */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+      {/* Filtros y Toggle */}
+      <div className="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm">
         <div className="flex gap-2">
           <button 
             onClick={() => setVista('mensual')}
@@ -1248,6 +1263,37 @@ function IndicadoresView() {
             📊 Trimestral
           </button>
         </div>
+        
+        {/* Filtros */}
+        <div className="flex flex-wrap gap-2">
+          <select 
+            value={filtroArea}
+            onChange={e => setFiltroArea(e.target.value)}
+            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          >
+            <option value="">Todas las Áreas</option>
+            {areasUnicas.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          
+          <select 
+            value={filtroProceso}
+            onChange={e => setFiltroProceso(e.target.value)}
+            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          >
+            <option value="">Todos los Procesos</option>
+            {procesosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          
+          {(filtroArea || filtroProceso) && (
+            <button 
+              onClick={() => { setFiltroArea(''); setFiltroProceso(''); }}
+              className="px-3 py-2 text-sm text-cyan-600 hover:bg-cyan-50 rounded-lg"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+        
         {vista === 'trimestral' && (
           <div className="flex gap-2">
             {[1, 2, 3, 4].map(t => (
@@ -1261,6 +1307,7 @@ function IndicadoresView() {
             ))}
           </div>
         )}
+        
         <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600">
           <Plus size={16} />
           Nuevo Indicador
@@ -1307,7 +1354,7 @@ function IndicadoresView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {indicadores.map(ind => {
+                  {indicadoresFiltrados.map(ind => {
                     const cump = getCumplimiento(ind.id, meses);
                     const sem = getSemaphoreColor(cump);
                     const seg = getSegumiento(ind.id);
@@ -1394,7 +1441,7 @@ function IndicadoresView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {indicadores.map(ind => {
+                  {indicadoresFiltrados.map(ind => {
                     const cump = getCumpTrimestral(ind.id, trimestre);
                     const sem = getSemaphoreColor(cump);
                     const mesesTrim = trimestresMap[trimestre];
