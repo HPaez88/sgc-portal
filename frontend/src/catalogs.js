@@ -1,139 +1,263 @@
-export const AREAS = [
-  'Agencia Esperanza',
-  'Agencia Marte R. Gómez',
-  'Agencia Providencia',
-  'Agencia Pueblo Yaqui',
-  'Alcantarillado y Saneamiento',
-  'Atención Ciudadana',
-  'Comunicación e Imagen Institucional',
-  'Contabilidad',
-  'Contratos y Servicios',
-  'Control de Calidad',
-  'Control y Servicios',
-  'Cultura del Agua',
-  'Informática',
-  'Jurídico',
-  'Licitaciones',
-  'Línea OOMAPASC',
-  'Mantenimiento de Redes',
-  'Mantenimiento y Servicios Generales',
-  'Órgano de Control Interno',
-  'Padrón de Usuarios',
-  'Plantas Potabilizadoras',
-  'Programas Sociales',
-  'Proyectos e Infraestructura',
-  'Recursos Humanos',
-  'Recursos Materiales',
-  'Sectorización Hidrométrica e Innovación',
-  'Seguridad Industrial',
-  'Sistema de Gestión de Calidad',
-  'Suburbano Técnico',
-  'Supervisión y Control de Obras',
-  'Trabajo Social',
-  'Trámites Técnicos',
-  'Verificación y Lectura'
-];
+export const ORIGENES_AC = ["Auditoría", "Indicador", "Queja", "Otra"];
 
+// Listas de catálogos
 export const DIRECCIONES = [
-  'Dir. General',
-  'Dir. Técnica',
-  'Dir. Administrativa',
-  'Dir. Órganos de Control Interno',
-  'Dir. Comercial',
-  'Dir. Jurídica',
-  'Dir. Programas Sociales y Cultura del Agua'
+  "General", "Técnica", "Administrativa", "Órganos de Control Interno", 
+  "Comercial", "Jurídica", "Programas Sociales y Cultura del Agua"
 ];
 
 export const PROCESOS = [
-  'Comercialización',
-  'Comunicación',
-  'Gestión de Recursos',
-  'Mantenimiento y Calibración',
-  'Medición Análisis y Mejora',
-  'Producción',
-  'Proyectos e Infraestructura',
-  'Responsabilidad de la Dirección'
+  "Comercialización", "Comunicación", "Gestión de Recursos", 
+  "Mantenimiento y Calibración", "Medición Análisis y Mejora", 
+  "Producción", "Proyectos e Infraestructura", "Responsabilidad de la Dirección"
 ];
 
-export const ORIGENES_AC = ['Auditoría', 'Indicador', 'Queja', 'Otra'];
-
-export const INDICADORES = [
-  { id: 1, nombre: 'Turbiedad Promedio', area: 'Plantas Potabilizadoras', meta: '< 1.0', unidad: 'NTU' },
-  { id: 2, nombre: 'Cloro Residual', area: 'Plantas Potabilizadoras', meta: '0.5-1.5', unidad: 'mg/L' },
-  { id: 3, nombre: 'Recaudación', area: 'Contabilidad', meta: '> 95', unidad: '%' },
-  { id: 4, nombre: 'Quejas Atendidas', area: 'Atención Ciudadana', meta: '< 24', unidad: 'hrs' },
-  { id: 5, nombre: 'Eficiencia de Bombas', area: 'Mantenimiento de Redes', meta: '> 85', unidad: '%' },
-  { id: 6, nombre: 'NC Resueltas', area: 'Sistema de Gestión de Calidad', meta: '> 90', unidad: '%' },
-  { id: 7, nombre: 'Cumplimiento de Indicadores', area: 'Sistema de Gestión de Calidad', meta: '> 80', unidad: '%' },
-  { id: 8, nombre: 'Proyectos Terminados', area: 'Proyectos e Infraestructura', meta: '> 90', unidad: '%' },
-  { id: 9, nombre: 'Capacitaciones', area: 'Recursos Humanos', meta: '100', unidad: '%' },
-  { id: 10, nombre: 'Lectura de Medidores', area: 'Verificación Y Lectura', meta: '> 98', unidad: '%' },
-  { id: 11, nombre: 'Tiempo de Respuesta', area: 'Línea OOMAPASC', meta: '< 15', unidad: 'min' },
-  { id: 12, nombre: 'Contratos Activos', area: 'Contratos y Servicios', meta: '> 90', unidad: '%' },
+export const AREAS = [
+  "Sistema de Gestión de Calidad", "Dirección General", "Recursos Humanos", 
+  "Recursos Materiales", "Contabilidad", "Seguridad Industrial", "Licitaciones",
+  "Trámites Técnicos", "Informática", "Mtto. y servicios generales",
+  "Mantenimiento de Redes", "Control de Calidad", "Plantas Potabilizadoras",
+  "Alcantarillado y Saneamiento", "Suburbano Técnico", "Padrón de Usuarios",
+  "Control y Servicios", "Verificación y Lectura", "Agencia Providencia",
+  "Agencia Esperanza", "Agencia Pueblo Yaqui", "Agencia Marte R. Gómez",
+  "Dirección Comercial", "Línea OOMAPASC", "Contratos y Servicios",
+  "Proyectos e Infraestructura", "Atención Ciudadana", "Cartera",
+  "Compras", "Taller Mecánico", "Almacén", "Legal", "Archivo"
 ];
 
-export const getIndicadoresByArea = (area) => INDICADORES.filter(i => i.area === area);
-
-export const ESTADOS_AC = ['BORRADOR', 'EN_REVISION', 'APROBADO', 'CERRADO'];
-
-export const ROLES = ['Super Admin', 'Admin', 'Auditor', 'Encargado', 'Usuario'];
-
-export const ROL_HIERARCHY = {
-  'Super Admin': 5,
-  'Admin': 4,
-  'Auditor': 3,
-  'Encargado': 2,
-  'Usuario': 1
-};
-
-export const SUPER_ADMIN_EMAIL = 'hpaez@oomapasc.gob.mx';
-
-export const canManageUser = (currentRole, targetRole) => {
-  return ROL_HIERARCHY[currentRole] > ROL_HIERARCHY[targetRole];
-};
-
-export const canManageDocument = (role) => {
-  return ['Super Admin', 'Admin', 'Encargado'].includes(role);
-};
-
-export const canUpdateIndicator = (role) => {
-  return ['Super Admin', 'Admin', 'Encargado', 'Usuario'].includes(role);
-};
-
-export const canManageAllAreas = (role) => {
-  return ['Super Admin', 'Admin'].includes(role);
-};
-
-export const NIVELES_RIESGO = {
-  ALTO: { min: 10, color: 'red' },
-  MEDIO: { min: 5, color: 'amber' },
-  BAJO: { min: 0, color: 'emerald' }
-};
-
+// Funciones de ayuda
 export const getColorNivel = (nivel) => {
-  if (nivel >= 15) return 'bg-red-600 text-white';
-  if (nivel >= 8) return 'bg-amber-500 text-white';
-  return 'bg-emerald-500 text-white';
+  if (nivel >= 15) return "bg-red-600 text-white";
+  if (nivel >= 10) return "bg-orange-500 text-white";
+  if (nivel >= 5) return "bg-yellow-400 text-black";
+  return "bg-green-400 text-black";
 };
 
-export const getNivelRiesgo = (probabilidad, impacto) => probabilidad * impacto;
+export const getNivelRiesgo = (prob, imp) => prob * imp;
 
 export const getEstadoColor = (estado) => {
-  switch(estado) {
-    case 'APROBADO': return 'bg-emerald-100 text-emerald-700';
-    case 'EN_REVISION': return 'bg-amber-100 text-amber-700';
-    case 'CERRADO': return 'bg-blue-100 text-blue-700';
-    case 'BORRADOR': return 'bg-slate-100 text-slate-700';
-    default: return 'bg-slate-100 text-slate-700';
-  }
+  const colors = {
+    "BORRADOR": "bg-slate-200 text-slate-700",
+    "EN_REVISION": "bg-amber-100 text-amber-700", 
+    "APROBADO": "bg-emerald-100 text-emerald-700",
+    "RECHAZADO": "bg-red-100 text-red-700",
+    "COMPLETADO": "bg-blue-100 text-blue-700"
+  };
+  return colors[estado] || "bg-slate-100 text-slate-600";
 };
 
 export const getRolColor = (rol) => {
-  switch(rol) {
-    case 'Super Admin': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
-    case 'Admin': return 'bg-purple-100 text-purple-700';
-    case 'Auditor': return 'bg-blue-100 text-blue-700';
-    case 'Encargado': return 'bg-cyan-100 text-cyan-700';
-    default: return 'bg-slate-100 text-slate-600';
-  }
+  const colors = {
+    "Super Admin": "bg-purple-100 text-purple-700",
+    "Admin": "bg-cyan-100 text-cyan-700",
+    "Auditor": "bg-blue-100 text-blue-700",
+    "Encargado": "bg-amber-100 text-amber-700",
+    "Usuario": "bg-slate-100 text-slate-600"
+  };
+  return colors[rol] || "bg-slate-100 text-slate-600";
 };
+
+export const INDICADORES = [
+  // 1. Lograr el grado de eficacia del SGC determinado por auditorí...
+  { id: 1, nombre: "Lograr el grado de eficacia del SGC determinado por auditorías e indicadores.", area: "Sistema de Gestión de Calidad", proceso: "Responsabilidad de la Dirección", direccion: "General", meta: 85.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 2. Cumplir con las metas establecidas por las direcciones adscr...
+  { id: 2, nombre: "Cumplir con las metas establecidas por las direcciones adscritas a la Dirección General", area: "Dirección General", proceso: "Responsabilidad de la Dirección", direccion: "General", meta: 85.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 3. Mantener una relación de comunicación con el Consejo Consult...
+  { id: 3, nombre: "Mantener una relación de comunicación con el Consejo Consultivo.", area: "Dirección General", proceso: "Responsabilidad de la Dirección", direccion: "General", meta: 11.0, unidad: "Actas", periodicidad: "Trimestral", es_menor: false },
+  // 4. Remuneración del personal.
+  { id: 4, nombre: "Remuneración del personal.", area: "Recursos Humanos", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 28.0, unidad: "Cantidad", periodicidad: "Trimestral", es_menor: false },
+  // 5. Remuneración a jubilados y pensionados
+  { id: 5, nombre: "Remuneración a jubilados y pensionados", area: "Recursos Humanos", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 28.0, unidad: "Cantidad", periodicidad: "Trimestral", es_menor: false },
+  // 6. Cumplir con el programa  trimestral de capacitación.
+  { id: 6, nombre: "Cumplir con el programa  trimestral de capacitación.", area: "Recursos Humanos", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 7. Evaluación del ambiente de trabajo.
+  { id: 7, nombre: "Evaluación del ambiente de trabajo.", area: "Recursos Humanos", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 95.0, unidad: "Porcentaje", periodicidad: "Anual", es_menor: false },
+  // 8. Evaluar el desempeño de proveedores de productos químicos cr...
+  { id: 8, nombre: "Evaluar el desempeño de proveedores de productos químicos críticos", area: "Recursos Materiales", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 9.  Atender las solicitudes de compra en el tiempo establecido.
+  { id: 9, nombre: " Atender las solicitudes de compra en el tiempo establecido.", area: "Recursos Materiales", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 10. Cumplir con el programa de verificación de activos fijos
+  { id: 10, nombre: "Cumplir con el programa de verificación de activos fijos", area: "Recursos Materiales", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 11. Cumplir con el calendario contable y presupuestal.
+  { id: 11, nombre: "Cumplir con el calendario contable y presupuestal.", area: "Contabilidad", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 29.0, unidad: "Documentos", periodicidad: "Mensual", es_menor: false },
+  // 12. Accidentes de trabajo
+  { id: 12, nombre: "Accidentes de trabajo", area: "Seguridad Industrial", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 0.0, unidad: "Cantidad", periodicidad: "Mensual", es_menor: true },
+  // 13. Cumplir con el proceso de licitación pública o simplificada
+  { id: 13, nombre: "Cumplir con el proceso de licitación pública o simplificada", area: "Licitaciones", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 14. Cumplir con el proceso de adjudicación directa.
+  { id: 14, nombre: "Cumplir con el proceso de adjudicación directa.", area: "Licitaciones", proceso: "Gestión de Recursos", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 15. Índice de programas federales gestionados
+  { id: 15, nombre: "Índice de programas federales gestionados", area: "Trámites Técnicos", proceso: "Gestión de Recursos", direccion: "Técnica", meta: 1.0, unidad: "Programa", periodicidad: "Semestral", es_menor: false },
+  // 16. Cumplir con el programa de mantenimiento preventivo de los e...
+  { id: 16, nombre: "Cumplir con el programa de mantenimiento preventivo de los equipos de cómputo.", area: "Informática", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 17. Solucionar las solicitudes de servicio.
+  { id: 17, nombre: "Solucionar las solicitudes de servicio.", area: "Informática", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 18. Asegurar la disponibilidad de los servicios críticos de info...
+  { id: 18, nombre: "Asegurar la disponibilidad de los servicios críticos de informática.", area: "Informática", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 19. Revisión de instalaciones
+  { id: 19, nombre: "Revisión de instalaciones", area: "Seguridad Industrial", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 20. Cumplimiento al programa anual de mantenimiento preventivo a...
+  { id: 20, nombre: "Cumplimiento al programa anual de mantenimiento preventivo a edificios.", area: "Mtto. y servicios generales", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 804.0, unidad: "Cantidad", periodicidad: "Mensual", es_menor: false },
+  // 21. Cumplimiento al programa anual de mantenimiento preventivo p...
+  { id: 21, nombre: "Cumplimiento al programa anual de mantenimiento preventivo para vehículos de transporte", area: "Mtto. y servicios generales", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 22. Cumplimiento al abastecimiento de las dotaciones de gasolina...
+  { id: 22, nombre: "Cumplimiento al abastecimiento de las dotaciones de gasolina autorizadas.", area: "Mtto. y servicios generales", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 59.0, unidad: "Reportes", periodicidad: "Mensual", es_menor: false },
+  // 23. Cumplimiento a las solicitudes de mantenimiento correctivo p...
+  { id: 23, nombre: "Cumplimiento a las solicitudes de mantenimiento correctivo para vehículos de transporte", area: "Mtto. y servicios generales", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 95.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 24. Cumplimiento al programa anual de intendencia
+  { id: 24, nombre: "Cumplimiento al programa anual de intendencia", area: "Mtto. y servicios generales", proceso: "Mantenimiento y Calibración", direccion: "Administrativa", meta: 1768.0, unidad: "Registros", periodicidad: "Mensual", es_menor: false },
+  // 25. Atender los reportes de los usuarios de la ciudad.
+  { id: 25, nombre: "Atender los reportes de los usuarios de la ciudad.", area: "Mantenimiento de Redes", proceso: "Mantenimiento y Calibración", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 26. Cumplir con programa de calibración y verificación de equipo...
+  { id: 26, nombre: "Cumplir con programa de calibración y verificación de equipos de medición.", area: "Control de Calidad", proceso: "Mantenimiento y Calibración", direccion: "Técnica", meta: 157.0, unidad: "Calibraciones y/o Verificaciones", periodicidad: "Trimestral", es_menor: false },
+  // 27. Índice de cumplimiento de los programas de mantenimiento a i...
+  { id: 27, nombre: "Índice de cumplimiento de los programas de mantenimiento a instalaciones y mantenimiento electromecánico preventivo y correctivo", area: "Plantas Potabilizadoras", proceso: "Mantenimiento y Calibración", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 28. Programa de mantenimiento de redes sanitaria
+  { id: 28, nombre: "Programa de mantenimiento de redes sanitaria", area: "Alcantarillado y Saneamiento", proceso: "Mantenimiento y Calibración", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 29. Cumplir con el programa anual de mantenimiento preventivo a ...
+  { id: 29, nombre: "Cumplir con el programa anual de mantenimiento preventivo a equipos de cloración y dosificación", area: "Suburbano Técnico", proceso: "Mantenimiento y Calibración", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Semestral", es_menor: false },
+  // 30. Cumplir con el programa anual de mantenimiento preventivo y ...
+  { id: 30, nombre: "Cumplir con el programa anual de mantenimiento preventivo y toma de parámetros eléctricos y mecánicos", area: "Suburbano Técnico", proceso: "Mantenimiento y Calibración", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 31. Cumplir con el programa de mantenimiento anual de padrón de ...
+  { id: 31, nombre: "Cumplir con el programa de mantenimiento anual de padrón de usuarios.", area: "Padrón de Usuarios", proceso: "Comercialización", direccion: "Comercial", meta: 250000.0, unidad: "Visitas", periodicidad: "Mensual", es_menor: false },
+  // 32. Cobertura de Agua Potable
+  { id: 32, nombre: "Cobertura de Agua Potable", area: "Padrón de Usuarios", proceso: "Comercialización", direccion: "Comercial", meta: 95.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 33. Recaudación por visitas efectivas.
+  { id: 33, nombre: "Recaudación por visitas efectivas.", area: "Control y Servicios", proceso: "Comercialización", direccion: "Comercial", meta: 100000000.0, unidad: "Pesos", periodicidad: "Mensual", es_menor: false },
+  // 34. Recaudación por cobranza especial.
+  { id: 34, nombre: "Recaudación por cobranza especial.", area: "Control y Servicios", proceso: "Comercialización", direccion: "Comercial", meta: 80000000.0, unidad: "Pesos", periodicidad: "Mensual", es_menor: false },
+  // 35. Cumplir con el calendario mensual de facturación.
+  { id: 35, nombre: "Cumplir con el calendario mensual de facturación.", area: "Verificación y Lectura", proceso: "Comercialización", direccion: "Comercial", meta: 216.0, unidad: "Sectores", periodicidad: "Mensual", es_menor: false },
+  // 36. Porcentaje de error en toma de lectura.
+  { id: 36, nombre: "Porcentaje de error en toma de lectura.", area: "Verificación y Lectura", proceso: "Comercialización", direccion: "Comercial", meta: 0.5, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: true },
+  // 37. Cobertura de Micromedición en área urbana
+  { id: 37, nombre: "Cobertura de Micromedición en área urbana", area: "Verificación y Lectura", proceso: "Comercialización", direccion: "Comercial", meta: 60.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 38. Cumplir con el presupuesto de ingresos en la gerencia Provid...
+  { id: 38, nombre: "Cumplir con el presupuesto de ingresos en la gerencia Providencia.", area: "Agencia Providencia", proceso: "Comercialización", direccion: "Comercial", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 39. Cumplir con el presupuesto de ingresos en la gerencia Espera...
+  { id: 39, nombre: "Cumplir con el presupuesto de ingresos en la gerencia Esperanza", area: "Agencia Esperanza", proceso: "Comercialización", direccion: "Comercial", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 40. Cumplir con el presupuesto de ingresos en la gerencia Pueblo...
+  { id: 40, nombre: "Cumplir con el presupuesto de ingresos en la gerencia Pueblo Yaqui.", area: "Agencia Pueblo Yaqui", proceso: "Comercialización", direccion: "Comercial", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 41. Cumplir con el presupuesto de ingresos en la gerencia Marte ...
+  { id: 41, nombre: "Cumplir con el presupuesto de ingresos en la gerencia Marte R. Gomez.", area: "Agencia Marte R. Gómez", proceso: "Comercialización", direccion: "Comercial", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 42. Cumplir con el presupuesto programado de ingresos.
+  { id: 42, nombre: "Cumplir con el presupuesto programado de ingresos.", area: "Dirección Comercial", proceso: "Comercialización", direccion: "Comercial", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 43. Eficiencia comercial
+  { id: 43, nombre: "Eficiencia comercial", area: "Dirección Comercial", proceso: "Comercialización", direccion: "Comercial", meta: 60.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 44. Eficiencia comercial de rezago
+  { id: 44, nombre: "Eficiencia comercial de rezago", area: "Dirección Comercial", proceso: "Comercialización", direccion: "Comercial", meta: 10.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 45. Atender las órdenes de trabajo en un lapso de 7 días hábiles
+  { id: 45, nombre: "Atender las órdenes de trabajo en un lapso de 7 días hábiles", area: "Trabajo Social ", proceso: "Comercialización", direccion: "Programas Sociales", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 46. Cumplimiento a NOM-127-SSA1-2021 aplicable a control de cali...
+  { id: 46, nombre: "Cumplimiento a NOM-127-SSA1-2021 aplicable a control de calidad.", area: "Control de Calidad", proceso: "Producción", direccion: "Técnica", meta: 10063.0, unidad: "Muestreos", periodicidad: "Mensual", es_menor: false },
+  // 47. Índice de cumplimiento en muestreos y análisis de agua potab...
+  { id: 47, nombre: "Índice de cumplimiento en muestreos y análisis de agua potable.", area: "Control de Calidad", proceso: "Producción", direccion: "Técnica", meta: 214.0, unidad: "Informes", periodicidad: "Trimestral", es_menor: false },
+  // 48. Producción de agua en plantas potabilizadoras y pozos de áre...
+  { id: 48, nombre: "Producción de agua en plantas potabilizadoras y pozos de área urbana", area: "Plantas Potabilizadoras", proceso: "Producción", direccion: "Técnica", meta: 48439097.0, unidad: "M3", periodicidad: "Mensual", es_menor: false },
+  // 49. Índice de cobertura de macromedición
+  { id: 49, nombre: "Índice de cobertura de macromedición", area: "Plantas Potabilizadoras", proceso: "Producción", direccion: "Técnica", meta: 70.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 50. Índice de agua residual tratada.
+  { id: 50, nombre: "Índice de agua residual tratada.", area: "Alcantarillado y Saneamiento", proceso: "Producción", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 51. Programa de muestreo y análisis de aguas residuales
+  { id: 51, nombre: "Programa de muestreo y análisis de aguas residuales", area: "Alcantarillado y Saneamiento", proceso: "Producción", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 52. Cumplir con el volumen de agua potabilizada.
+  { id: 52, nombre: "Cumplir con el volumen de agua potabilizada.", area: "Suburbano Técnico", proceso: "Producción", direccion: "Técnica", meta: 14583516.0, unidad: "M3", periodicidad: "Mensual", es_menor: false },
+  // 53. Realizar en el ejercicio fiscal una auditoría programada men...
+  { id: 53, nombre: "Realizar en el ejercicio fiscal una auditoría programada mensual.", area: "Órgano de Control Interno", proceso: "Medición, Análisis y Mejora", direccion: "Órgano de Control de Interno", meta: 12.0, unidad: "Informe", periodicidad: "Mensual", es_menor: false },
+  // 54. Revisar el seguimiento y control del recurso federalizado en...
+  { id: 54, nombre: "Revisar el seguimiento y control del recurso federalizado en el ejercicio fiscal.", area: "Órgano de Control Interno", proceso: "Medición, Análisis y Mejora", direccion: "Órgano de Control de Interno", meta: 60.0, unidad: "Porcentaje", periodicidad: "Semestral", es_menor: false },
+  // 55. Atender las solicitudes de intervención especiales y no prog...
+  { id: 55, nombre: "Atender las solicitudes de intervención especiales y no programadas.", area: "Órgano de Control Interno", proceso: "Medición, Análisis y Mejora", direccion: "Órgano de Control de Interno", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 56. Atender y dar seguimiento a las observaciones de los sujetos...
+  { id: 56, nombre: "Atender y dar seguimiento a las observaciones de los sujetos fiscalizadores.", area: "Órgano de Control Interno", proceso: "Medición, Análisis y Mejora", direccion: "Órgano de Control de Interno", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 57. Atender al personal que acuda al OCI a asesorías.
+  { id: 57, nombre: "Atender al personal que acuda al OCI a asesorías.", area: "Órgano de Control Interno", proceso: "Medición, Análisis y Mejora", direccion: "Órgano de Control de Interno", meta: 100.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 58. Atender a los usuarios que interpongan quejas y denuncias en...
+  { id: 58, nombre: "Atender a los usuarios que interpongan quejas y denuncias en contra del servicio o cualquier servidor público.", area: "Órgano de Control Interno", proceso: "Medición, Análisis y Mejora", direccion: "Órgano de Control de Interno", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: true },
+  // 59. Cumplir en los cierres de planes de acción de Matriz de Ries...
+  { id: 59, nombre: "Cumplir en los cierres de planes de acción de Matriz de Riesgos", area: "Sistema de Gestión de Calidad", proceso: "Medición, Análisis y Mejora", direccion: "General", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 60. Estado de acciones y mejoras.
+  { id: 60, nombre: "Estado de acciones y mejoras.", area: "Sistema de Gestión de Calidad", proceso: "Medición, Análisis y Mejora", direccion: "General", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 61. Lograr el grado de eficacia derivado de las auditorías inter...
+  { id: 61, nombre: "Lograr el grado de eficacia derivado de las auditorías internas", area: "Sistema de Gestión de Calidad", proceso: "Medición, Análisis y Mejora", direccion: "General", meta: 85.0, unidad: "Porcentaje", periodicidad: "Bimestral", es_menor: false },
+  // 62. Atender las llamadas o mensajes de solicitud de usuarios.
+  { id: 62, nombre: "Atender las llamadas o mensajes de solicitud de usuarios.", area: "Línea OOMAPASC", proceso: "Medición, Análisis y Mejora", direccion: "General", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 63. Medir la satisfacción del cliente en atención recibida.
+  { id: 63, nombre: "Medir la satisfacción del cliente en atención recibida.", area: "Línea OOMAPASC", proceso: "Medición, Análisis y Mejora", direccion: "General", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 64. Cumplir con la satisfacción del cliente por la atención brin...
+  { id: 64, nombre: "Cumplir con la satisfacción del cliente por la atención brindada.", area: "Contratos y Servicios", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 96.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 65. Cumplir en las encuestas de satisfacción al usuario externo ...
+  { id: 65, nombre: "Cumplir en las encuestas de satisfacción al usuario externo en los servicios proporcionados  por el supervisor.", area: "Verificación y Lectura", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 66. Medir la eficiencia y el tiempo de respuesta establecido en ...
+  { id: 66, nombre: "Medir la eficiencia y el tiempo de respuesta establecido en 7 días hábiles a partir de la recepción del folio emitido por el H. Ayuntamiento de Cajeme.", area: "Atención Ciudadana", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 67. Cumplir con la satisfacción del cliente por el servicio prop...
+  { id: 67, nombre: "Cumplir con la satisfacción del cliente por el servicio proporcionado", area: "Agencia Providencia", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 68. Cumplir con la satisfacción del cliente por el servicio prop...
+  { id: 68, nombre: "Cumplir con la satisfacción del cliente por el servicio proporcionado", area: "Agencia Esperanza", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 69. Cumplir con la satisfacción del cliente por el servicio prop...
+  { id: 69, nombre: "Cumplir con la satisfacción del cliente por el servicio proporcionado", area: "Agencia Pueblo Yaqui", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 70. Cumplir con la satisfacción del cliente por el servicio prop...
+  { id: 70, nombre: "Cumplir con la satisfacción del cliente por el servicio proporcionado", area: "Agencia Marte R. Gómez", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 95.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 71. Cumplir con la satisfacción de los usuarios por reconexiones...
+  { id: 71, nombre: "Cumplir con la satisfacción de los usuarios por reconexiones ", area: "Control y Servicios", proceso: "Medición, Análisis y Mejora", direccion: "Comercial", meta: 90.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 72. Atender en tiempo y forma las solicitudes de información apl...
+  { id: 72, nombre: "Atender en tiempo y forma las solicitudes de información aplicables al área.", area: "Transparencia", proceso: "Medición, Análisis y Mejora", direccion: "Jurídico", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 73. Indicador de cumplimiento página de transparencia.
+  { id: 73, nombre: "Indicador de cumplimiento página de transparencia.", area: "Transparencia", proceso: "Medición, Análisis y Mejora", direccion: "Jurídico", meta: 100.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 74. Índice de atención por asesorías.
+  { id: 74, nombre: "Índice de atención por asesorías.", area: "Coord. Jurídico", proceso: "Medición, Análisis y Mejora", direccion: "Jurídico", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 75. Notificar a todas las áreas las actualizaciones que se prese...
+  { id: 75, nombre: "Notificar a todas las áreas las actualizaciones que se presenten mensualmente en los documentos externos declarados.", area: "Coord. Jurídico", proceso: "Medición, Análisis y Mejora", direccion: "Jurídico", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 76. Cumplir con la elaboración de solicitudes de contrato solici...
+  { id: 76, nombre: "Cumplir con la elaboración de solicitudes de contrato solicitados por la gerencia de licitaciones de conformidad al procedimiento OOMPJU-07.", area: "Coord. Jurídico", proceso: "Medición, Análisis y Mejora", direccion: "Jurídico", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 77. Índice de juntas de gobierno.
+  { id: 77, nombre: "Índice de juntas de gobierno.", area: "Coord. Jurídico", proceso: "Medición, Análisis y Mejora", direccion: "Jurídico", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 78. Índice de eficiencia administrativa.
+  { id: 78, nombre: "Índice de eficiencia administrativa.", area: "Direccion Administrativa", proceso: "Medición, Análisis y Mejora", direccion: "Administrativa", meta: 90.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 79. Sistema de gestión por comparación cuestionario único de inf...
+  { id: 79, nombre: "Sistema de gestión por comparación cuestionario único de información básica.", area: "Direccion Administrativa", proceso: "Medición, Análisis y Mejora", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Anual", es_menor: false },
+  // 80. Cumplimiento de la satisfacción del cliente.
+  { id: 80, nombre: "Cumplimiento de la satisfacción del cliente.", area: "Mtto. y servicios generales", proceso: "Medición, Análisis y Mejora", direccion: "Administrativa", meta: 94.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 81. Satisfacción del cliente
+  { id: 81, nombre: "Satisfacción del cliente", area: "Seguridad Industrial", proceso: "Medición, Análisis y Mejora", direccion: "Administrativa", meta: 90.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 82. Cumplir con las auditorías para la acreditación de la NMX-EC...
+  { id: 82, nombre: "Cumplir con las auditorías para la acreditación de la NMX-EC-17025-IMNC-2018 y/o ISO/IEC 17025:2017.", area: "Control de Calidad", proceso: "Medición, Análisis y Mejora", direccion: "Técnica", meta: 2.0, unidad: "Informes", periodicidad: "Anual", es_menor: false },
+  // 83. Índice de cumplimiento de reportes atendidos
+  { id: 83, nombre: "Índice de cumplimiento de reportes atendidos", area: "Alcantarillado y Saneamiento", proceso: "Medición, Análisis y Mejora", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 84. Cumplimiento del programa de inspecciones
+  { id: 84, nombre: "Cumplimiento del programa de inspecciones", area: "Alcantarillado y Saneamiento", proceso: "Medición, Análisis y Mejora", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 85. Atención a reportes suburbanos
+  { id: 85, nombre: "Atención a reportes suburbanos", area: "Suburbano Técnico", proceso: "Medición, Análisis y Mejora", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 86. Índice de cumplimiento en los indicadores de las gerencias d...
+  { id: 86, nombre: "Índice de cumplimiento en los indicadores de las gerencias de la Subdirección de Operación y Mantenimiento.", area: "Subdirección de Operación y Mantenimiento", proceso: "Medición, Análisis y Mejora", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 87. Índice de cumplimiento en los indicadores de las gerencias d...
+  { id: 87, nombre: "Índice de cumplimiento en los indicadores de las gerencias de la Subdirección de Proyectos e Infraestructura.", area: "Subdirección de Proyectos e Infraestructura", proceso: "Medición, Análisis y Mejora", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Trimestral", es_menor: false },
+  // 88. Cumplir con tiempo, costo y calidad definidos en la supervis...
+  { id: 88, nombre: "Cumplir con tiempo, costo y calidad definidos en la supervisión de obras según proyecto autorizado", area: "Supervisión de Obras", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 89. Elaboración de prefactibilidades
+  { id: 89, nombre: "Elaboración de prefactibilidades", area: "Proyectos e Infraestructura", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 90. Aprobación de proyectos de agua potable y/o alcantarillado s...
+  { id: 90, nombre: "Aprobación de proyectos de agua potable y/o alcantarillado sanitario", area: "Proyectos e Infraestructura", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 91. Elaboración de proyectos de agua potable y/o alcantarillado ...
+  { id: 91, nombre: "Elaboración de proyectos de agua potable y/o alcantarillado sanitario", area: "Proyectos e Infraestructura", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 92. Elaboración de viabilidad comercial e industrial
+  { id: 92, nombre: "Elaboración de viabilidad comercial e industrial", area: "Proyectos e Infraestructura", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 93. Elaboración de proyectos para mejoramiento de la eficiencia
+  { id: 93, nombre: "Elaboración de proyectos para mejoramiento de la eficiencia", area: "Sectorización Hidrométrica e Innovación", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 94. Detecciones de infraestructura subterránea.
+  { id: 94, nombre: "Detecciones de infraestructura subterránea.", area: "Sectorización Hidrométrica e Innovación", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 95. Índice de cumplimiento de tiempo para cálculo de Derechos de...
+  { id: 95, nombre: "Índice de cumplimiento de tiempo para cálculo de Derechos de Conexión.", area: "Trámites Técnicos", proceso: "Proyectos e Infraestructura", direccion: "Técnica", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 96. Cumplir al 90% con los parámetros de comunicación interna.
+  { id: 96, nombre: "Cumplir al 90% con los parámetros de comunicación interna.", area: "Sistema de Gestión de Calidad", proceso: "Comunicación", direccion: "General", meta: 90.0, unidad: "Porcentaje", periodicidad: "Anual", es_menor: false },
+  // 97. Canalizar y dar seguimiento a los reportes que se publican e...
+  { id: 97, nombre: "Canalizar y dar seguimiento a los reportes que se publican en los medios de comunicación.", area: "Comunicación e Imagen Institucional", proceso: "Comunicación", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 98. Cumplir con los diseños requeridos por el OOMAPAS de Cajeme.
+  { id: 98, nombre: "Cumplir con los diseños requeridos por el OOMAPAS de Cajeme.", area: "Comunicación e Imagen Institucional", proceso: "Comunicación", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 99. Boletines oficiales elaborados.
+  { id: 99, nombre: "Boletines oficiales elaborados.", area: "Comunicación e Imagen Institucional", proceso: "Comunicación", direccion: "Administrativa", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+  // 100. Cumplir con el programa anual de pláticas y actividades de c...
+  { id: 100, nombre: "Cumplir con el programa anual de pláticas y actividades de cultura del agua.", area: "Cultura del Agua", proceso: "Comunicación", direccion: "Programas Sociales", meta: 100.0, unidad: "Porcentaje", periodicidad: "Mensual", es_menor: false },
+];
+
+export const getIndicadoresByArea = (area) => INDICADORES.filter(i => i.area === area);

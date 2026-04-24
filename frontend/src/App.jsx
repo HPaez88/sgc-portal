@@ -1022,13 +1022,16 @@ Responde en JSON:
 function IndicadoresView() {
   const [editando, setEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalSeguimiento, setMostrarModalSeguimiento] = useState(false);
+  const [indicadorNoCumple, setIndicadorNoCumple] = useState(null);
   const [vista, setVista] = useState('mensual'); // 'mensual' or 'trimestral'
   const [trimestre, setTrimestre] = useState(1);
   const [nuevoIndicador, setNuevoIndicador] = useState({ nombre: '', area: '', meta: '', unidad: '', formula: '' });
   
-  const [indicadores, setIndicadores] = useState(INDICADORES);
+  const [indicadores] = useState(INDICADORES);
   
   const [resultados, setResultados] = useState({});
+  const [seguimientos, setSeguimientos] = useState([]);  // {indicadorId, tipo, fecha, descripcion}
   const [anioActual] = useState(2026);
   
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -1047,20 +1050,21 @@ function IndicadoresView() {
   };
   
   const getCumplimiento = (indicadorId, mesesEval) => {
+    const ind = indicadores.find(i => i.id === indicadorId);
+    if (!ind) return 0;
+    
     const valores = mesesEval.map(m => resultados[`${indicadorId}-${m}`]).filter(v => v && v !== '');
     if (valores.length === 0) return 0;
-    const meta = indicadores.find(i => i.id === indicadorId)?.meta || '';
-    const esMayor = meta.startsWith('>');
-    const esMenor = meta.startsWith('<');
-    const numMeta = parseFloat(meta.replace(/[<|>]/g, '').replace(/%/g, ''));
+    
+    const meta = ind.meta;
+    const esMenor = ind.es_menor;
     
     let cumplidos = 0;
     valores.forEach(v => {
       const num = parseFloat(String(v).replace(/%/g, '').replace(/,/g, ''));
       if (isNaN(num)) return;
-      if (esMayor && num >= numMeta) cumplidos++;
-      else if (esMenor && num <= numMeta) cumplidos++;
-      else if (!esMayor && !esMenor && num >= numMeta) cumplidos++;
+      if (esMenor && num <= meta) cumplidos++;
+      else if (!esMenor && num >= meta) cumplidos++;
     });
     return Math.round((cumplidos / valores.length) * 100);
   };
@@ -1095,11 +1099,27 @@ function IndicadoresView() {
     return resultados[`${indicadorId}-${mes}-${anioActual}`] || '';
   };
   
-  const agregarIndicador = () => {
-    if (!nuevoIndicador.nombre || !nuevoIndicador.area || !nuevoIndicador.meta) return;
-    setIndicadores(prev => [...prev, { ...nuevoIndicador, id: prev.length + 1 }]);
-    setNuevoIndicador({ nombre: '', area: '', meta: '', unidad: '', formula: '' });
-    setMostrarModal(false);
+  const abrirSeguimiento = (ind) => {
+    setIndicadorNoCumple(ind);
+    setMostrarModalSeguimiento(true);
+  };
+  
+  const crearSeguimiento = (tipo, descripcion) => {
+    if (!indicadorNoCumple || !descripcion) return;
+    setSeguimientos(prev => [...prev, {
+      id: indicadorNoCumple.id,
+      nombre: indicadorNoCumple.nombre,
+      area: indicadorNoCumple.area,
+      tipo,
+      descripcion,
+      fecha: new Date().toISOString().split('T')[0]
+    }]);
+    setMostrarModalSeguimiento(false);
+    setIndicadorNoCumple(null);
+  };
+  
+  const getSegumiento = (indicadorId) => {
+    return seguimientos.filter(s => s.id === indicadorId);
   };
 
   // Calculate area statistics for summary cards
@@ -1185,15 +1205,18 @@ function IndicadoresView() {
                       <th key={m} className="p-2 text-xs font-semibold text-slate-500 text-center">{m}</th>
                     ))}
                     <th className="p-3 text-sm font-semibold text-slate-600">% Cump.</th>
+                    <th className="p-2 text-sm font-semibold text-slate-600">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {indicadores.map(ind => {
                     const cump = getCumplimiento(ind.id, meses);
                     const sem = getSemaphoreColor(cump);
+                    const seg = getSegumiento(ind.id);
+                    const noCumple = cump < 50 || (seg && seg.length > 0 && cump < 80);
                     return (
-                      <tr key={ind.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                        <td className="p-3 font-medium text-[#002855]">{ind.nombre}</td>
+                      <tr key={ind.id} className={`border-t border-slate-100 hover:bg-slate-50/50 ${noCumple ? 'bg-red-25' : ''}`}>
+                        <td className="p-3 font-medium text-[#002855] text-sm">{ind.nombre}</td>
                         <td className="p-3 text-sm text-slate-600">{ind.area}</td>
                         <td className="p-3 text-sm text-slate-600">{ind.meta}</td>
                         <td className="p-3 text-sm text-slate-600">{ind.unidad}</td>
@@ -1214,6 +1237,15 @@ function IndicadoresView() {
                           <span className={`px-2 py-1 rounded text-xs font-bold text-white ${sem.bg}`}>
                             {cump}%
                           </span>
+                        </td>
+                        <td className="p-2">
+                          {seg.length > 0 ? (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded" title={seg[0].tipo}>{seg.length}</span>
+                          ) : noCumple ? (
+                            <button onClick={() => abrirSeguimiento(ind)} className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200">⚠️</button>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1260,6 +1292,7 @@ function IndicadoresView() {
                     ))}
                     <th className="p-3 text-sm font-semibold text-slate-600">% Trim.</th>
                     <th className="p-3 text-sm font-semibold text-slate-600">Semáforo</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1267,9 +1300,11 @@ function IndicadoresView() {
                     const cump = getCumpTrimestral(ind.id, trimestre);
                     const sem = getSemaphoreColor(cump);
                     const mesesTrim = trimestresMap[trimestre];
+                    const seg = getSegumiento(ind.id);
+                    const noCumple = cump < 50 || (seg && seg.length > 0 && cump < 80);
                     return (
-                      <tr key={ind.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                        <td className="p-3 font-medium text-[#002855]">{ind.nombre}</td>
+                      <tr key={ind.id} className={`border-t border-slate-100 hover:bg-slate-50/50 ${noCumple ? 'bg-red-25' : ''}`}>
+                        <td className="p-3 font-medium text-[#002855] text-sm">{ind.nombre}</td>
                         <td className="p-3 text-sm text-slate-600">{ind.area}</td>
                         <td className="p-3 text-sm text-slate-600">{ind.meta}</td>
                         {mesesTrim.map(mes => (
@@ -1283,6 +1318,15 @@ function IndicadoresView() {
                           </span>
                         </td>
                         <td className="p-2 text-2xl">{sem.icon}</td>
+                        <td className="p-2">
+                          {seg.length > 0 ? (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded" title={seg[0].tipo}>{seg.length}</span>
+                          ) : noCumple ? (
+                            <button onClick={() => abrirSeguimiento(ind)} className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200">⚠️</button>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -1341,7 +1385,42 @@ function IndicadoresView() {
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
-              <button onClick={agregarIndicador} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Agregar</button>
+              </div>
+            </div>
+          </div>
+      )}
+
+      {/* Modal Seguimiento - Cuando indicador no cumple */}
+      {mostrarModalSeguimiento && indicadorNoCumple && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h3 className="font-bold text-[#002855] mb-2">⚠️ Indicador No Cumple</h3>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <p className="text-sm font-medium text-red-800">{indicadorNoCumple.nombre}</p>
+              <p className="text-xs text-red-600 mt-1">Área: {indicadorNoCumple.area} | Meta: {indicadorNoCumple.meta} {indicadorNoCumple.unidad}</p>
+            </div>
+            
+            <p className="text-sm text-slate-600 mb-3">Selecciona el tipo de seguimiento:</p>
+            
+            <div className="space-y-3">
+              <button onClick={() => crearSeguimiento('AC', 'Crear Acción Correctiva para este indicador')} className="w-full p-3 border border-red-200 bg-red-50 rounded-lg text-left hover:bg-red-100 transition-colors">
+                <span className="font-medium text-red-700">⚡ Acción Correctiva</span>
+                <p className="text-xs text-red-600">Para No Conformidades mayores</p>
+              </button>
+              
+              <button onClick={() => crearSeguimiento('RC', 'Crear Reporte de Corrección para este indicador')} className="w-full p-3 border border-amber-200 bg-amber-50 rounded-lg text-left hover:bg-amber-100 transition-colors">
+                <span className="font-medium text-amber-700">🔧 Reporte de Corrección</span>
+                <p className="text-xs text-amber-600">Para ajustes menores</p>
+              </button>
+              
+              <button onClick={() => crearSeguimiento('MINUTA', 'Crear Minuta de Reunión para analizar este indicador')} className="w-full p-3 border border-blue-200 bg-blue-50 rounded-lg text-left hover:bg-blue-100 transition-colors">
+                <span className="font-medium text-blue-700">📋 Minuta de Reunión</span>
+                <p className="text-xs text-blue-600">Para análisis en comité</p>
+              </button>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setMostrarModalSeguimiento(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
             </div>
           </div>
         </div>
