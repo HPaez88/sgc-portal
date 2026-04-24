@@ -626,21 +626,43 @@ function AccionCorrectivaView() {
     }
     setGenerando(true);
     try {
-      const prompt = `Eres un experto en Sistema de Gestión de Calidad ISO 9001. Analiza la siguiente No Conformidad y genera:
-1. Posibles causas (usa los 6M: Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)
-2. Causa raíz identificada
-3. Acción de contención inmediata
-4. Plan de actividades (3-5 acciones con responsable y fecha sugerida)
+      const prompt = `Eres un AGENTE EXPERTO ISO 9001 especializado en análisis de no conformidades y acciones correctivas. Tu rol es generar un análisis completo de causa raíz.
 
-No Conformidad: ${formData.descripcion_nc}
+IDENTIDAD DEL AGENTE:
+- Eres un auditor interno certificado ISO 9001
+- Dominas el análisis de causa raíz (6M, Ishikawa, 5 Porqués)
+- Generas acciones correctivas efectivas y medibles
 
-Responde en JSON:
+CONTEXTO:
+Área: ${formData.area || 'Por asignar'}
+Proceso: ${formData.proceso}
+Origen: ${formData.origen}
+
+NO CONFORMIDAD DETECTADA:
+${formData.descripcion_nc}
+
+INSTRUCCIONES:
+Analiza la NC y genera un JSON completo con:
+
 {
-  "posibles_causas": "...",
-  "causa_raiz": "...",
-  "accion_contencion": "...",
-  "actividades": [{"descripcion": "...", "responsable": "...", "fecha_limite": "...", "estado": "PENDIENTE"}]
-}`;
+  "posibles_causas": "Causa 1, Causa 2, Causa 3... (usen método 6M: Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)",
+  "causa_raiz": "Causa raíz identificada mediante análisis",
+  "accion_contencion": "Acción inmediata para contener el problema",
+  "clasificacion_nc": "Mayor|Menor|Observación",
+  "tipo_accion": "Acción Correctiva|Acción Preventiva",
+  "actividades": [
+    {
+      "descripcion": "Descripción detallada de la actividad",
+      "responsable": "Nombre del responsable",
+      "fecha_limite": "YYYY-MM-DD",
+      "tipo": "CORRECCION|PREVENTIVA|VERIFICACION",
+      "evidencia": "Evidencia requerida",
+      "estado": "PENDIENTE"
+    }
+  ]
+}
+
+Sé profesional, específico y orientado a la solución inmediata.`;
       
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -968,15 +990,27 @@ function PlanMejoraView() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generando, setGenerando] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errores, setErrores] = useState({});
+  const [mostrarModalIA, setMostrarModalIA] = useState(false);
+  
+  const usuarioActual = usuarios?.find(u => u.rol === 'Admin' || u.rol === 'Auditor') ? null : usuarios?.[0];
+  const puedeTodasAreas = usuarioActual?.rol === 'Admin' || usuarioActual?.rol === 'Auditor' || usuarioActual?.rol === 'Super Admin';
+  
   const [formData, setFormData] = useState({
-    codigo: '',
-    fecha_elaboracion: '',
-    area: '',
+    codigo: `PM-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+    fecha_elaboracion: new Date().toISOString().split('T')[0],
+    area: puedeTodasAreas ? '' : usuarioActual?.area || '',
     proceso: '',
     situacion_actual: '',
     situacion_deseada: '',
     beneficios: '',
     equipo_trabajo: '',
+    origen_mejora: '',
+    just_beneficios: '',
+    impacto_esperado: '',
+    recursos_necesarios: '',
+    presupuesto: '',
     actividades: [],
     estado: 'BORRADOR'
   });
@@ -984,12 +1018,46 @@ function PlanMejoraView() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errores[name]) setErrores(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const validateStep = (currentStep) => {
+    const newErrors = {};
+    if (currentStep === 1) {
+      if (!formData.area) newErrors.area = 'Requerido';
+      if (!formData.proceso) newErrors.proceso = 'Requerido';
+      if (!formData.situacion_actual) newErrors.situacion_actual = 'Describe la situación actual';
+      if (!formData.situacion_deseada) newErrors.situacion_deseada = 'Describe la situación deseada';
+    }
+    if (currentStep === 2) {
+      if (!formData.beneficios) newErrors.beneficios = 'Required';
+      if (!formData.equipo_trabajo) newErrors.equipo_trabajo = 'Required';
+    }
+    if (currentStep === 3) {
+      if (formData.actividades.length === 0) newErrors.actividades = 'Agrega al menos una actividad';
+    }
+    setErrores(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const agregarActividad = () => {
     setFormData(prev => ({
       ...prev,
-      actividades: [...prev.actividades, { actividad: '', indicador: '', meta: '', responsable: '', fecha_inicio: '', fecha_fin: '', estado: 'PENDIENTE' }]
+      actividades: [...prev.actividades, { 
+        actividad: '', 
+        indicador: '', 
+        meta: '', 
+        responsable: formData.equipo_trabajo || '',
+        fecha_inicio: '', 
+        fecha_fin: '', 
+        tipo: 'IMPLEMENTACION',
+        recursos: '',
+        evidencia: '',
+        evidencia_verificacion: '',
+        resultado: '',
+        estado: 'PENDIENTE',
+        observacion: ''
+      }]
     }));
   };
 
@@ -1006,25 +1074,58 @@ function PlanMejoraView() {
 
   const generarConIA = async () => {
     if (!formData.situacion_actual || !formData.situacion_deseada) {
-      alert('Describe la situación actual y deseable primero');
+      alert('Describe la situación actual y la situación deseable primero');
       return;
     }
     setGenerando(true);
     try {
-      const prompt = `Eres un experto en Sistema de Gestión de Calidad ISO 9001. Analiza el siguiente Plan de Mejora y genera:
-1. Beneficios esperados
-2. Equipo de trabajo necesario
-3. Plan de actividades con indicadores, metas, responsables y fechas
+      const prompt = `Eres un AGENTE EXPERTO ISO 9001 especializado en mejora continua y gestión de calidad. Tu tarea es generar un PLAN DE MEJORA completo y profesional.
 
-Situación Actual: ${formData.situacion_actual}
-Situación Deseada: ${formData.situacion_deseada}
+IDENTIDAD DEL AGENTE:
+- Eres un experto en sistemas de gestión de calidad ISO 9001:2015
+- Conoces profundamente el ciclo PHVA (Planificar, Hacer, Verificar, Actuar)
+-生成 soluciones prácticas y accionables
 
-Responde en JSON:
+CONTEXTO DEL PROYECTO:
+Organismo: OOMAPASC de Cajeme (Agua Potable)
+Área: ${formData.area || 'Por asignar'}
+Proceso: ${formData.proceso}
+
+SITUACIÓN ACTUAL (el problema):
+${formData.situacion_actual}
+
+SITUACIÓN DESEADA (el objetivo):
+${formData.situacion_deseada}
+
+INSTRUCCIONES DE GENERACIÓN:
+Genera un plan completo en JSON con esta estructura exacta. Cada actividad debe seguir el ciclo PHVA:
+
 {
-  "beneficios": "...",
-  "equipo_trabajo": "...",
-  "actividades": [{"actividad": "...", "indicador": "...", "meta": "...", "responsable": "...", "fecha_inicio": "...", "fecha_fin": "...", "estado": "PENDIENTE"}]
-}`;
+  "beneficios": "Beneficio 1, Beneficio 2, Beneficio 3...",
+  "just_beneficios": "Justificación clara y medible",
+  "impacto_esperado": "Alto|Medio|Bajo",
+  "recursos_necesarios": "Humanos, Materiales, Tec",
+  "presupuesto": 0,
+  "equipo_trabajo": "Nombre 1, Nombre 2, Nombre 3...",
+  "actividades": [
+    {
+      "actividad": "Descripción detallada",
+      "indicador": "Indicador de medición",
+      "meta": "Meta cuantificable",
+      "responsable": "Nombre responsable",
+      "fecha_inicio": "YYYY-MM-DD",
+      "fecha_fin": "YYYY-MM-DD",
+      "tipo": "PLANIFICACION|IMPLEMENTACION|VERIFICACION|CIERRE",
+      "recursos": "Recursos específicos",
+      "evidencia": "Evidencia a generar",
+      "evidencia_verificacion": "Cómo se verifica",
+      "resultado": "Resultado esperado",
+      "observacion": "Notas adicionales"
+    }
+  ]
+}
+
+Sé específico, práctico y orientado a resultados. El equipo solo dará la idea inicial, tú generas TODO.`;
       
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -1049,9 +1150,22 @@ Responde en JSON:
             setFormData(prev => ({
               ...prev,
               beneficios: parsed.beneficios || '',
+              just_beneficios: parsed.just_beneficios || '',
+              impacto_esperado: parsed.impacto_esperado || 'Medio',
+              recursos_necesarios: parsed.recursos_necesarios || '',
+              presupuesto: parsed.presupuesto || '',
               equipo_trabajo: parsed.equipo_trabajo || '',
-              actividades: parsed.actividades?.length ? parsed.actividades : prev.actividades
+              actividades: parsed.actividades?.length ? parsed.actividades.map(a => ({
+                ...a,
+                estado: 'PENDIENTE',
+                evidencia: a.evidencia || '',
+                evidencia_verificacion: a.evidencia_verificacion || '',
+                resultado: a.resultado || '',
+                observacion: a.observacion || ''
+              })) : prev.actividades
             }));
+            setMostrarModalIA(false);
+            setStep(2);
           }
         } catch (e) {
           alert('La IA generó una respuesta con formato inválido. Intenta de nuevo.');
@@ -1062,34 +1176,52 @@ Responde en JSON:
       alert('Error al generar con IA. Verifica la API key');
     } finally {
       setGenerando(false);
+      setMostrarModalIA(false);
     }
   };
 
   const guardar = async (enviar = false) => {
+    if (enviar && !validateStep(3)) return;
     setLoading(true);
-    try {
-      const payload = { ...formData, estado: enviar ? 'EN_REVISION' : 'BORRADOR' };
-      const resp = await fetch(getApiUrl('/api/v1/planes-mejora'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await resp.json();
-      if (data.ok) {
-        alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
-        if (enviar) {
-          setFormData({
-            codigo: '', fecha_elaboracion: '', area: '', proceso: '', situacion_actual: '',
-            situacion_deseada: '', beneficios: '', equipo_trabajo: '',
-            actividades: [], estado: 'BORRADOR'
-          });
-          setStep(1);
-        }
+    
+    const nuevoPM = {
+      ...formData,
+      id: Date.now(),
+      estado: enviar ? 'EN_REVISION' : 'BORRADOR',
+      fecha_creacion: new Date().toISOString().split('T')[0]
+    };
+    
+    setPlanesMejora(prev => [...prev, nuevoPM]);
+    setLoading(false);
+    setSuccess(true);
+    setTimeout(() => {
+      alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
+      setSuccess(false);
+      if (enviar) {
+        setFormData({
+          codigo: `PM-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+          fecha_elaboracion: new Date().toISOString().split('T')[0],
+          area: puedeTodasAreas ? '' : usuarioActual?.area || '',
+          proceso: '',
+          situacion_actual: '',
+          situacion_deseada: '',
+          beneficios: '',
+          just_beneficios: '',
+          impacto_esperado: '',
+          recursos_necesarios: '',
+          presupuesto: '',
+          equipo_trabajo: '',
+          actividades: [],
+          estado: 'BORRADOR'
+        });
+        setStep(1);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    }, 500);
+  };
+
+  const handleNext = () => {
+    if (validateStep(step)) {
+      setStep(s => Math.min(3, s + 1));
     }
   };
 
@@ -1115,70 +1247,109 @@ Responde en JSON:
         {step === 1 && (
           <div className="space-y-6">
             <SectionTitle icon="📋" title="Datos del Documento" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <InputField label="Código" name="codigo" value={formData.codigo} onChange={handleChange} placeholder="PM-2026-001" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <InputField label="Código" name="codigo" value={formData.codigo} onChange={handleChange} placeholder="PM-2026-0001" />
               <InputField label="Fecha Elaboración" name="fecha_elaboracion" type="date" value={formData.fecha_elaboracion} onChange={handleChange} />
-              <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={AREAS} />
+              <div>
+                <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={AREAS} />
+                {!puedeTodasAreas && <p className="text-xs text-cyan-600 mt-1">Solo tu área</p>}
+              </div>
               <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={PROCESOS} />
             </div>
 
-            <div>
-              <SectionTitle icon="📈" title="Situación Actual" required />
-              <textarea
-                name="situacion_actual"
-                value={formData.situacion_actual}
-                onChange={handleChange}
-                placeholder="Describe la situación actual que desea mejorar..."
-                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-              />
-            </div>
-
-            <div>
-              <SectionTitle icon="🎯" title="Situación Deseada" required />
-              <textarea
-                name="situacion_deseada"
-                value={formData.situacion_deseada}
-                onChange={handleChange}
-                placeholder="¿Cuál es el objetivo o situación deseada?"
-                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <SectionTitle icon="📈" title="Situación Actual" required />
+                <textarea
+                  name="situacion_actual"
+                  value={formData.situacion_actual}
+                  onChange={handleChange}
+                  placeholder="Describe la situación actual que desea mejorar..."
+                  className={`w-full p-4 border rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 ${errores.situacion_actual ? 'border-red-500' : 'border-slate-200'}`}
+                />
+                {errores.situacion_actual && <p className="text-red-500 text-xs mt-1">{errores.situacion_actual}</p>}
+              </div>
+              <div>
+                <SectionTitle icon="🎯" title="Situación Deseada" required />
+                <textarea
+                  name="situacion_deseada"
+                  value={formData.situacion_deseada}
+                  onChange={handleChange}
+                  placeholder="¿Cuál es el objetivo o situación deseada?"
+                  className={`w-full p-4 border rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 ${errores.situacion_deseada ? 'border-red-500' : 'border-slate-200'}`}
+                />
+                {errores.situacion_deseada && <p className="text-red-500 text-xs mt-1">{errores.situacion_deseada}</p>}
+              </div>
             </div>
 
             <button
               onClick={generarConIA}
               disabled={generando || !formData.situacion_actual || !formData.situacion_deseada}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-500 text-white rounded-xl font-medium hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50"
             >
               {generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {generando ? 'Generando...' : 'Generar con IA'}
+              {generando ? 'Generando Plan Completo con IA...' : '✨ Generar Plan Completo con IA'}
             </button>
           </div>
         )}
 
         {step === 2 && (
           <div className="space-y-6">
-            <SectionTitle icon="✨" title="Análisis y Beneficios" />
+            <SectionTitle icon="✨" title="Análisis de Beneficios y Recursos" />
             
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-2">Beneficios Esperados</label>
-              <textarea
-                name="beneficios"
-                value={formData.beneficios}
-                onChange={handleChange}
-                placeholder="¿Qué beneficios se esperan obtener con esta mejora?"
-                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Beneficios Esperados *</label>
+                <textarea
+                  name="beneficios"
+                  value={formData.beneficios}
+                  onChange={handleChange}
+                  placeholder="Lista los beneficios cuantificables..."
+                  className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Justificación de Beneficios</label>
+                <textarea
+                  name="just_beneficios"
+                  value={formData.just_beneficios}
+                  onChange={handleChange}
+                  placeholder="¿Por qué son importantes estos beneficios?"
+                  className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Impacto Esperado</label>
+                <select name="impacto_esperado" value={formData.impacto_esperado} onChange={handleChange} className="w-full p-3 border border-slate-200 rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  <option value="Alto">🔴 Alto</option>
+                  <option value="Medio">🟡 Medio</option>
+                  <option value="Bajo">🟢 Bajo</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Presupuesto Estimado (MXN)</label>
+                <input
+                  name="presupuesto"
+                  type="number"
+                  value={formData.presupuesto}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full p-3 border border-slate-200 rounded-lg"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-2">Equipo de Trabajo</label>
+              <label className="block text-sm font-semibold text-slate-600 mb-2">Equipo de Trabajo *</label>
               <input
                 name="equipo_trabajo"
                 value={formData.equipo_trabajo}
                 onChange={handleChange}
-                placeholder="Nombres de los integrantes del equipo..."
+                placeholder="Nombres de los integrantes (separados por coma)..."
                 className="w-full p-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
               />
+              <p className="text-xs text-slate-500 mt-1">Puedes agregar más integrantes después</p>
             </div>
           </div>
         )}
