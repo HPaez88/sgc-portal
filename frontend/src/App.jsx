@@ -1342,11 +1342,25 @@ function IndicadoresView() {
     return Math.round(suma / indicadoresArea.length);
   };
   
+  const getProcesoCumplimiento = (proceso, mesesEval) => {
+    const indicadoresProceso = indicadores.filter(i => i.proceso === proceso);
+    if (indicadoresProceso.length === 0) return 0;
+    const suma = indicadoresProceso.reduce((acc, ind) => acc + getCumplimiento(ind.id, mesesEval), 0);
+    return Math.round(suma / indicadoresProceso.length);
+  };
+  
   const getAreaTrimestralCump = (area, trim) => {
     const mesesTrim = trim === 1 ? ['Ene', 'Feb', 'Mar'] : 
                   trim === 2 ? ['Abr', 'May', 'Jun'] :
                   trim === 3 ? ['Jul', 'Ago', 'Sep'] : ['Oct', 'Nov', 'Dic'];
     return getAreaCumplimiento(area, mesesTrim);
+  };
+  
+  const getProcesoTrimestralCump = (proceso, trim) => {
+    const mesesTrim = trim === 1 ? ['Ene', 'Feb', 'Mar'] : 
+                  trim === 2 ? ['Abr', 'May', 'Jun'] :
+                  trim === 3 ? ['Jul', 'Ago', 'Sep'] : ['Oct', 'Nov', 'Dic'];
+    return getProcesoCumplimiento(proceso, mesesTrim);
   };
   
   const guardarResultado = (indicadorId, mes, valor) => {
@@ -1381,15 +1395,15 @@ function IndicadoresView() {
     return seguimientos.filter(s => s.id === indicadorId);
   };
 
-  // Calculate area statistics for summary cards
-  const areaStats = AREAS.map(area => {
-    const inds = indicadores.filter(i => i.area === area);
-    if (inds.length === 0) return { area, cumplimiento: 0, count: 0 };
+  // Calculate process statistics for summary cards (more concise)
+  const procesoStats = PROCESOS.map(proceso => {
+    const inds = indicadores.filter(i => i.proceso === proceso);
+    if (inds.length === 0) return { proceso, cumplimiento: 0, count: 0 };
     const cumpleTotal = inds.reduce((acc, ind) => {
       return acc + getCumplimiento(ind.id, meses);
     }, 0);
-    return { area, cumplimiento: Math.round(cumpleTotal / inds.length), count: inds.length };
-  }).filter(a => a.count > 0);
+    return { proceso, cumplimiento: Math.round(cumpleTotal / inds.length), count: inds.length };
+  }).filter(p => p.count > 0);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -1462,18 +1476,18 @@ function IndicadoresView() {
 
       {vista === 'mensual' ? (
         <>
-          {/* Resumen por Área */}
+          {/* Resumen por Proceso */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {areaStats.map(stat => {
+            {procesoStats.map(stat => {
               const sem = getSemaphoreColor(stat.cumplimiento);
               return (
-                <div key={stat.area} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/10 border-${sem.bg.replace('bg-', 'border-')}`}>
+                <div key={stat.proceso} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/10 border-${sem.bg.replace('bg-', 'border-')}`}>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-slate-500 truncate flex-1">{stat.area}</p>
+                    <p className="text-xs text-slate-500 truncate flex-1">{stat.proceso}</p>
                     <span className="text-lg">{sem.icon}</span>
                   </div>
                   <p className={`text-2xl font-bold ${sem.text}`}>{stat.cumplimiento}%</p>
-                  <p className="text-xs text-slate-500">{stat.count} indicadores</p>
+                  <p className="text-xs text-slate-500">{stat.count} inds.</p>
                 </div>
               );
             })}
@@ -1548,19 +1562,19 @@ function IndicadoresView() {
         </>
       ) : (
         <>
-          {/* Vista Trimestral - Resumen por Trimestre */}
+          {/* Vista Trimestral - Resumen por Proceso */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {areaStats.map(stat => {
-              const cump = getAreaTrimestralCump(stat.area, trimestre);
+            {procesoStats.map(stat => {
+              const cump = getProcesoTrimestralCump(stat.proceso, trimestre);
               const sem = getSemaphoreColor(cump);
               return (
-                <div key={stat.area} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/20`}>
+                <div key={stat.proceso} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/20`}>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-slate-500 truncate flex-1">{stat.area}</p>
+                    <p className="text-xs text-slate-500 truncate flex-1">{stat.proceso}</p>
                     <span className="text-lg">{sem.icon}</span>
                   </div>
                   <p className={`text-2xl font-bold ${sem.text}`}>{cump}%</p>
-                  <p className="text-xs text-slate-500">T{trimestre} {anioActual}</p>
+                  <p className="text-xs text-slate-500">T{trimestre}</p>
                 </div>
               );
             })}
