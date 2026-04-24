@@ -1,4 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  LayoutDashboard, 
+  FileText, 
+  ClipboardCheck, 
+  AlertTriangle, 
+  Settings, 
+  Search, 
+  Bell, 
+  Menu, 
+  FileUp, 
+  X,
+  ChevronRight,
+  Droplet,
+  CheckCircle2,
+  Clock,
+  FileEdit
+} from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import AccionCorrectivaForm from './components/AccionCorrectivaForm';
 import PlanMejoraForm from './components/PlanMejoraForm';
@@ -18,282 +35,222 @@ const COLORES = {
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showNewDocMenu, setShowNewDocMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
 
   const navItems = [
-    { id: 'dashboard', label: 'Panel Principal', icon: '📊' },
-    { id: 'documents', label: 'Documentos', icon: '📄' },
-    { id: 'audits', label: 'Auditorías', icon: '🔍' },
-    { id: 'nc', label: 'No Conformidades', icon: '⚠️' },
-    { id: 'gestor', label: 'Aprobaciones', icon: '✅' },
-    { id: 'settings', label: 'Configuración', icon: '⚙️' },
+    { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
+    { id: 'ac', label: 'Acciones Correctivas', icon: AlertTriangle },
+    { id: 'pm', label: 'Planes de Mejora', icon: CheckCircle2 },
+    { id: 'gestor', label: 'Aprobaciones', icon: FileEdit },
+    { id: 'documents', label: 'Documentos', icon: FileText },
+    { id: 'audits', label: 'Auditorías', icon: ClipboardCheck },
+    { id: 'nc', label: 'No Conformidades', icon: AlertTriangle },
+    { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
-  const handleNewDoc = (type) => {
-    setShowNewDocMenu(false);
-    if (type === 'ac') setActiveTab('ac');
-    if (type === 'pm') setActiveTab('pm');
+  const recentDocuments = [
+    { id: 1, title: 'Manual de Calidad del Agua v3.0', status: 'Aprobado', date: '23 Abr 2026', author: 'Ing. López', type: 'Manual' },
+    { id: 2, title: 'Procedimiento de Saneamiento', status: 'En Revisión', date: '20 Abr 2026', author: 'Lic. García', type: 'Proceso' },
+    { id: 3, title: 'Registro de Mantenimiento de Bombas', status: 'Borrador', date: '18 Abr 2026', author: 'Ing. Martínez', type: 'Registro' },
+  ];
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'Aprobado': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'En Revisión': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'Borrador': return 'bg-slate-100 text-slate-700 border-slate-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
   };
 
   const activeItem = navItems.find(item => item.id === activeTab);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: COLORES.grisClaro, fontFamily: "'Poppins', sans-serif", overflow: 'hidden' }}>
+    <div className="flex h-screen bg-[#f8fafc] font-sans text-slate-800 overflow-hidden">
       
       {/* Sidebar */}
-      <aside style={{
-        position: 'fixed',
-        left: isSidebarOpen ? 0 : -280,
-        top: 0, bottom: 0,
-        width: 280,
-        background: COLORES.azulOscuro,
-        transition: 'transform 0.4s ease',
-        zIndex: 50,
-        display: 'flex', flexDirection: 'column',
-      }}>
-        {/* Logo */}
-        <div style={{ padding: '1.5rem 2rem', background: '#00152e', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.1 }}>
-            <span style={{ fontSize: '5rem' }}>💧</span>
+      <aside 
+        className={`${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } fixed inset-y-0 left-0 z-50 w-72 bg-[#001f42] text-slate-300 transition-transform duration-400 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl`}
+      >
+        {/* Logo Area */}
+        <div className="h-24 flex items-center px-8 bg-[#00152e] relative overflow-hidden">
+          <div className="absolute right-0 top-0 opacity-10">
+            <Droplet size={120} className="text-cyan-400 -mt-10 -mr-10" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 1 }}>
-            <div style={{
-              width: 44, height: 44,
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #06b6d4, #2A78B0)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(6,182,212,0.3)',
-            }}>
-              <span style={{ fontSize: '1.5rem' }}>💧</span>
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+              <Droplet size={24} className="text-white" fill="currentColor" />
             </div>
             <div>
-              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORES.blanco, lineHeight: 1.2, display: 'block' }}>OOMAPASC</span>
-              <span style={{ fontSize: '0.65rem', color: COLORES.cyan, letterSpacing: 2, fontWeight: 600 }}>PORTAL SGC</span>
+              <span className="block text-xl font-bold tracking-wide text-white leading-tight">OOMAPASC</span>
+              <span className="block text-xs text-cyan-400 font-medium tracking-wider">PORTAL SGC</span>
             </div>
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} style={{ 
-            position: 'absolute', right: 16, top: 16, 
-            background: 'none', border: 'none', color: COLORES.blanco, 
-            fontSize: '1.25rem', cursor: 'pointer', display: 'none' 
-          }}>✕</button>
+          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden absolute right-6 text-slate-400 hover:text-white transition-colors">
+            <X size={24} />
+          </button>
         </div>
-
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: '2rem 1rem', overflow: 'auto' }}>
-          <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: 2, marginBottom: '1rem', paddingLeft: '1rem' }}>MENÚ PRINCIPAL</p>
-          {navItems.map(item => {
+        
+        {/* Navegación */}
+        <nav className="flex-1 mt-8 px-4 space-y-2 overflow-y-auto">
+          <p className="px-4 text-xs font-semibold text-slate-500 tracking-widest uppercase mb-4">Menú Principal</p>
+          {navItems.map((item) => {
+            const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }}
-                style={{
-                  width: '100%',
-                  padding: '0.875rem 1rem',
-                  border: 'none',
-                  borderRadius: '12px',
-                  background: isActive ? 'rgba(6,182,212,0.1)' : 'transparent',
-                  color: isActive ? COLORES.cyan : 'rgba(255,255,255,0.7)',
-                  fontWeight: isActive ? 600 : 400,
-                  fontSize: '0.9rem',
-                  display: 'flex', alignItems: 'center', gap: '0.75rem',
-                  cursor: 'pointer',
-                  marginBottom: '0.5rem',
-                  transition: 'all 0.3s',
-                  borderLeft: isActive ? '3px solid #06b6d4' : '3px solid transparent',
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsSidebarOpen(false);
                 }}
+                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group ${
+                  isActive 
+                    ? 'bg-gradient-to-r from-cyan-500/10 to-transparent text-cyan-400 font-semibold border-l-4 border-cyan-400' 
+                    : 'hover:bg-white/5 hover:text-white border-l-4 border-transparent'
+                }`}
               >
-                <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
-                <span>{item.label}</span>
-                {isActive && <span style={{ marginLeft: 'auto', animation: 'pulse 2s infinite' }}>›</span>}
+                <div className="flex items-center space-x-3">
+                  <Icon size={20} className={isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-300 transition-colors'} />
+                  <span>{item.label}</span>
+                </div>
+                {isActive && <ChevronRight size={16} className="text-cyan-400 animate-pulse" />}
               </button>
             );
           })}
         </nav>
 
-        {/* User */}
-        <div style={{ padding: '1rem', margin: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ width: 40, height: 40, borderRadius: '50%', background: COLORES.cyan, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORES.blanco, fontWeight: 700 }}>
-            A
-          </div>
-          <div>
-            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: COLORES.blanco, margin: 0 }}>Admin. SGC</p>
-            <p style={{ fontSize: '0.7rem', color: COLORES.cyan, margin: 0 }}>Calidad y Procesos</p>
-          </div>
+        {/* User Profile */}
+        <div className="p-4 m-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer">
+           <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold shadow-inner">
+             A
+           </div>
+           <div>
+             <p className="text-sm font-medium text-white">Admin. SGC</p>
+             <p className="text-xs text-cyan-300">Calidad y Procesos</p>
+           </div>
         </div>
       </aside>
 
-      {/* Overlay */}
+      {/* Overlay para móviles */}
       {isSidebarOpen && (
-        <div onClick={() => setIsSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,47,85,0.4)', zIndex: 40 }} />
+        <div 
+          className="fixed inset-0 bg-[#001f42]/40 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
 
-      {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginLeft: 0, transition: 'margin-left 0.3s' }}>
+      {/* Contenido Principal */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f8fafc]">
         
         {/* Header */}
-        <header style={{
-          background: COLORES.blanco,
-          borderBottom: '1px solid #e2e8f0',
-          padding: '1rem 2.5rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 30,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button onClick={() => setIsSidebarOpen(true)} style={{ 
-              background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer',
-              padding: '0.5rem', borderRadius: 8, color: COLORES.texto 
-            }}>☰</button>
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/50 flex items-center justify-between px-6 lg:px-10 z-30 sticky top-0">
+          <div className="flex items-center">
+            <button 
+              onClick={() => setIsSidebarOpen(true)} 
+              className="mr-4 md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+            >
+              <Menu size={24} />
+            </button>
             
-            <div style={{ position: 'relative' }}>
-              <input type="text" placeholder="Buscar en el SGC..." style={{
-                padding: '0.625rem 1rem 0.625rem 2.75rem',
-                borderRadius: '999px',
-                border: '1px solid #e2e8f0',
-                background: '#f8fafc',
-                width: 320,
-                fontSize: '0.85rem',
-                outline: 'none',
-                transition: 'all 0.3s',
-              }} />
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.9rem' }}>🔍</span>
+            <div className="relative hidden md:block group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-500 transition-colors" size={18} />
+              <input 
+                type="text" 
+                placeholder="Buscar en el SGC..." 
+                className="pl-11 pr-4 py-2.5 w-72 lg:w-96 rounded-full border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-300 shadow-sm text-sm"
+              />
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative' }}>
-            <button style={{ position: 'relative', padding: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>
-              🔔
-              <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, background: COLORES.rojo, borderRadius: '50%', border: '2px solid #fff' }} />
+          <div className="flex items-center space-x-3 sm:space-x-5">
+            <button className="relative p-2.5 rounded-full text-slate-400 hover:text-[#002855] hover:bg-slate-100 transition-all duration-300">
+              <Bell size={20} />
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
             </button>
             
-            <div style={{ position: 'relative' }}>
-              <button 
-                onClick={() => setShowNewDocMenu(!showNewDocMenu)}
-                style={{
-                  padding: '0.625rem 1.25rem',
-                  background: COLORES.azulOscuro,
-                  color: COLORES.blanco,
-                  border: 'none',
-                  borderRadius: '999px',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(0,40,85,0.3)',
-                  transition: 'all 0.3s',
-                }}
-              >
-                <span style={{ fontSize: '1rem' }}>📄</span>
-                <span>Nuevo Documento</span>
-              </button>
-
-              {/* Dropdown */}
-              {showNewDocMenu && (
-                <div style={{
-                  position: 'absolute', top: '100%', right: 0, marginTop: 8,
-                  background: COLORES.blanco, borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-                  overflow: 'hidden', zIndex: 100, minWidth: 220,
-                  border: '1px solid #e2e8f0',
-                }}>
-                  <button onClick={() => handleNewDoc('ac')} style={{
-                    width: '100%', padding: '1rem 1.25rem',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    fontSize: '0.9rem', color: COLORES.texto,
-                    transition: 'background 0.2s',
-                  }}>
-                    <span style={{ fontSize: '1.25rem' }}>⚡</span>
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontWeight: 600 }}>Acción Correctiva</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Registrar NC</div>
-                    </div>
-                  </button>
-                  <div style={{ height: 1, background: '#e2e8f0' }} />
-                  <button onClick={() => handleNewDoc('pm')} style={{
-                    width: '100%', padding: '1rem 1.25rem',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    fontSize: '0.9rem', color: COLORES.texto,
-                    transition: 'background 0.2s',
-                  }}>
-                    <span style={{ fontSize: '1.25rem' }}>🎯</span>
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontWeight: 600 }}>Plan de Mejora</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Nueva mejora</div>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
+            <button className="flex items-center justify-center space-x-2 bg-[#002855] hover:bg-[#00152e] text-white px-5 py-2.5 rounded-full font-medium transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:-translate-y-0.5 group">
+              <FileUp size={18} className="group-hover:animate-bounce" />
+              <span className="hidden sm:inline text-sm">Nuevo Documento</span>
+            </button>
           </div>
         </header>
 
-        {/* Content */}
-        <main style={{ flex: 1, padding: '2.5rem', overflow: 'auto' }}>
-          {/* Title */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '2rem', fontWeight: 700, color: COLORES.azulOscuro, margin: 0 }}>
-              {activeItem?.label}
-            </h1>
-            <p style={{ fontSize: '0.9rem', color: COLORES.texto, margin: '0.5rem 0 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: COLORES.cyan }}>✓</span>
-              Sistema de Gestión de Calidad - OOMAPASC de Cajeme
-            </p>
-          </div>
-
-          {/* Views */}
-          {activeTab === 'dashboard' && <Dashboard />}
+        {/* Main Content */}
+        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
           
-          {activeTab === 'ac' && (
-            <div style={{ maxWidth: 900, margin: '0 auto' }}>
-              <AccionCorrectivaForm onSuccess={() => {}} />
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Título */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 animate-fade-in-up">
+              <div>
+                <h1 className="text-3xl font-extrabold text-[#002855] tracking-tight">
+                  {activeItem?.label}
+                </h1>
+                <p className="text-slate-500 mt-1.5 flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-cyan-500" />
+                  Sistema de Gestión de Calidad - OOMAPAS de Cajeme
+                </p>
+              </div>
             </div>
-          )}
 
-          {activeTab === 'pm' && (
-            <div style={{ maxWidth: 900, margin: '0 auto' }}>
-              <PlanMejoraForm onSuccess={() => {}} />
-            </div>
-          )}
-
-          {activeTab === 'gestor' && <GestorAprobaciones />}
-
-          {activeTab === 'documents' && (
-            <div style={{ background: COLORES.blanco, borderRadius: 16, padding: '3rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📄</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORES.azulOscuro, marginBottom: '0.5rem' }}>Módulo de Documentos</h3>
-              <p style={{ color: COLORES.texto }}>Sección en construcción</p>
-            </div>
-          )}
-
-          {activeTab === 'audits' && (
-            <div style={{ background: COLORES.blanco, borderRadius: 16, padding: '3rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORES.azulOscuro, marginBottom: '0.5rem' }}>Módulo de Auditorías</h3>
-              <p style={{ color: COLORES.texto }}>Sección en construcción</p>
-            </div>
-          )}
-
-          {activeTab === 'nc' && (
-            <div style={{ background: COLORES.blanco, borderRadius: 16, padding: '3rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORES.azulOscuro, marginBottom: '0.5rem' }}>No Conformidades</h3>
-              <p style={{ color: COLORES.texto }}>Sección en construcción</p>
-            </div>
-          )}
-
-          {activeTab === 'settings' && (
-            <div style={{ background: COLORES.blanco, borderRadius: 16, padding: '3rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚙️</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORES.azulOscuro, marginBottom: '0.5rem' }}>Configuración</h3>
-              <p style={{ color: COLORES.texto }}>Sección en construcción</p>
-            </div>
-          )}
+            {/* Vistas dinámicas */}
+            {activeTab === 'dashboard' ? (
+              <Dashboard />
+            ) : activeTab === 'ac' ? (
+              <div className="max-w-4xl mx-auto">
+                <AccionCorrectivaForm onSuccess={() => {}} />
+              </div>
+            ) : activeTab === 'pm' ? (
+              <div className="max-w-4xl mx-auto">
+                <PlanMejoraForm onSuccess={() => {}} />
+              </div>
+            ) : activeTab === 'gestor' ? (
+              <GestorAprobaciones />
+            ) : (
+              // Placeholder para otras secciones
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
+                  {(() => {
+                    const ActiveIcon = navItems.find(item => item.id === activeTab)?.icon;
+                    return ActiveIcon ? <ActiveIcon size={40} /> : null;
+                  })()}
+                </div>
+                <h3 className="text-xl font-bold text-[#002855] mb-2">Sección en Construcción</h3>
+                <p className="text-slate-500 max-w-md">
+                  El módulo de {navItems.find(item => item.id === activeTab)?.label.toLowerCase()} se está adaptando al nuevo diseño institucional de OOMAPAS de Cajeme.
+                </p>
+              </div>
+            )}
+          </div>
         </main>
       </div>
+
+      {/* Animaciones CSS */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.5s ease-out forwards;
+        }
+      `}} />
     </div>
   );
 }
