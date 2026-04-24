@@ -1,4 +1,10 @@
-export const AREAS = ['Operación', 'Mantenimiento', 'Comercialización', 'Calidad', 'Administración'];
+export const AREAS = [
+  'Operación',
+  'Mantenimiento',
+  'Comercialización',
+  'Calidad',
+  'Administración'
+];
 
 export const DIRECCIONES = [
   'Dir. General',

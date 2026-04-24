@@ -1441,7 +1441,7 @@ function RiesgosView() {
 
 function SettingsView() {
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
-  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '' });
+  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '', password: '' });
   
   const [procesos, setProcesos] = useState([
     'Comercialización', 'Comunicación', 'Gestión de Recursos', 'Mantenimiento y Calibración',
@@ -1514,12 +1514,15 @@ function SettingsView() {
   const agregarUsuario = () => {
     if (!nuevoUsuario.nombre || !nuevoUsuario.email || !nuevoUsuario.area) return;
     setUsuarios(prev => [...prev, { ...nuevoUsuario, id: prev.length + 1 }]);
-    setNuevoUsuario({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '' });
+    setNuevoUsuario({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '', password: '' });
     setMostrarModalUser(false);
   };
 
   const eliminarUsuario = (id) => {
-    setUsuarios(prev => prev.filter(u => u.id !== id));
+    setConfirmDelete({ show: true, type: 'usuario', name: id, action: () => {
+      setUsuarios(prev => prev.filter(u => u.id !== id));
+      setConfirmDelete({ show: false, type: '', name: '', action: null });
+    }});
   };
 
   const getRolBadge = (rol) => getRolColor(rol);
@@ -1527,7 +1530,7 @@ function SettingsView() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Total Usuarios</p>
           <p className="text-2xl font-bold text-[#002855]">{usuarios.length}</p>
@@ -1543,6 +1546,10 @@ function SettingsView() {
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Áreas</p>
           <p className="text-2xl font-bold text-[#002855]">{areas.length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500">Direcciones</p>
+          <p className="text-2xl font-bold text-[#002855]">{direcciones.length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Procesos</p>
@@ -1571,6 +1578,7 @@ function SettingsView() {
               <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Dirección</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Rol</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Contraseña</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Acciones</th>
             </tr>
           </thead>
@@ -1588,9 +1596,17 @@ function SettingsView() {
                   </span>
                 </td>
                 <td className="p-3">
-                  <button onClick={() => eliminarUsuario(u.id)} className="p-2 text-red-500 hover:bg-red-50 rounded">
-                    <Trash2 size={16} />
-                  </button>
+                  <span className="text-sm text-slate-500">{u.password ? '••••••••' : '-'}</span>
+                </td>
+                <td className="p-3">
+                  <div className="flex gap-2">
+                    <button onClick={() => { const newPass = prompt('Nueva contraseña para ' + u.nombre + ':'); if (newPass) setUsuarios(usuarios.map(x => x.id === u.id ? {...x, password: newPass} : x)); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded" title="Cambiar contraseña">
+                      <Edit size={16} />
+                    </button>
+                    <button onClick={() => eliminarUsuario(u.id)} className="p-2 text-red-500 hover:bg-red-50 rounded">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -1767,6 +1783,10 @@ function SettingsView() {
                   <option value="Encargado">Encargado (Gerente)</option>
                   <option value="Admin">Admin (Control Total)</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Contraseña</label>
+                <input type="password" value={nuevoUsuario.password || ''} onChange={(e) => setNuevoUsuario({...nuevoUsuario, password: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Contraseña inicial..." />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
