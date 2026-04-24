@@ -552,17 +552,25 @@ function AccionCorrectivaView() {
   const [success, setSuccess] = useState(false);
   const [errores, setErrores] = useState({});
   
+  const usuarioActual = usuarios?.find(u => u.rol === 'Admin' || u.rol === 'Auditor') ? null : usuarios?.[0];
+  const puedeTodasAreas = usuarioActual?.rol === 'Admin' || usuarioActual?.rol === 'Auditor' || usuarioActual?.rol === 'Super Admin';
+  
   const [formData, setFormData] = useState({
-    fecha_deteccion: '',
+    codigo: `AC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+    fecha_deteccion: new Date().toISOString().split('T')[0],
     proceso: '',
-    area: '',
+    area: puedeTodasAreas ? '' : usuarioActual?.area || '',
     origen: '',
     num_auditoria: '',
-    indicador: '',
+    indicador_ref: '',
     descripcion_nc: '',
     posibles_causas: '',
     causa_raiz: '',
+    clasificacion: '',
+    tipo_accion: '',
     accion_contencion: '',
+    evidencia_contencion: '',
+    eficacia: '',
     actividades: [],
     estado: 'BORRADOR'
   });
@@ -604,7 +612,17 @@ function AccionCorrectivaView() {
   const agregarActividad = () => {
     setFormData(prev => ({
       ...prev,
-      actividades: [...prev.actividades, { descripcion: '', responsable: '', fecha_limite: '', estado: 'PENDIENTE' }]
+      actividades: [...prev.actividades, { 
+        descripcion: '', 
+        responsable: '', 
+        fecha_limite: '',
+        tipo: 'CORRECCION',
+        evidencia: '',
+        evidencia_verificacion: '',
+        resultado: '',
+        estado: 'PENDIENTE',
+        observacion: ''
+      }]
     }));
   };
 
@@ -688,9 +706,20 @@ Sé profesional, específico y orientado a la solución inmediata.`;
               ...prev,
               posibles_causas: parsed.posibles_causas || '',
               causa_raiz: parsed.causa_raiz || '',
+              clasificacion: parsed.clasificacion || 'Menor',
+              tipo_accion: parsed.tipo_accion || 'Acción Correctiva',
               accion_contencion: parsed.accion_contencion || '',
-              actividades: parsed.actividades?.length ? parsed.actividades : prev.actividades
+              evidencia_contencion: parsed.evidencia_contencion || '',
+              actividades: parsed.actividades?.length ? parsed.actividades.map(a => ({
+                ...a,
+                evidencia: a.evidencia || '',
+                evidencia_verificacion: a.evidencia_verificacion || '',
+                resultado: a.resultado || '',
+                estado: 'PENDIENTE',
+                observacion: a.observacion || ''
+              })) : prev.actividades
             }));
+            setStep(2);
           }
         } catch (e) {
           alert('La IA generó una respuesta con formato inválido. Intenta de nuevo.');
@@ -722,9 +751,23 @@ Sé profesional, específico y orientado a la solución inmediata.`;
       alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
       setSuccess(false);
       setFormData({
-        fecha_deteccion: '', proceso: '', area: '', origen: '', num_auditoria: '', indicador: '', descripcion_nc: '',
-        posibles_causas: '', causa_raiz: '', accion_contencion: '',
-        actividades: [], estado: 'BORRADOR'
+        codigo: `AC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+        fecha_deteccion: new Date().toISOString().split('T')[0],
+        proceso: '',
+        area: puedeTodasAreas ? '' : usuarioActual?.area || '',
+        origen: '',
+        num_auditoria: '',
+        indicador_ref: '',
+        descripcion_nc: '',
+        posibles_causas: '',
+        causa_raiz: '',
+        clasificacion: '',
+        tipo_accion: '',
+        accion_contencion: '',
+        evidencia_contencion: '',
+        eficacia: '',
+        actividades: [],
+        estado: 'BORRADOR'
       });
       setStep(1);
     }, 500);
@@ -767,6 +810,7 @@ Sé profesional, específico y orientado a la solución inmediata.`;
               <div>
                 <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={AREAS} />
                 {errores.area && <p className="text-red-500 text-xs mt-1">{errores.area}</p>}
+                {!puedeTodasAreas && <p className="text-xs text-cyan-600 mt-1">Solo tu área</p>}
               </div>
               <div>
                 <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={PROCESOS} />
@@ -865,38 +909,69 @@ Sé profesional, específico y orientado a la solución inmediata.`;
           <div className="space-y-6">
             <SectionTitle icon="🔍" title="Análisis de Causa Raíz (6M)" required />
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Clasificación NC *</label>
+                <select name="clasificacion" value={formData.clasificacion} onChange={handleChange} className="w-full p-3 border border-slate-200 rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  <option value="Mayor">🔴 Mayor</option>
+                  <option value="Menor">🟡 Menor</option>
+                  <option value="Observación">🟢 Observación</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-2">Tipo de Acción</label>
+                <select name="tipo_accion" value={formData.tipo_accion} onChange={handleChange} className="w-full p-3 border border-slate-200 rounded-lg">
+                  <option value="">Seleccionar...</option>
+                  <option value="Acción Correctiva">Acción Correctiva</option>
+                  <option value="Acción Preventiva">Acción Preventiva</option>
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-2">Posibles Causas</label>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Posibles Causas (6M: Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)</label>
               <textarea
                 name="posibles_causas"
                 value={formData.posibles_causas}
                 onChange={handleChange}
-                placeholder="Lista las posibles causas (Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)..."
-                className={`w-full p-4 border rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all ${errores.posibles_causas ? 'border-red-500' : 'border-slate-200'}`}
+                placeholder="Lista las posibles causas..."
+                className={`w-full p-4 border rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 ${errores.posibles_causas ? 'border-red-500' : 'border-slate-200'}`}
               />
               {errores.posibles_causas && <p className="text-red-500 text-xs mt-1">{errores.posibles_causas}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-2">Causa Raíz Identificada</label>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Causa Raíz Identificada *</label>
               <textarea
                 name="causa_raiz"
                 value={formData.causa_raiz}
                 onChange={handleChange}
                 placeholder="¿Cuál es la causa raíz?"
-                className={`w-full p-4 border rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all ${errores.causa_raiz ? 'border-red-500' : 'border-slate-200'}`}
+                className={`w-full p-4 border rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 ${errores.causa_raiz ? 'border-red-500' : 'border-slate-200'}`}
               />
               {errores.causa_raiz && <p className="text-red-500 text-xs mt-1">{errores.causa_raiz}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-2">Acción de Contención</label>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Acción de Contención Inmediata</label>
               <textarea
                 name="accion_contencion"
                 value={formData.accion_contencion}
                 onChange={handleChange}
                 placeholder="¿Qué acción inmediata se tomó para contener el problema?"
-                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-2">Evidencia de Contención</label>
+              <input
+                name="evidencia_contencion"
+                value={formData.evidencia_contencion}
+                onChange={handleChange}
+                placeholder="Evidencia que sustenta la contención..."
+                className="w-full p-3 border border-slate-200 rounded-lg"
               />
             </div>
           </div>
@@ -907,7 +982,7 @@ Sé profesional, específico y orientado a la solución inmediata.`;
             <SectionTitle icon="📋" title="Plan de Actividades" required />
             {errores.actividades && <p className="text-red-500 text-sm -mt-4">{errores.actividades}</p>}
             
-            <div className="space-y-4">
+<div className="space-y-4">
               {formData.actividades.map((act, idx) => (
                 <div key={idx} className="p-4 border border-slate-200 rounded-xl space-y-3">
                   <div className="flex justify-between items-center">
@@ -928,18 +1003,33 @@ Sé profesional, específico y orientado a la solución inmediata.`;
                       value={act.responsable}
                       onChange={(e) => actualizarActividad(idx, 'responsable', e.target.value)}
                       placeholder="Responsable"
-                      className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                      className="p-2 border border-slate-200 rounded-lg focus:outline-none"
                     />
                     <input
                       type="date"
                       value={act.fecha_limite}
                       onChange={(e) => actualizarActividad(idx, 'fecha_limite', e.target.value)}
-                      className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                      className="p-2 border border-slate-200 rounded-lg focus:outline-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <select value={act.tipo || 'CORRECCION'} onChange={(e) => actualizarActividad(idx, 'tipo', e.target.value)} className="p-2 border border-slate-200 rounded-lg text-sm">
+                      <option value="CORRECCION">Corrección</option>
+                      <option value="PREVENTIVA">Preventiva</option>
+                      <option value="VERIFICACION">Verificación</option>
+                      <option value="CIERRE">Cierre</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={act.evidencia}
+                      onChange={(e) => actualizarActividad(idx, 'evidencia', e.target.value)}
+                      placeholder="Evidencia requerida"
+                      className="p-2 border border-slate-200 rounded-lg text-sm"
                     />
                   </div>
                 </div>
               ))}
-              
+               
               <button
                 onClick={agregarActividad}
                 className="flex items-center gap-2 w-full p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 hover:border-cyan-500 hover:text-cyan-500 transition-all"
@@ -1966,14 +2056,14 @@ function RiesgosView() {
           <thead className="bg-slate-50">
             <tr>
               <th className="p-3 text-sm font-semibold text-slate-600">Riesgo/Oportunidad</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Causa</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Dirección</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Proceso</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Prob.</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Imp.</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Nivel</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Plan de Acción</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Fecha Término</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Fecha</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Evaluación</th>
             </tr>
           </thead>
