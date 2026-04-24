@@ -152,14 +152,47 @@ SGC page/
 
 ---
 
-## 9. Referencias UI
+## 11. Sistema de Usuarios (Fase 2 - Pendiente)
+
+### Descripción
+- Login por área
+- Cada usuario ve solo su área
+- Admin ve todo
+- Subir evidencia de actividades
+
+### Modelos Necesarios
+- Usuario: id, username, password, rol (ADMIN/USUARIO), area
+- Área: asignada a cada usuario
+
+### Funcionalidades
+- [ ] Login/logout
+- [ ] Sesión por área
+- [ ] Dashboard por área
+- [ ] Subir evidencia (fotos, documentos)
+
+### Dashboard por Área
+- [ ] Resultados de auditorías
+- [ ] Matrices de riesgos y oportunidades
+- [ ] Acciones correctivas del área
+- [ ] Planes de mejora del área
+- [ ] Indicadores mensuales
+
+---
+
+## 12. Referencias UI Adicionales
 
 - https://dribbble.com/shots/27307815-UI-UX-Design-for-Viora-Health-Tracking-Platform
 - https://dribbble.com/shots/26408113-Chartmogul-CRM-platform-redesign
 
 ---
 
-## 10. Contacto del Proyecto
+## 13. Mejoras UI Pendientes
+
+- [ ] Dashboard más limpio y ligero
+- [ ] Títulos más visibles
+- [ ] Mejor contraste de colores
+- [ ] Layout tipo tracking de actividades
+- [ ] Tarjetas con mejor estructura
 
 - **Desarrollador actual:** opencode AI
 - **Dueño del proyecto:** Humberto Páez
