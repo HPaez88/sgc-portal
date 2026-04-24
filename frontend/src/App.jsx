@@ -341,13 +341,9 @@ function AccionCorrectivaView() {
   const [loading, setLoading] = useState(false);
   const [generando, setGenerando] = useState(false);
   const [formData, setFormData] = useState({
-    codigo: '',
     fecha_deteccion: '',
-    area: '',
     proceso: '',
     descripcion_nc: '',
-    tipo_nc: '',
-    categoria: '',
     posibles_causas: '',
     causa_raiz: '',
     accion_contencion: '',
@@ -355,9 +351,16 @@ function AccionCorrectivaView() {
     estado: 'BORRADOR'
   });
 
-  const areas = ['Dirección', 'Calidad', 'Operación', 'Mantenimiento', 'Comercial', 'Administración'];
-  const procesos = ['Captación', 'Potabilización', 'Distribución', 'Cobro', 'Atención al Cliente', 'Mantenimiento'];
-  const tipos_nc = ['No Conformidad Mayor', 'No Conformidad Menor', 'Observación', 'Oportunidad de Mejora'];
+  const procesos = [
+    'Comercialización',
+    'Comunicación',
+    'Gestión de Recursos',
+    'Mantenimiento y Calibración',
+    'Medición Análisis y Mejora',
+    'Producción',
+    'Proyectos e Infraestructura',
+    'Responsabilidad de la Dirección'
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -425,8 +428,8 @@ function AccionCorrectivaView() {
         alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
         if (enviar) {
           setFormData({
-            codigo: '', fecha_deteccion: '', area: '', proceso: '', descripcion_nc: '',
-            tipo_nc: '', categoria: '', posibles_causas: '', causa_raiz: '', accion_contencion: '',
+            fecha_deteccion: '', proceso: '', descripcion_nc: '',
+            posibles_causas: '', causa_raiz: '', accion_contencion: '',
             actividades: [], estado: 'BORRADOR'
           });
           setStep(1);
@@ -462,12 +465,9 @@ function AccionCorrectivaView() {
         {step === 1 && (
           <div className="space-y-6">
             <SectionTitle icon="📋" title="Datos del Documento" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <InputField label="Código" name="codigo" value={formData.codigo} onChange={handleChange} placeholder="AC-2026-001" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField label="Fecha Detección" name="fecha_deteccion" type="date" value={formData.fecha_deteccion} onChange={handleChange} />
-              <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={areas} />
               <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={procesos} />
-              <SelectField label="Tipo de NC" name="tipo_nc" value={formData.tipo_nc} onChange={handleChange} options={tipos_nc} />
             </div>
 
             <SectionTitle icon="⚠️" title="Descripción de la No Conformidad" required />
@@ -1247,25 +1247,54 @@ function RiesgosView() {
 
 function SettingsView() {
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
-  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario' });
+  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '' });
   
-  const procesos = [
+  const [procesos, setProcesos] = useState([
     'Comercialización', 'Comunicación', 'Gestión de Recursos', 'Mantenimiento y Calibración',
     'Medición Análisis y Mejora', 'Producción', 'Proyectos e Infraestructura', 'Responsabilidad de la Dirección'
-  ];
-
+  ]);
+  
+  const [areas, setAreas] = useState([
+    'Dirección', 'Calidad', 'Operación', 'Mantenimiento', 'Comercial', 'Administración'
+  ]);
+  
+  const [nuevoProceso, setNuevoProceso] = useState('');
+  const [nuevaArea, setNuevaArea] = useState('');
+  
+  const agregarProceso = () => {
+    if (nuevoProceso && !procesos.includes(nuevoProceso)) {
+      setProcesos([...procesos, nuevoProceso]);
+      setNuevoProceso('');
+    }
+  };
+  
+  const eliminarProceso = (p) => {
+    setProcesos(procesos.filter(x => x !== p));
+  };
+  
+  const agregarArea = () => {
+    if (nuevaArea && !areas.includes(nuevaArea)) {
+      setAreas([...areas, nuevaArea]);
+      setNuevaArea('');
+    }
+  };
+  
+  const eliminarArea = (a) => {
+    setAreas(areas.filter(x => x !== a));
+  };
+  
   const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Producción', rol: 'Encargado' },
-    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Comunicación', rol: 'Usuario' },
-    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento y Calibración', rol: 'Encargado' },
-    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Comercialización', rol: 'Usuario' },
-    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Medición Análisis y Mejora', rol: 'Encargado' },
+    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Operación', rol: 'Admin', direccion: 'Norte' },
+    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Comunicación', rol: 'Usuario', direccion: 'Sur' },
+    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento', rol: 'Encargado', direccion: 'Norte' },
+    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Administración', rol: 'Usuario', direccion: 'Centro' },
+    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Calidad', rol: 'Encargado', direccion: 'Centro' },
   ]);
 
   const agregarUsuario = () => {
     if (!nuevoUsuario.nombre || !nuevoUsuario.email || !nuevoUsuario.area) return;
     setUsuarios(prev => [...prev, { ...nuevoUsuario, id: prev.length + 1 }]);
-    setNuevoUsuario({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario' });
+    setNuevoUsuario({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '' });
     setMostrarModalUser(false);
   };
 
@@ -1273,25 +1302,37 @@ function SettingsView() {
     setUsuarios(prev => prev.filter(u => u.id !== id));
   };
 
+  const getRolBadge = (rol) => {
+    switch(rol) {
+      case 'Admin': return 'bg-purple-100 text-purple-700';
+      case 'Encargado': return 'bg-cyan-100 text-cyan-700';
+      default: return 'bg-slate-100 text-slate-600';
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Total Usuarios</p>
           <p className="text-2xl font-bold text-[#002855]">{usuarios.length}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <p className="text-xs text-slate-500">Admins</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.rol === 'Admin').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Encargados</p>
           <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.rol === 'Encargado').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
-          <p className="text-xs text-slate-500">Áreas Activas</p>
-          <p className="text-2xl font-bold text-[#002855]">{procesos.length}</p>
+          <p className="text-xs text-slate-500">Áreas</p>
+          <p className="text-2xl font-bold text-[#002855]">{areas.length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
-          <p className="text-xs text-slate-500">Con Email</p>
-          <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.email).length}</p>
+          <p className="text-xs text-slate-500">Procesos</p>
+          <p className="text-2xl font-bold text-[#002855]">{procesos.length}</p>
         </div>
       </div>
 
@@ -1313,7 +1354,8 @@ function SettingsView() {
               <th className="p-3 text-sm font-semibold text-slate-600">Nombre</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Email</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Teléfono</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Área/Proceso</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Dirección</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Rol</th>
               <th className="p-3 text-sm font-semibold text-slate-600">Acciones</th>
             </tr>
@@ -1325,8 +1367,9 @@ function SettingsView() {
                 <td className="p-3 text-sm text-slate-600">{u.email}</td>
                 <td className="p-3 text-sm text-slate-600">{u.telefono}</td>
                 <td className="p-3 text-sm text-slate-600">{u.area}</td>
+                <td className="p-3 text-sm text-slate-600">{u.direccion || '-'}</td>
                 <td className="p-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${u.rol === 'Encargado' ? 'bg-cyan-100 text-cyan-700' : 'bg-slate-100 text-slate-600'}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getRolBadge(u.rol)}`}>
                     {u.rol}
                   </span>
                 </td>
@@ -1341,19 +1384,71 @@ function SettingsView() {
         </table>
       </div>
 
-      {/* Procesos/Áreas */}
+      {/* Áreas */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
           <h2 className="font-bold text-[#002855] flex items-center gap-2">
             <Building size={20} className="text-cyan-500" />
-            Procesos del Organismo
+            Catálogo de Áreas
           </h2>
+          <div className="flex gap-2">
+            <input 
+              value={nuevaArea} 
+              onChange={(e) => setNuevaArea(e.target.value)}
+              placeholder="Nueva área..." 
+              className="p-2 border border-slate-200 rounded-lg text-sm"
+              onKeyDown={(e) => e.key === 'Enter' && agregarArea()}
+            />
+            <button onClick={agregarArea} className="px-3 py-2 bg-cyan-500 text-white rounded-lg text-sm hover:bg-cyan-600">
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
+        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {areas.map(a => (
+            <div key={a} className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-500" />
+                <span className="text-sm text-slate-700">{a}</span>
+              </div>
+              <button onClick={() => eliminarArea(a)} className="text-red-400 hover:text-red-600">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Procesos */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-bold text-[#002855] flex items-center gap-2">
+            <Building size={20} className="text-cyan-500" />
+            Catálogo de Procesos
+          </h2>
+          <div className="flex gap-2">
+            <input 
+              value={nuevoProceso} 
+              onChange={(e) => setNuevoProceso(e.target.value)}
+              placeholder="Nuevo proceso..." 
+              className="p-2 border border-slate-200 rounded-lg text-sm"
+              onKeyDown={(e) => e.key === 'Enter' && agregarProceso()}
+            />
+            <button onClick={agregarProceso} className="px-3 py-2 bg-cyan-500 text-white rounded-lg text-sm hover:bg-cyan-600">
+              <Plus size={16} />
+            </button>
+          </div>
         </div>
         <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
           {procesos.map(p => (
-            <div key={p} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <span className="text-sm text-slate-700">{p}</span>
+            <div key={p} className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-500" />
+                <span className="text-sm text-slate-700">{p}</span>
+              </div>
+              <button onClick={() => eliminarProceso(p)} className="text-red-400 hover:text-red-600">
+                <Trash2 size={14} />
+              </button>
             </div>
           ))}
         </div>
@@ -1389,10 +1484,20 @@ function SettingsView() {
                 <input value={nuevoUsuario.telefono} onChange={(e) => setNuevoUsuario({...nuevoUsuario, telefono: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="644XXXXXXX" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Área/Proceso</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Área</label>
                 <select value={nuevoUsuario.area} onChange={(e) => setNuevoUsuario({...nuevoUsuario, area: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
                   <option value="">Seleccionar...</option>
-                  {procesos.map(p => <option key={p} value={p}>{p}</option>)}
+                  {areas.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Dirección (para reportes)</label>
+                <select value={nuevoUsuario.direccion} onChange={(e) => setNuevoUsuario({...nuevoUsuario, direccion: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                  <option value="">Sin dirección asignada</option>
+                  <option value="Norte">Norte</option>
+                  <option value="Sur">Sur</option>
+                  <option value="Centro">Centro</option>
+                  <option value="Costa">Costa</option>
                 </select>
               </div>
               <div>
@@ -1400,6 +1505,7 @@ function SettingsView() {
                 <select value={nuevoUsuario.rol} onChange={(e) => setNuevoUsuario({...nuevoUsuario, rol: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
                   <option value="Usuario">Usuario</option>
                   <option value="Encargado">Encargado (Gerente)</option>
+                  <option value="Admin">Admin (Control Total)</option>
                 </select>
               </div>
             </div>
