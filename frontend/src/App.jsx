@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
   ClipboardCheck, 
   AlertTriangle, 
   Settings, 
-  Search, 
-  Bell, 
-  Menu, 
-  FileUp, 
+  Search,
+  Bell,
+  Menu,
+  FileUp,
   X,
   ChevronRight,
   Droplet,
@@ -28,9 +28,16 @@ import {
   Users,
   Phone,
   Mail,
-  Building
+  Building,
+  Eye,
+  Edit,
+  Filter,
+  Download,
+  Check
 } from 'lucide-react';
 import { getApiUrl } from './config';
+import { AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, getColorNivel, getNivelRiesgo, getEstadoColor, getRolColor } from './catalogs';
+import { useLocalStorage, useFormValidation } from './hooks';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -340,9 +347,15 @@ function AccionCorrectivaView() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generando, setGenerando] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errores, setErrores] = useState({});
+  
   const [formData, setFormData] = useState({
     fecha_deteccion: '',
     proceso: '',
+    area: '',
+    origen: '',
+    num_auditoria: '',
     descripcion_nc: '',
     posibles_causas: '',
     causa_raiz: '',
@@ -351,20 +364,38 @@ function AccionCorrectivaView() {
     estado: 'BORRADOR'
   });
 
-  const procesos = [
-    'Comercialización',
-    'Comunicación',
-    'Gestión de Recursos',
-    'Mantenimiento y Calibración',
-    'Medición Análisis y Mejora',
-    'Producción',
-    'Proyectos e Infraestructura',
-    'Responsabilidad de la Dirección'
-  ];
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errores[name]) {
+      setErrores(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateStep = (currentStep) => {
+    const newErrors = {};
+    
+    if (currentStep === 1) {
+      if (!formData.fecha_deteccion) newErrors.fecha_deteccion = 'Requerido';
+      if (!formData.area) newErrors.area = 'Requerido';
+      if (!formData.proceso) newErrors.proceso = 'Requerido';
+      if (!formData.origen) newErrors.origen = 'Requerido';
+      if (!formData.descripcion_nc) newErrors.descripcion_nc = 'Requerido';
+    }
+    
+    if (currentStep === 2) {
+      if (!formData.posibles_causas) newErrors.posibles_causas = 'Requerido';
+      if (!formData.causa_raiz) newErrors.causa_raiz = 'Requerido';
+    }
+    
+    if (currentStep === 3) {
+      if (formData.actividades.length === 0) {
+        newErrors.actividades = 'Agrega al menos una actividad';
+      }
+    }
+    
+    setErrores(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const agregarActividad = () => {
@@ -392,29 +423,67 @@ function AccionCorrectivaView() {
     }
     setGenerando(true);
     try {
-      const resp = await fetch(getApiUrl('/api/v1/ai/generar-ac'), {
+      const prompt = `Eres un experto en Sistema de Gestión de Calidad ISO 9001. Analiza la siguiente No Conformidad y genera:
+1. Posibles causas (usa los 6M: Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)
+2. Causa raíz identificada
+3. Acción de contención inmediata
+4. Plan de actividades (3-5 acciones con responsable y fecha sugerida)
+
+No Conformidad: ${formData.descripcion_nc}
+
+Responde en JSON:
+{
+  "posibles_causas": "...",
+  "causa_raiz": "...",
+  "accion_contencion": "...",
+  "actividades": [{"descripcion": "...", "responsable": "...", "fecha_limite": "...", "estado": "PENDIENTE"}]
+}`;
+      
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descripcion: formData.descripcion_nc })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY || 'gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 2000
+        })
       });
+      
       const data = await resp.json();
-      if (data.ok) {
-        setFormData(prev => ({
-          ...prev,
-          posibles_causas: data.data.posibles_causas || '',
-          causa_raiz: data.data.causa_raiz || '',
-          accion_contencion: data.data.accion_contencion || '',
-          actividades: data.data.actividades?.length ? data.data.actividades : prev.actividades
-        }));
+      if (data.choices && data.choices[0]?.message?.content) {
+        try {
+          const jsonMatch = data.choices[0].message.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            setFormData(prev => ({
+              ...prev,
+              posibles_causas: parsed.posibles_causas || '',
+              causa_raiz: parsed.causa_raiz || '',
+              accion_contencion: parsed.accion_contencion || '',
+              actividades: parsed.actividades?.length ? parsed.actividades : prev.actividades
+            }));
+          }
+        } catch (e) {
+          alert('La IA generó una respuesta con formato inválido. Intenta de nuevo.');
+        }
       }
     } catch (err) {
       console.error(err);
+      alert('Error al generar con IA. Verifica la API key');
     } finally {
       setGenerando(false);
     }
   };
 
   const guardar = async (enviar = false) => {
+    if (enviar && !validateStep(3)) {
+      return;
+    }
+    
     setLoading(true);
     try {
       const payload = { ...formData, estado: enviar ? 'EN_REVISION' : 'BORRADOR' };
@@ -425,20 +494,31 @@ function AccionCorrectivaView() {
       });
       const data = await resp.json();
       if (data.ok) {
-        alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
-        if (enviar) {
-          setFormData({
-            fecha_deteccion: '', proceso: '', descripcion_nc: '',
-            posibles_causas: '', causa_raiz: '', accion_contencion: '',
-            actividades: [], estado: 'BORRADOR'
-          });
-          setStep(1);
-        }
+        setSuccess(true);
+        setTimeout(() => {
+          alert(enviar ? 'Enviado a revisión' : 'Guardado como borrador');
+          setSuccess(false);
+          if (enviar) {
+            setFormData({
+              fecha_deteccion: '', proceso: '', area: '', origen: '', num_auditoria: '', descripcion_nc: '',
+              posibles_causas: '', causa_raiz: '', accion_contencion: '',
+              actividades: [], estado: 'BORRADOR'
+            });
+            setStep(1);
+          }
+        }, 500);
       }
     } catch (err) {
       console.error(err);
+      alert('Error al guardar. Intenta de nuevo.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (validateStep(step)) {
+      setStep(s => Math.min(3, s + 1));
     }
   };
 
@@ -466,18 +546,38 @@ function AccionCorrectivaView() {
           <div className="space-y-6">
             <SectionTitle icon="📋" title="Datos del Documento" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InputField label="Fecha Detección" name="fecha_deteccion" type="date" value={formData.fecha_deteccion} onChange={handleChange} />
-              <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={procesos} />
+              <div>
+                <InputField label="Fecha Detección" name="fecha_deteccion" type="date" value={formData.fecha_deteccion} onChange={handleChange} />
+                {errores.fecha_deteccion && <p className="text-red-500 text-xs mt-1">{errores.fecha_deteccion}</p>}
+              </div>
+              <div>
+                <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={AREAS} />
+                {errores.area && <p className="text-red-500 text-xs mt-1">{errores.area}</p>}
+              </div>
+              <div>
+                <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={PROCESOS} />
+                {errores.proceso && <p className="text-red-500 text-xs mt-1">{errores.proceso}</p>}
+              </div>
+              <div>
+                <SelectField label="Origen de la AC" name="origen" value={formData.origen} onChange={handleChange} options={ORIGENES_AC} />
+                {errores.origen && <p className="text-red-500 text-xs mt-1">{errores.origen}</p>}
+              </div>
+              {formData.origen === 'Auditoría' && (
+                <InputField label="No. de Auditoría" name="num_auditoria" value={formData.num_auditoria} onChange={handleChange} placeholder="AUD-2026-XXX" />
+              )}
             </div>
 
-            <SectionTitle icon="⚠️" title="Descripción de la No Conformidad" required />
-            <textarea
-              name="descripcion_nc"
-              value={formData.descripcion_nc}
-              onChange={handleChange}
-              placeholder="Describe la no conformidad detectada..."
-              className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
-            />
+            <div>
+              <SectionTitle icon="⚠️" title="Descripción de la No Conformidad" required />
+              <textarea
+                name="descripcion_nc"
+                value={formData.descripcion_nc}
+                onChange={handleChange}
+                placeholder="Describe la no conformidad detectada..."
+                className={`w-full p-4 border rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all ${errores.descripcion_nc ? 'border-red-500' : 'border-slate-200'}`}
+              />
+              {errores.descripcion_nc && <p className="text-red-500 text-xs mt-1">{errores.descripcion_nc}</p>}
+            </div>
 
             <button
               onClick={generarConIA}
@@ -485,7 +585,7 @@ function AccionCorrectivaView() {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
             >
               {generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              Generar con IA
+              {generando ? 'Generando...' : 'Generar con IA'}
             </button>
           </div>
         )}
@@ -501,8 +601,9 @@ function AccionCorrectivaView() {
                 value={formData.posibles_causas}
                 onChange={handleChange}
                 placeholder="Lista las posibles causas (Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)..."
-                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                className={`w-full p-4 border rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all ${errores.posibles_causas ? 'border-red-500' : 'border-slate-200'}`}
               />
+              {errores.posibles_causas && <p className="text-red-500 text-xs mt-1">{errores.posibles_causas}</p>}
             </div>
 
             <div>
@@ -512,8 +613,9 @@ function AccionCorrectivaView() {
                 value={formData.causa_raiz}
                 onChange={handleChange}
                 placeholder="¿Cuál es la causa raíz?"
-                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                className={`w-full p-4 border rounded-xl resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all ${errores.causa_raiz ? 'border-red-500' : 'border-slate-200'}`}
               />
+              {errores.causa_raiz && <p className="text-red-500 text-xs mt-1">{errores.causa_raiz}</p>}
             </div>
 
             <div>
@@ -532,6 +634,7 @@ function AccionCorrectivaView() {
         {step === 3 && (
           <div className="space-y-6">
             <SectionTitle icon="📋" title="Plan de Actividades" required />
+            {errores.actividades && <p className="text-red-500 text-sm -mt-4">{errores.actividades}</p>}
             
             <div className="space-y-4">
               {formData.actividades.map((act, idx) => (
@@ -577,6 +680,14 @@ function AccionCorrectivaView() {
           </div>
         )}
 
+        {/* Success Message */}
+        {success && (
+          <div className="fixed top-4 right-4 bg-emerald-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-pulse z-50">
+            <Check size={18} />
+            ¡Guardado exitosamente!
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-between pt-6 border-t border-slate-200">
           <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium disabled:opacity-50 transition-all">
@@ -584,17 +695,17 @@ function AccionCorrectivaView() {
           </button>
           <div className="flex gap-3">
             <button onClick={() => guardar(false)} disabled={loading} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-all">
-              <Save size={18} />
-              Guardar Borrador
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              {loading ? 'Guardando...' : 'Guardar Borrador'}
             </button>
             {step < 3 ? (
-              <button onClick={() => setStep(s => Math.min(3, s + 1))} className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500 text-white hover:bg-cyan-600 rounded-xl font-medium shadow-md shadow-cyan-500/20 transition-all">
+              <button onClick={handleNext} className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500 text-white hover:bg-cyan-600 rounded-xl font-medium shadow-md shadow-cyan-500/20 transition-all">
                 Siguiente
               </button>
             ) : (
               <button onClick={() => guardar(true)} disabled={loading} className="flex items-center gap-2 px-6 py-2.5 bg-[#002855] text-white hover:bg-[#00152e] rounded-xl font-medium shadow-lg shadow-blue-900/20 transition-all">
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                Enviar a Revisión
+                {loading ? 'Enviando...' : 'Enviar a Revisión'}
               </button>
             )}
           </div>
@@ -620,9 +731,6 @@ function PlanMejoraView() {
     actividades: [],
     estado: 'BORRADOR'
   });
-
-  const areas = ['Dirección', 'Calidad', 'Operación', 'Mantenimiento', 'Comercial', 'Administración'];
-  const procesos = ['Captación', 'Potabilización', 'Distribución', 'Cobro', 'Atención al Cliente', 'Mantenimiento'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -654,22 +762,55 @@ function PlanMejoraView() {
     }
     setGenerando(true);
     try {
-      const resp = await fetch(getApiUrl('/api/v1/ai/generar-pm'), {
+      const prompt = `Eres un experto en Sistema de Gestión de Calidad ISO 9001. Analiza el siguiente Plan de Mejora y genera:
+1. Beneficios esperados
+2. Equipo de trabajo necesario
+3. Plan de actividades con indicadores, metas, responsables y fechas
+
+Situación Actual: ${formData.situacion_actual}
+Situación Deseada: ${formData.situacion_deseada}
+
+Responde en JSON:
+{
+  "beneficios": "...",
+  "equipo_trabajo": "...",
+  "actividades": [{"actividad": "...", "indicador": "...", "meta": "...", "responsable": "...", "fecha_inicio": "...", "fecha_fin": "...", "estado": "PENDIENTE"}]
+}`;
+      
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ situacion_actual: formData.situacion_actual, situacion_deseada: formData.situacion_deseada })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY || 'gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 2000
+        })
       });
+      
       const data = await resp.json();
-      if (data.ok) {
-        setFormData(prev => ({
-          ...prev,
-          beneficios: data.data.beneficios || '',
-          equipo_trabajo: data.data.equipo_trabajo || '',
-          actividades: data.data.actividades?.length ? data.data.actividades : prev.actividades
-        }));
+      if (data.choices && data.choices[0]?.message?.content) {
+        try {
+          const jsonMatch = data.choices[0].message.content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            setFormData(prev => ({
+              ...prev,
+              beneficios: parsed.beneficios || '',
+              equipo_trabajo: parsed.equipo_trabajo || '',
+              actividades: parsed.actividades?.length ? parsed.actividades : prev.actividades
+            }));
+          }
+        } catch (e) {
+          alert('La IA generó una respuesta con formato inválido. Intenta de nuevo.');
+        }
       }
     } catch (err) {
       console.error(err);
+      alert('Error al generar con IA. Verifica la API key');
     } finally {
       setGenerando(false);
     }
@@ -728,27 +869,31 @@ function PlanMejoraView() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputField label="Código" name="codigo" value={formData.codigo} onChange={handleChange} placeholder="PM-2026-001" />
               <InputField label="Fecha Elaboración" name="fecha_elaboracion" type="date" value={formData.fecha_elaboracion} onChange={handleChange} />
-              <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={areas} />
-              <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={procesos} />
+              <SelectField label="Área" name="area" value={formData.area} onChange={handleChange} options={AREAS} />
+              <SelectField label="Proceso" name="proceso" value={formData.proceso} onChange={handleChange} options={PROCESOS} />
             </div>
 
-            <SectionTitle icon="📈" title="Situación Actual" required />
-            <textarea
-              name="situacion_actual"
-              value={formData.situacion_actual}
-              onChange={handleChange}
-              placeholder="Describe la situación actual que desea mejorar..."
-              className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-            />
+            <div>
+              <SectionTitle icon="📈" title="Situación Actual" required />
+              <textarea
+                name="situacion_actual"
+                value={formData.situacion_actual}
+                onChange={handleChange}
+                placeholder="Describe la situación actual que desea mejorar..."
+                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+              />
+            </div>
 
-            <SectionTitle icon="🎯" title="Situación Deseada" required />
-            <textarea
-              name="situacion_deseada"
-              value={formData.situacion_deseada}
-              onChange={handleChange}
-              placeholder="¿Cuál es el objetivo o situación deseada?"
-              className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-            />
+            <div>
+              <SectionTitle icon="🎯" title="Situación Deseada" required />
+              <textarea
+                name="situacion_deseada"
+                value={formData.situacion_deseada}
+                onChange={handleChange}
+                placeholder="¿Cuál es el objetivo o situación deseada?"
+                className="w-full p-4 border border-slate-200 rounded-xl resize-none min-h-[100px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+              />
+            </div>
 
             <button
               onClick={generarConIA}
@@ -756,7 +901,7 @@ function PlanMejoraView() {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
             >
               {generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              Generar con IA
+              {generando ? 'Generando...' : 'Generar con IA'}
             </button>
           </div>
         )}
@@ -1085,32 +1230,27 @@ function IndicadoresView() {
 
 function RiesgosView() {
   const [mostrarModal, setMostrarModal] = useState(false);
-  const [nuevoRiesgo, setNuevoRiesgo] = useState({ riesgo: '', causa: '', efecto: '', probabilidad: 2, impacto: 2, control: '', tipo: 'Riesgo' });
-  
-  const procesos = [
-    'Comercialización', 'Comunicación', 'Gestión de Recursos', 'Mantenimiento y Calibración',
-    'Medición Análisis y Mejora', 'Producción', 'Proyectos e Infraestructura', 'Responsabilidad de la Dirección'
-  ];
+  const [nuevoRiesgo, setNuevoRiesgo] = useState({ 
+    riesgo: '', causa: '', efecto: '', probabilidad: 2, impacto: 2, 
+    control: '', tipo: 'Riesgo', area: '', direccion: '', proceso: '',
+    plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN'
+  });
 
   const [riesgos, setRiesgos] = useState([
-    { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo' },
-    { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo' },
-    { id: 3, riesgo: 'Quejas de clientes', causa: 'Atención lenta', efecto: 'Inconformidad', probabilidad: 3, impacto: 2, control: 'Capacitación', tipo: 'Riesgo' },
-    { id: 4, riesgo: 'Cortocircuito', causa: 'Cables viejas', efecto: 'Incendio', probabilidad: 1, impacto: 5, control: 'Renovación', tipo: 'Riesgo' },
-    { id: 5, riesgo: 'Clientes neuen', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad' },
+    { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo', area: 'Operación', direccion: 'Dir. Técnica', proceso: 'Producción', plan_accion: 'Mejorar monitoreo de cloro', fecha_termino: '2026-06-30', evaluacion: 'En proceso', estado_plan: 'EN_PROCESO' },
+    { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Técnica', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
+    { id: 3, riesgo: 'Quejas de clientes', causa: 'Atención lenta', efecto: 'Inconformidad', probabilidad: 3, impacto: 2, control: 'Capacitación', tipo: 'Riesgo', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Capacitación en atención', fecha_termino: '2026-05-15', evaluacion: 'Bueno', estado_plan: 'COMPLETADO' },
+    { id: 4, riesgo: 'Cortocircuito', causa: 'Cables viejas', efecto: 'Incendio', probabilidad: 1, impacto: 5, control: 'Renovación', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Administrativa', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
+    { id: 5, riesgo: 'Clientes nuevos', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Campaña de promo', fecha_termino: '2026-07-01', evaluacion: '', estado_plan: 'EN_PROCESO' },
   ]);
 
-  const getNivel = (prob, imp) => prob * imp;
-  const getColorNivel = (nivel) => {
-    if (nivel >= 15) return 'bg-red-600 text-white';
-    if (nivel >= 8) return 'bg-amber-500 text-white';
-    return 'bg-emerald-500 text-white';
-  };
+  const getNivel = (prob, imp) => getNivelRiesgo(prob, imp);
+  const getColor = (nivel) => getColor(nivel);
 
   const agregarRiesgo = () => {
     if (!nuevoRiesgo.riesgo) return;
     setRiesgos(prev => [...prev, { ...nuevoRiesgo, id: prev.length + 1 }]);
-    setNuevoRiesgo({ riesgo: '', causa: '', efecto: '', probabilidad: 2, impacto: 2, control: '', tipo: 'Riesgo' });
+    setNuevoRiesgo({ riesgo: '', causa: '', efecto: '', probabilidad: 2, impacto: 2, control: '', tipo: 'Riesgo', area: '', direccion: '', proceso: '', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' });
     setMostrarModal(false);
   };
 
@@ -1149,12 +1289,15 @@ function RiesgosView() {
           <thead className="bg-slate-50">
             <tr>
               <th className="p-3 text-sm font-semibold text-slate-600">Riesgo/Oportunidad</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Causa</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Efecto</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Dirección</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Proceso</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Prob.</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Imp.</th>
               <th className="p-3 text-sm font-semibold text-slate-600 text-center">Nivel</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Control</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Plan de Acción</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Fecha Término</th>
+              <th className="p-3 text-sm font-semibold text-slate-600">Evaluación</th>
             </tr>
           </thead>
           <tbody>
@@ -1167,8 +1310,9 @@ function RiesgosView() {
                       {r.riesgo}
                     </span>
                   </td>
-                  <td className="p-3 text-sm text-slate-600">{r.causa}</td>
-                  <td className="p-3 text-sm text-slate-600">{r.efecto}</td>
+                  <td className="p-3 text-sm text-slate-600">{r.area || '-'}</td>
+                  <td className="p-3 text-sm text-slate-600">{r.direccion || '-'}</td>
+                  <td className="p-3 text-sm text-slate-600">{r.proceso || '-'}</td>
                   <td className="p-3 text-center">
                     <select 
                       value={r.probabilidad}
@@ -1190,15 +1334,42 @@ function RiesgosView() {
                       }}
                       className="p-1 text-center text-sm border border-slate-200 rounded"
                     >
-                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                      {[1,2,3,4,5].map(n => <option key={n} value={n}</option>)}
                     </select>
                   </td>
                   <td className="p-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${getColorNivel(nivel)}`}>
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${getColor(nivel)}`}>
                       {nivel}
                     </span>
                   </td>
-                  <td className="p-3 text-sm text-slate-600">{r.control}</td>
+                  <td className="p-3">
+                    <input 
+                      value={r.plan_accion || ''}
+                      onChange={(e) => setRiesgos(prev => prev.map(x => x.id === r.id ? {...x, plan_accion: e.target.value} : x))}
+                      placeholder="Plan de acción..."
+                      className="p-1 text-sm border border-slate-200 rounded w-full"
+                    />
+                  </td>
+                  <td className="p-3">
+                    <input 
+                      type="date"
+                      value={r.fecha_termino || ''}
+                      onChange={(e) => setRiesgos(prev => prev.map(x => x.id === r.id ? {...x, fecha_termino: e.target.value} : x))}
+                      className="p-1 text-sm border border-slate-200 rounded"
+                    />
+                  </td>
+                  <td className="p-3">
+                    <select 
+                      value={r.evaluacion || ''}
+                      onChange={(e) => setRiesgos(prev => prev.map(x => x.id === r.id ? {...x, evaluacion: e.target.value} : x))}
+                      className="p-1 text-sm border border-slate-200 rounded"
+                    >
+                      <option value="">-</option>
+                      <option value="Bueno">Bueno</option>
+                      <option value="Regular">Regular</option>
+                      <option value="Malo">Malo</option>
+                    </select>
+                  </td>
                 </tr>
               );
             })}
@@ -1222,6 +1393,29 @@ function RiesgosView() {
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-1">Riesgo / Oportunidad</label>
                 <input value={nuevoRiesgo.riesgo} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, riesgo: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Descripción..." />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Área</label>
+                  <select value={nuevoRiesgo.area} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, area: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                    <option value="">Seleccionar...</option>
+                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Dirección</label>
+                  <select value={nuevoRiesgo.direccion} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, direccion: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                    <option value="">Seleccionar...</option>
+                    {DIRECCIONES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1">Proceso</label>
+                  <select value={nuevoRiesgo.proceso} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, proceso: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                    <option value="">Seleccionar...</option>
+                    {PROCESOS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1255,11 +1449,17 @@ function SettingsView() {
   ]);
   
   const [areas, setAreas] = useState([
-    'Dirección', 'Calidad', 'Operación', 'Mantenimiento', 'Comercial', 'Administración'
+    'Operación', 'Mantenimiento', 'Comercialización', 'Calidad', 'Administración'
+  ]);
+  
+  const [direcciones, setDirecciones] = useState([
+    'Dir. General', 'Dir. Técnica', 'Dir. Administrativa', 'Dir. Órganos de Control Interno', 'Dir. Comercial', 'Dir. Jurídica', 'Dir. Programas Sociales y Cultura del Agua'
   ]);
   
   const [nuevoProceso, setNuevoProceso] = useState('');
   const [nuevaArea, setNuevaArea] = useState('');
+  const [nuevaDireccion, setNuevaDireccion] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
   
   const agregarProceso = () => {
     if (nuevoProceso && !procesos.includes(nuevoProceso)) {
@@ -1269,7 +1469,10 @@ function SettingsView() {
   };
   
   const eliminarProceso = (p) => {
-    setProcesos(procesos.filter(x => x !== p));
+    setConfirmDelete({ show: true, type: 'proceso', name: p, action: () => {
+      setProcesos(procesos.filter(x => x !== p));
+      setConfirmDelete({ show: false, type: '', name: '', action: null });
+    }});
   };
   
   const agregarArea = () => {
@@ -1280,15 +1483,32 @@ function SettingsView() {
   };
   
   const eliminarArea = (a) => {
-    setAreas(areas.filter(x => x !== a));
+    setConfirmDelete({ show: true, type: 'área', name: a, action: () => {
+      setAreas(areas.filter(x => x !== a));
+      setConfirmDelete({ show: false, type: '', name: '', action: null });
+    }});
+  };
+  
+  const agregarDireccion = () => {
+    if (nuevaDireccion && !direcciones.includes(nuevaDireccion)) {
+      setDirecciones([...direcciones, nuevaDireccion]);
+      setNuevaDireccion('');
+    }
+  };
+  
+  const eliminarDireccion = (d) => {
+    setConfirmDelete({ show: true, type: 'dirección', name: d, action: () => {
+      setDirecciones(direcciones.filter(x => x !== d));
+      setConfirmDelete({ show: false, type: '', name: '', action: null });
+    }});
   };
   
   const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Operación', rol: 'Admin', direccion: 'Norte' },
-    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Comunicación', rol: 'Usuario', direccion: 'Sur' },
-    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento', rol: 'Encargado', direccion: 'Norte' },
-    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Administración', rol: 'Usuario', direccion: 'Centro' },
-    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Calidad', rol: 'Encargado', direccion: 'Centro' },
+    { id: 1, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Operación', rol: 'Admin', direccion: 'Dir. Técnica' },
+    { id: 2, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Comercialización', rol: 'Usuario', direccion: 'Dir. Comercial' },
+    { id: 3, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento', rol: 'Encargado', direccion: 'Dir. Técnica' },
+    { id: 4, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Administración', rol: 'Usuario', direccion: 'Dir. Administrativa' },
+    { id: 5, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Calidad', rol: 'Encargado', direccion: 'Dir. General' },
   ]);
 
   const agregarUsuario = () => {
@@ -1302,13 +1522,7 @@ function SettingsView() {
     setUsuarios(prev => prev.filter(u => u.id !== id));
   };
 
-  const getRolBadge = (rol) => {
-    switch(rol) {
-      case 'Admin': return 'bg-purple-100 text-purple-700';
-      case 'Encargado': return 'bg-cyan-100 text-cyan-700';
-      default: return 'bg-slate-100 text-slate-600';
-    }
-  };
+  const getRolBadge = (rol) => getRolColor(rol);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -1419,6 +1633,41 @@ function SettingsView() {
         </div>
       </div>
 
+      {/* Direcciones */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-bold text-[#002855] flex items-center gap-2">
+            <Building size={20} className="text-cyan-500" />
+            Catálogo de Direcciones
+          </h2>
+          <div className="flex gap-2">
+            <input 
+              value={nuevaDireccion} 
+              onChange={(e) => setNuevaDireccion(e.target.value)}
+              placeholder="Nueva dirección..." 
+              className="p-2 border border-slate-200 rounded-lg text-sm"
+              onKeyDown={(e) => e.key === 'Enter' && agregarDireccion()}
+            />
+            <button onClick={agregarDireccion} className="px-3 py-2 bg-cyan-500 text-white rounded-lg text-sm hover:bg-cyan-600">
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
+        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {direcciones.map(d => (
+            <div key={d} className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-500" />
+                <span className="text-sm text-slate-700">{d}</span>
+              </div>
+              <button onClick={() => eliminarDireccion(d)} className="text-red-400 hover:text-red-600">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Procesos */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
@@ -1465,6 +1714,20 @@ function SettingsView() {
         </ul>
       </div>
 
+      {/* Modal Confirmación Eliminar */}
+      {confirmDelete.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+            <h3 className="font-bold text-[#002855] mb-2">Confirmar eliminación</h3>
+            <p className="text-slate-600 mb-4">¿Estás seguro de eliminar <strong>{confirmDelete.type}</strong>: "{confirmDelete.name}"?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete({ show: false, type: '', name: '', action: null })} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button onClick={confirmDelete.action} className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Nuevo Usuario */}
       {mostrarModalUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -1491,13 +1754,10 @@ function SettingsView() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Dirección (para reportes)</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Dirección</label>
                 <select value={nuevoUsuario.direccion} onChange={(e) => setNuevoUsuario({...nuevoUsuario, direccion: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
-                  <option value="">Sin dirección asignada</option>
-                  <option value="Norte">Norte</option>
-                  <option value="Sur">Sur</option>
-                  <option value="Centro">Centro</option>
-                  <option value="Costa">Costa</option>
+                  <option value="">Seleccionar...</option>
+                  {direcciones.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
