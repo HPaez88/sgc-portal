@@ -1,276 +1,239 @@
-# Portal SGC - OOMAPASC de Cajeme
-## Documentación del Proyecto
+# SGC Portal - OOMAPASC de Cajeme
+## Documentación Técnica Completa
 
 ---
 
-## 1. Resumen del Proyecto
+## 1. RESUMEN DEL PROYECTO
 
 **Nombre:** Portal SGC (Sistema de Gestión de Calidad)  
 **Organización:** OOMAPASC de Cajeme (Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme)  
-**Versión:** 4.3.0  
-**Tecnología:** React + Vite (Frontend with localStorage persistence)  
-**URL en producción:** https://sgc-portal-933s.onrender.com  
-**Repositorio GitHub:** https://github.com/HPaez88/sgc-portal
+**Versión:** 4.3.6  
+**Tecnología:** React + Vite + TailwindCSS + Supabase
+**URL Producción:** https://sgc-portal-933s.onrender.com
+**Repositorio:** https://github.com/HPaez88/sgc-portal
 
 ---
 
-## 2. Estado Actual del Proyecto (25 abril 2026)
-
-### ✅ IMPLEMENTADO Y FUNCIONAL
-
-| Módulo | Estado | Notas |
-|--------|---------|-------|
-| Dashboard | ✅ | Stats con trend indicadores |
-| Acciones Correctivas (AC) | ✅ | Formulario 3 pasos, IA Agente, permisos por rol, campos ISO completos |
-| Planes de Mejora (PM) | ✅ | Formulario 3 pasos, IA Agente, permisos por rol, campos ISO completos |
-| Indicadores | ✅ | Vista mensual y trimestral, semáforo, por proceso |
-| Matriz de Riesgos | ✅ | Con plan de acción y evaluación, localStorage |
-| Gestión de Usuarios | ✅ | CRUD completo con roles, localStorage |
-| Configuración | ✅ | Catálogos editables (Áreas, Direcciones, Procesos) |
-| Aprobaciones | ✅ | Workflow de aprobación completo |
-| Documentos | ✅ | Catálogo, exportar, CRUD |
-| Auditorías | ✅ | Registro completo de auditorías |
-| Evidencias | ✅ | Sistema de evidencia por AC/PM |
-
-### ✅ MEJORAS IMPLEMENTADAS v4.3.0
--Sistema de Agentes IA (3 agentes especializados: AC, PM, Riesgos)
--Catálogos depurados (86 indicadores limpios)
--Permisos por rol (Usuario/Encargado solo su área, Admin/Auditor todas)
--Campos ISO completos en AC (clasificacion, tipo_accion, evidencia_contencion)
--Campos ISO completos en PM (just_beneficios, impacto_esperado, presupuesto)
--Props pasaron correctamente a componentes hijos
--Variables usuarioLogueado, puedeTodasAreas, areaUsuario definidas en App principal
-
-### 🔴 PENDIENTE
-
-| Módulo | Estado | Notas |
-|--------|---------|-------|
-| Backend API (Supabase) | 🔴 | Próximo paso |
-| Formatos Excel | 🔴 | Matching completo con formatos Excel |
-| Notificaciones email | 🔴 | No implementado |
-
----
-
-## 3. Catálogos del Sistema
-
-### ÁREAS (39 áreas de OOMAPASC)
-```
-- Sistema de Gestión de Calidad, Dirección General, Recursos Humanos
-- Recursos Materiales, Contabilidad, Seguridad Industrial, Licitaciones
-- Trámites Técnicos, Informática, Mtto. y servicios generales
-- Mantenimiento de Redes, Control de Calidad, Plantas Potabilizadoras
-- Alcantarillado y Saneamiento, Suburbano Técnico, Padrón de Usuarios
-- Control y Servicios, Verificación y Lectura, Agencia Providencia
-- Agencia Esperanza, Agencia Pueblo Yaqui, Agencia Marte R. Gómez
-- Dirección Comercial, Línea OOMAPASC, Contratos y Servicios
-- Proyectos e Infraestructura, Atención Ciudadana, Cartera
-- Compras, Taller Mecánico, Almacén, Legal, Archivo
-- Transparencia, Coord. Jurídico, Órgano de Control Interno, Trabajo Social
-```
-
-### DIRECCIONES
-```
-- General, Técnica, Administrativa, Órganos de Control Interno
-- Comercial, Jurídica, Programas Sociales y Cultura del Agua
-```
-
-### PROCESOS (ISO 9001)
-```
-- Comercialización, Comunicación, Gestión de Recursos
-- Mantenimiento y Calibración, Medición, Análisis y Mejora
-- Producción, Proyectos e Infraestructura
-- Responsabilidad de la Dirección
-```
-
-### ROLES (Jerarquía)
-```
-1. Super Admin (indestructible, solo 1 - Lic. Héctor Páez)
-2. Admin (complis área SGC, pueden ver info en todas las áreas)
-3. Auditor (crear AC/PM para cualquier área, no modifica indicadores)
-4. Encargado (solo su área: AC, PM, indicadores)
-5. Usuario (ver + indicators/evidencias, no documentos)
-```
-
-### INDICADORES (86 indicadores)
-- Presentes en catalogs.js, categorizados por área y proceso
-
----
-
-## 4. Arquitectura Técnica
+## 2. ARQUITECTURA DEL PROYECTO
 
 ```
 SGC page/
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx          # Todo el código React (~3200 líneas)
-│   │   ├── catalogs.js      # Catálogos centralizados
-│   │   ├── hooks.js         # useLocalStorage, useFormValidation (mejorados)
-│   │   ├── agents.js        # Sistema de Agentes IA (NUEVO)
-│   │   └── config.js        # API URL
-│   ├── package.json        # Dependencias
-│   └── dist/               # Build de producción
-├── formatos/                 # Archivos oficiales Excel
-│   ├── formato acción correctiva.xlsx
-│   ├── plan de mejora.xlsx
-│   ├── Control 6.xlsx
-│   └── Cuadro de Control Marzo 2026.xlsx
-├── formatos/Informes Auditorías/  # 33 informes PDF
+│   │   ├── App.jsx          # Componente principal (~3200 líneas)
+│   │   ├── catalogs.js      # Catálogos (áreas, procesos, indicadores)
+│   │   ├── hooks.js         # useLocalStorage, useFormValidation
+│   │   ├── supabase.js      # Cliente Supabase
+│   │   ├── exporters.js     # Exportar AC/PM
+│   │   ├── config.js        # Configuración API
+│   │   └── main.jsx        # Entry point
+│   ├── package.json
+│   └── dist/               # Build producción
+├── formatos/              # Excel/PDF formatos
+│   └── supabase-tables.sql # Schema DB
 └── DOCUMENTACION.md
 ```
 
-### Colores Institucionales
-- **Azul OOMAPASC:** #002855 (principal)
-- **Cyan-accent:** #06b6d4
-- **Fondo:** #f8fafc (slate-50)
+---
+
+## 3. ESTADO ACTUAL (25 abril 2026)
+
+### ✅ MÓDULOS FUNCIONALES
+- Dashboard
+- Acciones Correctivas (AC)
+- Planes de Mejora (PM)
+- Indicadores
+- Matriz de Riesgos
+- Configuración (Usuarios, Áreas, Procesos)
+- Documentos
+- Auditorías
+- Aprobaciones
+
+### ✅ INTEGRACIONES
+- Supabase conectado (URL: https://yrjlmqxpakjiwrfwhgaj.supabase.co)
+- Tablas creadas en Supabase (8 tablas)
+- localStorage como fallback
 
 ---
 
-## 5. Bugs Corregidos v4.3.0
+## 4. ESTRUCTURA DE DATOS
 
-### Bug 1: Pantalla Blanca en AC, PM, Riesgos
-**Problema:** Componentes usaban variables sin definirlas  
-**Causa:** `usuarios`, `puedeTodasAreas`, `areaUsuario` no se pasaban como props  
-**Solución:** Definidas en App principal y pasadas a todos los componentes hijos
+### 4.1 Tablas Supabase
+```sql
+usuarios
+acciones_correctivas
+planes_mejora
+indicadores_data
+riesgos
+documentos
+auditorias
+evidencias
+```
 
-### Bug 2: Catálogos Inconsistentes
-**Problema:** Áreas/procesos/direcciones no coincidían con indicadores  
-**Causa:** typos, espacios, nombres diferentes  
-**Solución:** 
-- Áreas faltantes agregadas
-- Proceso corregido: "Medición, Análisis y Mejora" (con coma)
-- Direcciones normalizadas
-- Espacios eliminados
-
-### Bug 3: hooks.js sin useCallback
-**Problema:** Renderizados innecesarios  
-**Solución:** useCallback agregado
-
----
-
-## 6. Módulos del Frontend
-
-### 6.1 Acciones Correctivas
-- **Pasos:** 1. Describir → 2. Analizar → 3. Plan de Acción
-- **Campos:** Fecha detección, Área, Proceso, Origen (Auditoría/Indicador/Queja/Otra)
-- **Origen Auditoría:** Número de auditoría
-- **Origen Indicador:** Selector de indicadores
-- **IA:** Genera causa raiz (6M), acción de contención, actividades
-- **Validación:** Campos requeridos paso a paso
-
-### 6.2 Planes de Mejora
-- **Pasos:** 1. Describir → 2. Análisis → 3.Plan
-- **Campos:** Situación actual/deseada, beneficios, equipo de trabajo
-- **IA:** Genera contenido completo
-
-### 6.3 Indicadores
-- **Vista Mensual:** Tabla con 12 columnas (Ene-Dic), captura inline
-- **Vista Trimestral:** Selector T1/T2/T3/T4, stats por área
-- **Semáforo:** 🟢 ≥80%, 🟡 50-79%, 🔴 <50%
-- **Cálculo:** Compara vs meta (>, <, =)
-
-### 6.4 Matriz de Riesgos
-- **Campos:** Área, Dirección, Proceso, Probabilidad(1-5), Impacto(1-5)
-- **Nivel:** Probabilidad × Impacto
-- **Plan de Acción:** editable en tabla
-- **Fecha término y Evaluación:** Bueno/Regular/Malo
-
-### 6.5 Gestión de Usuarios
-- **CRUD completo:** Nombre, Email, Teléfono, Área, Dirección, Rol, Contraseña
-- **Protección:** Super Admin no se puede eliminar
-- **Edición:** Modal completo
-
-### 6.6 Configuración
-- **Catálogos editables:** Áreas, Direcciones, Procesos
-- **Confirmación:** Al eliminar cualquier elemento
-
----
-
-## 7. Sistema de Agentes IA
-
-### Agentes Disponibles
-1. **Agente de Acciones Correctivas** - Análisis 6M, causa raíz, acciones
-2. **Agente de Planes de Mejora** - Análisis Gap, beneficios, plan
-3. **Agente de Gestión de Riesgos** - Matriz, controles, plan
-
-### Configuración
-- **Endpoint:** `https://api.groq.com/openai/v1/chat/completions`
-- **Modelo:** `llama-3.1-8b-instant`
-- **API Key:** Configurar en `.env` como `VITE_GROQ_API_KEY`
-
----
-
-## 9. Módulos de Export (exporters.js)
-
-### Funciones Disponibles
-- `exportToJSON(data, filename)` - Export to JSON
-- `exportToCSV(data, filename)` - Export to CSV  
-- `exportACToFormat(ac)` - Export AC to formatted TXT
-- `exportPMToFormat(pm)` - Export PM to formatted TXT
-
-### Uso futuro en componentes:
+### 4.2 Catálogos (catalogs.js)
 ```javascript
-import { exportACToFormat, exportPMToFormat } from './exporters';
+AREAS = [39 áreas de OOMAPASC]
+DIRECCIONES = [7 direcciones]
+PROCESOS = [8 procesos ISO 9001]
+INDICADORES = [86 indicadores]
+ORIGENES_AC = ["Auditoría", "Indicador", "Queja", "Otra"]
+```
 
-// En botones de AC:
-<button onClick={() => exportACToFormat(ac)}>Exportar</button>
+### 4.3 Roles
+- Super Admin (indestructible)
+- Admin
+- Auditor
+- Encargado
+- Usuario
+
+---
+
+## 5. COMPONENTES PRINCIPALES
+
+### 5.1 App.jsx
+Contiene TODOS los componentes en un solo archivo:
+- App() - Componente raíz
+- AccionCorrectivaView()
+- PlanMejoraView()
+- IndicadoresView()
+- RiesgosView()
+- SettingsView()
+- DocumentosView()
+- AuditoriasView()
+- GestorAprobacionesView()
+- Componentes auxiliares (StatCard, SectionTitle, etc)
+
+### 5.2 Props que deben PASARSE a cada componente:
+```javascript
+// App.jsx - estados principales
+const [accionesCorrectivas, setAccionesCorrectivas]
+const [planesMejora, setPlanesMejora]
+const [indicadoresData, setIndicadoresData]
+const [usuarios, setUsuarios]
+const [riesgos, setRiesgos]
+const [documentos, setDocumentos]
+const [auditorias, setAuditorias]
+const [evidencias, setEvidencias]
+const usuarioLogueado = usuarios[0]
+const puedeTodasAreas = es Admin/Auditor/Super Admin
+const areaUsuario = usuarioLogueado.area
+```
+
+### 5.3 Ejemplo de renderizado correcto:
+```jsx
+{activeTab === 'ac' && <AccionCorrectivaView 
+  accionesCorrectivas={accionesCorrectivas}
+  setAccionesCorrectivas={setAccionesCorrectivas}
+  evidencias={evidencias}
+  setEvidencias={setEvidencias}
+  usuarios={usuarios}
+  puedeTodasAreas={puedeTodasAreas}
+  areaUsuario={areaUsuario}
+/>}
 ```
 
 ---
 
-## 10. Pendientes Finales
+## 6. PROBLEMAS COMUNES Y SOLUCIONES
 
-### 🔴 CONFIGURAR SUPABASE (cuando tengas credenciales)
-1. Crear proyecto en supabase.com
-2. Obtener URL + anon key
-3. Configurar en .env:
+### 6.1 Pantalla Blanca
+**Causa:** Variables no pasadas como props
+**Solución:** Siempre pasar props desde App() a componentes hijos
+
+### 6.2 setDocumentos undefined
+**Causa:** Se usaba setDocumentos que no existe
+**Solución:** Componente SettingsView NO debe recibir documentos como prop
+
+### 6.3 setEditandoUsuario mal usado
+**Causa:** setEditandoUsuario({...u, show: true})
+**Solución:** setEditandoUsuario({ show: true, user: u })
+
+### 6.4 SelectField indicador_ref
+**Causa:** name="indicador" en lugar de name="indicador_ref"
+**Solución:** Verificar que el name coincida con formData
+
+---
+
+## 7. FUNCIONALIDADES IMPLEMENTADAS
+
+### 7.1 Acciones Correctivas
+- Formulario 3 pasos (Describir → Analizar → Plan)
+- Generación con IA (Groq API)
+- Evidencias adjuntas
+- Workflow de aprobación
+
+### 7.2 Planes de Mejora
+- Formulario 3 pasos
+- Situación actual/deseada
+- Beneficios y presupuesto
+- Actividades
+
+### 7.3 Indicadores
+- Captura mensual
+- Vista trimestral
+- Semáforo (verde/amarillo/rojo)
+
+### 7.4 Matriz de Riesgos
+- Probabilidad × Impacto
+- Plan de acción
+- Evaluación
+
+---
+
+## 8. VARIABLES DE ENTORNO
+
 ```
-VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJxxx
+VITE_SUPABASE_URL=https://yrjlmqxpakjiwrfwhgaj.supabase.co
+VITE_GROQ_API_KEY=... (para IA)
 ```
 
-### 🟡 MEDIA PRIORITY
+---
+
+## 9. PENDIENTES Y MEJORAS
+
+### PRIORIDAD ALTA
+- [ ] Sincronización automática con Supabase
+- [ ] Login real con Supabase Auth
+- [ ] Export Word/PDF real
+
+### PRIORIDAD MEDIA  
 - [ ] Notificaciones email
-- [ ] Evidencias cloud storage
-
-### 🟢 BAJA PRIORITY  
+- [ ] Evidencias en cloud storage
 - [ ] Gráficos/Charts
-- [ ] Calendario vencimientos
+
+### PRIORIDAD BAJA
+- [ ] Calendario de vencimientos
+- [ ] Dashboard personalizado
 
 ---
 
-## 9. Para Continuar el Desarrollo
+## 10. COMANDOS ÚTILES
 
-### Setup Local
 ```bash
-cd SGC page/frontend
+# Desarrollo
+cd frontend
 npm install
-npm run dev  # Desarrollo localhost:5173
-npm run build # Producción
-```
+npm run dev
 
-### Build y Deploy
-```bash
+# Producción
+npm run build
+
+# Deploy (auto en Render)
 git add -A
-git commit -m "descripción"
+git commit -m "descripcion"
 git push origin main
-# Render automáticamente hace build y deploy
-```
-
-### Variables de Entorno Needed
-```
-VITE_GROQ_API_KEY=gsk_xxxx...  # API key de Groq
 ```
 
 ---
 
-## 10. Contacto y Referencias
+## 11. CONTACTOS
 
-- **Dueño del proyecto:** Lic. Héctor Manuel Páez León (hpaez@oomapasc.gob.mx)
-- **Desarrollador actual:** opencode AI
-- **Repositorio:** https://github.com/HPaez88/sgc-portal
+- **Proyecto:** Lic. Héctor Manuel Páez León (hpaez@oomapasc.gob.mx)
+- **Desarrollo:** opencode AI
 - **Producción:** https://sgc-portal-933s.onrender.com
+- **Supabase:** https://yrjlmqxpakjiwrfwhgaj.supabase.co
 
 ---
 
 *Documento actualizado: 25 abril 2026*
-*Versión: 4.3.0*
+*Versión: 4.3.6*
