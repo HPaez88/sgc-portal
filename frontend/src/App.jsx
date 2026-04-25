@@ -2272,9 +2272,11 @@ function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocument
   const usuariosList = usuarios || [];
   const docList = documentos || [];
   
+  const safeSetUsuarios = typeof setUsuarios === 'function' ? setUsuarios : () => {};
+  
   const guardarEdicionUsuario = () => {
     if (editandoUsuario.user) {
-      setUsuarios(usuarios.map(u => u.id === editandoUsuario.user.id ? editandoUsuario.user : u));
+      safeSetUsuarios(usuariosList.map(u => u.id === editandoUsuario.user.id ? editandoUsuario.user : u));
       setEditandoUsuario({ show: false, user: null });
     }
   };
@@ -2323,14 +2325,14 @@ function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocument
   
   const agregarUsuario = () => {
     if (!nuevoUsuario.nombre || !nuevoUsuario.email || !nuevoUsuario.area) return;
-    setUsuarios(prev => [...prev, { ...nuevoUsuario, id: prev.length + 1 }]);
+    safeSetUsuarios(prev => [...prev, { ...nuevoUsuario, id: prev.length + 1 }]);
     setNuevoUsuario({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '', password: '' });
     setMostrarModalUser(false);
   };
 
   const eliminarUsuario = (id) => {
     setConfirmDelete({ show: true, type: 'usuario', name: id, action: () => {
-      setUsuarios(prev => prev.filter(u => u.id !== id));
+      safeSetUsuarios(prev => prev.filter(u => u.id !== id));
       setConfirmDelete({ show: false, type: '', name: '', action: null });
     }});
   };
