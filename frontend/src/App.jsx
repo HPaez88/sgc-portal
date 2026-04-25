@@ -147,6 +147,9 @@ function App() {
           sidebarCollapsed ? 'w-16' : 'w-72'
         }`}
       >
+        {/* Glow effect sutil */}
+        <div className="absolute top-0 left-0 w-full h-32 opacity-20 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, rgba(6, 182, 212, 0.3), transparent 70%)' }} />
+        
         <div className={`h-20 flex items-center bg-[#00152e] relative overflow-hidden ${sidebarCollapsed ? 'justify-center px-2' : 'px-6'}`}>
           <div className="absolute right-0 top-0 opacity-10 pointer-events-none">
             <Droplet size={120} className="text-cyan-400 -mt-10 -mr-10" />
