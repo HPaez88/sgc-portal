@@ -507,12 +507,12 @@ function App() {
               areaUsuario={areaUsuario}
             />}
 
-            {/* CONFIGURACIÓN */}
+{/* CONFIGURACIÓN */}
             {activeTab === 'settings' && <SettingsView 
               usuarios={usuarios}
               setUsuarios={setUsuarios}
               documentos={documentos}
-              setDocList={setDocList}
+              setDocumentos={setDocumentos}
             />}
 
             {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'riesgos' && activeTab !== 'settings' && activeTab !== 'gestor' && (
@@ -2257,7 +2257,7 @@ function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasAreas, areaUsuar
   );
 }
 
-function SettingsView({ usuarios, setUsuarios, documentos, setDocList }) {
+function SettingsView({ usuarios, setUsuarios, documentos, setDocumentos }) {
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
   const [procesos, setProcesos] = useState(PROCESOS);
   const [areas, setAreas] = useState(AREAS);
