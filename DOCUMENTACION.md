@@ -199,38 +199,42 @@ SGC page/
 
 ---
 
-## 8. Pendientes y Mejoras Detectadas
+## 9. Módulos de Export (exporters.js)
 
-### 🔴 PRIORIDAD 1 - CRÍTICO (Testing y Estabilidad)
+### Funciones Disponibles
+- `exportToJSON(data, filename)` - Export to JSON
+- `exportToCSV(data, filename)` - Export to CSV  
+- `exportACToFormat(ac)` - Export AC to formatted TXT
+- `exportPMToFormat(pm)` - Export PM to formatted TXT
 
-- [x] **Testing completo** - Verificar todos los módulos funcionan sin pantalla blanca
-- [x] **Verificar AC** - Acciones Correctivas abre correctamente
-- [x] **Verificar PM** - Planes de Mejora abre correctamente
-- [x] **Verificar Riesgos** - Matriz de Riesgos abre correctamente
-- [x] **Verificar Settings** - Configuración funciona correctamente
-- [x] **Verificar Documentos** - Módulo funciona
-- [x] **Verificar Auditorías** - Módulo funciona
+### Uso futuro en componentes:
+```javascript
+import { exportACToFormat, exportPMToFormat } from './exporters';
 
-### 🟡 PRIORIDAD 2 - ALTA (Backend)
+// En botones de AC:
+<button onClick={() => exportACToFormat(ac)}>Exportar</button>
+```
 
-- [ ] **Backend Supabase** - PostgreSQL cloud para persistencia
-- [ ] **Configurar variables** - VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-- [ ] **Sincronización** - Migrar localStorage a Supabase
-- [ ] **Auth** - Login real con Supabase Auth
+---
 
-### 🟠 PRIORIDAD 3 - MEDIA
+## 10. Pendientes Finales
 
-- [ ] **Export Word** - Generar documentos oficiales
-- [ ] **Export PDF** - Generar reportes en PDF
-- [ ] **Notificaciones email** - Alertas por vencimiento
-- [ ] **Evidencias cloud** - Subir archivos a storage
+### 🔴 CONFIGURAR SUPABASE (cuando tengas credenciales)
+1. Crear proyecto en supabase.com
+2. Obtener URL + anon key
+3. Configurar en .env:
+```
+VITE_SUPABASE_URL=https://xxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJxxx
+```
 
-### 🟢 PRIORIDAD 4 - BAJA
+### 🟡 MEDIA PRIORITY
+- [ ] Notificaciones email
+- [ ] Evidencias cloud storage
 
-- [ ] **Historial cambios** - Auditoría ISO 9001
-- [ ] **Dashboard personalizado** - Por usuario/área
-- [ ] **Gráficos** - Charts.js
-- [ ] **Calendario** - Vencimientos
+### 🟢 BAJA PRIORITY  
+- [ ] Gráficos/Charts
+- [ ] Calendario vencimientos
 
 ---
 
