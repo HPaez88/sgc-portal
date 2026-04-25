@@ -46,6 +46,36 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [accionesCorrectivas, setAccionesCorrectivas] = useLocalStorage('sgc-acciones-correctivas', []);
+  const [planesMejora, setPlanesMejora] = useLocalStorage('sgc-planes-mejora', []);
+  const [indicadoresData, setIndicadoresData] = useLocalStorage('sgc-indicadores-data', {});
+  const [usuarios, setUsuarios] = useLocalStorage('sgc-usuarios', [
+    { id: 1, nombre: 'Lic. Héctor Manuel Páez León', email: 'hpaez@oomapasc.gob.mx', telefono: '6441894125', area: 'Sistema de Gestión de Calidad', rol: 'Super Admin', direccion: 'Dir. General', password: 'sgc2026' },
+    { id: 2, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Control de Calidad', rol: 'Admin', direccion: 'Dir. Técnica', password: '' },
+    { id: 3, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Atención Ciudadana', rol: 'Usuario', direccion: 'Dir. Comercial', password: '' },
+    { id: 4, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento de Redes', rol: 'Encargado', direccion: 'Dir. Técnica', password: '' },
+    { id: 5, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Contabilidad', rol: 'Encargado', direccion: 'Dir. Administrativa', password: '' },
+    { id: 6, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Sistema de Gestión de Calidad', rol: 'Admin', direccion: 'Dir. General', password: '' },
+  ]);
+  const [riesgos, setRiesgos] = useLocalStorage('sgc-riesgos', [
+    { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo', area: 'Operación', direccion: 'Dir. Técnica', proceso: 'Producción', plan_accion: 'Mejorar monitoreo de cloro', fecha_termino: '2026-06-30', evaluacion: 'En proceso', estado_plan: 'EN_PROCESO' },
+    { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Técnica', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
+    { id: 3, riesgo: 'Quejas de clientes', causa: 'Atención lenta', efecto: 'Inconformidad', probabilidad: 3, impacto: 2, control: 'Capacitación', tipo: 'Riesgo', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Capacitación en atención', fecha_termino: '2026-05-15', evaluacion: 'Bueno', estado_plan: 'COMPLETADO' },
+    { id: 4, riesgo: 'Cortocircuito', causa: 'Cables viejas', efecto: 'Incendio', probabilidad: 1, impacto: 5, control: 'Renovación', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Administrativa', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
+    { id: 5, riesgo: 'Clientes nuevos', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Campaña de promo', fecha_termino: '2026-07-01', evaluacion: '', estado_plan: 'EN_PROCESO' },
+  ]);
+  const [seguimientos, setSeguimientos] = useLocalStorage('sgc-seguimientos', []);
+  const [documentos, setDocList] = useLocalStorage('sgc-documentos', [
+    { id: 1, titulo: 'Manual de Calidad del Agua v3.0', tipo: 'Manual', estado: 'APROBADO', area: 'Sistema de Gestión de Calidad', version: '3.0', fecha: '2026-01-15', autor: 'Ing. Juan López' },
+    { id: 2, titulo: 'Procedimiento de Saneamiento', tipo: 'Procedimiento', estado: 'EN_REVISION', area: 'Alcantarillado y Saneamiento', version: '1.2', fecha: '2026-03-20', autor: 'Lic. García' },
+    { id: 3, titulo: 'Registro de Mantenimiento de Bombas', tipo: 'Registro', estado: 'BORRADOR', area: 'Mantenimiento de Redes', version: '2.0', fecha: '2026-04-18', autor: 'Ing. Martínez' },
+  ]);
+  const [auditorias, setAuditorias] = useLocalStorage('sgc-auditorias', [
+    { id: 1, numero: 'AUD-2026-001', tipo: 'Interna', area: 'Sistema de Gestión de Calidad', fecha_inicio: '2026-01-15', fecha_fin: '2026-01-17', estado: 'COMPLETADA', hallazgos: 3, no_conformidades: 1 },
+    { id: 2, numero: 'AUD-2026-002', tipo: 'Interna', area: 'Control de Calidad', fecha_inicio: '2026-02-20', fecha_fin: '2026-02-22', estado: 'COMPLETADA', hallazgos: 2, no_conformidades: 0 },
+  ]);
+  const [evidencias, setEvidencias] = useLocalStorage('sgc-evidencias', []);
+
   useEffect(() => {
     setIsLoaded(true);
   }, []);
@@ -73,25 +103,23 @@ function App() {
   ];
 
   const StatCard = ({ title, value, icon: Icon, trend, trendUp }) => (
-    <div className="group indicator-card bg-white p-6 rounded-2xl border border-slate-200/50 shadow-lg hover:shadow-2xl relative overflow-hidden">
-      {/* Background effect */}
-      <div className="absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 ease-out opacity-50" />
-      
+    <div className="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer relative overflow-hidden">
+      <div className="absolute -right-6 -top-6 bg-cyan-50/50 w-24 h-24 rounded-full group-hover:scale-150 transition-transform duration-500 ease-out"></div>
       <div className="flex items-center justify-between relative z-10">
         <div>
-          <p className="text-sm font-semibold text-slate-500 mb-1">{title}</p>
-          <h3 className="text-4xl font-bold text-[#002855] tracking-tight">{value}</h3>
+          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-[#002855]">{value}</h3>
         </div>
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-          <Icon size={26} />
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md group-hover:rotate-6 transition-transform duration-300">
+          <Icon size={24} />
         </div>
       </div>
       {trend && (
-        <div className="mt-5 flex items-center text-sm relative z-10">
-          <span className={`px-3 py-1 rounded-full font-semibold ${trendUp ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+        <div className="mt-4 flex items-center text-sm relative z-10">
+          <span className={trendUp ? 'text-emerald-500 font-medium' : 'text-amber-500 font-medium'}>
             {trend}
           </span>
-          <span className="text-slate-400 ml-2 text-xs">vs mes anterior</span>
+          <span className="text-slate-400 ml-2">vs mes anterior</span>
         </div>
       )}
     </div>
@@ -113,24 +141,12 @@ function App() {
       
       {/* Sidebar */}
       <aside 
-        ref={sidebarRef}
         className={`${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } fixed inset-y-0 left-0 z-50 bg-[#001f42] text-slate-300 transition-all duration-300 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl ${
           sidebarCollapsed ? 'w-16' : 'w-72'
         }`}
       >
-        {/* Efecto de luz seguir mouse */}
-        <div className="absolute inset-0 sidebar-glow pointer-events-none z-0" />
-        
-{/* Elementos decorativos flotantes */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute w-32 h-32 rounded-full bg-cyan-500/10 blur-3xl animate-pulse" style={{ left: '20%', top: '30%' }} />
-          <div className="absolute w-24 h-24 rounded-full bg-blue-500/10 blur-2xl animate-pulse" style={{ right: '10%', bottom: '40%', animationDelay: '1s' }} />
-          <div className="absolute w-40 h-40 rounded-full bg-cyan-400/5 blur-3xl animate-pulse" style={{ left: '50%', top: '60%', animationDelay: '2s' }} />
-        </div>
-        
-        {/* Header del sidebar */}
         <div className={`h-20 flex items-center bg-[#00152e] relative overflow-hidden ${sidebarCollapsed ? 'justify-center px-2' : 'px-6'}`}>
           <div className="absolute right-0 top-0 opacity-10 pointer-events-none">
             <Droplet size={120} className="text-cyan-400 -mt-10 -mr-10" />
@@ -251,33 +267,32 @@ function App() {
 
 <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
            
-          {/* Fondo animado - Versión premium */}
-          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-            {/* Grid de fondo sutil */}
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiLz48cGF0aCBkPSJNMCAwaDFWM0gwVjF6IiBmaWxsPSIjZmZmZmYwIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L2c+PC9zdmc+')] opacity-40" />
+          {/* Fondo animado - Burbujas flotantes más visibles */}
+          <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
+            {/* Burbuja 1 grande */}
+            <div className="absolute w-80 h-80 rounded-full bg-gradient-to-b from-cyan-300/30 to-blue-400/30 animate-float-1" style={{ left: '-5%', top: '5%' }} />
+            {/* Burbuja 2 */}
+            <div className="absolute w-60 h-60 rounded-full bg-gradient-to-b from-blue-300/25 to-cyan-400/25 animate-float-2" style={{ right: '-2%', top: '25%' }} />
+            {/* Burbuja 3 */}
+            <div className="absolute w-40 h-40 rounded-full bg-gradient-to-b from-cyan-400/35 to-blue-500/35 animate-float-3" style={{ left: '30%', bottom: '10%' }} />
+            {/* Burbuja 4 */}
+            <div className="absolute w-32 h-32 rounded-full bg-cyan-500/40 animate-float-1" style={{ right: '25%', bottom: '30%' }} />
+            {/* Burbuja 5 */}
+            <div className="absolute w-24 h-24 rounded-full bg-blue-400/40 animate-float-2" style={{ left: '60%', bottom: '5%' }} />
             
-            {/* Orb principales */}
-            <div className="absolute w-96 h-96 rounded-full bg-gradient-to-br from-cyan-200/40 via-blue-300/30 to-cyan-400/20 blur-3xl animate-float-1" style={{ left: '-10%', top: '-5%' }} />
-            <div className="absolute w-72 h-72 rounded-full bg-gradient-to-br from-blue-200/35 via-cyan-300/25 to-blue-400/15 blur-3xl animate-float-2" style={{ right: '-5%', top: '15%' }} />
-            <div className="absolute w-64 h-64 rounded-full bg-gradient-to-br from-cyan-300/30 to-blue-500/20 blur-2xl animate-float-3" style={{ left: '25%', bottom: '5%' }} />
-            
-            {/* Orbs flotantes pequeños */}
-            <div className="absolute w-8 h-8 rounded-full bg-cyan-400/60 animate-float-orb" style={{ left: '15%', top: '20%', animationDuration: '8s' }} />
-            <div className="absolute w-6 h-6 rounded-full bg-blue-400/60 animate-float-orb" style={{ right: '20%', top: '35%', animationDelay: '1s', animationDuration: '10s' }} />
-            <div className="absolute w-10 h-10 rounded-full bg-cyan-300/50 animate-float-orb" style={{ left: '40%', bottom: '25%', animationDelay: '2s', animationDuration: '12s' }} />
-            <div className="absolute w-5 h-5 rounded-full bg-blue-300/50 animate-float-orb" style={{ left: '65%', top: '15%', animationDelay: '3s', animationDuration: '9s' }} />
-            <div className="absolute w-7 h-7 rounded-full bg-cyan-500/40 animate-float-orb" style={{ right: '35%', bottom: '40%', animationDelay: '4s', animationDuration: '11s' }} />
-            
-            {/* Partículas brillantes */}
-            <div className="absolute w-2 h-2 bg-white/70 rounded-full animate-particle-1" style={{ left: '10%', top: '15%' }} />
-            <div className="absolute w-2 h-2 bg-white/60 rounded-full animate-particle-2" style={{ left: '30%', top: '25%' }} />
-            <div className="absolute w-3 h-3 bg-cyan-200/60 rounded-full animate-particle-3" style={{ left: '50%', top: '10%' }} />
-            <div className="absolute w-2 h-2 bg-blue-200/60 rounded-full animate-particle-1" style={{ left: '70%', top: '30%' }} />
-            <div className="absolute w-3 h-3 bg-white/50 rounded-full animate-particle-2" style={{ left: '85%', top: '45%' }} />
-            <div className="absolute w-2 h-2 bg-cyan-300/60 rounded-full animate-particle-3" style={{ left: '20%', top: '50%' }} />
-            <div className="absolute w-2 h-2 bg-white/70 rounded-full animate-particle-1" style={{ left: '60%', top: '60%' }} />
-            <div className="absolute w-3 h-3 bg-blue-200/50 rounded-full animate-particle-2" style={{ left: '80%', top: '20%' }} />
+            {/* Partículas */}
+            <div className="absolute inset-0">
+              <div className="absolute w-3 h-3 bg-cyan-400/50 rounded-full animate-particle-1" style={{ left: '10%', top: '15%' }} />
+              <div className="absolute w-3 h-3 bg-blue-400/50 rounded-full animate-particle-2" style={{ left: '35%', top: '30%' }} />
+              <div className="absolute w-3 h-3 bg-cyan-300/50 rounded-full animate-particle-3" style={{ left: '55%', top: '20%' }} />
+              <div className="absolute w-3 h-3 bg-blue-300/50 rounded-full animate-particle-1" style={{ left: '75%', top: '40%' }} />
+              <div className="absolute w-3 h-3 bg-cyan-500/50 rounded-full animate-particle-2" style={{ left: '90%', top: '50%' }} />
+              <div className="absolute w-2 h-2 bg-white/60 rounded-full animate-particle-3" style={{ left: '20%', top: '60%' }} />
+              <div className="absolute w-2 h-2 bg-white/60 rounded-full animate-particle-1" style={{ left: '65%', top: '70%' }} />
+</div>
           </div>
+          
+          {/* Contenido principal con z-index para estar encima del fondo */}
           
           {/* Contenido principal con z-index para estar encima del fondo */}
           <div className="relative z-10">
@@ -1778,44 +1793,37 @@ function IndicadoresView({ indicadoresData, setIndicadoresData, puedeTodasAreas,
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {procesoStats.map(stat => {
               const sem = getSemaphoreColor(stat.cumplimiento);
-              const colorMap = { 'bg-emerald-500': 'from-emerald-400/20 to-emerald-500/10 border-emerald-400/30', 'bg-amber-500': 'from-amber-400/20 to-amber-500/10 border-amber-400/30', 'bg-red-500': 'from-red-400/20 to-red-500/10 border-red-400/30' };
               return (
-                <div key={stat.proceso} className={`indicator-card p-5 rounded-2xl bg-gradient-to-br ${colorMap[sem.bg]} border backdrop-blur-sm`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-medium text-slate-500 truncate flex-1">{stat.proceso}</p>
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center ${sem.bg} text-white shadow-lg`}>
-                      {sem.icon === '🟢' ? '✓' : sem.icon === '🟡' ? '!' : '✗'}
-                    </span>
+                <div key={stat.proceso} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/10 border-${sem.bg.replace('bg-', 'border-')}`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500 truncate flex-1">{stat.proceso}</p>
+                    <span className="text-lg">{sem.icon}</span>
                   </div>
-                  <p className={`text-3xl font-bold ${sem.text} tracking-tight`}>{stat.cumplimiento}%</p>
-                  <p className="text-xs text-slate-500 mt-1">{stat.count} inds.</p>
-                  {/* Barra de progreso */}
-                  <div className="mt-3 h-1.5 bg-slate-200/50 rounded-full overflow-hidden">
-                    <div className={`h-full ${sem.bg} rounded-full transition-all duration-1000`} style={{ width: `${stat.cumplimiento}%` }} />
-                  </div>
+                  <p className={`text-2xl font-bold ${sem.text}`}>{stat.cumplimiento}%</p>
+                  <p className="text-xs text-slate-500">{stat.count} inds.</p>
                 </div>
               );
             })}
           </div>
 
-          {/* Tabla Mensual premium */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-[#002855] to-[#00152e] border-b border-slate-200/50">
-              <h2 className="font-bold text-white">📊 Indicadores {anioActual} - Captura Mensual</h2>
+          {/* Tabla Mensual */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+              <h2 className="font-bold text-[#002855]"> Indicadores {anioActual} - Captura Mensual</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 to-slate-100 text-left">
-                    <th className="p-4 text-sm font-bold text-slate-700">Indicador</th>
-                    <th className="p-4 text-sm font-bold text-slate-700">Área</th>
-                    <th className="p-4 text-sm font-bold text-slate-700">Meta</th>
-                    <th className="p-4 text-sm font-bold text-slate-700">Und.</th>
+                  <tr className="bg-slate-50 text-left">
+                    <th className="p-3 text-sm font-semibold text-slate-600">Indicador</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Meta</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">Und.</th>
                     {meses.map(m => (
-                      <th key={m} className="p-3 text-xs font-bold text-slate-600 text-center">{m}</th>
+                      <th key={m} className="p-2 text-xs font-semibold text-slate-500 text-center">{m}</th>
                     ))}
-                    <th className="p-4 text-sm font-bold text-slate-700">% Cump.</th>
-                    <th className="p-4 text-sm font-bold text-slate-700">Acciones</th>
+                    <th className="p-3 text-sm font-semibold text-slate-600">% Cump.</th>
+                    <th className="p-2 text-sm font-semibold text-slate-600">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1825,34 +1833,34 @@ function IndicadoresView({ indicadoresData, setIndicadoresData, puedeTodasAreas,
                     const seg = getSegumiento(ind.id);
                     const noCumple = cump < 50 || (seg && seg.length > 0 && cump < 80);
                     return (
-                      <tr key={ind.id} className={`border-b border-slate-100/50 hover:bg-gradient-to-r hover:from-cyan-50/50 hover:to-transparent transition-all duration-300 ${noCumple ? 'bg-red-50/30' : ''}`}>
-                        <td className="p-4 font-semibold text-[#002855] text-sm">{ind.nombre}</td>
-                        <td className="p-4 text-sm text-slate-600">{ind.area}</td>
-                        <td className="p-4 text-sm text-slate-600">{ind.meta}</td>
-                        <td className="p-4 text-sm text-slate-600">{ind.unidad}</td>
+                      <tr key={ind.id} className={`border-t border-slate-100 hover:bg-slate-50/50 ${noCumple ? 'bg-red-25' : ''}`}>
+                        <td className="p-3 font-medium text-[#002855] text-sm">{ind.nombre}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.area}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.meta}</td>
+                        <td className="p-3 text-sm text-slate-600">{ind.unidad}</td>
                         {meses.map(mes => {
                           const key = `${ind.id}-${mes}`;
                           const valor = getValor(ind.id, mes);
                           return (
-                            <td key={mes} className="p-2 text-center">
+                            <td key={mes} className="p-1 text-center">
                               {editando === key ? (
-                                <input type="text" value={valor} onChange={(e) => guardarResultado(ind.id, mes, e.target.value)} onBlur={() => setEditando(null)} onKeyDown={(e) => e.key === 'Enter' && setEditando(null)} autoFocus className="w-full p-2 text-center text-sm font-medium border-2 border-cyan-500 rounded-lg bg-white" />
+                                <input type="text" value={valor} onChange={(e) => guardarResultado(ind.id, mes, e.target.value)} onBlur={() => setEditando(null)} onKeyDown={(e) => e.key === 'Enter' && setEditando(null)} autoFocus className="w-full p-1 text-center text-xs border border-cyan-500 rounded" />
                               ) : (
-                                <span onClick={() => setEditando(key)} className="cursor-pointer hover:bg-cyan-100 px-2 py-1.5 rounded text-sm font-medium text-slate-700 block transition-colors">{valor || '-'}</span>
+                                <span onClick={() => setEditando(key)} className="cursor-pointer hover:bg-cyan-50 px-1 py-0.5 rounded text-xs block">{valor || '-'}</span>
                               )}
                             </td>
                           );
                         })}
-                        <td className="p-3">
-                          <div className={`px-4 py-2 rounded-xl text-sm font-bold text-white ${sem.bg} shadow-md`}>
+                        <td className="p-2">
+                          <span className={`px-2 py-1 rounded text-xs font-bold text-white ${sem.bg}`}>
                             {cump}%
-                          </div>
+                          </span>
                         </td>
-                        <td className="p-3">
+                        <td className="p-2">
                           {seg.length > 0 ? (
-                            <span className="text-sm bg-blue-500/10 text-blue-600 px-3 py-1.5 rounded-lg font-medium">{seg.length} 📋</span>
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded" title={seg[0].tipo}>{seg.length}</span>
                           ) : noCumple ? (
-                            <button onClick={() => abrirSeguimiento(ind)} className="text-sm bg-red-500/10 text-red-600 px-3 py-1.5 rounded-lg font-medium hover:bg-red-500/20 transition-colors">⚠️ Crear AC</button>
+                            <button onClick={() => abrirSeguimiento(ind)} className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200">⚠️</button>
                           ) : (
                             <span className="text-slate-300">-</span>
                           )}
@@ -1872,20 +1880,14 @@ function IndicadoresView({ indicadoresData, setIndicadoresData, puedeTodasAreas,
             {procesoStats.map(stat => {
               const cump = getProcesoTrimestralCump(stat.proceso, trimestre);
               const sem = getSemaphoreColor(cump);
-              const colorMap = { 'bg-emerald-500': 'from-emerald-400/20 to-emerald-500/10 border-emerald-400/30', 'bg-amber-500': 'from-amber-400/20 to-amber-500/10 border-amber-400/30', 'bg-red-500': 'from-red-400/20 to-red-500/10 border-red-400/30' };
               return (
-                <div key={stat.proceso} className={`indicator-card p-5 rounded-2xl bg-gradient-to-br ${colorMap[sem.bg]} border backdrop-blur-sm`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-medium text-slate-500 truncate flex-1">{stat.proceso}</p>
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center ${sem.bg} text-white shadow-lg`}>
-                      {sem.icon === '🟢' ? '✓' : sem.icon === '🟡' ? '!' : '✗'}
-                    </span>
+                <div key={stat.proceso} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'bg-')}/20`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500 truncate flex-1">{stat.proceso}</p>
+                    <span className="text-lg">{sem.icon}</span>
                   </div>
-                  <p className={`text-3xl font-bold ${sem.text} tracking-tight`}>{cump}%</p>
-                  <p className="text-xs text-slate-500 mt-1">T{trimestre}</p>
-                  <div className="mt-3 h-1.5 bg-slate-200/50 rounded-full overflow-hidden">
-                    <div className={`h-full ${sem.bg} rounded-full transition-all duration-1000`} style={{ width: `${cump}%` }} />
-                  </div>
+                  <p className={`text-2xl font-bold ${sem.text}`}>{cump}%</p>
+                  <p className="text-xs text-slate-500">T{trimestre}</p>
                 </div>
               );
             })}
