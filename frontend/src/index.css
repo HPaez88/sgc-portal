@@ -1,3 +1,127 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ✅ Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #06b6d4, #3b82f6);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0891b2, #2563eb);
+}
+
+/* ✅ Tarjetas de indicadores mejoradas - estados visuales */
+.indicator-card {
+  transition: all 0.3s ease;
+}
+
+.indicator-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* ✅ Estado: verde (cumplimiento >= 80%) */
+.status-good {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-left: 4px solid #10b981;
+}
+
+.status-good:hover {
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+}
+
+/* ✅ Estado: amarillo (50-79%) */
+.status-warning {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-left: 4px solid #f59e0b;
+}
+
+.status-warning:hover {
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.2);
+}
+
+/* ✅ Estado: rojo (< 50%) */
+.status-danger {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-left: 4px solid #ef4444;
+}
+
+.status-danger:hover {
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
+}
+
+/* ✅ StatCards del dashboard */
+.stat-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
+
+/* ✅ Tablas */
+.table-header {
+  background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+}
+
+.table-row:hover {
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.05), transparent);
+}
+
+/* ✅ Botones */
+.btn-primary {
+  background: linear-gradient(135deg, #06b6d4, #0ea5e9);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #0891b2, #0284c7);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+/* ✅ badges de estado */
+.badge {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-borrador {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.badge-en-revision {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-aprobado {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.badge-rechazado {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-completado {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
