@@ -36,18 +36,25 @@ SGC page/
 
 ---
 
-## 3. ESTADO ACTUAL (25 abril 2026)
+## 3. ESTADO ACTUAL (24 abril 2026)
 
 ### ✅ MÓDULOS FUNCIONALES
 - Dashboard
 - Acciones Correctivas (AC)
 - Planes de Mejora (PM)
-- Indicadores
+- Indicadores (86 indicadores)
 - Matriz de Riesgos
-- Configuración (Usuarios, Áreas, Procesos)
+- Configuración (Usuarios)
 - Documentos
 - Auditorías
 - Aprobaciones
+
+### ✅ DISEÑO VISUAL ACTUAL
+- Tarjetas de indicadores con estados visuales (verde/amarillo/rojo)
+- Badges de estado (BORRADOR, EN_REVISION, APROBADO, etc.)
+- Efectos hover en tablas y tarjetas
+- Scrollbar personalizada
+- Gradientes en botones y stat cards
 
 ### ✅ INTEGRACIONES
 - Supabase conectado (URL: https://yrjlmqxpakjiwrfwhgaj.supabase.co)
@@ -264,19 +271,21 @@ VITE_GROQ_API_KEY=... (para IA)
 
 ## 9. PENDIENTES Y MEJORAS
 
-### PRIORIDAD ALTA
-- [ ] Sincronización automática con Supabase
+### 🔴 PRIORIDAD ALTA
+- [ ] Sincronización automática con Supabase (guardar/cargar datos)
 - [ ] Login real con Supabase Auth
-- [ ] Export Word/PDF real
+- [ ] Export Word/PDF real (docx, pdf)
 
-### PRIORIDAD MEDIA  
+### 🟡 PRIORIDAD MEDIA  
 - [ ] Notificaciones email
-- [ ] Evidencias en cloud storage
-- [ ] Gráficos/Charts
+- [ ] Evidencias en cloud storage (Supabase Storage)
+- [ ] Gráficos/Charts para indicadores
 
-### PRIORIDAD BAJA
-- [ ] Calendario de vencimientos
-- [ ] Dashboard personalizado
+### 🟢 COMPLETADOS
+- [x] Diseño visual de tarjetas indicadores
+- [x] Badges de estado
+- [x] Efectos hover
+- [x] Scrollbar personalizada
 
 ---
 
