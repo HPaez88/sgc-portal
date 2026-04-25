@@ -72,11 +72,11 @@
   .animate-particle-1 { animation: particle-1 4s ease-in-out infinite; }
   .animate-particle-2 { animation: particle-2 5s ease-in-out infinite; }
   .animate-particle-3 { animation: particle-3 6s ease-in-out infinite; }
-  .animate-float-orb { animation: float-orb 6s ease-in-out infinite; }
-  
-  /* Efectos de sidebar */
+.animate-float-orb { animation: float-orb 6s ease-in-out infinite; }
+   
+  /* Efecto de glow en sidebar */
   .sidebar-glow {
-    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(6, 182,212, 0.15), transparent 40%);
+    background: radial-gradient(600px circle at 50% 50%, rgba(6, 182,212, 0.15), transparent 40%);
   }
   
   .card-hover-lift:hover {
