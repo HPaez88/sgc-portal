@@ -5,6 +5,50 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+export async function loadFromSupabase(table) {
+  try {
+    const { data, error } = await supabase.from(table).select('*');
+    if (error) throw error;
+    return data || [];
+  } catch (e) {
+    console.error(`Error loading ${table}:`, e);
+    return [];
+  }
+}
+
+export async function saveToSupabase(table, data) {
+  try {
+    const { error } = await supabase.from(table).upsert(data, { onConflict: 'id' });
+    if (error) throw error;
+    return { success: true };
+  } catch (e) {
+    console.error(`Error saving ${table}:`, e);
+    return { error: e.message };
+  }
+}
+
+export async function insertToSupabase(table, data) {
+  try {
+    const { error } = await supabase.from(table).insert(data);
+    if (error) throw error;
+    return { success: true };
+  } catch (e) {
+    console.error(`Error inserting ${table}:`, e);
+    return { error: e.message };
+  }
+}
+
+export async function deleteFromSupabase(table, id) {
+  try {
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch (e) {
+    console.error(`Error deleting from ${table}:`, e);
+    return { error: e.message };
+  }
+}
+
 export const tables = {
   usuarios: 'usuarios',
   accionesCorrectivas: 'acciones_correctivas',
@@ -13,42 +57,5 @@ export const tables = {
   riesgos: 'riesgos',
   documentos: 'documentos',
   auditorias: 'auditorias',
-  evidencias: 'evidencias',
-  seguimientos: 'seguimientos'
+  evidencias: 'evidencias'
 };
-
-export async function syncTable(table, data) {
-  try {
-    const { error } = await supabase.from(table).upsert(data, { onConflict: 'id' });
-    return { error };
-  } catch (e) {
-    return { error: e.message };
-  }
-}
-
-export async function fetchTable(table, filters = {}) {
-  try {
-    let query = supabase.from(table).select('*');
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        query = query.eq(key, value);
-      }
-    });
-    const { data, error } = await query;
-    return { data, error };
-  } catch (e) {
-    return { data: null, error: e.message };
-  }
-}
-
-export async function loginUser(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-  return { data, error };
-}
-
-export async function signOut() {
-  return await supabase.auth.signOut();
-}
