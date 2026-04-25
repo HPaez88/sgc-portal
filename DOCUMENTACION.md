@@ -203,36 +203,34 @@ SGC page/
 
 ### 🔴 PRIORIDAD 1 - CRÍTICO (Testing y Estabilidad)
 
-- [ ] **Testing completo** - Verificar todos los módulos funcionan sin pantalla blanca
-- [ ] **Verificar AC** - Acciones Correctivas abre correctamente
-- [ ] **Verificar PM** - Planes de Mejora abre correctamente
-- [ ] **Verificar Riesgos** - Matriz de Riesgos abre correctamente
-- [ ] **Verificar login** - Autenticación con permisos por rol
-- [ ] **Verificar indicadores** - Captura y cálculo correcto
+- [x] **Testing completo** - Verificar todos los módulos funcionan sin pantalla blanca
+- [x] **Verificar AC** - Acciones Correctivas abre correctamente
+- [x] **Verificar PM** - Planes de Mejora abre correctamente
+- [x] **Verificar Riesgos** - Matriz de Riesgos abre correctamente
+- [x] **Verificar Settings** - Configuración funciona correctamente
+- [x] **Verificar Documentos** - Módulo funciona
+- [x] **Verificar Auditorías** - Módulo funciona
 
-### 🟡 PRIORIDAD 2 - ALTA (Backend y Persistencia)
+### 🟡 PRIORIDAD 2 - ALTA (Backend)
 
-- [ ] **Backend API real** - PostgreSQL/MySQL para persistencia
-- [ ] **Supabase** - Integrar base de datos cloud
-- [ ] **Autenticación real** - Login con passwords encriptadas (bcrypt)
-- [ ] ** Migación datos** - Mover localStorage a base de datos real
+- [ ] **Backend Supabase** - PostgreSQL cloud para persistencia
+- [ ] **Configurar variables** - VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+- [ ] **Sincronización** - Migrar localStorage a Supabase
+- [ ] **Auth** - Login real con Supabase Auth
 
-### 🟠 PRIORIDAD 3 - MEDIA (Features)
+### 🟠 PRIORIDAD 3 - MEDIA
 
 - [ ] **Export Word** - Generar documentos oficiales
 - [ ] **Export PDF** - Generar reportes en PDF
 - [ ] **Notificaciones email** - Alertas por vencimiento
-- [ ] **Evidencias cloud** - Subir archivos a storage (S3/Cloudinary)
-- [ ] **Webhooks** - Notificaciones a WhatsApp/Telegram
+- [ ] **Evidencias cloud** - Subir archivos a storage
 
-### 🟢 PRIORIDAD 4 - BAJA (Extras)
+### 🟢 PRIORIDAD 4 - BAJA
 
-- [ ] **Historial de cambios** - Auditoría ISO 9001
-- [ ] **Dashboard personalizado** - Por usuario/área/dirección
-- [ ] **Chatbot IA** - WhatsApp/Telegram
-- [ ] **Gráficos avanzados** - Charts.js o Recharts
-- [ ] **Calendario** - Vista de vencimientos
-- [ ] **API pública** - Datos abiertos para otros sistemas
+- [ ] **Historial cambios** - Auditoría ISO 9001
+- [ ] **Dashboard personalizado** - Por usuario/área
+- [ ] **Gráficos** - Charts.js
+- [ ] **Calendario** - Vencimientos
 
 ---
 
