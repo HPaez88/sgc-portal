@@ -2335,7 +2335,13 @@ function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocument
     }});
   };
 
-  const getRolBadge = (rol) => getRolColor(rol);
+  const getRolBadge = (rol) => {
+    try {
+      return getRolColor(rol) || 'bg-slate-100 text-slate-600';
+    } catch {
+      return 'bg-slate-100 text-slate-600';
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
