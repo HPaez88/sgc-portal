@@ -465,8 +465,13 @@ function App() {
               areaUsuario={areaUsuario}
             />}
 
-            {/* INDICADORES */}
-            {activeTab === 'indicadores' && <IndicadoresView />}
+{/* INDICADORES */}
+            {activeTab === 'indicadores' && <IndicadoresView 
+              indicadoresData={indicadoresData}
+              setIndicadoresData={setIndicadoresData}
+              puedeTodasAreas={puedeTodasAreas}
+              areaUsuario={areaUsuario}
+            />}
 
             {/* MATRIZ DE RIESGOS */}
             {activeTab === 'riesgos' && <RiesgosView 
@@ -577,9 +582,8 @@ function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, evi
   const [success, setSuccess] = useState(false);
   const [errores, setErrores] = useState({});
   
-  const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
-  const esAdmin = usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Auditor' || usuarioLogueado?.rol === 'Super Admin';
-  const areaDefault = esAdmin ? '' : (areaUsuario || usuarioLogueado?.area || '');
+  const esAdmin = puedeTodasAreas;
+  const areaDefault = esAdmin ? '' : (areaUsuario || '');
   
   const [formData, setFormData] = useState({
     codigo: `AC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
@@ -1110,7 +1114,7 @@ function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAre
   const [errores, setErrores] = useState({});
   const [mostrarModalIA, setMostrarModalIA] = useState(false);
   
-  const esAdmin = usuarios?.some(u => u?.rol === 'Admin' || u?.rol === 'Auditor' || u?.rol === 'Super Admin');
+  const esAdmin = puedeTodasAreas;
   const areaDefault = esAdmin ? '' : (areaUsuario || '');
   
   const [formData, setFormData] = useState({
@@ -1549,7 +1553,7 @@ Sé específico, práctico y orientado a resultados. El equipo solo dará la ide
   );
 }
 
-function IndicadoresView() {
+function IndicadoresView({ indicadoresData, setIndicadoresData, puedeTodasAreas, areaUsuario }) {
   const [editando, setEditando] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalCaptura, setMostrarModalCaptura] = useState(false);

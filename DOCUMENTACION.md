@@ -201,20 +201,38 @@ SGC page/
 
 ## 8. Pendientes y Mejoras Detectadas
 
-### PRIORIDAD 1 - CRÍTICO
-- [ ] **Testing completo** - Verificar todos los módulos funcionan
-- [ ] **Backend API real** - Necesario para persistencia de datos
-- [ ] **Autenticación real** - Login con passwords encriptadas
+### 🔴 PRIORIDAD 1 - CRÍTICO (Testing y Estabilidad)
 
-### PRIORIDAD 2 - ALTA
-- [ ] **Export documentos** - Word/PDF
+- [ ] **Testing completo** - Verificar todos los módulos funcionan sin pantalla blanca
+- [ ] **Verificar AC** - Acciones Correctivas abre correctamente
+- [ ] **Verificar PM** - Planes de Mejora abre correctamente
+- [ ] **Verificar Riesgos** - Matriz de Riesgos abre correctamente
+- [ ] **Verificar login** - Autenticación con permisos por rol
+- [ ] **Verificar indicadores** - Captura y cálculo correcto
+
+### 🟡 PRIORIDAD 2 - ALTA (Backend y Persistencia)
+
+- [ ] **Backend API real** - PostgreSQL/MySQL para persistencia
+- [ ] **Supabase** - Integrar base de datos cloud
+- [ ] **Autenticación real** - Login con passwords encriptadas (bcrypt)
+- [ ] ** Migación datos** - Mover localStorage a base de datos real
+
+### 🟠 PRIORIDAD 3 - MEDIA (Features)
+
+- [ ] **Export Word** - Generar documentos oficiales
+- [ ] **Export PDF** - Generar reportes en PDF
 - [ ] **Notificaciones email** - Alertas por vencimiento
-- [ ] **Evidencias** - Subir archivos (fotos, docs)
+- [ ] **Evidencias cloud** - Subir archivos a storage (S3/Cloudinary)
+- [ ] **Webhooks** - Notificaciones a WhatsApp/Telegram
 
-### PRIORIDAD 3 - MEDIA
+### 🟢 PRIORIDAD 4 - BAJA (Extras)
+
 - [ ] **Historial de cambios** - Auditoría ISO 9001
 - [ ] **Dashboard personalizado** - Por usuario/área/dirección
-- [ ] **Chatbot** - WhatsApp/Telegram
+- [ ] **Chatbot IA** - WhatsApp/Telegram
+- [ ] **Gráficos avanzados** - Charts.js o Recharts
+- [ ] **Calendario** - Vista de vencimientos
+- [ ] **API pública** - Datos abiertos para otros sistemas
 
 ---
 
