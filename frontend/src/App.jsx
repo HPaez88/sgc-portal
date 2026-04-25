@@ -2351,23 +2351,23 @@ function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocument
       <div className="grid grid-cols-2 md:grid-cols-8 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Total Usuarios</p>
-          <p className="text-2xl font-bold text-[#002855]">{usuarios.length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuariosList.length}</p>
         </div>
         <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
           <p className="text-xs text-yellow-600">Super Admin</p>
-          <p className="text-2xl font-bold text-yellow-700">{usuarios.filter(u => u.rol === 'Super Admin').length}</p>
+          <p className="text-2xl font-bold text-yellow-700">{usuariosList.filter(u => u.rol === 'Super Admin').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Admins</p>
-          <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.rol === 'Admin').length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuariosList.filter(u => u.rol === 'Admin').length}</p>
         </div>
         <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
           <p className="text-xs text-blue-600">Auditores</p>
-          <p className="text-2xl font-bold text-blue-700">{usuarios.filter(u => u.rol === 'Auditor').length}</p>
+          <p className="text-2xl font-bold text-blue-700">{usuariosList.filter(u => u.rol === 'Auditor').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Encargados</p>
-          <p className="text-2xl font-bold text-[#002855]">{usuarios.filter(u => u.rol === 'Encargado').length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuariosList.filter(u => u.rol === 'Encargado').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Áreas</p>
