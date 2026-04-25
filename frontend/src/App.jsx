@@ -142,13 +142,14 @@ const [isLoaded, setIsLoaded] = useState(false);
         {/* Efecto de luz seguir mouse */}
         <div className="absolute inset-0 sidebar-glow pointer-events-none z-0" />
         
-        {/* Elementos decorativos flotantes */}
+{/* Elementos decorativos flotantes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute w-32 h-32 rounded-full bg-cyan-500/10 blur-3xl animate-pulse" style={{ left: '20%', top: '30%' }} />
           <div className="absolute w-24 h-24 rounded-full bg-blue-500/10 blur-2xl animate-pulse" style={{ right: '10%', bottom: '40%', animationDelay: '1s' }} />
           <div className="absolute w-40 h-40 rounded-full bg-cyan-400/5 blur-3xl animate-pulse" style={{ left: '50%', top: '60%', animationDelay: '2s' }} />
         </div>
-      >
+        
+        {/* Header del sidebar */}
         <div className={`h-20 flex items-center bg-[#00152e] relative overflow-hidden ${sidebarCollapsed ? 'justify-center px-2' : 'px-6'}`}>
           <div className="absolute right-0 top-0 opacity-10 pointer-events-none">
             <Droplet size={120} className="text-cyan-400 -mt-10 -mr-10" />
