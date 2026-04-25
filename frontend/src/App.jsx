@@ -2257,7 +2257,7 @@ function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasAreas, areaUsuar
   );
 }
 
-function SettingsView({ usuarios, setUsuarios, documentos, setDocumentos }) {
+function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocumentos }) {
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
   const [procesos, setProcesos] = useState(PROCESOS);
   const [areas, setAreas] = useState(AREAS);
@@ -2268,6 +2268,9 @@ function SettingsView({ usuarios, setUsuarios, documentos, setDocumentos }) {
   const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '', password: '' });
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
   const [editandoUsuario, setEditandoUsuario] = useState({ show: false, user: null });
+  
+  const usuariosList = usuarios || [];
+  const docList = documentos || [];
   
   const guardarEdicionUsuario = () => {
     if (editandoUsuario.user) {
@@ -2398,7 +2401,7 @@ function SettingsView({ usuarios, setUsuarios, documentos, setDocumentos }) {
             </tr>
           </thead>
           <tbody>
-            {usuarios.map(u => (
+            {usuariosList.map(u => (
               <tr key={u.id} className={`border-t border-slate-100 hover:bg-slate-50/50 ${u.rol === 'Super Admin' ? 'bg-purple-50' : ''}`}>
                 <td className="p-3 font-medium text-[#002855]">
                   <div className="flex items-center gap-2">
