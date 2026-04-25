@@ -2955,46 +2955,15 @@ Fecha de elaboración: ${ac.fecha_creacion || new Date().toISOString().split('T'
 
 function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuario }) {
   const [mostrarModal, setMostrarModal] = useState(false);
-  const [nuevaAud, setNuevaAud] = useState({ numero: '', tipo: 'Interna', area: '', fecha_inicio: '', fecha_fin: '' });
   const [verInformes, setVerInformes] = useState(false);
 
-  const informesPorAnio = {
-    '2025': [
-      { nombre: '01 Informe Responsabilidad Dirección', archivo: '01 informe auditoria responsabilidad por la dirección.pdf' },
-      { nombre: '02 Informe MAM', archivo: '02 INFORME DE AUDITORIA 2 MAM.pdf' },
-      { nombre: '03 MC', archivo: '03 INFORME 03 MC.pdf' },
-      { nombre: '04 Comunicación', archivo: '04 Informa 04 comunicación.pdf' },
-      { nombre: '05 Producción', archivo: '05 INFORME 05 PRODUCCION.pdf' },
-      { nombre: '06 Comercialización', archivo: '06 INFORME 06 COMERCIALIZACION.pdf' },
-    ],
-    '2024': [
-      { nombre: '01 Responsabilidad Dirección', archivo: '01 INFORME DE AUDITORIA 1 2024 RESPONSABILIDAD DE LA DIRECCIÓN.pdf' },
-      { nombre: '02 Gestión Recursos', archivo: '02 INFORME AUD GR.pdf' },
-      { nombre: '03 Comunicación', archivo: '03 INFORME AUD 3 PROCESO COMUNICACIÓN.pdf' },
-      { nombre: '04 Producción', archivo: '04 INFORME PRODUCCION 04.pdf' },
-      { nombre: '05 Proyectos', archivo: '05 INFORME PROYECTOS 05.pdf' },
-      { nombre: '06 MAM', archivo: '06 informe 06 mam.pdf' },
-      { nombre: '07 MC', archivo: '07 Informe Auditoria 7 MC.pdf' },
-      { nombre: '08 Comercialización', archivo: '08 INFORME AUDITORIA 08 COMERCIALIZACION.pdf' },
-      { nombre: '09 Comunicación', archivo: '09 Informe 9 Comunicacion.pdf' },
-      { nombre: '10 Producción', archivo: '10 Informe de Auditoría 10 Producción.pdf' },
-      { nombre: '11 Comercialización', archivo: '11 informe 11 comercializacion.pdf' },
-      { nombre: '12 Gestión Recursos', archivo: '12 Informe de Auditoría 12 Gestión de Recursos.pdf' },
-    ],
-    '2023': [
-      { nombre: '01 Responsabilidad Dirección', archivo: '01 INFORME RESPONSABILIDAD DE LA DIRECCION.pdf' },
-      { nombre: '02 Medición Análisis', archivo: '02 INFORME AUDITORIA AL PROCESO MEDICION ANALISIS Y MEJORA 02-2023.pdf' },
-      { nombre: '03 Comunicación', archivo: '03 Informe de Auditoría 03 COMUNICACION.pdf' },
-      { nombre: '04 Comercialización', archivo: '04 Informe Auditoria 04 Comercialización.pdf' },
-      { nombre: '05 MAM', archivo: '05 Informe Aud 05 Mtto y Calibracion.pdf' },
-      { nombre: '06 Gestión Recursos', archivo: '06 INFORME DE AUDITORIA 6 GESTION DE RECURSOS.pdf' },
-      { nombre: '07 Producción', archivo: '07 Informe Aud 07 Producción.pdf' },
-      { nombre: '08 Proyectos', archivo: '08 INFORME 08 PROYECTOS.pdf' },
-      { nombre: '09 MAM', archivo: '09 OOMRSC-16  Rev 12  INFORME DE AUDITORIA MAM.pdf' },
-      { nombre: '10 Producción', archivo: '10 Informe de Auditoría 10.pdf' },
-      { nombre: '11 Comercial', archivo: '11 Informe Comercial 11.pdf' },
-    ]
-  };
+  // Resumen simplificado de auditorías
+  const auditoriasResumen = [
+    { anio: 2026, total: 2, informes: 6 },
+    { anio: 2025, total: 12, informes: 6 },
+    { anio: 2024, total: 12, informes: 12 },
+    { anio: 2023, total: 11, informes: 11 },
+  ];
 
   const getEstadoColor = (estado) => {
     const colors = { 'COMPLETADA': 'bg-emerald-100 text-emerald-700', 'EN_PROCESO': 'bg-blue-100 text-blue-700', 'PROGRAMADA': 'bg-amber-100 text-amber-700', 'CANCELADA': 'bg-red-100 text-red-600' };
@@ -3002,14 +2971,29 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
   };
 
   const agregarAuditoria = () => {
-    if (!nuevaAud.numero || !nuevaAud.area) return;
-    setAuditorias(prev => [...prev, { ...nuevaAud, id: Date.now(), estado: 'PROGRAMADA', hallazgos: 0, no_conformidades: 0 }]);
+    const numero = `AUD-${new Date().getFullYear()}-${String(auditorias.length + 1).padStart(3, '0')}`;
+    const nuevaAud = { id: Date.now(), numero, tipo: 'Interna', area: puedeTodasAreas ? 'Sistema de Gestión de Calidad' : areaUsuario, fecha_inicio: '', fecha_fin: '', estado: 'PROGRAMADA', hallazgos: 0, no_conformidades: 0 };
+    setAuditorias(prev => [...prev, nuevaAud]);
     setMostrarModal(false);
-    setNuevaAud({ numero: '', tipo: 'Interna', area: '', fecha_inicio: '', fecha_fin: '' });
   };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {/* Resumen por año - Solo informativo */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {auditoriasResumen.map(resumen => (
+          <div key={resumen.anio} className="bg-white p-5 rounded-xl border border-slate-200 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">Año {resumen.anio}</span>
+              <span className="text-2xl">📋</span>
+            </div>
+            <p className="text-3xl font-bold text-[#002855]">{resumen.total}</p>
+            <p className="text-xs text-slate-500 mt-1">auditorías • {resumen.informes} informes</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Estado actual */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Total Auditorías</p>
@@ -3029,80 +3013,38 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
         </div>
       </div>
 
+      {/* Lista simple de auditorías */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <h2 className="font-bold text-[#002855]">Registro de Auditorías</h2>
-          <button onClick={() => setMostrarModal(true)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg text-sm font-medium hover:bg-cyan-600">
-            <Plus size={16} /> Nueva Auditoría
-          </button>
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <h2 className="font-bold text-[#002855]">📋 Auditorías Recientes</h2>
         </div>
-        <table className="w-full">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="p-3 text-sm font-semibold text-slate-600">Número</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Tipo</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Área</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Fechas</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Estado</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">Hallazgos</th>
-              <th className="p-3 text-sm font-semibold text-slate-600">NC</th>
-            </tr>
-          </thead>
-          <tbody>
-            {auditorias.map(aud => (
-              <tr key={aud.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                <td className="p-3 font-medium text-[#002855]">{aud.numero}</td>
-                <td className="p-3 text-sm text-slate-600">{aud.tipo}</td>
-                <td className="p-3 text-sm text-slate-600">{aud.area}</td>
-                <td className="p-3 text-sm text-slate-600">{aud.fecha_inicio} - {aud.fecha_fin}</td>
-                <td className="p-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getEstadoColor(aud.estado)}`}>{aud.estado}</span>
-                </td>
-                <td className="p-3 text-sm text-slate-600">{aud.hallazgos}</td>
-                <td className="p-3 text-sm text-slate-600">{aud.no_conformidades}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="divide-y divide-slate-100">
+          {auditorias.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              <p className="text-4xl mb-2">📭</p>
+              <p>No hay auditorías registradas</p>
+            </div>
+          ) : auditorias.slice(0, 5).map(aud => (
+            <div key={aud.id} className="p-4 hover:bg-slate-50/50 flex items-center justify-between">
+              <div>
+                <p className="font-medium text-[#002855]">{aud.numero}</p>
+                <p className="text-sm text-slate-500">{aud.area} • {aud.fecha_inicio || 'Sin fecha'}</p>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(aud.estado)}`}>
+                {aud.estado}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
+      {/* Modal simple */}
       {mostrarModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <h3 className="font-bold text-[#002855] mb-4">Nueva Auditoría</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1">Número de Auditoría</label>
-                <input value={nuevaAud.numero} onChange={e => setNuevaAud({...nuevaAud, numero: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="AUD-2026-XXX" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1">Tipo</label>
-                  <select value={nuevaAud.tipo} onChange={e => setNuevaAud({...nuevaAud, tipo: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
-                    <option value="Interna">Interna</option>
-                    <option value="Externa">Externa</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1">Área</label>
-                  <select value={nuevaAud.area} onChange={e => setNuevaAud({...nuevaAud, area: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg">
-                    <option value="">Seleccionar...</option>
-                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1">Fecha Inicio</label>
-                  <input type="date" value={nuevaAud.fecha_inicio} onChange={e => setNuevaAud({...nuevaAud, fecha_inicio: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1">Fecha Fin</label>
-                  <input type="date" value={nuevaAud.fecha_fin} onChange={e => setNuevaAud({...nuevaAud, fecha_fin: e.target.value})} className="w-full p-2.5 border border-slate-200 rounded-lg" />
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
+            <p className="text-sm text-slate-600 mb-4">Se creará un registro nuevo de auditoría.</p>
+            <div className="flex gap-3">
               <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
               <button onClick={agregarAuditoria} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Crear</button>
             </div>
