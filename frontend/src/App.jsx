@@ -80,6 +80,10 @@ function App() {
     setIsLoaded(true);
   }, []);
 
+  const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
+  const puedeTodasAreas = usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Auditor' || usuarioLogueado?.rol === 'Super Admin';
+  const areaUsuario = usuarioLogueado?.area || '';
+
   const navItems = [
     { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
     { id: 'ac', label: 'Acciones Correctivas', icon: AlertTriangle },
