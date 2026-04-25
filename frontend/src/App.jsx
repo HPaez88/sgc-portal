@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -44,28 +44,10 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-const [isLoaded, setIsLoaded] = useState(false);
-  const sidebarRef = useRef(null);
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (sidebarRef.current) {
-        const rect = sidebarRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        setMousePos({ x, y });
-      }
-    };
-    const sidebar = sidebarRef.current;
-    if (sidebar) {
-      sidebar.addEventListener('mousemove', handleMouseMove);
-      return () => sidebar.removeEventListener('mousemove', handleMouseMove);
-    }
   }, []);
 
   const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
@@ -137,7 +119,6 @@ const [isLoaded, setIsLoaded] = useState(false);
         } fixed inset-y-0 left-0 z-50 bg-[#001f42] text-slate-300 transition-all duration-300 ease-out md:relative md:translate-x-0 flex flex-col shadow-2xl ${
           sidebarCollapsed ? 'w-16' : 'w-72'
         }`}
-        style={{ '--mouse-x': mousePos.x, '--mouse-y': mousePos.y }}
       >
         {/* Efecto de luz seguir mouse */}
         <div className="absolute inset-0 sidebar-glow pointer-events-none z-0" />
