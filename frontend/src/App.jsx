@@ -65,7 +65,7 @@ function App() {
     { id: 5, riesgo: 'Clientes nuevos', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Campaña de promo', fecha_termino: '2026-07-01', evaluacion: '', estado_plan: 'EN_PROCESO' },
   ]);
   const [seguimientos, setSeguimientos] = useLocalStorage('sgc-seguimientos', []);
-  const [documentos, setDocumentos] = useLocalStorage('sgc-documentos', [
+  const [documentos, setDocList] = useLocalStorage('sgc-documentos', [
     { id: 1, titulo: 'Manual de Calidad del Agua v3.0', tipo: 'Manual', estado: 'APROBADO', area: 'Sistema de Gestión de Calidad', version: '3.0', fecha: '2026-01-15', autor: 'Ing. Juan López' },
     { id: 2, titulo: 'Procedimiento de Saneamiento', tipo: 'Procedimiento', estado: 'EN_REVISION', area: 'Alcantarillado y Saneamiento', version: '1.2', fecha: '2026-03-20', autor: 'Lic. García' },
     { id: 3, titulo: 'Registro de Mantenimiento de Bombas', tipo: 'Registro', estado: 'BORRADOR', area: 'Mantenimiento de Redes', version: '2.0', fecha: '2026-04-18', autor: 'Ing. Martínez' },
@@ -483,13 +483,37 @@ function App() {
             />}
 
             {/* DOCUMENTOS */}
-            {activeTab === 'documents' && <DocumentosView />}
+            {activeTab === 'documents' && <DocumentosView 
+              documentos={documentos}
+              setDocList={setDocList}
+              puedeTodasAreas={puedeTodasAreas}
+              areaUsuario={areaUsuario}
+            />}
             
             {/* AUDITORÍAS */}
-            {activeTab === 'audits' && <AuditoriasView />}
+            {activeTab === 'audits' && <AuditoriasView 
+              auditorias={auditorias}
+              setAuditorias={setAuditorias}
+              puedeTodasAreas={puedeTodasAreas}
+              areaUsuario={areaUsuario}
+            />}
             
             {/* GESTOR DE APROBACIONES */}
-            {activeTab === 'gestor' && <GestorAprobacionesView />}
+            {activeTab === 'gestor' && <GestorAprobacionesView 
+              accionesCorrectivas={accionesCorrectivas}
+              planesMejora={planesMejora}
+              usuarios={usuarios}
+              puedeTodasAreas={puedeTodasAreas}
+              areaUsuario={areaUsuario}
+            />}
+
+            {/* CONFIGURACIÓN */}
+            {activeTab === 'settings' && <SettingsView 
+              usuarios={usuarios}
+              setUsuarios={setUsuarios}
+              documentos={documentos}
+              setDocList={setDocList}
+            />}
 
             {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'riesgos' && activeTab !== 'settings' && activeTab !== 'gestor' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up">
@@ -2233,24 +2257,15 @@ function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasAreas, areaUsuar
   );
 }
 
-function SettingsView() {
+function SettingsView({ usuarios, setUsuarios, documentos, setDocList }) {
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
-  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '', password: '' });
-  
-  const [procesos, setProcesos] = useState([
-    'Comercialización', 'Comunicación', 'Gestión de Recursos', 'Mantenimiento y Calibración',
-    'Medición Análisis y Mejora', 'Producción', 'Proyectos e Infraestructura', 'Responsabilidad de la Dirección'
-  ]);
-  
+  const [procesos, setProcesos] = useState(PROCESOS);
   const [areas, setAreas] = useState(AREAS);
-  
-  const [direcciones, setDirecciones] = useState([
-    'Dir. General', 'Dir. Técnica', 'Dir. Administrativa', 'Dir. Órganos de Control Interno', 'Dir. Comercial', 'Dir. Jurídica', 'Dir. Programas Sociales y Cultura del Agua'
-  ]);
-  
+  const [direcciones, setDirecciones] = useState(DIRECCIONES);
   const [nuevoProceso, setNuevoProceso] = useState('');
   const [nuevaArea, setNuevaArea] = useState('');
   const [nuevaDireccion, setNuevaDireccion] = useState('');
+  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '', password: '' });
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
   const [editandoUsuario, setEditandoUsuario] = useState({ show: false, user: null });
   
@@ -2303,15 +2318,6 @@ function SettingsView() {
     }});
   };
   
-  const [usuarios, setUsuarios] = useState([
-    { id: 1, nombre: 'Lic. Héctor Manuel Páez León', email: 'hpaez@oomapasc.gob.mx', telefono: '6441894125', area: 'Sistema de Gestión de Calidad', rol: 'Super Admin', direccion: 'Dir. General', password: 'sgc2026' },
-    { id: 2, nombre: 'Ing. Juan López', email: 'jlopez@oomapasc.gob.mx', telefono: '6441234567', area: 'Control de Calidad', rol: 'Admin', direccion: 'Dir. Técnica', password: '' },
-    { id: 3, nombre: 'Lic. María García', email: 'mgarcia@oomapasc.gob.mx', telefono: '6442345678', area: 'Atención Ciudadana', rol: 'Usuario', direccion: 'Dir. Comercial', password: '' },
-    { id: 4, nombre: 'Ing. Pedro Martínez', email: 'pmartinez@oomapasc.gob.mx', telefono: '6443456789', area: 'Mantenimiento de Redes', rol: 'Encargado', direccion: 'Dir. Técnica', password: '' },
-    { id: 5, nombre: 'C.P. Ana Hernández', email: 'ahernandez@oomapasc.gob.mx', telefono: '6444567890', area: 'Contabilidad', rol: 'Encargado', direccion: 'Dir. Administrativa', password: '' },
-    { id: 6, nombre: 'Ing. Roberto Torres', email: 'rtorres@oomapasc.gob.mx', telefono: '6445678901', area: 'Sistema de Gestión de Calidad', rol: 'Admin', direccion: 'Dir. General', password: '' },
-  ]);
-
   const agregarUsuario = () => {
     if (!nuevoUsuario.nombre || !nuevoUsuario.email || !nuevoUsuario.area) return;
     setUsuarios(prev => [...prev, { ...nuevoUsuario, id: prev.length + 1 }]);
@@ -2726,14 +2732,7 @@ function SelectField({ label, name, value, onChange, options, required }) {
   );
 }
 
-function DocumentosView() {
-  const [documentos, setDocumentos] = useLocalStorage('sgc-documentos', [
-    { id: 1, titulo: 'Manual de Calidad del Agua v3.0', tipo: 'Manual', estado: 'APROBADO', area: 'Sistema de Gestión de Calidad', version: '3.0', fecha: '2026-01-15', autor: 'Ing. Juan López' },
-    { id: 2, titulo: 'Procedimiento de Saneamiento', tipo: 'Procedimiento', estado: 'EN_REVISION', area: 'Alcantarillado y Saneamiento', version: '1.2', fecha: '2026-03-20', autor: 'Lic. García' },
-    { id: 3, titulo: 'Registro de Mantenimiento de Bombas', tipo: 'Registro', estado: 'BORRADOR', area: 'Mantenimiento de Redes', version: '2.0', fecha: '2026-04-18', autor: 'Ing. Martínez' },
-    { id: 4, titulo: 'Política de Calidad', tipo: 'Política', estado: 'APROBADO', area: 'Dirección General', version: '1.0', fecha: '2025-06-01', autor: 'Lic. Héctor Páez' },
-    { id: 5, titulo: 'Instrucción de Trabalho - Medición de Cloro', tipo: 'Instrucción', estado: 'APROBADO', area: 'Control de Calidad', version: '1.5', fecha: '2025-09-10', autor: 'Ing. López' },
-  ]);
+function DocumentosView({ documentos, setDocumentos, puedeTodasAreas, areaUsuario }) {
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -2848,7 +2847,7 @@ Fecha de elaboración: ${ac.fecha_creacion || new Date().toISOString().split('T'
 
   const agregarDoc = () => {
     if (!nuevoDoc.titulo || !nuevoDoc.area) return;
-    setDocumentos(prev => [...prev, { ...nuevoDoc, id: Date.now(), estado: 'BORRADOR', fecha: new Date().toISOString().split('T')[0] }]);
+    setDocList(prev => [...prev, { ...nuevoDoc, id: Date.now(), estado: 'BORRADOR', fecha: new Date().toISOString().split('T')[0] }]);
     setMostrarModal(false);
     setNuevoDoc({ titulo: '', tipo: 'Procedimiento', area: '', version: '1.0', autor: '' });
   };
@@ -2946,13 +2945,7 @@ Fecha de elaboración: ${ac.fecha_creacion || new Date().toISOString().split('T'
   );
 }
 
-function AuditoriasView() {
-  const [auditorias, setAuditorias] = useLocalStorage('sgc-auditorias', [
-    { id: 1, numero: 'AUD-2026-001', tipo: 'Interna', area: 'Sistema de Gestión de Calidad', fecha_inicio: '2026-01-15', fecha_fin: '2026-01-17', estado: 'COMPLETADA', hallazgos: 3, no_conformidades: 1 },
-    { id: 2, numero: 'AUD-2026-002', tipo: 'Interna', area: 'Control de Calidad', fecha_inicio: '2026-02-20', fecha_fin: '2026-02-22', estado: 'COMPLETADA', hallazgos: 2, no_conformidades: 0 },
-    { id: 3, numero: 'AUD-2026-003', tipo: 'Externa', area: 'Plantas Potabilizadoras', fecha_inicio: '2026-03-10', fecha_fin: '2026-03-12', estado: 'PROGRAMADA', hallazgos: 0, no_conformidades: 0 },
-    { id: 4, numero: 'AUD-2026-004', tipo: 'Interna', area: 'Mantenimiento de Redes', fecha_inicio: '2026-04-05', fecha_fin: '2026-04-07', estado: 'EN_PROCESO', hallazgos: 1, no_conformidades: 1 },
-  ]);
+function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuario }) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevaAud, setNuevaAud] = useState({ numero: '', tipo: 'Interna', area: '', fecha_inicio: '', fecha_fin: '' });
   const [verInformes, setVerInformes] = useState(false);
@@ -3112,7 +3105,7 @@ function AuditoriasView() {
   );
 }
 
-function GestorAprobacionesView() {
+function GestorAprobacionesView({ accionesCorrectivas, planesMejora, usuarios, puedeTodasAreas, areaUsuario }) {
   const [aprobaciones, setAprobaciones] = useLocalStorage('sgc-aprobaciones', [
     { id: 1, documento: 'AC-2026-001', tipo: 'Acción Correctiva', area: 'Control de Calidad', solicitante: 'Ing. Juan López', fecha: '2026-04-15', estado: 'PENDIENTE', prioridad: 'Alta' },
     { id: 2, documento: 'PM-2026-002', tipo: 'Plan de Mejora', area: 'Recursos Humanos', solicitante: 'Lic. María García', fecha: '2026-04-18', estado: 'APROBADO', prioridad: 'Media' },
