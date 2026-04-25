@@ -70,13 +70,86 @@ auditorias
 evidencias
 ```
 
-### 4.2 Catálogos (catalogs.js)
-```javascript
-AREAS = [39 áreas de OOMAPASC]
-DIRECCIONES = [7 direcciones]
-PROCESOS = [8 procesos ISO 9001]
-INDICADORES = [86 indicadores]
-ORIGENES_AC = ["Auditoría", "Indicador", "Queja", "Otra"]
+### 4.2 ÁREAS (39 áreas)
+```
+Agencia Esperanza
+Agencia Marte R. Gómez
+Agencia Providencia
+Agencia Pueblo Yaqui
+Alcantarillado y Saneamiento
+Atención Ciudadana
+Comunicación e Imagen Institucional
+Contabilidad
+Contratos y Servicios
+Control de Calidad
+Control y Servicios
+Cultura del agua
+Informática
+Jurídico
+Licitaciones
+Línea OOMAPASC
+Mantenimiento de Redes
+Mantenimiento y Servicios Generales
+Órgano de Control Interno
+Padrón de Usuarios
+Plantas Potabilizadoras
+Programas Sociales
+Proyectos e Infraestructura
+Recursos Humanos
+Recursos Materiales
+Sectorización hidrométrica e innovación
+Seguridad Industrial
+Sistema de Gestión de Calidad
+Suburbano Técnico
+Supervisión y control de obras
+Trabajo Social
+Trámites Técnicos
+Verificación Y Lectura
+```
+
+### 4.3 DIRECCIONES (7 direcciones)
+```
+Dir. General
+Dir. Técnica
+Dir. Jurídica
+Dir. Órgano de Control Interno
+Dir. Comercial
+Dir. Administrativa
+Dir. Programas Sociales y Cultura del Agua
+```
+
+### 4.4 PROCESOS (8 procesos ISO 9001)
+```
+Comercialización
+Comunicación
+Gestión de Recursos
+Mantenimiento y Calibración
+Medición, Análisis y Mejora
+Producción
+Proyectos e Infraestructura
+Responsabilidad de la Dirección
+```
+
+### 4.5 INDICADORES (86 indicadores)
+Los indicadores están definidos en catalogs.js con:
+- id, nombre, área, proceso, dirección
+- meta, unidad, periodicidad, es_menor
+
+### 4.6 ROLES
+```
+Super Admin (indestructible - Lic. Héctor Páez)
+Admin
+Auditor
+Encargado
+Usuario
+```
+
+### 4.7 ORIGENES AC
+```
+Auditoría
+Indicador
+Queja
+Otra
 ```
 
 ### 4.3 Roles

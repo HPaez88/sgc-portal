@@ -1,0 +1,78 @@
+{
+  "AREAS": [
+    "Agencia Esperanza",
+    "Agencia Marte R. Gómez",
+    "Agencia Providencia",
+    "Agencia Pueblo Yaqui",
+    "Alcantarillado y Saneamiento",
+    "Atención Ciudadana",
+    "Comunicación e Imagen Institucional",
+    "Contabilidad",
+    "Contratos y Servicios",
+    "Control de Calidad",
+    "Control y Servicios",
+    "Cultura del agua",
+    "Informática",
+    "Jurídico",
+    "Licitaciones",
+    "Línea OOMAPASC",
+    "Mantenimiento de Redes",
+    "Mantenimiento y Servicios Generales",
+    "Órgano de Control Interno",
+    "Padrón de Usuarios",
+    "Plantas Potabilizadoras",
+    "Programas Sociales",
+    "Proyectos e Infraestructura",
+    "Recursos Humanos",
+    "Recursos Materiales",
+    "Sectorización hidrométrica e innovación",
+    "Seguridad Industrial",
+    "Sistema de Gestión de Calidad",
+    "Suburbano Técnico",
+    "Supervisión y control de obras",
+    "Trabajo Social",
+    "Trámites Técnicos",
+    "Verificación Y Lectura"
+  ],
+  "DIRECCIONES": [
+    "Dir. General",
+    "Dir. Técnica",
+    "Dir. Jurídica",
+    "Dir. Órgano de Control Interno",
+    "Dir. Comercial",
+    "Dir. Administrativa",
+    "Dir. Programas Sociales y Cultura del Agua"
+  ],
+  "PROCESOS": [
+    "Comercialización",
+    "Comunicación",
+    "Gestión de Recursos",
+    "Mantenimiento y Calibración",
+    "Medición, Análisis y Mejora",
+    "Producción",
+    "Proyectos e Infraestructura",
+    "Responsabilidad de la Dirección"
+  ],
+  "ORIGENES_AC": [
+    "Auditoría",
+    "Indicador",
+    "Queja",
+    "Otra"
+  ],
+  "ROLES": [
+    "Super Admin",
+    "Admin",
+    "Auditor",
+    "Encargado",
+    "Usuario"
+  ],
+  "DIRECCIONES_COMPLETAS": {
+    "General": "Dirección General",
+    "Técnica": "Dirección Técnica",
+    "Administrativa": "Dirección Administrativa",
+    "Órganos de Control Interno": "Órgano de Control Interno",
+    "Comercial": "Dirección Comercial",
+    "Jurídica": "Dirección Jurídica",
+    "Programas Sociales y Cultura del Agua": "Programas Sociales y Cultura del Agua"
+  }
+}
