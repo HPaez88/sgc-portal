@@ -511,8 +511,6 @@ function App() {
             {activeTab === 'settings' && <SettingsView 
               usuarios={usuarios}
               setUsuarios={setUsuarios}
-              documentos={documentos}
-              setDocumentos={setDocumentos}
             />}
 
             {activeTab !== 'dashboard' && activeTab !== 'ac' && activeTab !== 'pm' && activeTab !== 'indicadores' && activeTab !== 'riesgos' && activeTab !== 'settings' && activeTab !== 'gestor' && (
@@ -879,7 +877,7 @@ Sé profesional, específico y orientado a la solución inmediata.`;
               )}
               {formData.origen === 'Indicador' && (
                 <div>
-                  <SelectField label="Indicador" name="indicador" value={formData.indicador} onChange={handleChange} options={INDICADORES.map(i => i.nombre)} />
+                  <SelectField label="Indicador" name="indicador_ref" value={formData.indicador_ref} onChange={handleChange} options={INDICADORES.map(i => i.nombre)} />
                 </div>
               )}
             </div>
@@ -2257,7 +2255,7 @@ function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasAreas, areaUsuar
   );
 }
 
-function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocumentos }) {
+function SettingsView({ usuarios = [], setUsuarios }) {
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
   const [procesos, setProcesos] = useState(PROCESOS);
   const [areas, setAreas] = useState(AREAS);
@@ -2269,8 +2267,7 @@ function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocument
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
   const [editandoUsuario, setEditandoUsuario] = useState({ show: false, user: null });
   
-  const usuariosList = usuarios || [];
-  const docList = documentos || [];
+  const usuariosList = Array.isArray(usuarios) ? usuarios : [];
   
   const safeSetUsuarios = typeof setUsuarios === 'function' ? setUsuarios : () => {};
   
@@ -2432,7 +2429,7 @@ function SettingsView({ usuarios = [], setUsuarios, documentos = [], setDocument
                 <td className="p-3">
                   <div className="flex gap-2">
                     <button onClick={() => { 
-                      setEditandoUsuario({...u, show: true }); 
+                      setEditandoUsuario({ show: true, user: u }); 
                     }} className="p-2 text-blue-500 hover:bg-blue-50 rounded" title="Editar usuario">
                       <Edit size={16} />
                     </button>
