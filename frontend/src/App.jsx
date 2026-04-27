@@ -13,7 +13,6 @@ import {
   X,
   ChevronRight,
   Droplet,
-  Download,
   CheckCircle2,
   Clock,
   FileEdit,
@@ -34,7 +33,6 @@ import {
   Eye,
   Edit,
   Filter,
-  Download,
   Check,
   AlertCircle
 } from 'lucide-react';
