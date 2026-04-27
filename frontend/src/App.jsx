@@ -3051,7 +3051,8 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
 .order('anio', { ascending: false })
               .order('numero', { ascending: true });
 
-          console.log('Informes cargados:', data);
+console.log('Informes cargados:', data);
+          console.log('Error carga informes:', error);
           
           if (error) {
             console.warn('Error cargando informes:', error);
