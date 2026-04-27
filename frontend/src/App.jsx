@@ -676,7 +676,7 @@ function App() {
 }
 
 function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, evidencias, setEvidencias, usuarios, puedeTodasAreas, areaUsuario }) {
-  const [step, setStep] = useState(1);
+  const [hojaActiva, setHojaActiva] = useState('REGISTRO');
   const [loading, setLoading] = useState(false);
   const [generando, setGenerando] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -687,21 +687,43 @@ function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, evi
   
   const [formData, setFormData] = useState({
     codigo: `AC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+    folio_codigo: '',
     fecha_deteccion: new Date().toISOString().split('T')[0],
     proceso: '',
     area: areaDefault,
     origen: '',
     num_auditoria: '',
     indicador_ref: '',
-    descripcion_nc: '',
+    descripcion_no_conformidad_original: '',
+    descripcion_no_conformidad_mejorada: '',
+    impacta_otros_procesos: 'NO',
+    otros_procesos_afectados: '',
     posibles_causas: '',
     causa_raiz: '',
     clasificacion: '',
     tipo_accion: '',
     accion_contencion: '',
-    evidencia_contencion: '',
-    eficacia: '',
+    actividad_inmediata: '',
+    responsable_inmediato: '',
+    fecha_inmediata: '',
+    causas: [
+      { numero: 1, causa: '', puntuacion: 0 },
+      { numero: 2, causa: '', puntuacion: 0 },
+      { numero: 3, causa: '', puntuacion: 0 },
+      { numero: 4, causa: '', puntuacion: 0 }
+    ],
+    causa_principal: '',
+    requiere_matriz_riesgos: 'NO',
+    riesgo_modificado: '',
+    requiere_cambio_sgc: 'NO',
     actividades: [],
+    equipo_trabajo: [
+      { nombre: '', puesto: '', area: '', rol: 'Responsable' }
+    ],
+    evidencia_contencion: '',
+    evidencia_objetiva: '',
+    conclusion_auditor: '',
+    evaluacion_eficacia: '',
     estado: 'BORRADOR'
   });
 
@@ -920,25 +942,30 @@ Sé profesional, específico y orientado a la solución inmediata.`;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in-up">
-      {/* Steps */}
+      {/* Tabs */}
       <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex gap-4">
-        {['1. Describir', '2. Analizar', '3. Plan de Acción'].map((label, idx) => (
+        {[
+          { id: 'REGISTRO', label: '1. Registro' },
+          { id: 'ANALISIS', label: '2. Análisis' },
+          { id: 'ACTIVIDADES', label: '3. Actividades' },
+          { id: 'AUDITOR', label: '4. Auditor' }
+        ].map(tab => (
           <button
-            key={idx}
-            onClick={() => setStep(idx + 1)}
+            key={tab.id}
+            onClick={() => setHojaActiva(tab.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              step === idx + 1 
+              hojaActiva === tab.id 
                 ? 'bg-cyan-500 text-white shadow-md' 
                 : 'text-slate-500 hover:bg-slate-100'
             }`}
           >
-            {label}
+            {tab.label}
           </button>
         ))}
       </div>
 
       <div className="p-6 space-y-6">
-        {step === 1 && (
+        {hojaActiva === 'REGISTRO' && (
           <div className="space-y-6">
             <SectionTitle icon="📋" title="Datos del Documento" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1044,7 +1071,7 @@ Sé profesional, específico y orientado a la solución inmediata.`;
           </div>
         )}
 
-        {step === 2 && (
+        {hojaActiva === 'ANALISIS' && (
           <div className="space-y-6">
             <SectionTitle icon="🔍" title="Análisis de Causa Raíz (6M)" required />
             
@@ -1116,7 +1143,7 @@ Sé profesional, específico y orientado a la solución inmediata.`;
           </div>
         )}
 
-        {step === 3 && (
+        {hojaActiva === 'ACTIVIDADES' && (
           <div className="space-y-6">
             <SectionTitle icon="📋" title="Plan de Actividades" required />
             {errores.actividades && <p className="text-red-500 text-sm -mt-4">{errores.actividades}</p>}
@@ -1526,7 +1553,7 @@ Sé específico, práctico y orientado a resultados. El equipo solo dará la ide
           </div>
         )}
 
-        {step === 2 && (
+        {hojaActiva === 'ANALISIS' && (
           <div className="space-y-6">
             <SectionTitle icon="✨" title="Análisis de Beneficios y Recursos" />
             
@@ -1587,7 +1614,7 @@ Sé específico, práctico y orientado a resultados. El equipo solo dará la ide
           </div>
         )}
 
-        {step === 3 && (
+        {hojaActiva === 'ACTIVIDADES' && (
           <div className="space-y-6">
             <SectionTitle icon="📋" title="Plan de Actividades" required />
             
