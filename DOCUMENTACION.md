@@ -55,10 +55,12 @@ SGC page/
 - Efectos hover en tablas y tarjetas
 - Scrollbar personalizada
 - Gradientes en botones y stat cards
+- Indicador "Supabase" en header
 
 ### ✅ INTEGRACIONES
 - Supabase conectado (URL: https://yrjlmqxpakjiwrfwhgaj.supabase.co)
-- Tablas creadas en Supabase (8 tablas)
+- **Sync automático** al cargar: usuarios, AC, PM, Riesgos, Documentos, Auditorías
+- **Guardado automático**: cambios en AC, PM, Riesgos, Documentos, Auditorías se guardan en Supabase
 - localStorage como fallback
 
 ---
@@ -272,20 +274,20 @@ VITE_GROQ_API_KEY=... (para IA)
 ## 9. PENDIENTES Y MEJORAS
 
 ### 🔴 PRIORIDAD ALTA
-- [ ] Sincronización automática con Supabase (guardar/cargar datos)
-- [ ] Login real con Supabase Auth
 - [ ] Export Word/PDF real (docx, pdf)
 
 ### 🟡 PRIORIDAD MEDIA  
 - [ ] Notificaciones email
 - [ ] Evidencias en cloud storage (Supabase Storage)
 - [ ] Gráficos/Charts para indicadores
+- [ ] Login real con Supabase Auth
 
 ### 🟢 COMPLETADOS
 - [x] Diseño visual de tarjetas indicadores
 - [x] Badges de estado
 - [x] Efectos hover
 - [x] Scrollbar personalizada
+- [x] Sync Supabase (carga y guarda datos automáticamente)
 
 ---
 
