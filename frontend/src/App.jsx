@@ -34,7 +34,8 @@ import {
   Edit,
   Filter,
   Check,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { getApiUrl } from './config';
 import { AGENTS, callAgent, parseAgentResponse, generatePrompt } from './agents';
@@ -1648,6 +1649,29 @@ Sé específico, práctico y orientado a resultados. El equipo solo dará la ide
               <Save size={18} />
               Guardar Borrador
             </button>
+            <button onClick={() => {
+              if (!formData.descripcion_nc) { alert('No hay datos'); return; }
+              const win = window.open('', '_blank');
+              win.document.write(`<html><head><title>AC ${formData.codigo}</title></head><body>
+<h1>ACCIÓN CORRECTIVA - ${formData.codigo}</h1>
+<table border="1" cellpadding="5"><tr><td><b>Área:</b></td><td>${formData.area}</td></tr>
+<tr><td><b>Proceso:</b></td><td>${formData.proceso}</td></tr>
+<tr><td><b>Origen:</b></td><td>${formData.origen}</td></tr>
+<tr><td><b>Descripción NC:</b></td><td>${formData.descripcion_nc}</td></tr>
+<tr><td><b>Posibles Causas:</b></td><td>${formData.posibles_causas}</td></tr>
+<tr><td><b>Causa Raíz:</b></td><td>${formData.causa_raiz}</td></tr>
+<tr><td><b>Clasificación:</b></td><td>${formData.clasificacion}</td></tr>
+<tr><td><b>Tipo Acción:</b></td><td>${formData.tipo_accion}</td></tr></table>
+<h2>Equipo de Trabajo</h2><ul>${(formData.equipo_trabajo || []).map(m => `<li>${m.nombre} - ${m.puesto} (${m.rol})</li>`).join('')}</ul>
+<h2>Actividades</h2><table border="1" cellpadding="4"><tr><th>Descripción</th><th>Responsable</th><th>Fecha</th><th>Estado</th></tr>
+${(formData.actividades || []).map(a => `<tr><td>${a.descripcion}</td><td>${a.responsable}</td><td>${a.fecha_limite}</td><td>${a.estado}</td></tr>`).join('')}
+</table></body></html>`);
+              win.document.close();
+              setTimeout(() => win.print(), 500);
+            }} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-all">
+              <Download size={18} />
+             Exportar
+            </button>
             {step < 3 ? (
               <button onClick={() => setStep(s => Math.min(3, s + 1))} className="flex items-center gap-2 px-6 py-2.5 bg-cyan-500 text-white hover:bg-cyan-600 rounded-xl font-medium shadow-md shadow-cyan-500/20 transition-all">
                 Siguiente
@@ -1825,6 +1849,12 @@ function IndicadoresView({ indicadoresData, setIndicadoresData, puedeTodasAreas,
           >
             📊 Trimestral
           </button>
+          <button 
+            onClick={() => setVista('graficos')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${vista === 'graficos' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-600'}`}
+          >
+            📈 Gráficos
+          </button>
         </div>
         
         {/* Filtros */}
@@ -1960,6 +1990,62 @@ function IndicadoresView({ indicadoresData, setIndicadoresData, puedeTodasAreas,
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </>
+      ) : vista === 'graficos' ? (
+        <>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <h2 className="font-bold text-[#002855] mb-6">Dashboard de Indicadores</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {procesoStats.map(stat => {
+                const sem = getSemaphoreColor(stat.cumplimiento);
+                return (
+                  <div key={stat.proceso} className={`p-4 rounded-xl border ${sem.bg.replace('bg-', 'border-')}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-slate-500 truncate">{stat.proceso}</p>
+                      <span className="text-xl">{sem.icon}</span>
+                    </div>
+                    <p className={`text-3xl font-bold ${sem.text}`}>{stat.cumplimiento}%</p>
+                    <p className="text-xs text-slate-400">{stat.count} inds.</p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="space-y-6">
+              {procesosUnicos.map(proceso => {
+                const indicadoresProceso = indicadores.filter(i => i.proceso === proceso);
+                if (indicadoresProceso.length === 0) return null;
+                const promedio = procesoStats.find(s => s.proceso === proceso)?.cumplimiento || 0;
+                const sem = getSemaphoreColor(promedio);
+                return (
+                  <div key={proceso} className="border border-slate-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-[#002855]">{proceso}</h3>
+                      <span className={`text-2xl font-bold ${sem.text}`}>{promedio}%</span>
+                    </div>
+                    <div className="space-y-2">
+                      {indicadoresProceso.map(ind => {
+                        const cump = getCumplimiento(ind.id, meses);
+                        const semInd = getSemaphoreColor(cump);
+                        return (
+                          <div key={ind.id} className="flex items-center gap-3">
+                            <div className="w-40 flex-shrink-0">
+                              <p className="text-xs text-slate-600 truncate">{ind.nombre}</p>
+                            </div>
+                            <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                              <div className={`h-full ${semInd.bg} transition-all`} style={{ width: `${cump}%` }} />
+                            </div>
+                            <div className="w-12 text-right">
+                              <span className="text-xs font-medium">{cump}%</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </>
