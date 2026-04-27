@@ -743,7 +743,7 @@ function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, evi
       if (!formData.area) newErrors.area = 'Requerido';
       if (!formData.proceso) newErrors.proceso = 'Requerido';
       if (!formData.origen) newErrors.origen = 'Requerido';
-      if (!formData.descripcion_nc) newErrors.descripcion_nc = 'Requerido';
+      if (!formData.descripcion_no_conformidad_original) newErrors.descripcion_nc = 'Requerido';
     }
     
     if (currentStep === 2) {
@@ -790,7 +790,7 @@ function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, evi
   };
 
   const generarConIA = async () => {
-    if (!formData.descripcion_nc) {
+    if (!formData.descripcion_no_conformidad_original) {
       alert('Describe la No Conformidad primero');
       return;
     }
@@ -999,8 +999,8 @@ Sé profesional, específico y orientado a la solución inmediata.`;
             <div>
               <SectionTitle icon="⚠️" title="Descripción de la No Conformidad" required />
               <textarea
-                name="descripcion_nc"
-                value={formData.descripcion_nc}
+                name="descripcion_no_conformidad_original"
+                value={formData.descripcion_no_conformidad_original}
                 onChange={handleChange}
                 placeholder="Describe la no conformidad detectada..."
                 className={`w-full p-4 border rounded-xl resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all ${errores.descripcion_nc ? 'border-red-500' : 'border-slate-200'}`}
@@ -1008,16 +1008,43 @@ Sé profesional, específico y orientado a la solución inmediata.`;
               {errores.descripcion_nc && <p className="text-red-500 text-xs mt-1">{errores.descripcion_nc}</p>}
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-2">La no conformidad, ¿Impacta en otros procesos?</label>
+                <select 
+                  name="impacta_otros_procesos" 
+                  value={formData.impacta_otros_procesos} 
+                  onChange={handleChange}
+                  className="w-full p-3 border border-slate-200 rounded-lg"
+                >
+                  <option value="NO">NO</option>
+                  <option value="SI">SI</option>
+                </select>
+              </div>
+              {formData.impacta_otros_procesos === 'SI' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-2">Enunciar qué otros procesos se ven afectados</label>
+                  <textarea
+                    name="otros_procesos_afectados"
+                    value={formData.otros_procesos_afectados}
+                    onChange={handleChange}
+                    placeholder="Procesos afectados..."
+                    className="w-full p-3 border border-slate-200 rounded-lg resize-none min-h-[80px]"
+                  />
+                </div>
+              )}
+            </div>
+
             <button
               onClick={generarConIA}
               disabled={generando || !formData.descripcion_nc}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
             >
-              {generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {generando ? 'Generando...' : 'Generar con IA'}
-            </button>
+{generando ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+            {generando ? 'Generando...' : 'Generar con IA'}
+          </button>
 
-            {/* Sección de Evidencias */}
+          {/* Evidencias */}
             <div className="mt-6 p-4 bg-slate-50 rounded-xl">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-slate-700 flex items-center gap-2">
@@ -1601,15 +1628,93 @@ Sé específico, práctico y orientado a resultados. El equipo solo dará la ide
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Equipo de Trabajo *</label>
-              <input
-                name="equipo_trabajo"
-                value={formData.equipo_trabajo}
-                onChange={handleChange}
-                placeholder="Nombres de los integrantes (separados por coma)..."
-                className="w-full p-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-              />
-              <p className="text-xs text-slate-500 mt-1">Puedes agregar más integrantes después</p>
+              <label className="block text-sm font-semibold text-slate-600 mb-2">Equipo de Trabajo (hasta 4 integrantes)</label>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="p-2 text-left font-medium">Nombre</th>
+                      <th className="p-2 text-left font-medium">Puesto</th>
+                      <th className="p-2 text-left font-medium">Área</th>
+                      <th className="p-2 text-left font-medium">Rol</th>
+                      <th className="p-2 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(formData.equipo_trabajo || []).map((integrante, idx) => (
+                      <tr key={idx} className="border-t border-slate-200">
+                        <td className="p-1">
+                          <input
+                            value={integrante.nombre || ''}
+                            onChange={(e) => {
+                              const nuevo = [...(formData.equipo_trabajo || [])];
+                              nuevo[idx] = { ...nuevo[idx], nombre: e.target.value };
+                              setFormData(prev => ({ ...prev, equipo_trabajo: nuevo }));
+                            }}
+                            placeholder="Nombre completo"
+                            className="w-full p-1.5 border border-slate-200 rounded"
+                          />
+                        </td>
+                        <td className="p-1">
+                          <input
+                            value={integrante.puesto || ''}
+                            onChange={(e) => {
+                              const nuevo = [...(formData.equipo_trabajo || [])];
+                              nuevo[idx] = { ...nuevo[idx], puesto: e.target.value };
+                              setFormData(prev => ({ ...prev, equipo_trabajo: nuevo }));
+                            }}
+                            placeholder="Puesto"
+                            className="w-full p-1.5 border border-slate-200 rounded"
+                          />
+                        </td>
+                        <td className="p-1">
+                          <input
+                            value={integrante.area || ''}
+                            onChange={(e) => {
+                              const nuevo = [...(formData.equipo_trabajo || [])];
+                              nuevo[idx] = { ...nuevo[idx], area: e.target.value };
+                              setFormData(prev => ({ ...prev, equipo_trabajo: nuevo }));
+                            }}
+                            placeholder="Área"
+                            className="w-full p-1.5 border border-slate-200 rounded"
+                          />
+                        </td>
+                        <td className="p-1">
+                          <select
+                            value={integrante.rol || 'Responsable'}
+                            onChange={(e) => {
+                              const nuevo = [...(formData.equipo_trabajo || [])];
+                              nuevo[idx] = { ...nuevo[idx], rol: e.target.value };
+                              setFormData(prev => ({ ...prev, equipo_trabajo: nuevo }));
+                            }}
+                            className="w-full p-1.5 border border-slate-200 rounded"
+                          >
+                            <option value="Responsable">Responsable</option>
+                            <option value="Coordinador">Coordinador</option>
+                            <option value="Enlace SGC">Enlace SGC</option>
+                            <option value="Integrante">Integrante</option>
+                          </select>
+                        </td>
+                        <td className="p-1 text-center">
+                          {(formData.equipo_trabajo?.length || 0) > 1 && (
+                            <button onClick={() => {
+                              const nuevo = formData.equipo_trabajo.filter((_, i) => i !== idx);
+                              setFormData(prev => ({ ...prev, equipo_trabajo: nuevo }));
+                            }} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                              <X size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {(formData.equipo_trabajo?.length || 0) < 4 && (
+                <button onClick={() => setFormData(prev => ({ ...prev, equipo_trabajo: [...(prev.equipo_trabajo || []), { nombre: '', puesto: '', area: '', rol: 'Integrante' }] }))} className="mt-2 text-sm text-cyan-600 hover:bg-cyan-50 px-3 py-1.5 rounded">
+                + Agregar integrante
+              </button>
+              )}
             </div>
           </div>
         )}
@@ -1677,7 +1782,7 @@ Sé específico, práctico y orientado a resultados. El equipo solo dará la ide
               Guardar Borrador
             </button>
             <button onClick={() => {
-              if (!formData.descripcion_nc) { alert('No hay datos'); return; }
+              if (!formData.descripcion_no_conformidad_original) { alert('No hay datos'); return; }
               const win = window.open('', '_blank');
               win.document.write(`<html><head><title>AC ${formData.codigo}</title></head><body>
 <h1>ACCIÓN CORRECTIVA - ${formData.codigo}</h1>
