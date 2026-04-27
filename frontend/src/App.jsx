@@ -34,7 +34,8 @@ import {
   Edit,
   Filter,
   Download,
-  Check
+  Check,
+  AlertCircle
 } from 'lucide-react';
 import { getApiUrl } from './config';
 import { AGENTS, callAgent, parseAgentResponse, generatePrompt } from './agents';
@@ -3033,13 +3034,97 @@ Fecha de elaboración: ${ac.fecha_creacion || new Date().toISOString().split('T'
 function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuario }) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [verInformes, setVerInformes] = useState(false);
+  const [anioSeleccionado, setAnioSeleccionado] = useState(2026);
+  const [informes, setInformes] = useState([]);
+  const [loadingInformes, setLoadingInformes] = useState(false);
+  const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
-  // Resumen simplificado de auditorías
+  // Cargar informes desde Supabase
+  useEffect(() => {
+    if (verInformes) {
+      async function cargarInformes() {
+        setLoadingInformes(true);
+        try {
+          const { data, error } = await supabase
+            .from('informes_auditoria')
+            .select('*')
+            .order('anio', { ascending: false })
+            .order('numero', { ascending: true });
+          
+          if (error) {
+            console.warn('Error cargando informes:', error);
+            // Usar datos locales si falla
+            setInformes(localInformes);
+          } else if (data && data.length > 0) {
+            setInformes(data);
+          } else {
+            // No hay datos en Supabase, usar locales
+            setInformes(localInformes);
+          }
+        } catch (e) {
+          setInformes(localInformes);
+        } finally {
+          setLoadingInformes(false);
+        }
+      }
+      cargarInformes();
+    }
+  }, [verInformes]);
+
+  // Informes locales como fallback
+  const localInformes = [
+    { anio: 2026, numero: 1, nombre: '01 Informe Responsabilidad Dirección', tipo: 'PDF' },
+    { anio: 2026, numero: 2, nombre: '02 Informe MAM', tipo: 'PDF' },
+    { anio: 2026, numero: 3, nombre: '03 MC', tipo: 'PDF' },
+    { anio: 2026, numero: 4, nombre: '04 Comunicación', tipo: 'PDF' },
+    { anio: 2026, numero: 5, nombre: '05 Producción', tipo: 'PDF' },
+    { anio: 2026, numero: 6, nombre: '06 Comercialización', tipo: 'PDF' },
+    { anio: 2025, numero: 1, nombre: '01 Informe Responsabilidad Dirección', tipo: 'PDF' },
+    { anio: 2025, numero: 2, nombre: '02 Informe MAM', tipo: 'PDF' },
+    { anio: 2025, numero: 3, nombre: '03 MC', tipo: 'PDF' },
+    { anio: 2025, numero: 4, nombre: '04 Comunicación', tipo: 'PDF' },
+    { anio: 2025, numero: 5, nombre: '05 Producción', tipo: 'PDF' },
+    { anio: 2025, numero: 6, nombre: '06 Comercialización', tipo: 'PDF' },
+    { anio: 2024, numero: 1, nombre: '01 Responsabilidad Dirección', tipo: 'PDF' },
+    { anio: 2024, numero: 2, nombre: '02 Gestión Recursos', tipo: 'PDF' },
+    { anio: 2024, numero: 3, nombre: '03 Comunicación', tipo: 'PDF' },
+    { anio: 2024, numero: 4, nombre: '04 Producción', tipo: 'PDF' },
+    { anio: 2024, numero: 5, nombre: '05 Proyectos', tipo: 'PDF' },
+    { anio: 2024, numero: 6, nombre: '06 MAM', tipo: 'PDF' },
+    { anio: 2024, numero: 7, nombre: '07 MC', tipo: 'PDF' },
+    { anio: 2024, numero: 8, nombre: '08 Comercialización', tipo: 'PDF' },
+    { anio: 2024, numero: 9, nombre: '09 Comunicación', tipo: 'PDF' },
+    { anio: 2024, numero: 10, nombre: '10 Producción', tipo: 'PDF' },
+    { anio: 2024, numero: 11, nombre: '11 Comercialización', tipo: 'PDF' },
+    { anio: 2024, numero: 12, nombre: '12 Gestión Recursos', tipo: 'PDF' },
+    { anio: 2023, numero: 1, nombre: '01 Responsabilidad Dirección', tipo: 'PDF' },
+    { anio: 2023, numero: 2, nombre: '02 Medición Análisis', tipo: 'PDF' },
+    { anio: 2023, numero: 3, nombre: '03 Comunicación', tipo: 'PDF' },
+    { anio: 2023, numero: 4, nombre: '04 Comercialización', tipo: 'PDF' },
+    { anio: 2023, numero: 5, nombre: '05 MAM', tipo: 'PDF' },
+    { anio: 2023, numero: 6, nombre: '06 Gestión Recursos', tipo: 'PDF' },
+    { anio: 2023, numero: 7, nombre: '07 Producción', tipo: 'PDF' },
+    { anio: 2023, numero: 8, nombre: '08 Proyectos', tipo: 'PDF' },
+    { anio: 2023, numero: 9, nombre: '09 MAM', tipo: 'PDF' },
+    { anio: 2023, numero: 10, nombre: '10 Producción', tipo: 'PDF' },
+    { anio: 2023, numero: 11, nombre: '11 Comercial', tipo: 'PDF' },
+  ];
+
+  // Filtrar informes por año seleccionado
+  const informesFiltrados = informes.filter(i => i.anio === anioSeleccionado);
+
+  // Años disponibles
+  const aniosDisponibles = [...new Set(informes.map(i => i.anio))].sort((a, b) => b - a);
+  if (aniosDisponibles.length === 0) {
+    aniosDisponibles.push(2026, 2025, 2024, 2023);
+  }
+
+  // Resumen
   const auditoriasResumen = [
-    { anio: 2026, total: 2, informes: 6 },
-    { anio: 2025, total: 12, informes: 6 },
-    { anio: 2024, total: 12, informes: 12 },
-    { anio: 2023, total: 11, informes: 11 },
+    { anio: 2026, total: auditorias.filter(a => a.numero?.includes('2026')).length || 2, informes: informes.filter(i => i.anio === 2026).length || 6 },
+    { anio: 2025, total: auditorias.filter(a => a.numero?.includes('2025')).length || 12, informes: informes.filter(i => i.anio === 2025).length || 6 },
+    { anio: 2024, total: auditorias.filter(a => a.numero?.includes('2024')).length || 12, informes: informes.filter(i => i.anio === 2024).length || 12 },
+    { anio: 2023, total: auditorias.filter(a => a.numero?.includes('2023')).length || 11, informes: informes.filter(i => i.anio === 2023).length || 11 },
   ];
 
   const getEstadoColor = (estado) => {
@@ -3052,6 +3137,10 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
     const nuevaAud = { id: Date.now(), numero, tipo: 'Interna', area: puedeTodasAreas ? 'Sistema de Gestión de Calidad' : areaUsuario, fecha_inicio: '', fecha_fin: '', estado: 'PROGRAMADA', hallazgos: 0, no_conformidades: 0 };
     setAuditorias(prev => [...prev, nuevaAud]);
     setMostrarModal(false);
+  };
+
+  const verInforme = (informe) => {
+    setInformeSeleccionado(informe);
   };
 
   return (
@@ -3090,6 +3179,94 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
         </div>
       </div>
 
+      {/* Sección de Informes de Auditoría */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 bg-gradient-to-r from-[#002855] to-[#00152e] border-b border-slate-200 flex justify-between items-center">
+          <h2 className="font-bold text-white flex items-center gap-2">
+            📄 Informes de Auditoría
+          </h2>
+          <button 
+            onClick={() => setVerInformes(!verInformes)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${verInformes ? 'bg-cyan-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}
+          >
+            {verInformes ? 'Ocultar' : 'Ver Informes'}
+          </button>
+        </div>
+        
+        {verInformes && (
+          <div className="p-6">
+            {loadingInformes ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="animate-spin text-cyan-500" size={32} />
+                <span className="ml-2 text-slate-500">Cargando informes...</span>
+              </div>
+            ) : (
+              <>
+                {/* Selector de año */}
+                <div className="flex gap-2 mb-6 flex-wrap">
+                  {aniosDisponibles.map(anio => (
+                    <button
+                      key={anio}
+                      onClick={() => setAnioSeleccionado(anio)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        anioSeleccionado === anio 
+                          ? 'bg-cyan-500 text-white' 
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {anio}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Lista de informes */}
+                <div className="grid gap-3">
+                  {informesFiltrados.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500">
+                      <p className="text-4xl mb-2">📭</p>
+                      <p>No hay informes para {anioSeleccionado}</p>
+                    </div>
+                  ) : informesFiltrados.map((informe, idx) => (
+                    <div key={informe.id || idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <span className="w-10 h-10 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center font-bold text-sm">
+                          {String(informe.numero || idx + 1).padStart(2, '0')}
+                        </span>
+                        <div>
+                          <p className="font-medium text-[#002855]">{informe.nombre}</p>
+                          <p className="text-xs text-slate-500">{informe.anio} • {informe.tipo}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          informe.tipo === 'PDF' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                        }`}>
+                          {informe.tipo}
+                        </span>
+                        <button 
+                          onClick={() => verInforme(informe)}
+                          className="p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-cyan-600 hover:border-cyan-300 transition-all"
+                          title="Ver informe"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-sm text-amber-800 flex items-center gap-2">
+                    <AlertCircle size={18} />
+                    Los informes se almacenan en SharePoint. Contacta al área de SGC para acceder a los documentos originales.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Lista simple de auditorías */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
@@ -3124,6 +3301,47 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
             <div className="flex gap-3">
               <button onClick={() => setMostrarModal(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
               <button onClick={agregarAuditoria} className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg">Crear</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ver informe */}
+      {informeSeleccionado && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 bg-gradient-to-r from-[#002855] to-[#00152e] flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-white">{informeSeleccionado.nombre}</h3>
+                <p className="text-sm text-cyan-200">Año {informeSeleccionado.anio}</p>
+              </div>
+              <button onClick={() => setInformeSeleccionado(null)} className="text-white hover:bg-white/20 p-2 rounded-lg">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6">
+              {informeSeleccionado.url ? (
+                <iframe 
+                  src={informeSeleccionado.url} 
+                  className="w-full h-[60vh] rounded-xl border border-slate-200"
+                  title={informeSeleccionado.nombre}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <FileText size={64} className="mx-auto text-slate-300 mb-4" />
+                  <p className="text-lg font-medium text-slate-600 mb-2">Documento no disponible en línea</p>
+                  <p className="text-sm text-slate-500 mb-4">Este informe se encuentra almacenado en SharePoint.</p>
+                  <p className="text-xs text-slate-400">Para acceder, contacta al área de Sistema de Gestión de Calidad.</p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button 
+                onClick={() => setInformeSeleccionado(null)}
+                className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
