@@ -7,7 +7,7 @@
 
 **Nombre:** Portal SGC (Sistema de Gestión de Calidad)  
 **Organización:** OOMAPASC de Cajeme (Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme)  
-**Versión:** 4.3.6  
+**Versión:** 4.4.0  
 **Tecnología:** React + Vite + TailwindCSS + Supabase
 **URL Producción:** https://sgc-portal-933s.onrender.com
 **Repositorio:** https://github.com/HPaez88/sgc-portal
@@ -20,48 +20,54 @@
 SGC page/
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx          # Componente principal (~3200 líneas)
-│   │   ├── catalogs.js      # Catálogos (áreas, procesos, indicadores)
-│   │   ├── hooks.js         # useLocalStorage, useFormValidation
-│   │   ├── supabase.js      # Cliente Supabase
-│   │   ├── exporters.js     # Exportar AC/PM
-│   │   ├── config.js        # Configuración API
-│   │   └── main.jsx        # Entry point
+│   │   ├── App.jsx              # Componente principal (~3400 líneas)
+│   │   ├── catalogs.js           # Catálogos (áreas, procesos, indicadores)
+│   │   ├── hooks.js             # useLocalStorage, useFormValidation
+│   │   ├── supabase.js         # Cliente Supabase
+│   │   ├── useSupabaseSync.js  # Hook para sync automático
+│   │   ├── exporters.js         # Exportar AC/PM
+│   │   ├── agents.js           # IA para AC, PM, Riesgos
+│   │   ├── config.js           # Configuración API
+│   │   ├── index.css          # Estilos globales
+│   │   └── main.jsx           # Entry point
 │   ├── package.json
-│   └── dist/               # Build producción
-├── formatos/              # Excel/PDF formatos
-│   └── supabase-tables.sql # Schema DB
+│   └── dist/                  # Build producción
+├── formatos/
+│   ├── supabase-tables.sql    # Schema DB
+│   └── catalogos-sgc.json     # Catálogos backup
 └── DOCUMENTACION.md
 ```
 
 ---
 
-## 3. ESTADO ACTUAL (24 abril 2026)
+## 3. ESTADO ACTUAL (26 abril 2026)
 
 ### ✅ MÓDULOS FUNCIONALES
 - Dashboard
-- Acciones Correctivas (AC)
-- Planes de Mejora (PM)
+- Acciones Correctivas (AC) - con IA
+- Planes de Mejora (PM) - con IA
 - Indicadores (86 indicadores)
-- Matriz de Riesgos
+- Matriz de Riesgos - con IA
 - Configuración (Usuarios)
 - Documentos
-- Auditorías
+- Auditorías + Informes
 - Aprobaciones
 
-### ✅ DISEÑO VISUAL ACTUAL
-- Tarjetas de indicadores con estados visuales (verde/amarillo/rojo)
+### ✅ DISEÑO VISUAL
+- Tarjetas con estados visuales (verde/amarillo/rojo)
 - Badges de estado (BORRADOR, EN_REVISION, APROBADO, etc.)
 - Efectos hover en tablas y tarjetas
 - Scrollbar personalizada
 - Gradientes en botones y stat cards
 - Indicador "Supabase" en header
+- Diseño responsive
 
 ### ✅ INTEGRACIONES
 - Supabase conectado (URL: https://yrjlmqxpakjiwrfwhgaj.supabase.co)
 - **Sync automático** al cargar: usuarios, AC, PM, Riesgos, Documentos, Auditorías
-- **Guardado automático**: cambios en AC, PM, Riesgos, Documentos, Auditorías se guardan en Supabase
+- **Guardado automático**: cambios se guardan en Supabase
 - localStorage como fallback
+- IA Groq para generar AC, PM y Riesgos
 
 ---
 
@@ -77,9 +83,10 @@ riesgos
 documentos
 auditorias
 evidencias
+informes_auditoria     -- NEW: Lista de informes
 ```
 
-### 4.2 ÁREAS (39 áreas)
+### 4.2 ÁREAS (33 áreas)
 ```
 Agencia Esperanza
 Agencia Marte R. Gómez
@@ -161,126 +168,21 @@ Queja
 Otra
 ```
 
-### 4.3 Roles
-- Super Admin (indestructible)
-- Admin
-- Auditor
-- Encargado
-- Usuario
-
 ---
 
-## 5. COMPONENTES PRINCIPALES
-
-### 5.1 App.jsx
-Contiene TODOS los componentes en un solo archivo:
-- App() - Componente raíz
-- AccionCorrectivaView()
-- PlanMejoraView()
-- IndicadoresView()
-- RiesgosView()
-- SettingsView()
-- DocumentosView()
-- AuditoriasView()
-- GestorAprobacionesView()
-- Componentes auxiliares (StatCard, SectionTitle, etc)
-
-### 5.2 Props que deben PASARSE a cada componente:
-```javascript
-// App.jsx - estados principales
-const [accionesCorrectivas, setAccionesCorrectivas]
-const [planesMejora, setPlanesMejora]
-const [indicadoresData, setIndicadoresData]
-const [usuarios, setUsuarios]
-const [riesgos, setRiesgos]
-const [documentos, setDocumentos]
-const [auditorias, setAuditorias]
-const [evidencias, setEvidencias]
-const usuarioLogueado = usuarios[0]
-const puedeTodasAreas = es Admin/Auditor/Super Admin
-const areaUsuario = usuarioLogueado.area
-```
-
-### 5.3 Ejemplo de renderizado correcto:
-```jsx
-{activeTab === 'ac' && <AccionCorrectivaView 
-  accionesCorrectivas={accionesCorrectivas}
-  setAccionesCorrectivas={setAccionesCorrectivas}
-  evidencias={evidencias}
-  setEvidencias={setEvidencias}
-  usuarios={usuarios}
-  puedeTodasAreas={puedeTodasAreas}
-  areaUsuario={areaUsuario}
-/>}
-```
-
----
-
-## 6. PROBLEMAS COMUNES Y SOLUCIONES
-
-### 6.1 Pantalla Blanca
-**Causa:** Variables no pasadas como props
-**Solución:** Siempre pasar props desde App() a componentes hijos
-
-### 6.2 setDocumentos undefined
-**Causa:** Se usaba setDocumentos que no existe
-**Solución:** Componente SettingsView NO debe recibir documentos como prop
-
-### 6.3 setEditandoUsuario mal usado
-**Causa:** setEditandoUsuario({...u, show: true})
-**Solución:** setEditandoUsuario({ show: true, user: u })
-
-### 6.4 SelectField indicador_ref
-**Causa:** name="indicador" en lugar de name="indicador_ref"
-**Solución:** Verificar que el name coincida con formData
-
----
-
-## 7. FUNCIONALIDADES IMPLEMENTADAS
-
-### 7.1 Acciones Correctivas
-- Formulario 3 pasos (Describir → Analizar → Plan)
-- Generación con IA (Groq API)
-- Evidencias adjuntas
-- Workflow de aprobación
-
-### 7.2 Planes de Mejora
-- Formulario 3 pasos
-- Situación actual/deseada
-- Beneficios y presupuesto
-- Actividades
-
-### 7.3 Indicadores
-- Captura mensual
-- Vista trimestral
-- Semáforo (verde/amarillo/rojo)
-
-### 7.4 Matriz de Riesgos
-- Probabilidad × Impacto
-- Plan de acción
-- Evaluación
-
----
-
-## 8. VARIABLES DE ENTORNO
-
-```
-VITE_SUPABASE_URL=https://yrjlmqxpakjiwrfwhgaj.supabase.co
-VITE_GROQ_API_KEY=... (para IA)
-```
-
----
-
-## 9. PENDIENTES Y MEJORAS
+## 5. PENDIENTES Y MEJORAS
 
 ### 🔴 PRIORIDAD ALTA
 - [ ] Export Word/PDF real (docx, pdf)
+- [ ] Subir PDFs de informes a Supabase Storage
+- [ ] Configurar URLs de informes en DB
 
 ### 🟡 PRIORIDAD MEDIA  
 - [ ] Notificaciones email
 - [ ] Evidencias en cloud storage (Supabase Storage)
 - [ ] Gráficos/Charts para indicadores
 - [ ] Login real con Supabase Auth
+- [ ] Dashboard con gráficos estadísticos
 
 ### 🟢 COMPLETADOS
 - [x] Diseño visual de tarjetas indicadores
@@ -288,10 +190,87 @@ VITE_GROQ_API_KEY=... (para IA)
 - [x] Efectos hover
 - [x] Scrollbar personalizada
 - [x] Sync Supabase (carga y guarda datos automáticamente)
+- [x] Módulo Auditorías con lista de informes
+- [x] Modal visor de informes
+- [x] IA para generar AC, PM y Riesgos
 
 ---
 
-## 10. COMANDOS ÚTILES
+## 6. CÓMO AGREGAR INFORMES DE AUDITORÍA
+
+### Opción A: Supabase Storage (Recomendado)
+
+1. **Crear bucket:**
+   - Ir a https://supabase.com/dashboard/project/yrjlmqxpakjiwrfwhgaj/storage
+   - New bucket → nombre: `informes-auditoria`
+   - Marcar **Public bucket**
+
+2. **Subir archivos:**
+   - Crear carpetas: `2026/`, `2025/`, `2024/`, `2023/`
+   - Subir PDFs organizados
+
+3. **Agregar URLs a la base de datos:**
+```sql
+INSERT INTO informes_auditoria (anio, numero, nombre, tipo, url) VALUES
+(2026, 1, '01 Informe Responsabilidad Dirección', 'PDF', 'https://yrjlmqxpakjiwrfwhgaj.supabase.co/storage/v1/object/public/informes-auditoria/2026/01.pdf'),
+(2026, 2, '02 Informe MAM', 'PDF', 'https://...'),
+-- etc
+```
+
+### Opción B: SharePoint
+- Obtener links compartidos de cada PDF
+- Insertarlos en la tabla `informes_auditoria`
+
+---
+
+## 7. MÓDULOS IMPLEMENTADOS
+
+### 7.1 Acciones Correctivas
+- Formulario 3 pasos (Describir → Analizar → Plan)
+- Generación con IA (Groq API)
+- Evidencias adjuntas
+- Workflow de aprobación
+- Sync automático a Supabase
+
+### 7.2 Planes de Mejora
+- Formulario 3 pasos
+- Situación actual/deseada
+- Beneficios y presupuesto
+- Actividades
+- Sync automático a Supabase
+
+### 7.3 Indicadores
+- 86 indicadores definidos
+- Captura mensual
+- Vista trimestral
+- Semáforo (verde/amarillo/rojo)
+- Estados visuales mejorado
+
+### 7.4 Matriz de Riesgos
+- Probabilidad × Impacto
+- Plan de acción
+- Evaluación
+- Generación con IA
+
+### 7.5 Auditorías
+- Resumen por año (2023-2026)
+- Lista de auditorías recientes
+- Sección de Informes con modal visor
+- Sync automático a Supabase
+
+---
+
+## 8. VARIABLES DE ENTORNO
+
+```
+VITE_SUPABASE_URL=https://yrjlmqxpakjiwrfwhgaj.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_GROQ_API_KEY=... (para IA)
+```
+
+---
+
+## 9. COMANDOS ÚTILES
 
 ```bash
 # Desarrollo
@@ -310,7 +289,7 @@ git push origin main
 
 ---
 
-## 11. CONTACTOS
+## 10. CONTACTOS
 
 - **Proyecto:** Lic. Héctor Manuel Páez León (hpaez@oomapasc.gob.mx)
 - **Desarrollo:** opencode AI
@@ -319,5 +298,5 @@ git push origin main
 
 ---
 
-*Documento actualizado: 25 abril 2026*
-*Versión: 4.3.6*
+*Documento actualizado: 26 abril 2026*
+*Versión: 4.4.0*
