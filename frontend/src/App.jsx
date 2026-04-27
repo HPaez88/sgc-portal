@@ -3048,8 +3048,10 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
           const { data, error } = await supabase
             .from('informes_auditoria')
             .select('*')
-            .order('anio', { ascending: false })
-            .order('numero', { ascending: true });
+.order('anio', { ascending: false })
+              .order('numero', { ascending: true });
+
+          console.log('Informes cargados:', data);
           
           if (error) {
             console.warn('Error cargando informes:', error);
