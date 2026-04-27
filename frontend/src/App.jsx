@@ -771,6 +771,10 @@ function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, evi
       alert('Describe la No Conformidad primero');
       return;
     }
+    if (formData.equipo_trabajo.length === 0 || !formData.equipo_trabajo.some(m => m.nombre && m.nombre.trim() !== '')) {
+      alert('Agrega al menos un integrante con nombre en el Equipo de Trabajo antes de generar con IA');
+      return;
+    }
     setGenerando(true);
     try {
       const prompt = `Eres un AGENTE EXPERTO ISO 9001 especializado en análisis de no conformidades y acciones correctivas. Tu rol es generar un análisis completo de causa raíz.
@@ -785,22 +789,27 @@ CONTEXTO:
 Proceso: ${formData.proceso}
 Origen: ${formData.origen}
 
+EQUIPO DE TRABAJO (ya definido por el usuario):
+${formData.equipo_trabajo.filter(m => m.nombre).map(m => `- ${m.nombre} (${m.puesto || m.rol})`).join('\n')}
+
 NO CONFORMIDAD DETECTADA:
 ${formData.descripcion_nc}
 
 INSTRUCCIONES:
 Analiza la NC y genera un JSON completo con:
+- Usa ÚNICAMENTE los nombres del EQUIPO DE TRABAJO proporcionado para los responsables de actividades
+- Si ninguna persona del equipo es adecuada para una actividad, usa "Responsable por definir"
 
 {
-  "posibles_causas": "Causa 1, Causa 2, Causa 3... (usen método 6M: Método, Máquina, Material, Medio, Mano de obra, Medio Ambiente)",
-  "causa_raiz": "Causa raíz identificada mediante análisis",
-  "accion_contencion": "Acción inmediata para contener el problema",
-  "clasificacion_nc": "Mayor|Menor|Observación",
-  "tipo_accion": "Acción Correctiva|Acción Preventiva",
+  "posibles_causas": "Causa 1, Causa 2, Causa 3... (usen metodo 6M)",
+  "causa_raiz": "Causa raiz identificada",
+  "accion_contencion": "Accion inmediata para contener el problema",
+  "clasificacion_nc": "Mayor|Menor|Observacion",
+  "tipo_accion": "Accion Correctiva|Accion Preventiva",
   "actividades": [
     {
-      "descripcion": "Descripción detallada de la actividad",
-      "responsable": "Nombre del responsable",
+      "descripcion": "Descripcion detallada",
+      "responsable": "Nombre del equipo",
       "fecha_limite": "YYYY-MM-DD",
       "tipo": "CORRECCION|PREVENTIVA|VERIFICACION",
       "evidencia": "Evidencia requerida",
@@ -1294,6 +1303,10 @@ function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAre
   const generarConIA = async () => {
     if (!formData.situacion_actual || !formData.situacion_deseada) {
       alert('Describe la situación actual y la situación deseable primero');
+      return;
+    }
+    if (formData.integrantes.length === 0 || !formData.integrantes.some(m => m.nombre && m.nombre.trim() !== '')) {
+      alert('Agrega al menos un integrante con nombre en el Equipo de Mejora antes de generar con IA');
       return;
     }
     setGenerando(true);
