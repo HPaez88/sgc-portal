@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from './supabase';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -78,6 +79,26 @@ function App() {
 
   useEffect(() => {
     setIsLoaded(true);
+    
+    // Sync usuarios with Supabase on mount
+    async function syncUsuarios() {
+      try {
+        const { data, error } = await supabase.from('usuarios').select('*').order('id');
+        if (error) {
+          console.warn('Supabase sync warning:', error);
+        } else if (data && data.length > 0) {
+          // Update localStorage with Supabase data
+          const mappedData = data.map(({ created_at, ...rest }) => rest);
+          localStorage.setItem('sgc-usuarios', JSON.stringify(mappedData));
+          // Force re-render by updating state
+          setUsuarios(mappedData);
+        }
+      } catch (e) {
+        console.error('Sync error:', e);
+      }
+    }
+    
+    syncUsuarios();
   }, []);
 
   const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
@@ -253,6 +274,11 @@ function App() {
           </div>
 
           <div className="flex items-center space-x-3 sm:space-x-5">
+            <span className="hidden lg:flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+              Supabase
+            </span>
+            
             <button className="relative p-2.5 rounded-full text-slate-400 hover:text-[#002855] hover:bg-slate-100 transition-all duration-300">
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
