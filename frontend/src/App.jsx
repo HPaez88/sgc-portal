@@ -13,6 +13,7 @@ import {
   X,
   ChevronRight,
   Droplet,
+  Download,
   CheckCircle2,
   Clock,
   FileEdit,
@@ -3039,37 +3040,38 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
   const [loadingInformes, setLoadingInformes] = useState(false);
   const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
-  // Cargar informes desde Supabase
-useEffect(() => {
+// Cargar informes desde Supabase
+  useEffect(() => {
     if (verInformes) {
       async function cargarInformes() {
         setLoadingInformes(true);
-        console.log('Iniciando carga de informes...');
+        console.log('📋 Iniciando carga de informes...');
         try {
-          console.log('Haciendo query a Supabase...');
+          console.log('🔄 Haciendo query a Supabase...');
           const { data, error } = await supabase
             .from('informes_auditoria')
             .select('*')
             .order('anio', { ascending: false })
             .order('numero', { ascending: true });
 
-          console.log('Query completada - Data:', data);
-          console.log('Query completada - Error:', error);
+          console.log('✅ Query completada');
+          console.log('   Data长度:', data?.length || 0);
+          console.log('   Error:', error);
 
           setLoadingInformes(false);
 
           if (error) {
-            console.warn('Error cargando informes:', error);
+            console.error('❌ Error cargando informes:', error);
             setInformes(localInformes);
           } else if (data && data.length > 0) {
-            console.log('Estableciendo informes desde Supabase:', data);
+            console.log('📄 Estableciendo informes desde Supabase:', data);
             setInformes(data);
           } else {
-            console.log('No hay datos, usando locales');
+            console.warn('⚠️ No hay datos en Supabase, usando locales');
             setInformes(localInformes);
           }
         } catch (e) {
-          console.error('Excepción:', e);
+          console.error('❗ Excepción:', e);
           setInformes(localInformes);
           setLoadingInformes(false);
         }
@@ -3321,12 +3323,27 @@ useEffect(() => {
               </button>
             </div>
             <div className="p-6">
-              {informeSeleccionado.url ? (
-                <iframe 
-                  src={informeSeleccionado.url} 
-                  className="w-full h-[60vh] rounded-xl border border-slate-200"
-                  title={informeSeleccionado.nombre}
-                />
+              {informeSeleccionado?.url ? (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-3 rounded-lg text-sm">
+                    <p className="font-medium text-blue-800">URL del documento:</p>
+                    <p className="text-blue-600 break-all">{informeSeleccionado.url}</p>
+                  </div>
+                  <iframe 
+                    src={informeSeleccionado.url} 
+                    className="w-full h-[60vh] rounded-xl border border-slate-200"
+                    title={informeSeleccionado.nombre}
+                  />
+                  <a 
+                    href={informeSeleccionado.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+                  >
+                    <Download size={20} />
+                    Descargar PDF
+                  </a>
+                </div>
               ) : (
                 <div className="text-center py-12">
                   <FileText size={64} className="mx-auto text-slate-300 mb-4" />
