@@ -3042,19 +3042,20 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
   // Cargar informes desde Supabase
   useEffect(() => {
     if (verInformes) {
-      async function cargarInformes() {
+async function cargarInformes() {
         setLoadingInformes(true);
+        console.log('Iniciando carga de informes...');
         try {
+          console.log('Haciendo query a Supabase...');
           const { data, error } = await supabase
             .from('informes_auditoria')
             .select('*')
-.order('anio', { ascending: false })
-              .order('numero', { ascending: true });
+            .order('anio', { ascending: false })
+            .order('numero', { ascending: true });
 
-console.log('Informes cargados:', data);
-          console.log('Error carga informes:', error);
-          
-          if (error) {
+          console.log('Query completada');
+          console.log('Data:', data);
+          console.log('Error:', error);
             console.warn('Error cargando informes:', error);
             // Usar datos locales si falla
             setInformes(localInformes);
