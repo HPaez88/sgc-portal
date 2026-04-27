@@ -3040,9 +3040,9 @@ function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuari
   const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
   // Cargar informes desde Supabase
-  useEffect(() => {
+useEffect(() => {
     if (verInformes) {
-async function cargarInformes() {
+      async function cargarInformes() {
         setLoadingInformes(true);
         console.log('Iniciando carga de informes...');
         try {
@@ -3053,21 +3053,24 @@ async function cargarInformes() {
             .order('anio', { ascending: false })
             .order('numero', { ascending: true });
 
-          console.log('Query completada');
-          console.log('Data:', data);
-          console.log('Error:', error);
+          console.log('Query completada - Data:', data);
+          console.log('Query completada - Error:', error);
+
+          setLoadingInformes(false);
+
+          if (error) {
             console.warn('Error cargando informes:', error);
-            // Usar datos locales si falla
             setInformes(localInformes);
           } else if (data && data.length > 0) {
+            console.log('Estableciendo informes desde Supabase:', data);
             setInformes(data);
           } else {
-            // No hay datos en Supabase, usar locales
+            console.log('No hay datos, usando locales');
             setInformes(localInformes);
           }
         } catch (e) {
+          console.error('Excepción:', e);
           setInformes(localInformes);
-        } finally {
           setLoadingInformes(false);
         }
       }
@@ -3075,14 +3078,8 @@ async function cargarInformes() {
     }
   }, [verInformes]);
 
-  // Informes locales como fallback
+  // Informes locales como fallback (solo si no hay datos en Supabase)
   const localInformes = [
-    { anio: 2026, numero: 1, nombre: '01 Informe Responsabilidad Dirección', tipo: 'PDF' },
-    { anio: 2026, numero: 2, nombre: '02 Informe MAM', tipo: 'PDF' },
-    { anio: 2026, numero: 3, nombre: '03 MC', tipo: 'PDF' },
-    { anio: 2026, numero: 4, nombre: '04 Comunicación', tipo: 'PDF' },
-    { anio: 2026, numero: 5, nombre: '05 Producción', tipo: 'PDF' },
-    { anio: 2026, numero: 6, nombre: '06 Comercialización', tipo: 'PDF' },
     { anio: 2025, numero: 1, nombre: '01 Informe Responsabilidad Dirección', tipo: 'PDF' },
     { anio: 2025, numero: 2, nombre: '02 Informe MAM', tipo: 'PDF' },
     { anio: 2025, numero: 3, nombre: '03 MC', tipo: 'PDF' },
