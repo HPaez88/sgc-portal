@@ -47,8 +47,32 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Helper para guardar en Supabase
+  const saveToSupabase = useCallback(async (table, data) => {
+    if (!data || !Array.isArray(data)) return;
+    try {
+      const items = data.filter(item => item.id).map(({ created_at, ...rest }) => rest);
+      if (items.length === 0) return;
+      const { error } = await supabase.from(table).upsert(items, { onConflict: 'id' });
+      if (error) console.warn(`Save error [${table}]:`, error.message);
+      else console.log(`Saved to Supabase [${table}]:`, items.length, 'records');
+    } catch (e) {
+      console.error(`Save error [${table}]:`, e);
+    }
+  }, []);
+
   const [accionesCorrectivas, setAccionesCorrectivas] = useLocalStorage('sgc-acciones-correctivas', []);
+  const setAccionesCorrectivasSync = useCallback((data) => {
+    setAccionesCorrectivas(data);
+    saveToSupabase('acciones_correctivas', Array.isArray(data) ? data : [data]);
+  }, [setAccionesCorrectivas, saveToSupabase]);
+  
   const [planesMejora, setPlanesMejora] = useLocalStorage('sgc-planes-mejora', []);
+  const setPlanesMejoraSync = useCallback((data) => {
+    setPlanesMejora(data);
+    saveToSupabase('planes_mejora', Array.isArray(data) ? data : [data]);
+  }, [setPlanesMejora, saveToSupabase]);
+  
   const [indicadoresData, setIndicadoresData] = useLocalStorage('sgc-indicadores-data', {});
   const [usuarios, setUsuarios] = useLocalStorage('sgc-usuarios', [
     { id: 1, nombre: 'Lic. Héctor Manuel Páez León', email: 'hpaez@oomapasc.gob.mx', telefono: '6441894125', area: 'Sistema de Gestión de Calidad', rol: 'Super Admin', direccion: 'Dir. General', password: 'sgc2026' },
@@ -65,40 +89,67 @@ function App() {
     { id: 4, riesgo: 'Cortocircuito', causa: 'Cables viejas', efecto: 'Incendio', probabilidad: 1, impacto: 5, control: 'Renovación', tipo: 'Riesgo', area: 'Mantenimiento', direccion: 'Dir. Administrativa', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
     { id: 5, riesgo: 'Clientes nuevos', causa: 'Promociones', efecto: 'Más ingresos', probabilidad: 4, impacto: 3, control: '', tipo: 'Oportunidad', area: 'Comercialización', direccion: 'Dir. Comercial', proceso: 'Comercialización', plan_accion: 'Campaña de promo', fecha_termino: '2026-07-01', evaluacion: '', estado_plan: 'EN_PROCESO' },
   ]);
+  const setRiesgosSync = useCallback((data) => {
+    setRiesgos(data);
+    saveToSupabase('riesgos', Array.isArray(data) ? data : [data]);
+  }, [setRiesgos, saveToSupabase]);
+  
   const [seguimientos, setSeguimientos] = useLocalStorage('sgc-seguimientos', []);
   const [documentos, setDocList] = useLocalStorage('sgc-documentos', [
     { id: 1, titulo: 'Manual de Calidad del Agua v3.0', tipo: 'Manual', estado: 'APROBADO', area: 'Sistema de Gestión de Calidad', version: '3.0', fecha: '2026-01-15', autor: 'Ing. Juan López' },
     { id: 2, titulo: 'Procedimiento de Saneamiento', tipo: 'Procedimiento', estado: 'EN_REVISION', area: 'Alcantarillado y Saneamiento', version: '1.2', fecha: '2026-03-20', autor: 'Lic. García' },
     { id: 3, titulo: 'Registro de Mantenimiento de Bombas', tipo: 'Registro', estado: 'BORRADOR', area: 'Mantenimiento de Redes', version: '2.0', fecha: '2026-04-18', autor: 'Ing. Martínez' },
   ]);
+  const setDocListSync = useCallback((data) => {
+    setDocList(data);
+    saveToSupabase('documentos', Array.isArray(data) ? data : [data]);
+  }, [setDocList, saveToSupabase]);
+  
   const [auditorias, setAuditorias] = useLocalStorage('sgc-auditorias', [
     { id: 1, numero: 'AUD-2026-001', tipo: 'Interna', area: 'Sistema de Gestión de Calidad', fecha_inicio: '2026-01-15', fecha_fin: '2026-01-17', estado: 'COMPLETADA', hallazgos: 3, no_conformidades: 1 },
     { id: 2, numero: 'AUD-2026-002', tipo: 'Interna', area: 'Control de Calidad', fecha_inicio: '2026-02-20', fecha_fin: '2026-02-22', estado: 'COMPLETADA', hallazgos: 2, no_conformidades: 0 },
   ]);
+  const setAuditoriasSync = useCallback((data) => {
+    setAuditorias(data);
+    saveToSupabase('auditorias', Array.isArray(data) ? data : [data]);
+  }, [setAuditorias, saveToSupabase]);
+  
   const [evidencias, setEvidencias] = useLocalStorage('sgc-evidencias', []);
 
+  // Helper para sync bidireccional con Supabase
+  const syncWithSupabase = useCallback(async (table, data, setData, key) => {
+    try {
+      // 1. Cargar de Supabase
+      const { data: sbData, error: sbError } = await supabase.from(table).select('*').order('id');
+      if (sbError) {
+        console.warn(`Sync warning [${table}]:`, sbError.message);
+      } else if (sbData && sbData.length > 0) {
+        // Mapear datos de Supabase (remover metadata)
+        const mapped = sbData.map(({ created_at, ...rest }) => rest);
+        // Usar datos de Supabase como source of truth
+        setData(mapped);
+        localStorage.setItem(key, JSON.stringify(mapped));
+        console.log(`Synced from Supabase [${table}]:`, mapped.length, 'records');
+      }
+    } catch (e) {
+      console.error(`Sync error [${table}]:`, e);
+    }
+  }, []);
+
+  // Sync todos los módulos al cargar
   useEffect(() => {
     setIsLoaded(true);
     
-    // Sync usuarios with Supabase on mount
-    async function syncUsuarios() {
-      try {
-        const { data, error } = await supabase.from('usuarios').select('*').order('id');
-        if (error) {
-          console.warn('Supabase sync warning:', error);
-        } else if (data && data.length > 0) {
-          // Update localStorage with Supabase data
-          const mappedData = data.map(({ created_at, ...rest }) => rest);
-          localStorage.setItem('sgc-usuarios', JSON.stringify(mappedData));
-          // Force re-render by updating state
-          setUsuarios(mappedData);
-        }
-      } catch (e) {
-        console.error('Sync error:', e);
-      }
+    async function syncAllData() {
+      await syncWithSupabase('usuarios', usuarios, setUsuarios, 'sgc-usuarios');
+      await syncWithSupabase('acciones_correctivas', accionesCorrectivas, setAccionesCorrectivas, 'sgc-acciones-correctivas');
+      await syncWithSupabase('planes_mejora', planesMejora, setPlanesMejora, 'sgc-planes-mejora');
+      await syncWithSupabase('riesgos', riesgos, setRiesgos, 'sgc-riesgos');
+      await syncWithSupabase('documentos', documentos, setDocList, 'sgc-documentos');
+      await syncWithSupabase('auditorias', auditorias, setAuditorias, 'sgc-auditorias');
     }
     
-    syncUsuarios();
+    syncAllData();
   }, []);
 
   const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
@@ -474,7 +525,7 @@ function App() {
             {/* ACCIONES CORRECTIVAS */}
             {activeTab === 'ac' && <AccionCorrectivaView 
               accionesCorrectivas={accionesCorrectivas} 
-              setAccionesCorrectivas={setAccionesCorrectivas}
+              setAccionesCorrectivas={setAccionesCorrectivasSync}
               evidencias={evidencias}
               setEvidencias={setEvidencias}
               usuarios={usuarios}
@@ -485,7 +536,7 @@ function App() {
 {/* PLANES DE MEJORA */}
             {activeTab === 'pm' && <PlanMejoraView 
               planesMejora={planesMejora} 
-              setPlanesMejora={setPlanesMejora}
+              setPlanesMejora={setPlanesMejoraSync}
               usuarios={usuarios}
               puedeTodasAreas={puedeTodasAreas}
               areaUsuario={areaUsuario}
@@ -502,7 +553,7 @@ function App() {
             {/* MATRIZ DE RIESGOS */}
             {activeTab === 'riesgos' && <RiesgosView 
               riesgos={riesgos}
-              setRiesgos={setRiesgos}
+              setRiesgos={setRiesgosSync}
               usuarios={usuarios}
               puedeTodasAreas={puedeTodasAreas}
               areaUsuario={areaUsuario}
@@ -511,7 +562,7 @@ function App() {
             {/* DOCUMENTOS */}
             {activeTab === 'documents' && <DocumentosView 
               documentos={documentos}
-              setDocList={setDocList}
+              setDocList={setDocListSync}
               puedeTodasAreas={puedeTodasAreas}
               areaUsuario={areaUsuario}
             />}
@@ -519,7 +570,7 @@ function App() {
             {/* AUDITORÍAS */}
             {activeTab === 'audits' && <AuditoriasView 
               auditorias={auditorias}
-              setAuditorias={setAuditorias}
+              setAuditorias={setAuditoriasSync}
               puedeTodasAreas={puedeTodasAreas}
               areaUsuario={areaUsuario}
             />}
