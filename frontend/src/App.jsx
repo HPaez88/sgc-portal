@@ -547,13 +547,7 @@ function App() {
                 puedeTodasAreas={puedeTodasAreas}
                 areaUsuario={areaUsuario}
               />
-            )}
-                setPlanesMejora={setPlanesMejora}
-                usuarios={usuarios}
-                puedeTodasAreas={puedeTodasAreas}
-                areaUsuario={areaUsuario}
-              />
-            )}
+)}
 
 {/* INDICADORES */}
             {activeTab === 'indicadores' && <IndicadoresView 
