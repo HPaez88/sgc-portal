@@ -194,9 +194,9 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     setError('');
     
     try {
-      const apiKey = localStorage.getItem('openai_api_key');
+      const apiKey = localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY;
       if (!apiKey) {
-        setError('Configura tu API key de OpenAI en Configuración');
+        setError('Configura tu API key de GroQ en Configuración');
         setGenerandoIA(false);
         return;
       }
@@ -256,11 +256,11 @@ JSON de salida esperado:
   }
 }`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'llama-3.1-70b-versatile',
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.3,
           max_tokens: 4000
