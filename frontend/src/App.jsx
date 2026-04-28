@@ -343,9 +343,9 @@ function App() {
           </div>
         </header>
 
-<main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
+        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
            
-          {/* Fondo animado - Burbujas flotantes más visibles */}
+          {/* Fondo animado */}
           <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
             {/* Burbuja 1 grande */}
             <div className="absolute w-80 h-80 rounded-full bg-gradient-to-b from-cyan-300/30 to-blue-400/30 animate-float-1" style={{ left: '-5%', top: '5%' }} />
@@ -526,22 +526,15 @@ function App() {
             {/* ACCIONES CORRECTIVAS */}
             {activeTab === 'ac' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                {console.log('Rendering AC view') || null}
-                {typeof AccionCorrectivaView === 'function' ? (
-                  <AccionCorrectivaView 
-                    accionesCorrectivas={accionesCorrectivas} 
-                    setAccionesCorrectivas={setAccionesCorrectivasSync}
-                    evidencias={evidencias}
-                    setEvidencias={setEvidencias}
-                    usuarios={usuarios}
-                    puedeTodasAreas={puedeTodasAreas}
-                    areaUsuario={areaUsuario}
-                  />
-                ) : (
-                  <div className="text-center py-10 text-red-500">
-                    Error: Componente no cargado
-                  </div>
-                )}
+                <AccionCorrectivaView 
+                  accionesCorrectivas={accionesCorrectivas} 
+                  setAccionesCorrectivas={setAccionesCorrectivasSync}
+                  evidencias={evidencias}
+                  setEvidencias={setEvidencias}
+                  usuarios={usuarios}
+                  puedeTodasAreas={puedeTodasAreas}
+                  areaUsuario={areaUsuario}
+                />
               </div>
             )}
 
