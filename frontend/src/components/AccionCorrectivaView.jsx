@@ -248,6 +248,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+      console.log('API Key exists:', !!apiKey, apiKey ? 'yes' : 'no');
       if (!apiKey) {
         setError('Configura VITE_GROQ_API_KEY en archivo .env o variable de entorno');
         setGenerandoIA(false);
@@ -321,6 +322,13 @@ JSON de salida esperado:
       });
 
       const data = await response.json();
+      console.log('API Response:', data);
+      
+      if (data.error) {
+        setError(`Error de IA: ${data.error.message || JSON.stringify(data.error)}`);
+        setGenerandoIA(false);
+        return;
+      }
       
       if (data.choices && data.choices[0]?.message?.content) {
         const contenido = data.choices[0].message.content;
@@ -619,23 +627,22 @@ JSON de salida esperado:
     revision_formato: 'Rev. 18'
   });
 
-  // ===== PANTALLA 1: NUEVO REGISTRO =====
-  if (step === 1) {
+// ===== PANTALLA UNICA: NUEVA ACCIÓN CORRECTIVA =====
+  if (vista === 'nuevo') {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-[#002855]">Nueva Acción Correctiva</h2>
-          <div className="text-sm text-slate-500">
-            Formato: {form.clave_formato} {form.revision_formato}
-          </div>
+          <span className="text-sm text-slate-500">{form.clave_formato} {form.revision_formato}</span>
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          <div className="p-4 bg-red-50 border border-red-300 text-red-700 rounded-lg">
             ⚠️ {error}
           </div>
         )}
 
+        {/* Datos Generales */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">📋 Datos Generales</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -663,47 +670,119 @@ JSON de salida esperado:
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Número de Auditoría</label>
               <input type="text" name="numero_auditoria" value={form.numero_auditoria} onChange={handleChange}
-                placeholder={form.origen === 'Auditoría' ? 'Obligatorio cuando origen es auditoría' : 'Solo si origen es auditoría'}
+                placeholder={form.origen === 'Auditoría' ? 'Obligatorio' : 'Solo si origen es auditoría'}
                 disabled={form.origen !== 'Auditoría'} 
                 className="w-full p-2 border rounded-lg disabled:bg-slate-100" />
             </div>
           </div>
         </div>
 
+        {/* Descripción */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">⚠️ Descripción de la No Conformidad</h3>
           <textarea name="descripcion_no_conformidad_original" value={form.descripcion_no_conformidad_original} onChange={handleChange}
-            rows={4} className="w-full p-3 border rounded-lg" placeholder="Describe la no conformidad encontrada..." />
-        </div>
-
-        <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">🔗 Impacto en Otros Procesos</h3>
-          <div className="flex gap-4 mb-4">
+            rows={3} className="w-full p-3 border rounded-lg" placeholder="Describe la no conformidad encontrada..." />
+          
+          <div className="flex gap-4 mt-3">
             <label className="flex items-center gap-2">
               <input type="radio" name="impacta_otros_procesos" value="SI" checked={form.impacta_otros_procesos === 'SI'} onChange={handleChange} />
-              <span className="font-medium">SI</span>
+              <span>¿Impacta otros procesos? - SI</span>
             </label>
             <label className="flex items-center gap-2">
               <input type="radio" name="impacta_otros_procesos" value="NO" checked={form.impacta_otros_procesos === 'NO'} onChange={handleChange} />
-              <span className="font-medium">NO</span>
+              <span>NO</span>
             </label>
           </div>
           {form.impacta_otros_procesos === 'SI' && (
             <textarea name="otros_procesos_afectados" value={form.otros_procesos_afectados} onChange={handleChange}
-              rows={2} className="w-full p-2 border rounded-lg" placeholder="Enuncia qué otros procesos se ven afectados..." />
+              rows={2} className="w-full p-2 border rounded-lg mt-2" placeholder="Otros procesos afectados..." />
           )}
         </div>
 
-        <div className="flex gap-3">
+        {/* Equipo de Trabajo */}
+        <div className="bg-slate-50 p-4 rounded-xl">
+          <h3 className="font-bold text-[#002855] mb-4">👥 Equipo de Trabajo</h3>
+          <p className="text-sm text-slate-600 mb-3">Minimo: 1 responsable + 1 integrante</p>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-100">
+                <tr>
+                  <th className="p-2 text-left">Nombre</th>
+                  <th className="p-2 text-left">Puesto</th>
+                  <th className="p-2 text-left">Área</th>
+                  <th className="p-2 text-left">Rol</th>
+                  <th className="p-2 text-center">Responsable</th>
+                  <th className="p-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipo.map((integrante) => (
+                  <tr key={integrante.id} className="border-b">
+                    <td className="p-1">
+                      <input type="text" value={integrante.nombre} 
+                        onChange={(e) => actualizarIntegrante(integrante.id, 'nombre', e.target.value)}
+                        className="w-full p-1 border rounded" placeholder="Nombre" />
+                    </td>
+                    <td className="p-1">
+                      <input type="text" value={integrante.puesto} 
+                        onChange={(e) => actualizarIntegrante(integrante.id, 'puesto', e.target.value)}
+                        className="w-full p-1 border rounded" placeholder="Puesto" />
+                    </td>
+                    <td className="p-1">
+                      <input type="text" value={integrante.area} 
+                        onChange={(e) => actualizarIntegrante(integrante.id, 'area', e.target.value)}
+                        className="w-full p-1 border rounded" placeholder="Área" />
+                    </td>
+                    <td className="p-1">
+                      <select value={integrante.rol} 
+                        onChange={(e) => actualizarIntegrante(integrante.id, 'rol', e.target.value)}
+                        className="w-full p-1 border rounded">
+                        {ROLES_EQUIPO.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-1 text-center">
+                      <input type="checkbox" checked={integrante.es_responsable_principal} 
+                        onChange={(e) => actualizarIntegrante(integrante.id, 'es_responsable_principal', e.target.checked)}
+                        className="w-4 h-4" />
+                    </td>
+                    <td className="p-1 text-center">
+                      <button onClick={() => eliminarIntegrante(integrante.id)} 
+                        disabled={equipo.length === 1}
+                        className="text-red-500 hover:bg-red-50 p-1 rounded disabled:opacity-30">
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={agregarIntegrante} disabled={equipo.length >= 10}
+            className="mt-2 text-sm text-cyan-600 hover:bg-cyan-50 px-2 py-1 rounded disabled:opacity-50">
+            + Agregar miembro
+          </button>
+        </div>
+
+        {/* Generar con IA */}
+        <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
+          <h3 className="font-bold text-purple-800 mb-2">🤖 Generar con IA</h3>
+          <p className="text-sm text-purple-700 mb-3">
+            Genera: descripción mejorada, análisis de causas, plan de actividades.
+          </p>
+          <button onClick={generarConIA} disabled={generandoIA} 
+            className="px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50">
+            {generandoIA ? '🤖 Generando...' : '🤖 Generar Propuesta con IA'}
+          </button>
+        </div>
+
+        {/* Acciones */}
+        <div className="flex gap-3 flex-wrap">
           <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
             ← Cancelar
           </button>
           <button onClick={guardarBorrador} disabled={loading} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
             {loading ? '💾 Guardando...' : '💾 Guardar Borrador'}
-          </button>
-          <button onClick={() => { const err = validarCapturaInicial(); if (err) setError(err); else setStep(2); }}
-            className="px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600">
-            Continuar a Equipo →
           </button>
         </div>
       </div>
