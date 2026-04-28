@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '../supabase';
 
 const AREAS = [
   "Agencia Esperanza", "Agencia Marte R. Gómez", "Agencia Providencia", "Agencia Pueblo Yaqui",
@@ -43,7 +44,7 @@ const ESTADOS = [
   { id: 'CANCELADO', label: 'Cancelado' }
 ];
 
-export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios }) {
+export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
   const [vista, setVista] = useState('lista');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -340,9 +341,8 @@ JSON de salida esperado:
     setGenerandoIA(false);
   };
 
-  const guardarBorrador = () => {
+  const guardarBorrador = async () => {
     console.log('GuardarBorrador called, form:', form);
-    console.log('setAccionesCorrectivas:', typeof setAccionesCorrectivas);
     setLoading(true);
     const nuevo = {
       ...form,
@@ -353,6 +353,62 @@ JSON de salida esperado:
       fecha_creacion_borrador: form.fecha_creacion_borrador || new Date().toISOString()
     };
     
+    // Guardar en Supabase (internet)
+    try {
+      const { error } = await supabase.from('acciones_correctivas').upsert({
+        id: nuevo.id,
+        codigo: nuevo.folio_codigo,
+        estado: nuevo.estado,
+        area: nuevo.area,
+        proceso: nuevo.proceso,
+        origen: nuevo.origen,
+        numero_auditoria: nuevo.numero_auditoria,
+        descripcion_no_conformidad_original: nuevo.descripcion_no_conformidad_original,
+        descripcion_no_conformidad_ia: nuevo.descripcion_no_conformidad_ia,
+        descripcion_no_conformidad_final: nuevo.descripcion_no_conformidad_final,
+        impacta_otros_procesos: nuevo.impacta_otros_procesos,
+        otros_procesos_afectados: nuevo.otros_procesos_afectados,
+        accion_contenedora: nuevo.accion_contenedora,
+        actividad_inmediata: nuevo.actividad_inmediata,
+        responsable_actividad_inmediata: nuevo.responsable_actividad_inmediata,
+        fecha_actividad_inmediata: nuevo.fecha_actividad_inmediata,
+        herramienta_analisis: nuevo.herramienta_analisis,
+        requiere_actualizar_matriz_riesgos: nuevo.requiere_actualizar_matriz_riesgos,
+        descripcion_riesgo_oportunidad: nuevo.descripcion_riesgo_oportunidad,
+        requiere_cambio_sgc: nuevo.requiere_cambio_sgc,
+        fecha_creacion_borrador: nuevo.fecha_creacion_borrador,
+        fecha_generacion_ia: nuevo.fecha_generacion_ia,
+        fecha_envio_sgc: nuevo.fecha_envio_sgc,
+        fecha_aprobacion_sgc: nuevo.fecha_aprobacion_sgc,
+        fecha_apertura: nuevo.fecha_apertura,
+        fecha_cierre: nuevo.fecha_cierre,
+        usuario_solicitante: nuevo.usuario_solicitante,
+        aprobado_por_sgc: nuevo.aprobado_por_sgc,
+        auditor_cierre: nuevo.auditor_cierre,
+        resultado_cierre: nuevo.resultado_cierre,
+        evidencia_objetiva_revisada: nuevo.evidencia_objetiva_revisada,
+        conclusion_eficacia: nuevo.conclusion_eficacia,
+        clave_formato: nuevo.clave_formato,
+        revision_formato: nuevo.revision_formato,
+        // Guardar equipo como JSON
+        equipo_json: JSON.stringify(equipo),
+        // Guardar causas como JSON
+        causas_json: JSON.stringify(causas),
+        // Guardar actividades como JSON
+        actividades_json: JSON.stringify(actividades),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+      
+      if (error) {
+        console.error('Error saving to Supabase:', error);
+      } else {
+        console.log('Saved to Supabase successfully');
+      }
+    } catch (e) {
+      console.error('Supabase error:', e);
+    }
+    
+    // También guardar en localStorage como backup
     if (form.id) {
       setAccionesCorrectivas(accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac));
     } else {
@@ -361,9 +417,25 @@ JSON de salida esperado:
     
     setLoading(false);
     setGuardado(true);
-    setMensaje('💾 Guardado exitosamente');
+    setMensaje('💾 Guardado en servidor');
     setForm({...form, id: nuevo.id});
     setTimeout(() => setGuardado(false), 2000);
+    setTimeout(() => setMensaje(''), 3000);
+  };
+
+  const eliminarAC = async (id) => {
+    if (!confirm('¿Estás seguro de eliminar esta acción correctiva?')) return;
+    
+    setLoading(true);
+    try {
+      await supabase.from('acciones_correctivas').delete().eq('id', id);
+    } catch (e) {
+      console.error('Error deleting:', e);
+    }
+    
+    setAccionesCorrectivas(accionesCorrectivas.filter(ac => ac.id !== id));
+    setLoading(false);
+    setMensaje('🗑️ Eliminado');
     setTimeout(() => setMensaje(''), 3000);
   };
 
@@ -508,10 +580,18 @@ JSON de salida esperado:
                       {ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}
                     </td>
                     <td className="p-3 text-center">
-                      <button onClick={() => { setForm(ac); setVista('ver'); setStep(1); }}
-                        className="text-cyan-600 hover:bg-cyan-50 px-2 py-1 rounded">
-                        👁️ Ver
-                      </button>
+                      <div className="flex gap-2 justify-center">
+                        <button onClick={() => { setForm(ac); setVista('ver'); setStep(1); }}
+                          className="text-cyan-600 hover:bg-cyan-50 px-2 py-1 rounded">
+                          👁️ Ver
+                        </button>
+                        {(usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Super Admin') && (
+                          <button onClick={() => eliminarAC(ac.id)}
+                            className="text-red-600 hover:bg-red-50 px-2 py-1 rounded">
+                            🗑️
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -535,6 +535,7 @@ function App() {
                 usuarios={usuarios}
                 puedeTodasAreas={puedeTodasAreas}
                 areaUsuario={areaUsuario}
+                usuarioLogueado={usuarioLogueado}
               />
             )}
 
