@@ -50,6 +50,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   const [generandoIA, setGenerandoIA] = useState(false);
   const [guardado, setGuardado] = useState(false);
   const [error, setError] = useState('');
+  const [mensaje, setMensaje] = useState('');
   
   const [form, setForm] = useState({
     id: null,
@@ -340,6 +341,8 @@ JSON de salida esperado:
   };
 
   const guardarBorrador = () => {
+    console.log('GuardarBorrador called, form:', form);
+    console.log('setAccionesCorrectivas:', typeof setAccionesCorrectivas);
     setLoading(true);
     const nuevo = {
       ...form,
@@ -358,11 +361,14 @@ JSON de salida esperado:
     
     setLoading(false);
     setGuardado(true);
+    setMensaje('💾 Guardado exitosamente');
     setForm({...form, id: nuevo.id});
     setTimeout(() => setGuardado(false), 2000);
+    setTimeout(() => setMensaje(''), 3000);
   };
 
   const enviarSGC = () => {
+    console.log('EnviarSGC called');
     setForm(f => ({ 
       ...f, 
       estado: 'ENVIADO_SGC', 
@@ -532,6 +538,12 @@ JSON de salida esperado:
           </div>
         )}
 
+        {mensaje && (
+          <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {mensaje}
+          </div>
+        )}
+
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">📋 Datos Generales</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -615,6 +627,12 @@ JSON de salida esperado:
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
             ⚠️ {error}
+          </div>
+        )}
+
+        {mensaje && (
+          <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {mensaje}
           </div>
         )}
 
@@ -714,6 +732,12 @@ JSON de salida esperado:
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
             ⚠️ {error}
+          </div>
+        )}
+
+        {mensaje && (
+          <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {mensaje}
           </div>
         )}
 
