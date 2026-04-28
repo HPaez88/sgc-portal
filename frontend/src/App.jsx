@@ -526,15 +526,22 @@ function App() {
             {/* ACCIONES CORRECTIVAS */}
             {activeTab === 'ac' && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <AccionCorrectivaView 
-                  accionesCorrectivas={accionesCorrectivas} 
-                  setAccionesCorrectivas={setAccionesCorrectivasSync}
-                  evidencias={evidencias}
-                  setEvidencias={setEvidencias}
-                  usuarios={usuarios}
-                  puedeTodasAreas={puedeTodasAreas}
-                  areaUsuario={areaUsuario}
-                />
+                {console.log('Rendering AC view') || null}
+                {typeof AccionCorrectivaView === 'function' ? (
+                  <AccionCorrectivaView 
+                    accionesCorrectivas={accionesCorrectivas} 
+                    setAccionesCorrectivas={setAccionesCorrectivasSync}
+                    evidencias={evidencias}
+                    setEvidencias={setEvidencias}
+                    usuarios={usuarios}
+                    puedeTodasAreas={puedeTodasAreas}
+                    areaUsuario={areaUsuario}
+                  />
+                ) : (
+                  <div className="text-center py-10 text-red-500">
+                    Error: Componente no cargado
+                  </div>
+                )}
               </div>
             )}
 
