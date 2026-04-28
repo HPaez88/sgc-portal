@@ -41,6 +41,8 @@ import { getApiUrl } from './config';
 import { AGENTS, callAgent, parseAgentResponse, generatePrompt } from './agents';
 import { AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, getColorNivel, getNivelRiesgo, getEstadoColor, getRolColor, INDICADORES, getIndicadoresByArea } from './catalogs';
 import { useLocalStorage, useFormValidation } from './hooks';
+import AccionCorrectivaViewExternal from './components/AccionCorrectivaView';
+import PlanMejoraViewExternal from './components/PlanForm';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -525,7 +527,7 @@ function App() {
 
             {/* ACCIONES CORRECTIVAS */}
             {activeTab === 'ac' && (
-              <AccionCorrectivaView 
+              <AccionCorrectivaViewExternal 
                 accionesCorrectivas={accionesCorrectivas} 
                 setAccionesCorrectivas={setAccionesCorrectivas}
                 evidencias={evidencias}
@@ -538,8 +540,14 @@ function App() {
 
 {/* PLANES DE MEJORA */}
             {activeTab === 'pm' && (
-              <PlanMejoraView 
+              <PlanMejoraViewExternal 
                 planesMejora={planesMejora}
+                setPlanesMejora={setPlanesMejora}
+                usuarios={usuarios}
+                puedeTodasAreas={puedeTodasAreas}
+                areaUsuario={areaUsuario}
+              />
+            )}
                 setPlanesMejora={setPlanesMejora}
                 usuarios={usuarios}
                 puedeTodasAreas={puedeTodasAreas}
