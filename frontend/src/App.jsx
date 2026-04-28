@@ -525,18 +525,26 @@ function App() {
 
             {/* ACCIONES CORRECTIVAS */}
             {activeTab === 'ac' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h1 className="text-2xl font-bold text-[#002855]">Acciones Correctivas</h1>
-                <p className="text-slate-500 mt-2">Cargando formulario...</p>
-              </div>
+              <AccionCorrectivaView 
+                accionesCorrectivas={accionesCorrectivas} 
+                setAccionesCorrectivas={setAccionesCorrectivas}
+                evidencias={evidencias}
+                setEvidencias={setEvidencias}
+                usuarios={usuarios}
+                puedeTodasAreas={puedeTodasAreas}
+                areaUsuario={areaUsuario}
+              />
             )}
 
 {/* PLANES DE MEJORA */}
             {activeTab === 'pm' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h1 className="text-2xl font-bold text-[#002855]">Planes de Mejora</h1>
-                <p className="text-slate-500 mt-2">Cargando formulario...</p>
-              </div>
+              <PlanMejoraView 
+                planesMejora={planesMejora}
+                setPlanesMejora={setPlanesMejora}
+                usuarios={usuarios}
+                puedeTodasAreas={puedeTodasAreas}
+                areaUsuario={areaUsuario}
+              />
             )}
 
 {/* INDICADORES */}
