@@ -44,7 +44,7 @@ const ESTADOS = [
 ];
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios }) {
-  const [vista, setVista] = useState('lista'); // lista, nuevo, editar,Seguimiento, Auditor
+  const [vista, setVista] = useState('lista');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generandoIA, setGenerandoIA] = useState(false);
@@ -54,7 +54,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   const [form, setForm] = useState({
     id: null,
     folio_numero: null,
-    folio_codigo: '',
+    folio_codigo: 'Pendiente de aprobación',
     anio_folio: null,
     estado: 'BORRADOR',
     area: '',
@@ -66,6 +66,11 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     descripcion_no_conformidad_final: '',
     impacta_otros_procesos: 'NO',
     otros_procesos_afectados: '',
+    accion_contenedora: '',
+    actividad_inmediata: '',
+    responsable_actividad_inmediata: '',
+    fecha_actividad_inmediata: '',
+    herramienta_analisis: 'Lluvia de ideas',
     requiere_actualizar_matriz_riesgos: 'NO',
     descripcion_riesgo_oportunidad: '',
     requiere_cambio_sgc: 'NO',
@@ -90,85 +95,20 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   ]);
   
   const [causas, setCausas] = useState([
-    { id: 1, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
-    { id: 2, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
-    { id: 3, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
-    { id: 4, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false }
+    { id: 1, numero: 1, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false },
+    { id: 2, numero: 2, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false },
+    { id: 3, numero: 3, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false },
+    { id: 4, numero: 4, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false }
   ]);
   
-  const [analisis, setAnalisis] = useState({
-    accion_contenedora: '',
-    actividad_inmediata: '',
-    responsable_actividad_inmediata: '',
-    fecha_actividad_inmediata: '',
-    herramienta_analisis: 'Lluvia de ideas'
-  });
-  
   const [actividades, setActividades] = useState([]);
-  
-  const [evidencias, setEvidencias] = useState([]);
 
-  // ========== RESET FORM ==========
-  const resetForm = () => {
-    setForm({
-      id: null,
-      folio_numero: null,
-      folio_codigo: '',
-      anio_folio: null,
-      estado: 'BORRADOR',
-      area: '',
-      proceso: '',
-      origen: '',
-      numero_auditoria: '',
-      descripcion_no_conformidad_original: '',
-      descripcion_no_conformidad_ia: '',
-      descripcion_no_conformidad_final: '',
-      impacta_otros_procesos: 'NO',
-      otros_procesos_afectados: '',
-      requiere_actualizar_matriz_riesgos: 'NO',
-      descripcion_riesgo_oportunidad: '',
-      requiere_cambio_sgc: 'NO',
-      fecha_creacion_borrador: new Date().toISOString(),
-      fecha_generacion_ia: null,
-      fecha_envio_sgc: null,
-      fecha_aprobacion_sgc: null,
-      fecha_apertura: null,
-      fecha_cierre: null,
-      usuario_solicitante: '',
-      aprobado_por_sgc: '',
-      auditor_cierre: '',
-      resultado_cierre: '',
-      evidencia_objetiva_revisada: '',
-      conclusion_eficacia: '',
-      clave_formato: 'OOMRSC-20',
-      revision_formato: 'Rev. 18'
-    });
-    setEquipo([{ id: 1, nombre: '', puesto: '', area: '', rol: 'Responsable principal', es_responsable_principal: true, firma_digital: '' }]);
-    setCausas([
-      { id: 1, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
-      { id: 2, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
-      { id: 3, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
-      { id: 4, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false }
-    ]);
-    setAnalisis({
-      accion_contenedora: '',
-      actividad_inmediata: '',
-      responsable_actividad_inmediata: '',
-      fecha_actividad_inmediata: '',
-      herramienta_analisis: 'Lluvia de ideas'
-    });
-    setActividades([]);
-    setError('');
-  };
-
-  // ========== HANDLERS ==========
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({...form, [name]: value});
     setError('');
   };
 
-  // ========== EQUIPO ==========
   const agregarIntegrante = () => {
     if (equipo.length < 10) {
       setEquipo([...equipo, { 
@@ -206,7 +146,6 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     setEquipo(nuevo);
   };
 
-  // ========== VALIDACIONES ==========
   const validarCapturaInicial = () => {
     if (!form.area) return 'Selecciona el área';
     if (!form.proceso) return 'Selecciona el proceso';
@@ -224,17 +163,6 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     return null;
   };
 
-  const validarEnvioSGC = () => {
-    const errCaptura = validarCapturaInicial();
-    if (errCaptura) return errCaptura;
-    const errEq = validarEquipo();
-    if (errEq) return errEq;
-    if (!analisis.accion_contenedora) return 'Falta acción contenedora';
-    if (!causas.some(c => c.causa.trim())) return 'Falta al menos una causa';
-    return null;
-  };
-
-  // ========== GENERAR CON IA ==========
   const generarConIA = async () => {
     const errorCaptura = validarCapturaInicial();
     if (errorCaptura) { setError(errorCaptura); return; }
@@ -247,18 +175,18 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     
     try {
       const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-      console.log('API Key exists:', !!apiKey, apiKey ? 'yes' : 'no');
+      console.log('API Key exists:', !!apiKey);
       if (!apiKey) {
-        setError('Configura VITE_GROQ_API_KEY en archivo .env o variable de entorno');
+        setError('Configura VITE_GROQ_API_KEY en variable de entorno');
         setGenerandoIA(false);
         return;
       }
 
       const prompt = `Eres asistente del Sistema de Gestión de Calidad ISO 9001 para OOMAPASC de Cajeme.
 
-Tu tarea es ANALIZAR la no conformidad y generar un plan de acción correctiva.
+Genera una propuesta de Acción Correctiva conforme al formato oficial OOMRSC-20 Rev. 18.
 
-INFORMACIÓN CAPTURADA POR EL USUARIO:
+El usuario capturó:
 - Área: ${form.area}
 - Proceso: ${form.proceso}
 - Origen: ${form.origen}
@@ -266,47 +194,57 @@ INFORMACIÓN CAPTURADA POR EL USUARIO:
 - Descripción de la no conformidad: ${form.descripcion_no_conformidad_original}
 - ¿Impacta otros procesos?: ${form.impacta_otros_procesos}
 - Otros procesos afectados: ${form.otros_procesos_afectados || 'N/A'}
-- Equipo de trabajo: ${JSON.stringify(equipo.filter(e => e.nombre.trim()).map(e => ({nombre: e.nombre, puesto: e.puesto, rol: e.rol})))}
+- Equipo de trabajo: ${JSON.stringify(equipo.filter(e => e.nombre.trim()).map(e => ({nombre: e.nombre, puesto: e.puesto, area: e.area, rol: e.rol})))}
 
-TAREA:
-1. ANALIZA la descripción de la no conformidad para entender el problema real
-2. Genera UNA ACCIÓN CONTENEDORA inmediata (temporal, para evitar que el problema continúe)
-3. Genera 3 CAUSAS POSIBLES mediante lluvia deideas (enfoca en: método, capacitación, supervisión, documentación, comunicación, recursos, seguimiento, control del proceso)
-4. La causa con mayor puntuación será la CAUSA PRINCIPAL
-5. Genera un PLAN DE 5 ACTIVIDADES para mitigar la causa raíz
+Instrucciones obligatorias:
+1. NO asignes folio ni fecha de apertura
+2. NO apruebes ni cierres la acción
+3. Usa únicamente el equipo proporcionado para responsables
+4. Si no existe persona adecuada, usa "Responsable por definir"
+5. Genera UNA acción contenedora inmediata (temporal, ejecutable)
+6. Genera hast4 causas mediante lluvia de ideas (enfoca en método, capacitación, supervisión, documentación, comunicación, recursos, seguimiento, control)
+7. Sugiere puntuación para cada causa
+8. La causa con mayor puntuación será la causa principal
+9. Determina si requiere actualizar matriz de riesgos y oportunidades
+10. Determina si requiere cambio en SGC
+11. Genera hast5 actividades correctivas con: actividad, responsable, indicador, fecha y evidencia
+12. Responde en JSON válido
 
-REGLAS IMPORTANTES:
-- NO asignes folio ni fecha de apertura (eso lo hace SGC)
-- NO approves ni cierres la acción
-- Usa los nombres del equipo para asignar responsables
-- Si no hay persona adecuada, usa "Responsable por definir"
-- Las actividades deben ser específicas, medibles y con fecha límite
-- Incluye evidencia esperada para cada actividad
-
- Responde en JSON válido:
-
+JSON de salida esperado:
 {
   "registro": {
-    "descripcion_mejorada": "Descripción mejorada y más clara del problema",
-    "accion_contenedora": "Acción inmediata para contener el problema"
+    "descripcion_no_conformidad_mejorada": "",
+    "impacta_otros_procesos": "SI/NO",
+    "otros_procesos_afectados": ""
   },
   "analisis": {
+    "accion_contenedora": "",
+    "actividad_inmediata": {
+      "actividad": "",
+      "responsable": "",
+      "fecha_sugerida": ""
+    },
+    "herramienta_analisis": "Lluvia de ideas",
     "causas": [
-      { "causa": "Causa 1 - enfoque en proceso/método", "puntuacion": 8 },
-      { "causa": "Causa 2 - enfoque en capacitación", "puntuacion": 5 },
-      { "causa": "Causa 3 - enfoque en documentación", "puntuacion": 3 }
+      { "numero": 1, "causa": "", "puntuacion_sugerida": 0, "porcentaje_sugerido": 0, "es_causa_principal": false },
+      { "numero": 2, "causa": "", "puntuacion_sugerida": 0, "porcentaje_sugerido": 0, "es_causa_principal": false },
+      { "numero": 3, "causa": "", "puntuacion_sugerida": 0, "porcentaje_sugerido": 0, "es_causa_principal": false },
+      { "numero": 4, "causa": "", "puntuacion_sugerida": 0, "porcentaje_sugerido": 0, "es_causa_principal": false }
     ],
-    "causa_principal": "Causa con mayor puntuación"
+    "requiere_actualizar_matriz_riesgos": "SI/NO",
+    "descripcion_riesgo_oportunidad": ""
   },
   "actividades": {
-    "plan": [
-      { "actividad": "Actividad 1", "responsable": "Nombre del equipo", "indicador": "% completado", "fecha": "YYYY-MM-DD", "evidencia": "Evidencia requerida" },
-      { "actividad": "Actividad 2", "responsable": "Nombre del equipo", "indicador": "Registro revisado", "fecha": "YYYY-MM-DD", "evidencia": "Captura de pantalla" },
-      { "actividad": "Actividad 3", "responsable": "Nombre del equipo", "indicador": "Procedimiento actualizado", "fecha": "YYYY-MM-DD", "evidencia": "Documento PDF" },
-      { "actividad": "Actividad 4", "responsable": "Nombre del equipo", "indicador": "Personal capacitado", "fecha": "YYYY-MM-DD", "evidencia": "Lista de asistencia" },
-      { "actividad": "Actividad 5", "responsable": "Nombre del equipo", "indicador": "Verificación completada", "fecha": "YYYY-MM-DD", "evidencia": "Reporte de verificación" }
-    ],
-    "requiere_cambio_sgc": "SI/NO"
+    "causa_principal": "",
+    "requiere_cambio_sgc": "SI/NO",
+    "actividades_correctivas": [
+      { "actividad": "", "responsable": "", "indicador_progreso": "", "fecha_termino_sugerida": "", "evidencia_esperada": "" }
+    ]
+  },
+  "observaciones_ia": {
+    "riesgos_detectados": "",
+    "recomendaciones_para_sgc": "",
+    "campos_que_requieren_revision_humana": []
   }
 }`;
 
@@ -337,52 +275,58 @@ REGLAS IMPORTANTES:
         if (jsonMatch) {
           const ia = JSON.parse(jsonMatch[0]);
           
-          // Registro
           setForm(f => ({
             ...f,
-            descripcion_no_conformidad_ia: ia.registro?.descripcion_mejorada || '',
-            descripcion_no_conformidad_final: ia.registro?.descripcion_mejorada || '',
-            accion_contenedora: ia.registro?.accion_contenedora || '',
+            descripcion_no_conformidad_ia: ia.registro?.descripcion_no_conformidad_mejorada || '',
+            descripcion_no_conformidad_final: ia.registro?.descripcion_no_conformidad_mejorada || '',
+            impacta_otros_procesos: ia.registro?.impacta_otros_procesos || 'NO',
+            otros_procesos_afectados: ia.registro?.otros_procesos_afectados || '',
+            accion_contenedora: ia.analisis?.accion_contenedora || '',
+            actividad_inmediata: ia.analisis?.actividad_inmediata?.actividad || '',
+            responsable_actividad_inmediata: ia.analisis?.actividad_inmediata?.responsable || '',
+            fecha_actividad_inmediata: ia.analisis?.actividad_inmediata?.fecha_sugerida || '',
+            herramienta_analisis: 'Lluvia de ideas',
+            requiere_actualizar_matriz_riesgos: ia.analisis?.requiere_actualizar_matriz_riesgos || 'NO',
+            descripcion_riesgo_oportunidad: ia.analisis?.descripcion_riesgo_oportunidad || '',
             requiere_cambio_sgc: ia.actividades?.requiere_cambio_sgc || 'NO',
             estado: 'GENERADO_IA',
             fecha_generacion_ia: new Date().toISOString()
           }));
           
-          // Análisis - causas
           if (ia.analisis?.causas) {
             const nuevasCausas = causas.map((c, i) => {
               const causaIA = ia.analisis.causas[i];
               return {
                 ...c,
                 causa: causaIA?.causa || '',
-                puntuacion: causaIA?.puntuacion || 0,
-                es_causa_principal: causaIA?.causa === ia.analisis?.causa_principal
+                puntuacion_sugerida: causaIA?.puntuacion_sugerida || 0,
+                porcentaje_sugerido: causaIA?.porcentaje_sugerido || 0,
+                es_causa_principal: causaIA?.es_causa_principal || false
               };
             });
             setCausas(nuevasCausas);
           }
           
-          // Actividades - plan
-          if (ia.actividades?.plan) {
-            const nuevasActividades = ia.actividades.plan.map((a, i) => ({
+          if (ia.actividades?.actividades_correctivas) {
+            const nuevasActividades = ia.actividades.actividades_correctivas.map((a, i) => ({
               id: i + 1,
               actividad: a.actividad || '',
               responsable: a.responsable || 'Responsable por definir',
-              indicador: a.indicador || '',
-              fecha_termino: a.fecha || '',
-              evidencia_esperada: a.evidencia || '',
+              indicador_progreso: a.indicador_progreso || '',
+              fecha_termino_sugerida: a.fecha_termino_sugerida || '',
+              evidencia_esperada: a.evidencia_esperada || '',
               evidencia_cargada: '',
-              resultado_verificado: '',
+              resultado_verificado_auditor: '',
               estatus: 'PENDIENTE',
               primer_replanteo_fecha: '',
-              primer_replantio_justificacion: '',
+              primer_replanteo_justificacion: '',
               segundo_replanteo_fecha: '',
               segundo_replanteo_justificacion: ''
             }));
             setActividades(nuevasActividades);
           }
           
-          setVista('lista');
+          setStep(3);
         } else {
           setError('No se pudo procesar la respuesta de IA');
         }
@@ -395,7 +339,6 @@ REGLAS IMPORTANTES:
     setGenerandoIA(false);
   };
 
-  // ========== GUARDAR ==========
   const guardarBorrador = () => {
     setLoading(true);
     const nuevo = {
@@ -403,7 +346,6 @@ REGLAS IMPORTANTES:
       id: form.id || Date.now(),
       equipo: equipo,
       causas: causas,
-      analisis: analisis,
       actividades: actividades,
       fecha_creacion_borrador: form.fecha_creacion_borrador || new Date().toISOString()
     };
@@ -421,9 +363,6 @@ REGLAS IMPORTANTES:
   };
 
   const enviarSGC = () => {
-    const errorValidacion = validarEnvioSGC();
-    if (errorValidacion) { setError(errorValidacion); return; }
-    
     setForm(f => ({ 
       ...f, 
       estado: 'ENVIADO_SGC', 
@@ -432,7 +371,6 @@ REGLAS IMPORTANTES:
     guardarBorrador();
   };
 
-  // ========== APROBACIÓN SGC ==========
   const aprobarSGC = () => {
     const folioNumero = accionesCorrectivas.length + 1;
     const anio = new Date().getFullYear().toString().slice(-2);
@@ -450,54 +388,6 @@ REGLAS IMPORTANTES:
     guardarBorrador();
   };
 
-  const cerrarEfectivo = () => {
-    setForm(f => ({
-      ...f,
-      estado: 'CERRADO_EFECTIVO',
-      resultado_cierre: 'EFECTIVA',
-      fecha_cierre: new Date().toISOString()
-    }));
-    guardarBorrador();
-  };
-
-  const cerrarNoEfectivo = () => {
-    setForm(f => ({
-      ...f,
-      estado: 'CERRADO_NO_EFECTIVO',
-      resultado_cierre: 'NO_EFECTIVA',
-      fecha_cierre: new Date().toISOString()
-    }));
-    guardarBorrador();
-  };
-
-  // ========== REPLANTEO ==========
-  const solicitarReplanteo = (actividadId, replanteoNum) => {
-    const justificacion = prompt(`Justificación del ${replanteoNum === 1 ? '1er' : '2do'} replanteo:`);
-    if (justificacion) {
-      setActividades(actividades.map(a => {
-        if (a.id === actividadId) {
-          return replanteoNum === 1 
-            ? { ...a, primer_replanteo_fecha: new Date().toISOString(), primer_replanteo_justificacion: justificacion }
-            : { ...a, segundo_replanteo_fecha: new Date().toISOString(), segundo_replanteo_justificacion: justificacion };
-        }
-        return a;
-      }));
-      setForm(f => ({ ...f, estado: 'CON_REPLANTEO' }));
-    }
-  };
-
-  // ========== EDITAR REGISTRO ==========
-  const editarRegistro = (ac) => {
-    setForm(ac);
-    setEquipo(ac.equipo || []);
-    setCausas(ac.causas || causas);
-    setAnalisis(ac.analisis || analisis);
-    setActividades(ac.actividades || []);
-    setVista('editar');
-    setStep(1);
-  };
-
-  // ========== RENDER ==========
   const getEstadoLabel = (id) => ESTADOS.find(e => e.id === id)?.label || id;
   const getEstadoColor = (estado) => {
     const colors = {
@@ -508,21 +398,70 @@ REGLAS IMPORTANTES:
       'APROBADO_SGC': 'bg-cyan-100 text-cyan-700',
       'FOLIO_ASIGNADO': 'bg-emerald-100 text-emerald-700',
       'EN_SEGUIMIENTO': 'bg-cyan-100 text-cyan-700',
-      'CON_REPLANTEO': 'bg-orange-100 text-orange-700',
       'CERRADO_EFECTIVO': 'bg-green-100 text-green-700',
-      'CERRADO_NO_EFECTIVO': 'bg-red-100 text-red-700',
-      'CANCELADO': 'bg-gray-100 text-gray-700'
+      'CERRADO_NO_EFECTIVO': 'bg-red-100 text-red-700'
     };
     return colors[estado] || 'bg-slate-100 text-slate-700';
   };
 
-  // ===== VISTA LISTA =====
+  const resetForm = () => {
+    setForm({
+      id: null,
+      folio_numero: null,
+      folio_codigo: 'Pendiente de aprobación',
+      anio_folio: null,
+      estado: 'BORRADOR',
+      area: '',
+      proceso: '',
+      origen: '',
+      numero_auditoria: '',
+      descripcion_no_conformidad_original: '',
+      descripcion_no_conformidad_ia: '',
+      descripcion_no_conformidad_final: '',
+      impacta_otros_procesos: 'NO',
+      otros_procesos_afectados: '',
+      accion_contenedora: '',
+      actividad_inmediata: '',
+      responsable_actividad_inmediata: '',
+      fecha_actividad_inmediata: '',
+      herramienta_analisis: 'Lluvia de ideas',
+      requiere_actualizar_matriz_riesgos: 'NO',
+      descripcion_riesgo_oportunidad: '',
+      requiere_cambio_sgc: 'NO',
+      fecha_creacion_borrador: new Date().toISOString(),
+      fecha_generacion_ia: null,
+      fecha_envio_sgc: null,
+      fecha_aprobacion_sgc: null,
+      fecha_apertura: null,
+      fecha_cierre: null,
+      usuario_solicitante: '',
+      aprobado_por_sgc: '',
+      auditor_cierre: '',
+      resultado_cierre: '',
+      evidencia_objetiva_revisada: '',
+      conclusion_eficacia: '',
+      clave_formato: 'OOMRSC-20',
+      revision_formato: 'Rev. 18'
+    });
+    setEquipo([{ id: 1, nombre: '', puesto: '', area: '', rol: 'Responsable principal', es_responsable_principal: true, firma_digital: '' }]);
+    setCausas([
+      { id: 1, numero: 1, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false },
+      { id: 2, numero: 2, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false },
+      { id: 3, numero: 3, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false },
+      { id: 4, numero: 4, causa: '', puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: false }
+    ]);
+    setActividades([]);
+    setStep(1);
+    setError('');
+  };
+
+  // ===== VISTA: LISTA =====
   if (vista === 'lista') {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-[#002855]">📋 Acciones Correctivas</h2>
-          <button onClick={() => { resetForm(); setVista('nuevo'); setStep(1); }}
+          <button onClick={() => { resetForm(); setVista('nuevo'); }}
             className="px-4 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40]">
             + Nueva Acción Correctiva
           </button>
@@ -550,9 +489,7 @@ REGLAS IMPORTANTES:
               <tbody>
                 {accionesCorrectivas.map((ac, idx) => (
                   <tr key={ac.id || idx} className="border-b hover:bg-slate-50">
-                    <td className="p-3 font-mono text-xs">
-                      {ac.folio_codigo || <span className="text-slate-400">Pendiente</span>}
-                    </td>
+                    <td className="p-3 font-mono text-xs">{ac.folio_codigo || 'Pendiente'}</td>
                     <td className="p-3">{ac.area || '-'}</td>
                     <td className="p-3">{ac.proceso || '-'}</td>
                     <td className="p-3">{ac.origen || '-'}</td>
@@ -565,7 +502,7 @@ REGLAS IMPORTANTES:
                       {ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}
                     </td>
                     <td className="p-3 text-center">
-                      <button onClick={() => { editarRegistro(ac); }}
+                      <button onClick={() => { setForm(ac); setVista('ver'); setStep(1); }}
                         className="text-cyan-600 hover:bg-cyan-50 px-2 py-1 rounded">
                         👁️ Ver
                       </button>
@@ -580,42 +517,8 @@ REGLAS IMPORTANTES:
     );
   }
 
-  const getInitialForm = () => ({
-    id: null,
-    folio_numero: null,
-    folio_codigo: '',
-    anio_folio: null,
-    estado: 'BORRADOR',
-    area: '',
-    proceso: '',
-    origen: '',
-    numero_auditoria: '',
-    descripcion_no_conformidad_original: '',
-    descripcion_no_conformidad_ia: '',
-    descripcion_no_conformidad_final: '',
-    impacta_otros_procesos: 'NO',
-    otros_procesos_afectados: '',
-    requiere_actualizar_matriz_riesgos: 'NO',
-    descripcion_riesgo_oportunidad: '',
-    requiere_cambio_sgc: 'NO',
-    fecha_creacion_borrador: new Date().toISOString(),
-    fecha_generacion_ia: null,
-    fecha_envio_sgc: null,
-    fecha_aprobacion_sgc: null,
-    fecha_apertura: null,
-    fecha_cierre: null,
-    usuario_solicitante: '',
-    aprobado_por_sgc: '',
-    auditor_cierre: '',
-    resultado_cierre: '',
-    evidencia_objetiva_revisada: '',
-    conclusion_eficacia: '',
-    clave_formato: 'OOMRSC-20',
-    revision_formato: 'Rev. 18'
-  });
-
-// ===== PANTALLA UNICA: NUEVA ACCIÓN CORRECTIVA =====
-  if (vista === 'nuevo') {
+  // ===== PANTALLA 1: NUEVO REGISTRO (step=1) =====
+  if (vista === 'nuevo' && step === 1) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -624,12 +527,11 @@ REGLAS IMPORTANTES:
         </div>
 
         {error && (
-          <div className="p-4 bg-red-50 border border-red-300 text-red-700 rounded-lg">
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
             ⚠️ {error}
           </div>
         )}
 
-        {/* Datos Generales */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">📋 Datos Generales</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -664,11 +566,10 @@ REGLAS IMPORTANTES:
           </div>
         </div>
 
-        {/* Descripción */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">⚠️ Descripción de la No Conformidad</h3>
           <textarea name="descripcion_no_conformidad_original" value={form.descripcion_no_conformidad_original} onChange={handleChange}
-            rows={3} className="w-full p-3 border rounded-lg" placeholder="Describe la no conformidad encontrada..." />
+            rows={4} className="w-full p-3 border rounded-lg" placeholder="Describe la no conformidad encontrada..." />
           
           <div className="flex gap-4 mt-3">
             <label className="flex items-center gap-2">
@@ -686,9 +587,39 @@ REGLAS IMPORTANTES:
           )}
         </div>
 
-        {/* Equipo de Trabajo */}
+        <div className="flex gap-3">
+          <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
+            ← Cancelar
+          </button>
+          <button onClick={guardarBorrador} disabled={loading} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
+            {loading ? '💾 Guardando...' : '💾 Guardar Borrador'}
+          </button>
+          <button onClick={() => { const err = validarCapturaInicial(); if (err) setError(err); else setStep(2); }}
+            className="px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600">
+            Continuar a Equipo →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== PANTALLA 2: EQUIPO DE TRABAJO (step=2) =====
+  if (vista === 'nuevo' && step === 2) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-[#002855]">Equipo de Trabajo</h2>
+          <span className="text-sm text-slate-500">Paso 2 de 4</span>
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            ⚠️ {error}
+          </div>
+        )}
+
         <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">👥 Equipo de Trabajo</h3>
+          <h3 className="font-bold text-[#002855] mb-4">👥 Integrantes del Equipo</h3>
           <p className="text-sm text-slate-600 mb-3">Minimo: 1 responsable + 1 del área + 1 externo (total 3)</p>
           
           <div className="overflow-x-auto">
@@ -751,181 +682,10 @@ REGLAS IMPORTANTES:
           </button>
         </div>
 
-        {/* Generar con IA */}
         <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
           <h3 className="font-bold text-purple-800 mb-2">🤖 Generar con IA</h3>
           <p className="text-sm text-purple-700 mb-3">
             Genera: descripción mejorada, análisis de causas, plan de actividades.
-          </p>
-          <button onClick={generarConIA} disabled={generandoIA} 
-            className="px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50">
-            {generandoIA ? '🤖 Generando...' : '🤖 Generar Propuesta con IA'}
-          </button>
-        </div>
-
-        {/* Resultados del Análisis IA */}
-        {(form.descripcion_no_conformidad_ia || actividades.length > 0) && (
-          <div className="bg-cyan-50 p-4 rounded-xl border border-cyan-200">
-            <h3 className="font-bold text-cyan-800 mb-4">📊 Análisis Generado por IA</h3>
-            
-            {form.descripcion_no_conformidad_ia && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-cyan-700 mb-1">Descripción Mejorada</label>
-                <textarea value={form.descripcion_no_conformidad_ia} onChange={(e) => setForm({...form, descripcion_no_conformidad_ia: e.target.value, descripcion_no_conformidad_final: e.target.value})}
-                  className="w-full p-2 border rounded-lg" rows={2} />
-              </div>
-            )}
-
-            {causas.filter(c => c.causa).length > 0 && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-cyan-700 mb-2">Causas (Lluvia de Ideas)</label>
-                <table className="w-full text-sm">
-                  <thead className="bg-white">
-                    <tr>
-                      <th className="p-2 text-left">#</th>
-                      <th className="p-2 text-left">Causa</th>
-                      <th className="p-2 text-center">Puntuación</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {causas.filter(c => c.causa).map((c, i) => (
-                      <tr key={c.id} className={c.es_causa_principal ? 'bg-yellow-50' : 'bg-white'}>
-                        <td className="p-2">{i + 1}</td>
-                        <td className="p-2">{c.causa}</td>
-                        <td className="p-2 text-center font-bold">{c.puntuacion}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {actividades.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-cyan-700 mb-2">Plan de Actividades</label>
-                <table className="w-full text-sm">
-                  <thead className="bg-white">
-                    <tr>
-                      <th className="p-2 text-left">#</th>
-                      <th className="p-2 text-left">Actividad</th>
-                      <th className="p-2 text-left">Responsable</th>
-                      <th className="p-2 text-left">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {actividades.map((a, i) => (
-                      <tr key={a.id} className="bg-white">
-                        <td className="p-2">{i + 1}</td>
-                        <td className="p-2">{a.actividad}</td>
-                        <td className="p-2">{a.responsable}</td>
-                        <td className="p-2">{a.fecha_termino}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Acciones */}
-        <div className="flex gap-3 flex-wrap">
-          <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
-            ← Cancelar
-          </button>
-          <button onClick={guardarBorrador} disabled={loading} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
-            {loading ? '💾 Guardando...' : '💾 Guardar Borrador'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ===== PANTALLA 2: EQUIPO DE TRABAJO =====
-  if (step === 2) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-[#002855]">Equipo de Trabajo</h2>
-          <div className="text-sm text-slate-500">Step 2/4</div>
-        </div>
-
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            ⚠️ {error}
-          </div>
-        )}
-
-        <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">👥 Integrantes del Equipo</h3>
-          <p className="text-sm text-slate-600 mb-4">Debes agregar al menos: 1 responsable principal + 1 integrante adicional</p>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-100">
-                <tr>
-                  <th className="p-2 text-left">Nombre</th>
-                  <th className="p-2 text-left">Puesto</th>
-                  <th className="p-2 text-left">Área</th>
-                  <th className="p-2 text-left">Rol</th>
-                  <th className="p-2 text-center">Responsable Principal</th>
-                  <th className="p-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {equipo.map((integrante, i) => (
-                  <tr key={integrante.id} className="border-b">
-                    <td className="p-2">
-                      <input type="text" value={integrante.nombre} 
-                        onChange={(e) => actualizarIntegrante(integrante.id, 'nombre', e.target.value)}
-                        className="w-full p-1 border rounded" placeholder="Nombre completo" />
-                    </td>
-                    <td className="p-2">
-                      <input type="text" value={integrante.puesto} 
-                        onChange={(e) => actualizarIntegrante(integrante.id, 'puesto', e.target.value)}
-                        className="w-full p-1 border rounded" placeholder="Puesto" />
-                    </td>
-                    <td className="p-2">
-                      <input type="text" value={integrante.area} 
-                        onChange={(e) => actualizarIntegrante(integrante.id, 'area', e.target.value)}
-                        className="w-full p-1 border rounded" placeholder="Área" />
-                    </td>
-                    <td className="p-2">
-                      <select value={integrante.rol} 
-                        onChange={(e) => actualizarIntegrante(integrante.id, 'rol', e.target.value)}
-                        className="w-full p-1 border rounded">
-                        {ROLES_EQUIPO.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    </td>
-                    <td className="p-2 text-center">
-                      <input type="checkbox" checked={integrante.es_responsable_principal} 
-                        onChange={(e) => actualizarIntegrante(integrante.id, 'es_responsable_principal', e.target.checked)}
-                        className="w-4 h-4" />
-                    </td>
-                    <td className="p-2 text-center">
-                      <button onClick={() => eliminarIntegrante(integrante.id)} 
-                        disabled={equipo.length === 1}
-                        className="text-red-500 hover:bg-red-50 p-1 rounded disabled:opacity-30">
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          <button onClick={agregarIntegrante} 
-            disabled={equipo.length >= 10}
-            className="mt-3 text-sm text-cyan-600 hover:bg-cyan-50 px-3 py-1 rounded disabled:opacity-50">
-            + Agregar integrante
-          </button>
-        </div>
-
-        <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
-          <h3 className="font-bold text-purple-800 mb-2">🤖 Generar Propuesta con IA</h3>
-          <p className="text-sm text-purple-700 mb-3">
-            La IA generará automáticamente: descripción mejorada, acción contenedora, análisis de causas, plan de actividades y más.
           </p>
           <button onClick={generarConIA} disabled={generandoIA} 
             className="px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50">
@@ -942,13 +702,13 @@ REGLAS IMPORTANTES:
     );
   }
 
-  // ===== PANTALLA 3: ANÁLISIS IA =====
-  if (step === 3) {
+  // ===== PANTALLA 3: PROPUESTA IA (step=3) =====
+  if (vista === 'nuevo' && step === 3) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-[#002855]">Análisis Generado por IA</h2>
-          <div className="text-sm text-slate-500">Step 3/4</div>
+          <h2 className="text-xl font-bold text-[#002855]">Propuesta Generada por IA</h2>
+          <span className="text-sm text-slate-500">Paso 3 de 4</span>
         </div>
 
         {error && (
@@ -957,40 +717,40 @@ REGLAS IMPORTANTES:
           </div>
         )}
 
+        {/* Descripción mejorada */}
         <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">📝 Descripción Mejorada (Editable)</h3>
-          <textarea name="descripcion_no_conformidad_final" value={form.descripcion_no_conformidad_final} onChange={handleChange}
+          <h3 className="font-bold text-[#002855] mb-4">📝 Descripción Mejorada</h3>
+          <textarea value={form.descripcion_no_conformidad_ia} 
+            onChange={(e) => setForm({...form, descripcion_no_conformidad_ia: e.target.value, descripcion_no_conformidad_final: e.target.value})}
             rows={3} className="w-full p-3 border rounded-lg" />
         </div>
 
+        {/* Análisis */}
         <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">🛡️ Acción Contenedora</h3>
-          <textarea name="accion_contenedora" value={analisis.accion_contenedora} 
-            onChange={(e) => setAnalisis({...analisis, accion_contenedora: e.target.value})}
-            rows={2} className="w-full p-3 border rounded-lg" placeholder="Acción inmediata para contener el problema..." />
+          <h3 className="font-bold text-[#002855] mb-4">��️ Acción Contenedora</h3>
+          <textarea name="accion_contenedora" value={form.accion_contenedora} onChange={handleChange}
+            rows={2} className="w-full p-3 border rounded-lg" />
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Actividad Inmediata</label>
-              <input type="text" value={analisis.actividad_inmediata} 
-                onChange={(e) => setAnalisis({...analisis, actividad_inmediata: e.target.value})}
+              <input type="text" name="actividad_inmediata" value={form.actividad_inmediata} onChange={handleChange}
                 className="w-full p-2 border rounded-lg" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Responsable</label>
-              <input type="text" value={analisis.responsable_actividad_inmediata} 
-                onChange={(e) => setAnalisis({...analisis, responsable_actividad_inmediata: e.target.value})}
+              <input type="text" name="responsable_actividad_inmediata" value={form.responsable_actividad_inmediata} onChange={handleChange}
                 className="w-full p-2 border rounded-lg" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
-              <input type="date" value={analisis.fecha_actividad_inmediata} 
-                onChange={(e) => setAnalisis({...analisis, fecha_actividad_inmediata: e.target.value})}
+              <input type="date" name="fecha_actividad_inmediata" value={form.fecha_actividad_inmediata} onChange={handleChange}
                 className="w-full p-2 border rounded-lg" />
             </div>
           </div>
         </div>
 
+        {/* Causas */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">💡 Análisis de Causas (Lluvia de Ideas)</h3>
           <div className="overflow-x-auto">
@@ -1000,13 +760,12 @@ REGLAS IMPORTANTES:
                   <th className="p-2 text-center">#</th>
                   <th className="p-2 text-left">Causa</th>
                   <th className="p-2 text-center">Puntuación</th>
-                  <th className="p-2 text-center">%</th>
                   <th className="p-2 text-center">Principal</th>
                 </tr>
               </thead>
               <tbody>
-                {causas.map((c, i) => (
-                  <tr key={c.id} className={c.es_causa_principal ? 'bg-cyan-50' : 'border-b'}>
+                {causas.filter(c => c.causa).map((c, i) => (
+                  <tr key={c.id} className={c.es_causa_principal ? 'bg-yellow-50' : 'border-b'}>
                     <td className="p-2 text-center">{i + 1}</td>
                     <td className="p-2">
                       <input type="text" value={c.causa} 
@@ -1015,18 +774,17 @@ REGLAS IMPORTANTES:
                           nuevo[i].causa = e.target.value;
                           setCausas(nuevo);
                         }}
-                        className="w-full p-1 border rounded" placeholder="Causa probable..." />
+                        className="w-full p-1 border rounded" />
                     </td>
                     <td className="p-2 text-center">
-                      <input type="number" value={c.puntuacion} 
+                      <input type="number" value={c.puntuacion_sugerida} 
                         onChange={(e) => {
                           const nuevo = [...causas];
-                          nuevo[i].puntuacion = parseInt(e.target.value) || 0;
+                          nuevo[i].puntuacion_sugerida = parseInt(e.target.value) || 0;
                           setCausas(nuevo);
                         }}
                         className="w-16 p-1 border rounded text-center" />
                     </td>
-                    <td className="p-2 text-center">{c.porcentaje}%</td>
                     <td className="p-2 text-center">
                       <input type="checkbox" checked={c.es_causa_principal} 
                         onChange={(e) => {
@@ -1060,6 +818,7 @@ REGLAS IMPORTANTES:
           </div>
         </div>
 
+        {/* Actividades */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">📋 Plan de Actividades Correctivas</h3>
           <div className="overflow-x-auto">
@@ -1097,19 +856,19 @@ REGLAS IMPORTANTES:
                         className="w-full p-1 border rounded" />
                     </td>
                     <td className="p-2">
-                      <input type="text" value={act.indicador} 
+                      <input type="text" value={act.indicador_progreso} 
                         onChange={(e) => {
                           const nuevo = [...actividades];
-                          nuevo[i].indicador = e.target.value;
+                          nuevo[i].indicador_progreso = e.target.value;
                           setActividades(nuevo);
                         }}
                         className="w-full p-1 border rounded" />
                     </td>
                     <td className="p-2">
-                      <input type="date" value={act.fecha_termino} 
+                      <input type="date" value={act.fecha_termino_sugerida} 
                         onChange={(e) => {
                           const nuevo = [...actividades];
-                          nuevo[i].fecha_termino = e.target.value;
+                          nuevo[i].fecha_termino_sugerida = e.target.value;
                           setActividades(nuevo);
                         }}
                         className="w-full p-1 border rounded" />
@@ -1156,60 +915,80 @@ REGLAS IMPORTANTES:
     );
   }
 
-  // ===== PANTALLA 4: SEGUIMIENTO =====
-  if (step === 4) {
+  // ===== VISTA: VER (ver detalle) =====
+  if (vista === 'ver') {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-[#002855]">📊 Seguimiento</h2>
-            <p className="text-sm text-slate-500">Folio: {form.folio_codigo || 'Pendiente de aprobación'}</p>
+            <h2 className="text-xl font-bold text-[#002855]">Ver Acción Correctiva</h2>
+            <p className="text-sm text-slate-500">Folio: {form.folio_codigo}</p>
           </div>
           <span className={`px-3 py-1 rounded ${getEstadoColor(form.estado)}`}>
             {getEstadoLabel(form.estado)}
           </span>
         </div>
 
+        {/* Datos */}
         <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">Actividades</h3>
-          {actividades.length === 0 ? (
-            <p className="text-slate-400">No hay actividades</p>
-          ) : (
-            <div className="space-y-3">
-              {actividades.map((act, i) => (
-                <div key={act.id} className="p-4 border rounded-lg bg-white">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium text-[#002855]">Actividad {i + 1}</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      act.estatus === 'COMPLETADA' ? 'bg-green-100 text-green-700' :
-                      act.estatus === 'EN_PROCESO' ? 'bg-cyan-100 text-cyan-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>
-                      {act.estatus || 'PENDIENTE'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600 mb-2">{act.actividades}</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                    <div><span className="text-slate-500">Responsable:</span> {act.responsable}</div>
-                    <div><span className="text-slate-500">Fecha:</span> {act.fecha_termino || 'Sin fecha'}</div>
-                    <div><span className="text-slate-500">Indicador:</span> {act.indicador || 'N/A'}</div>
-                    <div><span className="text-slate-500">Evidencia:</span> {act.evidencia_esperada || 'N/A'}</div>
-                  </div>
-                  {act.primer_repleteo_justificacion && (
-                    <div className="mt-2 p-2 bg-orange-50 rounded text-sm">
-                      📌 1er Replanteo: {act.primer_repleteo_justificacion}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <h3 className="font-bold text-[#002855] mb-4">📋 Datos Generales</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div><span className="text-slate-500">Área:</span> {form.area}</div>
+            <div><span className="text-slate-500">Proceso:</span> {form.proceso}</div>
+            <div><span className="text-slate-500">Origen:</span> {form.origen}</div>
+            <div><span className="text-slate-500">No. Auditoría:</span> {form.numero_auditoria || 'N/A'}</div>
+          </div>
         </div>
+
+        {/* Descripción */}
+        <div className="bg-slate-50 p-4 rounded-xl">
+          <h3 className="font-bold text-[#002855] mb-4">⚠️ Descripción</h3>
+          <p className="text-sm whitespace-pre-wrap">{form.descripcion_no_conformidad_original}</p>
+        </div>
+
+        {/* Causas */}
+        {causas.filter(c => c.causa).length > 0 && (
+          <div className="bg-slate-50 p-4 rounded-xl">
+            <h3 className="font-bold text-[#002855] mb-4">💡 Causas</h3>
+            <table className="w-full text-sm">
+              <thead className="bg-slate-100">
+                <tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Causa</th><th className="p-2 text-center">Punt.</th></tr>
+              </thead>
+              <tbody>
+                {causas.filter(c => c.causa).map((c, i) => (
+                  <tr key={c.id}><td className="p-2">{i+1}</td><td className="p-2">{c.causa}</td><td className="p-2 text-center">{c.puntuacion_sugerida}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Actividades */}
+        {actividades.length > 0 && (
+          <div className="bg-slate-50 p-4 rounded-xl">
+            <h3 className="font-bold text-[#002855] mb-4">📋 Actividades</h3>
+            <table className="w-full text-sm">
+              <thead className="bg-slate-100">
+                <tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Actividad</th><th className="p-2 text-left">Responsable</th><th className="p-2 text-left">Fecha</th><th className="p-2 text-left">Estado</th></tr>
+              </thead>
+              <tbody>
+                {actividades.map((a, i) => (
+                  <tr key={a.id}><td className="p-2">{i+1}</td><td className="p-2">{a.actividad}</td><td className="p-2">{a.responsable}</td><td className="p-2">{a.fecha_termino_sugerida || '-'}</td><td className="p-2">{a.estatus}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
             ← Volver a Lista
           </button>
+          {form.estado === 'ENVIADO_SGC' && (
+            <button onClick={aprobarSGC} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              ✓ Aprobar y Asignar Folio
+            </button>
+          )}
         </div>
       </div>
     );
