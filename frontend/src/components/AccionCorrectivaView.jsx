@@ -108,6 +108,59 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   
   const [evidencias, setEvidencias] = useState([]);
 
+  // ========== RESET FORM ==========
+  const resetForm = () => {
+    setForm({
+      id: null,
+      folio_numero: null,
+      folio_codigo: '',
+      anio_folio: null,
+      estado: 'BORRADOR',
+      area: '',
+      proceso: '',
+      origen: '',
+      numero_auditoria: '',
+      descripcion_no_conformidad_original: '',
+      descripcion_no_conformidad_ia: '',
+      descripcion_no_conformidad_final: '',
+      impacta_otros_procesos: 'NO',
+      otros_procesos_afectados: '',
+      requiere_actualizar_matriz_riesgos: 'NO',
+      descripcion_riesgo_oportunidad: '',
+      requiere_cambio_sgc: 'NO',
+      fecha_creacion_borrador: new Date().toISOString(),
+      fecha_generacion_ia: null,
+      fecha_envio_sgc: null,
+      fecha_aprobacion_sgc: null,
+      fecha_apertura: null,
+      fecha_cierre: null,
+      usuario_solicitante: '',
+      aprobado_por_sgc: '',
+      auditor_cierre: '',
+      resultado_cierre: '',
+      evidencia_objetiva_revisada: '',
+      conclusion_eficacia: '',
+      clave_formato: 'OOMRSC-20',
+      revision_formato: 'Rev. 18'
+    });
+    setEquipo([{ id: 1, nombre: '', puesto: '', area: '', rol: 'Responsable principal', es_responsable_principal: true, firma_digital: '' }]);
+    setCausas([
+      { id: 1, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
+      { id: 2, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
+      { id: 3, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false },
+      { id: 4, causa: '', puntuacion: 0, porcentaje: 0, es_causa_principal: false }
+    ]);
+    setAnalisis({
+      accion_contenedora: '',
+      actividad_inmediata: '',
+      responsable_actividad_inmediata: '',
+      fecha_actividad_inmediata: '',
+      herramienta_analisis: 'Lluvia de ideas'
+    });
+    setActividades([]);
+    setError('');
+  };
+
   // ========== HANDLERS ==========
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -194,9 +247,9 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     setError('');
     
     try {
-      const apiKey = localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY;
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
       if (!apiKey) {
-        setError('Configura tu API key de GroQ en Configuración');
+        setError('Configura VITE_GROQ_API_KEY en archivo .env o variable de entorno');
         setGenerandoIA(false);
         return;
       }
@@ -474,7 +527,7 @@ JSON de salida esperado:
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-[#002855]">📋 Acciones Correctivas</h2>
-          <button onClick={() => { setForm(getInitialForm()); setVista('nuevo'); setStep(1); }}
+          <button onClick={() => { resetForm(); setVista('nuevo'); setStep(1); }}
             className="px-4 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40]">
             + Nueva Acción Correctiva
           </button>

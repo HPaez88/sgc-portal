@@ -1,3 +1,43 @@
+# PROTOCOLO DE VALIDACIÓN CRUZADA - SGC Portal
+
+**Fecha:** 2026-04-28
+**Versión:** 1.0
+
+---
+
+## PROTOCOLO DE VALIDACIÓN PARA CAMBIOS
+
+### Regla Principal
+> **TODO cambio debe ser validado por TODOS los agentes relevantes ANTES de hacer commit a producción**
+
+### Flujo de Validación
+
+1. **Frontend Agent** → Verifica imports, renderizado, sintaxis
+2. **Database Agent** → Verifica compatibilidad de esquemas
+3. **Backend Agent** → Verifica APIs y endpoints
+4. **QA Agent** → Verifica testing y flujos de usuario
+5. **SEO Agent** → Verifica impacto en SEO si aplica
+
+### Checklist de Validación
+
+- [ ] Build compila sin errores (`npm run build`)
+- [x] No hay funciones duplicadas con mismo nombre
+- [ ] schemas de DB son compatibles con el componente
+- [ ] APIs funcionan con los nuevos campos
+- [ ] Testing cubre el cambio
+
+### Comandos de Validación
+
+```bash
+# Frontend
+npm run build
+
+# Verificar imports
+grep -n "import.*from" src/App.jsx | head -20
+```
+
+---
+
 # REPORTE DE AUDITORÍA COMPLETA - SGC Portal
 
 **Fecha:** 2026-04-28
@@ -11,7 +51,7 @@
 | Archivo | Líneas | Estado |
 |---------|--------|---------|
 | App.jsx | 3699 | OK (con funciones inline duplicadas) |
-| components/AccionCorrectivaView.jsx | 109 | OK |
+| components/AccionCorrectivaView.jsx | 1035 | OK (rebuild OOMRSC-20) |
 | components/PlanForm.jsx | 101 | OK |
 | package.json | 34 dependencias | OK |
 
