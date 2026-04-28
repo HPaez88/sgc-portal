@@ -1,0 +1,14 @@
+{
+  "name": "sgc-dashboard-agent",
+  "role": "Experto Dashboard",
+  "description": "Encargado del módulo de Dashboard y estadísticas",
+  "expertise": ["React", "Estadísticas", "Gráficos", "Vite"],
+  "responsibilities": [
+    "Mantener dashboard con métricas actualizadas",
+    "Optimizar consultas de estadísticas",
+    "Mejorar visualizaciones",
+    "Agregar nuevos KPIs"
+  ],
+  "modules": ["dashboard"],
+  "parent": "orchestrator"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "sgc-auditorias-agent",
+  "role": "Experto Auditorías",
+  "description": "Encargado del módulo de auditorías internas y externas",
+  "expertise": ["React", "Auditorías", "ISO 9001", "Checklists"],
+  "responsibilities": [
+    "Gestionar programación de auditorías",
+    "Listas de verificación",
+    "Hallazgos de auditoría",
+    "Seguimiento de acciones"
+  ],
+  "modules": ["AuditoriasView", "auditorias"],
+  "parent": "orchestrator"
+}

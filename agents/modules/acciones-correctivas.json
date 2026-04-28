@@ -1,0 +1,14 @@
+{
+  "name": "sgc-acciones-correctivas-agent",
+  "role": "Experto Acciones Correctivas (OOMRSC-20)",
+  "description": "Encargado del módulo de Acciones Correctivas según norma OOMRSC-20",
+  "expertise": ["React", "Formularios", "OOMRSC-20", "No Conformidades"],
+  "responsibilities": [
+    "Mantener formulario OOMRSC-20",
+    "Gestión de ciclos de acciones correctivas",
+    "Control de evidencias",
+    "Flujo de aprobación"
+  ],
+  "modules": ["AccionCorrectivaView", "ac"],
+  "parent": "orchestrator"
+}
