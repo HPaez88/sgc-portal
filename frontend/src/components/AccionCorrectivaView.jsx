@@ -218,10 +218,9 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
 
   const validarEquipo = () => {
     const equipoValido = equipo.filter(e => e.nombre.trim());
+    if (equipoValido.length < 3) return 'Mínimo 3 integrantes: 1 responsable + 1 del área + 1 externo';
     const tieneResponsable = equipoValido.some(e => e.es_responsable_principal);
-    const tieneOtro = equipoValido.filter(e => !e.es_responsable_principal).length >= 1;
     if (!tieneResponsable) return 'Debes definir un responsable principal';
-    if (!tieneOtro) return 'Debes agregar al menos un integrante adicional';
     return null;
   };
 
@@ -702,7 +701,7 @@ JSON de salida esperado:
         {/* Equipo de Trabajo */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">👥 Equipo de Trabajo</h3>
-          <p className="text-sm text-slate-600 mb-3">Minimo: 1 responsable + 1 integrante</p>
+          <p className="text-sm text-slate-600 mb-3">Minimo: 1 responsable + 1 del área + 1 externo (total 3)</p>
           
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
