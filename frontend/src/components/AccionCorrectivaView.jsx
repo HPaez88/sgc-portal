@@ -254,11 +254,11 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
         return;
       }
 
-      const prompt = `Actúa como asistente del Sistema de Gestión de Calidad ISO 9001 para OOMAPASC de Cajeme.
+      const prompt = `Eres asistente del Sistema de Gestión de Calidad ISO 9001 para OOMAPASC de Cajeme.
 
-Genera una propuesta de Acción Correctiva conforme al formato oficial OOMRSC-20 Rev. 18.
+Tu tarea es ANALIZAR la no conformidad y generar un plan de acción correctiva.
 
-El usuario capturó:
+INFORMACIÓN CAPTURADA POR EL USUARIO:
 - Área: ${form.area}
 - Proceso: ${form.proceso}
 - Origen: ${form.origen}
@@ -266,46 +266,47 @@ El usuario capturó:
 - Descripción de la no conformidad: ${form.descripcion_no_conformidad_original}
 - ¿Impacta otros procesos?: ${form.impacta_otros_procesos}
 - Otros procesos afectados: ${form.otros_procesos_afectados || 'N/A'}
-- Equipo de trabajo: ${JSON.stringify(equipo.filter(e => e.nombre.trim()).map(e => ({nombre: e.nombre, puesto: e.puesto, area: e.area, rol: e.rol})))}
+- Equipo de trabajo: ${JSON.stringify(equipo.filter(e => e.nombre.trim()).map(e => ({nombre: e.nombre, puesto: e.puesto, rol: e.rol})))}
 
-Instrucciones obligatorias:
-1. NO asignes folio ni fecha de apertura
-2. NO apruebes ni cierres la acción
-3. Usa únicamente el equipo proporcionado para responsables. Si no existe persona adecuada, usa "Responsable por definir"
-4. Genera acción contenedora inmediata (temporal, ejecutable, clara)
-5. Genera hast4 causas mediante lluvia de ideas (enfoca en método, capacitación, supervisión, documentación, comunicación, recursos, seguimiento, control)
-6. Sugiere puntuación para cada causa. La causa con mayor puntuación será la causa principal
-7. Determina si requiere actualizar matriz de riesgos y oportunidades (sistémico, recurrencia, incumplimiento normativo)
-8. Determina si requiere cambio en SGC (modificación de documentación oficial)
-9. Genera hast5 actividades correctivas con: actividad, responsable (del equipo), indicador, fecha y evidencia
-10. Responde en JSON válido
+TAREA:
+1. ANALIZA la descripción de la no conformidad para entender el problema real
+2. Genera UNA ACCIÓN CONTENEDORA inmediata (temporal, para evitar que el problema continúe)
+3. Genera 3 CAUSAS POSIBLES mediante lluvia deideas (enfoca en: método, capacitación, supervisión, documentación, comunicación, recursos, seguimiento, control del proceso)
+4. La causa con mayor puntuación será la CAUSA PRINCIPAL
+5. Genera un PLAN DE 5 ACTIVIDADES para mitigar la causa raíz
 
-JSON de salida esperado:
+REGLAS IMPORTANTES:
+- NO asignes folio ni fecha de apertura (eso lo hace SGC)
+- NO approves ni cierres la acción
+- Usa los nombres del equipo para asignar responsables
+- Si no hay persona adecuada, usa "Responsable por definir"
+- Las actividades deben ser específicas, medibles y con fecha límite
+- Incluye evidencia esperada para cada actividad
+
+ Responde en JSON válido:
+
 {
   "registro": {
-    "descripcion_mejorada": "",
-    "impacta_otros_procesos": "SI/NO",
-    "otros_procesos_afectados": ""
+    "descripcion_mejorada": "Descripción mejorada y más clara del problema",
+    "accion_contenedora": "Acción inmediata para contener el problema"
   },
   "analisis": {
-    "accion_contenedora": "",
-    "actividad_inmediata": { "actividad": "", "responsable": "", "fecha": "" },
     "causas": [
-      { "causa": "", "puntuacion": 0, "porcentaje": 0 },
-      { "causa": "", "puntuacion": 0, "porcentaje": 0 },
-      { "causa": "", "puntuacion": 0, "porcentaje": 0 },
-      { "causa": "", "puntuacion": 0, "porcentaje": 0 }
+      { "causa": "Causa 1 - enfoque en proceso/método", "puntuacion": 8 },
+      { "causa": "Causa 2 - enfoque en capacitación", "puntuacion": 5 },
+      { "causa": "Causa 3 - enfoque en documentación", "puntuacion": 3 }
     ],
-    "causa_principal": "",
-    "requiere_matriz_riesgos": "SI/NO",
-    "descripcion_riesgo": ""
+    "causa_principal": "Causa con mayor puntuación"
   },
   "actividades": {
-    "causa_principal": "",
-    "requiere_cambio_sgc": "SI/NO",
-    "lista": [
-      { "actividad": "", "responsable": "", "indicador": "", "fecha": "", "evidencia": "" }
-    ]
+    "plan": [
+      { "actividad": "Actividad 1", "responsable": "Nombre del equipo", "indicador": "% completado", "fecha": "YYYY-MM-DD", "evidencia": "Evidencia requerida" },
+      { "actividad": "Actividad 2", "responsable": "Nombre del equipo", "indicador": "Registro revisado", "fecha": "YYYY-MM-DD", "evidencia": "Captura de pantalla" },
+      { "actividad": "Actividad 3", "responsable": "Nombre del equipo", "indicador": "Procedimiento actualizado", "fecha": "YYYY-MM-DD", "evidencia": "Documento PDF" },
+      { "actividad": "Actividad 4", "responsable": "Nombre del equipo", "indicador": "Personal capacitado", "fecha": "YYYY-MM-DD", "evidencia": "Lista de asistencia" },
+      { "actividad": "Actividad 5", "responsable": "Nombre del equipo", "indicador": "Verificación completada", "fecha": "YYYY-MM-DD", "evidencia": "Reporte de verificación" }
+    ],
+    "requiere_cambio_sgc": "SI/NO"
   }
 }`;
 
@@ -341,25 +342,13 @@ JSON de salida esperado:
             ...f,
             descripcion_no_conformidad_ia: ia.registro?.descripcion_mejorada || '',
             descripcion_no_conformidad_final: ia.registro?.descripcion_mejorada || '',
-            impacta_otros_procesos: ia.registro?.impacta_otros_procesos || 'NO',
-            otros_procesos_afectados: ia.registro?.otros_procesos_afectados || '',
-            requiere_actualizar_matriz_riesgos: ia.analisis?.requiere_matriz_riesgos || 'NO',
-            descripcion_riesgo_oportunidad: ia.analisis?.descripcion_riesgo || '',
+            accion_contenedora: ia.registro?.accion_contenedora || '',
             requiere_cambio_sgc: ia.actividades?.requiere_cambio_sgc || 'NO',
             estado: 'GENERADO_IA',
             fecha_generacion_ia: new Date().toISOString()
           }));
           
-          // Análisis
-          setAnalisis({
-            accion_contenedora: ia.analisis?.accion_contenedora || '',
-            actividad_inmediata: ia.analisis?.actividad_inmediata?.actividad || '',
-            responsable_actividad_inmediata: ia.analisis?.actividad_inmediata?.responsable || '',
-            fecha_actividad_inmediata: ia.analisis?.actividad_inmediata?.fecha || '',
-            herramienta_analisis: 'Lluvia de ideas'
-          });
-          
-          // Causas
+          // Análisis - causas
           if (ia.analisis?.causas) {
             const nuevasCausas = causas.map((c, i) => {
               const causaIA = ia.analisis.causas[i];
@@ -367,16 +356,15 @@ JSON de salida esperado:
                 ...c,
                 causa: causaIA?.causa || '',
                 puntuacion: causaIA?.puntuacion || 0,
-                porcentaje: causaIA?.porcentaje || 0,
                 es_causa_principal: causaIA?.causa === ia.analisis?.causa_principal
               };
             });
             setCausas(nuevasCausas);
           }
           
-          // Actividades
-          if (ia.actividades?.lista) {
-            const nuevasActividades = ia.actividades.lista.map((a, i) => ({
+          // Actividades - plan
+          if (ia.actividades?.plan) {
+            const nuevasActividades = ia.actividades.plan.map((a, i) => ({
               id: i + 1,
               actividad: a.actividad || '',
               responsable: a.responsable || 'Responsable por definir',
@@ -394,7 +382,7 @@ JSON de salida esperado:
             setActividades(nuevasActividades);
           }
           
-          setStep(3);
+          setVista('lista');
         } else {
           setError('No se pudo procesar la respuesta de IA');
         }
@@ -774,6 +762,71 @@ JSON de salida esperado:
             {generandoIA ? '🤖 Generando...' : '🤖 Generar Propuesta con IA'}
           </button>
         </div>
+
+        {/* Resultados del Análisis IA */}
+        {(form.descripcion_no_conformidad_ia || actividades.length > 0) && (
+          <div className="bg-cyan-50 p-4 rounded-xl border border-cyan-200">
+            <h3 className="font-bold text-cyan-800 mb-4">📊 Análisis Generado por IA</h3>
+            
+            {form.descripcion_no_conformidad_ia && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-cyan-700 mb-1">Descripción Mejorada</label>
+                <textarea value={form.descripcion_no_conformidad_ia} onChange={(e) => setForm({...form, descripcion_no_conformidad_ia: e.target.value, descripcion_no_conformidad_final: e.target.value})}
+                  className="w-full p-2 border rounded-lg" rows={2} />
+              </div>
+            )}
+
+            {causas.filter(c => c.causa).length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-cyan-700 mb-2">Causas (Lluvia de Ideas)</label>
+                <table className="w-full text-sm">
+                  <thead className="bg-white">
+                    <tr>
+                      <th className="p-2 text-left">#</th>
+                      <th className="p-2 text-left">Causa</th>
+                      <th className="p-2 text-center">Puntuación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {causas.filter(c => c.causa).map((c, i) => (
+                      <tr key={c.id} className={c.es_causa_principal ? 'bg-yellow-50' : 'bg-white'}>
+                        <td className="p-2">{i + 1}</td>
+                        <td className="p-2">{c.causa}</td>
+                        <td className="p-2 text-center font-bold">{c.puntuacion}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {actividades.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-cyan-700 mb-2">Plan de Actividades</label>
+                <table className="w-full text-sm">
+                  <thead className="bg-white">
+                    <tr>
+                      <th className="p-2 text-left">#</th>
+                      <th className="p-2 text-left">Actividad</th>
+                      <th className="p-2 text-left">Responsable</th>
+                      <th className="p-2 text-left">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {actividades.map((a, i) => (
+                      <tr key={a.id} className="bg-white">
+                        <td className="p-2">{i + 1}</td>
+                        <td className="p-2">{a.actividad}</td>
+                        <td className="p-2">{a.responsable}</td>
+                        <td className="p-2">{a.fecha_termino}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Acciones */}
         <div className="flex gap-3 flex-wrap">
