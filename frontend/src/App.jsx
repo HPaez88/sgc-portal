@@ -524,24 +524,32 @@ function App() {
             )}
 
             {/* ACCIONES CORRECTIVAS */}
-            {activeTab === 'ac' && <AccionCorrectivaView 
-              accionesCorrectivas={accionesCorrectivas} 
-              setAccionesCorrectivas={setAccionesCorrectivasSync}
-              evidencias={evidencias}
-              setEvidencias={setEvidencias}
-              usuarios={usuarios}
-              puedeTodasAreas={puedeTodasAreas}
-              areaUsuario={areaUsuario}
-            />}
+            {activeTab === 'ac' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <AccionCorrectivaView 
+                  accionesCorrectivas={accionesCorrectivas} 
+                  setAccionesCorrectivas={setAccionesCorrectivasSync}
+                  evidencias={evidencias}
+                  setEvidencias={setEvidencias}
+                  usuarios={usuarios}
+                  puedeTodasAreas={puedeTodasAreas}
+                  areaUsuario={areaUsuario}
+                />
+              </div>
+            )}
 
 {/* PLANES DE MEJORA */}
-            {activeTab === 'pm' && <PlanMejoraView 
-              planesMejora={planesMejora} 
-              setPlanesMejora={setPlanesMejoraSync}
-              usuarios={usuarios}
-              puedeTodasAreas={puedeTodasAreas}
-              areaUsuario={areaUsuario}
-            />}
+            {activeTab === 'pm' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <PlanMejoraView 
+                  planesMejora={planesMejora} 
+                  setPlanesMejora={setPlanesMejoraSync}
+                  usuarios={usuarios}
+                  puedeTodasAreas={puedeTodasAreas}
+                  areaUsuario={areaUsuario}
+                />
+              </div>
+            )}
 
 {/* INDICADORES */}
             {activeTab === 'indicadores' && <IndicadoresView 
