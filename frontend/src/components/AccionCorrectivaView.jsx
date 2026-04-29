@@ -1260,7 +1260,6 @@ ESTADO: ${getEstadoLabel(form.estado)}
               <span className={`px-4 py-2 rounded-lg font-bold ${getEstadoColor(form.estado)}`}>
                 {getEstadoLabel(form.estado)}
               </span>
-              <p className="text-xs mt-2 opacity-75">Estado: {form.estado}</p>
             </div>
           </div>
         </div>
