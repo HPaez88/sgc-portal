@@ -482,6 +482,33 @@ JSON de salida esperado:
     guardarBorrador();
   };
 
+  const asignarAuditor = () => {
+    const auditor = prompt('Ingrese el nombre del auditor que revisará las evidencias:');
+    if (!auditor) return;
+    
+    setForm(f => ({
+      ...f,
+      estado: 'REVISION_AUDITOR',
+      auditor_cierre: auditor
+    }));
+    guardarBorrador();
+    setMensaje('📋 Auditor asignado para revisión');
+    setTimeout(() => setMensaje(''), 3000);
+  };
+
+  const cerrarAccion = (efectiva) => {
+    const estadoCierre = efectiva ? 'CERRADO_EFECTIVO' : 'CERRADO_NO_EFECTIVO';
+    setForm(f => ({
+      ...f,
+      estado: estadoCierre,
+      fecha_cierre: new Date().toISOString(),
+      resultado_cierre: efectiva ? 'EFECTIVA' : 'NO EFECTIVA'
+    }));
+    guardarBorrador();
+    setMensaje(efectiva ? '✅ Acción cerrada efectiva' : '❌ Acción cerrada no efectiva');
+    setTimeout(() => setMensaje(''), 3000);
+  };
+
   const getEstadoLabel = (id) => ESTADOS.find(e => e.id === id)?.label || id;
   const getEstadoColor = (estado) => {
     const colors = {
@@ -1102,6 +1129,26 @@ JSON de salida esperado:
           <button onClick={guardarBorrador} disabled={loading} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
             {loading ? '💾 Guardando...' : '💾 Guardar'}
           </button>
+          {form.estado === 'ENVIADO_SGC' && (
+            <button onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              ✓ Aprobar Folio
+            </button>
+          )}
+          {(form.estado === 'FOLIO_ASIGNADO' || form.estado === 'EN_SEGUIMIENTO') && (
+            <button onClick={asignarAuditor} className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+              👤 Asignar Auditor
+            </button>
+          )}
+          {form.estado === 'REVISION_AUDITOR' && (
+            <>
+              <button onClick={() => cerrarAccion(true)} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                ✓ Cerrar Efectiva
+              </button>
+              <button onClick={() => cerrarAccion(false)} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                ✗ Cerrar No Efectiva
+              </button>
+            </>
+          )}
           <button onClick={enviarSGC} className="px-6 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40]">
             📤 Enviar a SGC
           </button>
@@ -1230,7 +1277,42 @@ ESTADO: ${getEstadoLabel(form.estado)}
           </div>
         )}
 
-        {/* Plan de Actividades - Tarjetas profesionales */}
+        {/* Auditor Asignado (si aplica) */}
+        {(form.auditor_cierre || form.estado === 'REVISION_AUDITOR' || form.estado === 'CERRADO_EFECTIVO' || form.estado === 'CERRADO_NO_EFECTIVO') && (
+          <div className="bg-purple-50 p-6 rounded-xl border-2 border-purple-200">
+            <h3 className="font-bold text-purple-800 mb-4 flex items-center gap-2">
+              <span>👤</span> Revisión del Auditor
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-purple-600">Auditor asignado</p>
+                <p className="font-semibold text-purple-900">{form.auditor_cierre || 'Por asignar'}</p>
+              </div>
+              {form.resultado_cierre && (
+                <div>
+                  <p className="text-sm text-purple-600">Resultado</p>
+                  <p className={`font-semibold ${form.resultado_cierre === 'EFECTIVA' ? 'text-green-700' : 'text-red-700'}`}>
+                    {form.resultado_cierre}
+                  </p>
+                </div>
+              )}
+            </div>
+            {form.evidencia_objetiva_revisada && (
+              <div className="mt-4">
+                <p className="text-sm text-purple-600">Evidencia revisada</p>
+                <p className="text-purple-900 mt-1">{form.evidencia_objetiva_revisada}</p>
+              </div>
+            )}
+            {form.conclusion_eficacia && (
+              <div className="mt-4">
+                <p className="text-sm text-purple-600">Conclusión de eficacia</p>
+                <p className="text-purple-900 mt-1">{form.conclusion_eficacia}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Plan de Actividades}
         {actividades.length > 0 && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
@@ -1307,6 +1389,21 @@ ESTADO: ${getEstadoLabel(form.estado)}
             <button onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
               <span>✓</span> Aprobar y Asignar Folio
             </button>
+          )}
+          {(form.estado === 'FOLIO_ASIGNADO' || form.estado === 'EN_SEGUIMIENTO') && (
+            <button onClick={asignarAuditor} className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2">
+              <span>👤</span> Asignar Auditor
+            </button>
+          )}
+          {form.estado === 'REVISION_AUDITOR' && (
+            <>
+              <button onClick={() => cerrarAccion(true)} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+                <span>✓</span> Cerrar Efectiva
+              </button>
+              <button onClick={() => cerrarAccion(false)} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
+                <span>✗</span> Cerrar No Efectiva
+              </button>
+            </>
           )}
         </div>
       </div>
