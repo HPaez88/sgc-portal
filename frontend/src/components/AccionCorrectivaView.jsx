@@ -30,17 +30,17 @@ const ROLES_EQUIPO = [
 
 const ESTADOS = [
   { id: 'BORRADOR', label: 'Borrador' },
-  { id: 'GENERADO_IA', label: 'Generado por IA' },
-  { id: 'EN_REVISION_USUARIO', label: 'En revisión del usuario' },
-  { id: 'ENVIADO_SGC', label: 'Enviado a SGC' },
-  { id: 'DEVUELTO_SGC', label: 'Devuelto por SGC' },
-  { id: 'APROBADO_SGC', label: 'Aprobado por SGC' },
-  { id: 'FOLIO_ASIGNADO', label: 'Folio asignado' },
-  { id: 'EN_SEGUIMIENTO', label: 'En seguimiento' },
-  { id: 'CON_REPLANTEO', label: 'Con replanteo' },
-  { id: 'REVISION_AUDITOR', label: 'En revisión de auditor' },
-  { id: 'CERRADO_EFECTIVO', label: 'Cerrado efectivo' },
-  { id: 'CERRADO_NO_EFECTIVO', label: 'Cerrado no efectivo' },
+  { id: 'GENERADO_IA', label: 'Pendiente' },
+  { id: 'EN_REVISION_USUARIO', label: 'Pendiente' },
+  { id: 'ENVIADO_SGC', label: 'En revisión SGC' },
+  { id: 'DEVUELTO_SGC', label: 'Devuelto' },
+  { id: 'APROBADO_SGC', label: 'Aprobado' },
+  { id: 'FOLIO_ASIGNADO', label: 'Abierta' },
+  { id: 'EN_SEGUIMIENTO', label: 'Abierta' },
+  { id: 'CON_REPLANTEO', label: 'Abierta' },
+  { id: 'REVISION_AUDITOR', label: 'En cierre' },
+  { id: 'CERRADO_EFECTIVO', label: 'Cerrada efectiva' },
+  { id: 'CERRADO_NO_EFECTIVO', label: 'Cerrada no efectiva' },
   { id: 'CANCELADO', label: 'Cancelado' }
 ];
 
@@ -52,6 +52,11 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   const [guardado, setGuardado] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  
+  // Filtros
+  const [filtroAnio, setFiltroAnio] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroProceso, setFiltroProceso] = useState('');
   
   const [form, setForm] = useState({
     id: null,
@@ -535,6 +540,19 @@ JSON de salida esperado:
 
   // ===== VISTA: LISTA =====
   if (vista === 'lista') {
+    // Obtener años únicos de las acciones
+    const aniosRaw = accionesCorrectivas.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
+    const años = [...new Set(aniosRaw)].sort((a,b) => b - a);
+    
+    // Filtrar acciones
+    const accionesFiltradas = accionesCorrectivas.filter(ac => {
+      const anioAC = ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null;
+      if (filtroAnio && anioAC !== parseInt(filtroAnio)) return false;
+      if (filtroEstado && ac.estado !== filtroEstado) return false;
+      if (filtroProceso && ac.proceso !== filtroProceso) return false;
+      return true;
+    });
+    
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -545,10 +563,55 @@ JSON de salida esperado:
           </button>
         </div>
         
-        {accionesCorrectivas.length === 0 ? (
+        {/* Filtros */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Año</label>
+              <select value={filtroAnio} onChange={(e) => setFiltroAnio(e.target.value)}
+                className="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Todos</option>
+                {años.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Estado</label>
+              <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}
+                className="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Todos</option>
+                <option value="BORRADOR">Borrador</option>
+                <option value="GENERADO_IA">Pendiente</option>
+                <option value="ENVIADO_SGC">En revisión SGC</option>
+                <option value="APROBADO_SGC">Aprobado</option>
+                <option value="FOLIO_ASIGNADO">Abierta</option>
+                <option value="EN_SEGUIMIENTO">Abierta</option>
+                <option value="REVISION_AUDITOR">En cierre</option>
+                <option value="CERRADO_EFECTIVO">Cerrada efectiva</option>
+                <option value="CERRADO_NO_EFECTIVO">Cerrada no efectiva</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Proceso</label>
+              <select value={filtroProceso} onChange={(e) => setFiltroProceso(e.target.value)}
+                className="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Todos</option>
+                {PROCESOS.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroProceso(''); }}
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">Mostrando {accionesFiltradas.length} de {accionesCorrectivas.length} acciones</p>
+        </div>
+        
+        {accionesFiltradas.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <p className="text-4xl mb-4">📭</p>
-            <p>No hay acciones correctivas registradas</p>
+            <p>No hay acciones correctivas con los filtros seleccionados</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -565,7 +628,7 @@ JSON de salida esperado:
                 </tr>
               </thead>
               <tbody>
-                {accionesCorrectivas.map((ac, idx) => (
+                {accionesFiltradas.map((ac, idx) => (
                   <tr key={ac.id || idx} className="border-b hover:bg-slate-50">
                     <td className="p-3 font-mono text-xs">{ac.folio_codigo || 'Pendiente'}</td>
                     <td className="p-3">{ac.area || '-'}</td>
