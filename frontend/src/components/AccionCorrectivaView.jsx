@@ -349,12 +349,23 @@ JSON de salida esperado:
   const guardarBorrador = async () => {
     console.log('GuardarBorrador called, form:', form);
     setLoading(true);
+    
+    // Si la acción ya tenía folio (estaba aprobada/abierta), vuelve a BORRADOR para re-aprobación
+    // Mantenemos la fecha de creación original
+    let estadoFinal = form.estado;
+    if (form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') {
+      estadoFinal = 'BORRADOR';
+      console.log('Acción editada tras aprobación - requiere re-aprobación');
+    }
+    
     const nuevo = {
       ...form,
       id: form.id || Date.now(),
+      estado: estadoFinal,
       equipo: equipo,
       causas: causas,
       actividades: actividades,
+      // Preservar fecha de creación original, no modificar si ya existía
       fecha_creacion_borrador: form.fecha_creacion_borrador || new Date().toISOString()
     };
     
