@@ -581,7 +581,21 @@ JSON de salida esperado:
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex gap-2 justify-center">
-                        <button onClick={() => { setForm(ac); setVista('ver'); setStep(1); }}
+                        <button onClick={() => { 
+                          setForm(ac); 
+                          // Cargar equipo y causas desde JSON si existen
+                          if (ac.equipo_json) {
+                            try { setEquipo(JSON.parse(ac.equipo_json)); } catch(e) { console.error('Error loading equipo:', e); }
+                          }
+                          if (ac.causas_json) {
+                            try { setCausas(JSON.parse(ac.causas_json)); } catch(e) { console.error('Error loading causas:', e); }
+                          }
+                          if (ac.actividades_json) {
+                            try { setActividades(JSON.parse(ac.actividades_json)); } catch(e) { console.error('Error loading actividades:', e); }
+                          }
+                          setVista('ver'); 
+                          setStep(1); 
+                        }}
                           className="text-cyan-600 hover:bg-cyan-50 px-2 py-1 rounded">
                           👁️ Ver
                         </button>
@@ -1021,11 +1035,54 @@ JSON de salida esperado:
 
   // ===== VISTA: VER (ver detalle) =====
   if (vista === 'ver') {
+    const generarInforme = () => {
+      const contenido = `
+ACCIÓN CORRECTIVA - ${form.folio_codigo || 'Pendiente de aprobación'}
+=====================================
+ÁREA: ${form.area}
+PROCESO: ${form.proceso}
+ORIGEN: ${form.origen}
+${form.numero_auditoria ? 'NÚMERO DE AUDITORÍA: ' + form.numero_auditoria : ''}
+
+DESCRIPCIÓN DE LA NO CONFORMIDAD:
+${form.descripcion_no_conformidad_original}
+
+${form.descripcion_no_conformidad_ia ? 'DESCRIPCIÓN MEJORADA:\n' + form.descripcion_no_conformidad_ia : ''}
+
+IMPACTO EN OTROS PROCESOS: ${form.impacta_otros_procesos}
+${form.otros_procesos_afectados ? 'Otros procesos: ' + form.otros_procesos_afectados : ''}
+
+EQUIPO DE TRABAJO:
+${equipo.map(e => `- ${e.nombre} (${e.puesto}) - ${e.rol}`).join('\n')}
+
+ANÁLISIS:
+${form.accion_contenedora ? 'Acción Contenedora: ' + form.accion_contenedora : ''}
+${form.actividad_inmediata ? 'Actividad Inmediata: ' + form.actividad_inmediata + ' - ' + form.responsable_actividad_inmediata : ''}
+
+CAUSAS:
+${causas.filter(c => c.causa).map((c, i) => `${i+1}. ${c.causa} (Punt: ${c.puntuacion_sugerida})`).join('\n')}
+
+ACTIVIDADES:
+${actividades.map((a, i) => `${i+1}. ${a.actividades}\n   Responsable: ${a.responsable}\n   Fecha: ${a.fecha_termino_sugerida}\n   Evidencia: ${a.evidencia_esperada}`).join('\n\n')}
+
+ESTADO: ${getEstadoLabel(form.estado)}
+      `;
+      
+      // Crear archivo para descargar
+      const blob = new Blob([contenido], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `AC_${form.folio_codigo || 'borrador'}_${new Date().toISOString().split('T')[0]}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+    
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-[#002855]">Ver Acción Correctiva</h2>
+            <h2 className="text-xl font-bold text-[#002855]">Acción Correctiva</h2>
             <p className="text-sm text-slate-500">Folio: {form.folio_codigo}</p>
           </div>
           <span className={`px-3 py-1 rounded ${getEstadoColor(form.estado)}`}>
@@ -1033,7 +1090,7 @@ JSON de salida esperado:
           </span>
         </div>
 
-        {/* Datos */}
+        {/* Datos Generales */}
         <div className="bg-slate-50 p-4 rounded-xl">
           <h3 className="font-bold text-[#002855] mb-4">📋 Datos Generales</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -1046,21 +1103,43 @@ JSON de salida esperado:
 
         {/* Descripción */}
         <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">⚠️ Descripción</h3>
+          <h3 className="font-bold text-[#002855] mb-4">⚠️ Descripción de la No Conformidad</h3>
           <p className="text-sm whitespace-pre-wrap">{form.descripcion_no_conformidad_original}</p>
         </div>
 
-        {/* Causas */}
+        {/* Impacto */}
+        <div className="bg-slate-50 p-4 rounded-xl">
+          <h3 className="font-bold text-[#002855] mb-4">🔗 Impacto en Otros Procesos</h3>
+          <p className="text-sm">{form.impacta_otros_procesos}</p>
+          {form.otros_procesos_afectados && <p className="text-sm mt-2">{form.otros_procesos_afectados}</p>}
+        </div>
+
+        {/* Equipo */}
+        <div className="bg-slate-50 p-4 rounded-xl">
+          <h3 className="font-bold text-[#002855] mb-4">👥 Equipo de Trabajo</h3>
+          <table className="w-full text-sm">
+            <thead className="bg-slate-100">
+              <tr><th className="p-2 text-left">Nombre</th><th className="p-2 text-left">Puesto</th><th className="p-2 text-left">Área</th><th className="p-2 text-left">Rol</th></tr>
+            </thead>
+            <tbody>
+              {equipo.filter(e => e.nombre).map((e, i) => (
+                <tr key={i}><td className="p-2">{e.nombre}</td><td className="p-2">{e.puesto}</td><td className="p-2">{e.area}</td><td className="p-2">{e.rol}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Análisis / Causas */}
         {causas.filter(c => c.causa).length > 0 && (
           <div className="bg-slate-50 p-4 rounded-xl">
-            <h3 className="font-bold text-[#002855] mb-4">💡 Causas</h3>
+            <h3 className="font-bold text-[#002855] mb-4">💡 Análisis de Causas</h3>
             <table className="w-full text-sm">
               <thead className="bg-slate-100">
-                <tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Causa</th><th className="p-2 text-center">Punt.</th></tr>
+                <tr><th className="p-2 text-center">#</th><th className="p-2 text-left">Causa</th><th className="p-2 text-center">Puntuación</th></tr>
               </thead>
               <tbody>
                 {causas.filter(c => c.causa).map((c, i) => (
-                  <tr key={c.id}><td className="p-2">{i+1}</td><td className="p-2">{c.causa}</td><td className="p-2 text-center">{c.puntuacion_sugerida}</td></tr>
+                  <tr key={c.id}><td className="p-2 text-center">{i+1}</td><td className="p-2">{c.causa}</td><td className="p-2 text-center font-bold">{c.puntuacion_sugerida}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -1070,26 +1149,46 @@ JSON de salida esperado:
         {/* Actividades */}
         {actividades.length > 0 && (
           <div className="bg-slate-50 p-4 rounded-xl">
-            <h3 className="font-bold text-[#002855] mb-4">📋 Actividades</h3>
+            <h3 className="font-bold text-[#002855] mb-4">📋 Plan de Actividades</h3>
             <table className="w-full text-sm">
               <thead className="bg-slate-100">
-                <tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Actividad</th><th className="p-2 text-left">Responsable</th><th className="p-2 text-left">Fecha</th><th className="p-2 text-left">Estado</th></tr>
+                <tr><th className="p-2 text-center">#</th><th className="p-2 text-left">Actividad</th><th className="p-2 text-left">Responsable</th><th className="p-2 text-left">Fecha</th><th className="p-2 text-left">Evidencia</th></tr>
               </thead>
               <tbody>
                 {actividades.map((a, i) => (
-                  <tr key={a.id}><td className="p-2">{i+1}</td><td className="p-2">{a.actividad}</td><td className="p-2">{a.responsable}</td><td className="p-2">{a.fecha_termino_sugerida || '-'}</td><td className="p-2">{a.estatus}</td></tr>
+                  <tr key={a.id}>
+                    <td className="p-2 text-center">{i+1}</td>
+                    <td className="p-2">{a.actividad}</td>
+                    <td className="p-2">{a.responsable}</td>
+                    <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
+                    <td className="p-2">{a.evidencia_esperada || '-'}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
 
-        <div className="flex gap-3">
+        {/* Fechas */}
+        <div className="bg-slate-50 p-4 rounded-xl">
+          <h3 className="font-bold text-[#002855] mb-4">📅 Trazabilidad</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            {form.fecha_creacion_borrador && <div><span className="text-slate-500">Creación:</span> {new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX')}</div>}
+            {form.fecha_envio_sgc && <div><span className="text-slate-500">Envío a SGC:</span> {new Date(form.fecha_envio_sgc).toLocaleDateString('es-MX')}</div>}
+            {form.fecha_aprobacion_sgc && <div><span className="text-slate-500">Aprobación:</span> {new Date(form.fecha_aprobacion_sgc).toLocaleDateString('es-MX')}</div>}
+            {form.fecha_apertura && <div><span className="text-slate-500">Apertura:</span> {new Date(form.fecha_apertura).toLocaleDateString('es-MX')}</div>}
+          </div>
+        </div>
+
+        <div className="flex gap-3 flex-wrap">
           <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
             ← Volver a Lista
           </button>
+          <button onClick={generarInforme} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            📄 Generar Informe
+          </button>
           {form.estado === 'ENVIADO_SGC' && (
-            <button onClick={aprobarSGC} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <button onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
               ✓ Aprobar y Asignar Folio
             </button>
           )}
