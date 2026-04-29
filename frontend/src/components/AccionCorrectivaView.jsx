@@ -711,8 +711,15 @@ const aprobarSGC = () => {
                             setCausas([{ id: 1, numero: 1, causa: ac.causa, puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: true }]);
                           }
                           // Cargar actividades desde JSON o usar estructura old
+                          console.log('Debug cargar - actividades_json:', ac.actividades_json);
+                          console.log('Debug cargar - actividad_inmediata:', ac.actividad_inmediata);
                           if (ac.actividades_json) {
-                            try { setActividades(JSON.parse(ac.actividades_json)); } catch(e) { 
+                            try { 
+                              const parsed = JSON.parse(ac.actividades_json);
+                              console.log('Debug parsed actividades:', parsed);
+                              setActividades(Array.isArray(parsed) ? parsed : [parsed]); 
+                            } catch(e) { 
+                              console.log('Debug error parse:', e);
                               if (ac.actividad_inmediata) {
                                 setActividades([{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }]);
                               }
@@ -721,6 +728,8 @@ const aprobarSGC = () => {
                             setActividades([{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }]);
                           } else if (ac.actividades && Array.isArray(ac.actividades)) {
                             setActividades(ac.actividades);
+                          } else {
+                            setActividades([]);
                           }
                           setVista('ver'); 
                           setStep(1); 
