@@ -56,7 +56,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   // Filtros
   const [filtroAnio, setFiltroAnio] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
-  const [filtroProceso, setFiltroProceso] = useState('');
+  const [filtroOrigen, setFiltroOrigen] = useState('');
   
   const [form, setForm] = useState({
     id: null,
@@ -548,8 +548,14 @@ JSON de salida esperado:
     const accionesFiltradas = accionesCorrectivas.filter(ac => {
       const anioAC = ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null;
       if (filtroAnio && anioAC !== parseInt(filtroAnio)) return false;
-      if (filtroEstado && ac.estado !== filtroEstado) return false;
-      if (filtroProceso && ac.proceso !== filtroProceso) return false;
+      if (filtroEstado) {
+        if (filtroEstado === 'CERRADA') {
+          if (ac.estado !== 'CERRADO_EFECTIVO' && ac.estado !== 'CERRADO_NO_EFECTIVO') return false;
+        } else if (filtroEstado === 'ABIERTA') {
+          if (ac.estado !== 'FOLIO_ASIGNADO' && ac.estado !== 'EN_SEGUIMIENTO') return false;
+        } else if (ac.estado !== filtroEstado) return false;
+      }
+      if (filtroOrigen && ac.origen !== filtroOrigen) return false;
       return true;
     });
     
@@ -582,24 +588,21 @@ JSON de salida esperado:
                 <option value="BORRADOR">Borrador</option>
                 <option value="GENERADO_IA">Pendiente</option>
                 <option value="ENVIADO_SGC">En revisión SGC</option>
-                <option value="APROBADO_SGC">Aprobado</option>
-                <option value="FOLIO_ASIGNADO">Abierta</option>
-                <option value="EN_SEGUIMIENTO">Abierta</option>
+                <option value="ABIERTA">Abierta</option>
                 <option value="REVISION_AUDITOR">En cierre</option>
-                <option value="CERRADO_EFECTIVO">Cerrada efectiva</option>
-                <option value="CERRADO_NO_EFECTIVO">Cerrada no efectiva</option>
+                <option value="CERRADA">Cerrada</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Proceso</label>
-              <select value={filtroProceso} onChange={(e) => setFiltroProceso(e.target.value)}
+              <label className="block text-xs text-slate-500 mb-1">Origen</label>
+              <select value={filtroOrigen} onChange={(e) => setFiltroOrigen(e.target.value)}
                 className="border border-slate-300 rounded-lg px-3 py-2 text-sm">
                 <option value="">Todos</option>
-                {PROCESOS.map(p => <option key={p} value={p}>{p}</option>)}
+                {ORIGENES.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div className="flex items-end">
-              <button onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroProceso(''); }}
+              <button onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroOrigen(''); }}
                 className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
                 Limpiar filtros
               </button>
