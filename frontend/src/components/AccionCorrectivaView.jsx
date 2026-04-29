@@ -1053,6 +1053,9 @@ const aprobarSGC = () => {
                   <th className="p-2 text-left">Indicador</th>
                   <th className="p-2 text-left">Fecha Término</th>
                   <th className="p-2 text-left">Evidencia Esperada</th>
+                  {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
+                    <th className="p-2 text-left bg-purple-50">Evidencia Real</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -1061,6 +1064,7 @@ const aprobarSGC = () => {
                     <td className="p-2 text-center">{i + 1}</td>
                     <td className="p-2">
                       <input type="text" value={act.actividad} 
+                        disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].actividad = e.target.value;
@@ -1070,6 +1074,7 @@ const aprobarSGC = () => {
                     </td>
                     <td className="p-2">
                       <input type="text" value={act.responsable} 
+                        disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].responsable = e.target.value;
@@ -1079,6 +1084,7 @@ const aprobarSGC = () => {
                     </td>
                     <td className="p-2">
                       <input type="text" value={act.indicador_progreso} 
+                        disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].indicador_progreso = e.target.value;
@@ -1088,6 +1094,7 @@ const aprobarSGC = () => {
                     </td>
                     <td className="p-2">
                       <input type="date" value={act.fecha_termino_sugerida} 
+                        disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].fecha_termino_sugerida = e.target.value;
@@ -1097,6 +1104,7 @@ const aprobarSGC = () => {
                     </td>
                     <td className="p-2">
                       <input type="text" value={act.evidencia_esperada} 
+                        disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].evidencia_esperada = e.target.value;
@@ -1104,6 +1112,18 @@ const aprobarSGC = () => {
                         }}
                         className="w-full p-1 border rounded" />
                     </td>
+                    {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
+                      <td className="p-2 bg-purple-50">
+                        <input type="text" value={act.evidencia_real || ''} 
+                          onChange={(e) => {
+                            const nuevo = [...actividades];
+                            nuevo[i].evidencia_real = e.target.value;
+                            setActividades(nuevo);
+                          }}
+                          placeholder="Link o descripción"
+                          className="w-full p-1 border border-purple-300 rounded" />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
