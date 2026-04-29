@@ -465,14 +465,14 @@ JSON de salida esperado:
     guardarBorrador();
   };
 
-  const aprobarSGC = () => {
+const aprobarSGC = () => {
     const folioNumero = accionesCorrectivas.length + 1;
     const anio = new Date().getFullYear().toString().slice(-2);
     const folioCodigo = `AC#${folioNumero}/${anio}`;
     
     setForm(f => ({
       ...f,
-      estado: 'FOLIO_ASIGNADO',
+      estado: 'EN_SEGUIMIENTO',
       folio_numero: folioNumero,
       folio_codigo: folioCodigo,
       anio_folio: anio,
