@@ -578,6 +578,9 @@ const aprobarSGC = () => {
 
   // ===== VISTA: LISTA =====
   if (vista === 'lista') {
+    // DEBUG: Mostrar estado actual
+    console.log('Debug - accionesCorrectivas:', JSON.stringify(accionesCorrectivas.slice(0,2), null, 2));
+    
     // Obtener años únicos de las acciones
     const aniosRaw = accionesCorrectivas.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
     const años = [...new Set(aniosRaw)].sort((a,b) => b - a);
@@ -599,6 +602,10 @@ const aprobarSGC = () => {
     
     return (
       <div className="space-y-4">
+        <div className="bg-yellow-100 text-yellow-800 p-2 rounded">
+          🔧 DEBUG: {new Date().toISOString()} | Acciones: {accionesCorrectivas.length}
+        </div>
+        
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-[#002855]">📋 Acciones Correctivas</h2>
           <button onClick={() => { resetForm(); setVista('nuevo'); }}
