@@ -1035,6 +1035,8 @@ JSON de salida esperado:
 
   // ===== VISTA: VER (ver detalle) =====
   if (vista === 'ver') {
+    const causaPrincipal = causas.find(c => c.es_causa_principal) || causas.filter(c => c.causa)[0];
+    
     const generarInforme = () => {
       const contenido = `
 ACCIÓN CORRECTIVA - ${form.folio_codigo || 'Pendiente de aprobación'}
@@ -1047,20 +1049,13 @@ ${form.numero_auditoria ? 'NÚMERO DE AUDITORÍA: ' + form.numero_auditoria : ''
 DESCRIPCIÓN DE LA NO CONFORMIDAD:
 ${form.descripcion_no_conformidad_original}
 
-${form.descripcion_no_conformidad_ia ? 'DESCRIPCIÓN MEJORADA:\n' + form.descripcion_no_conformidad_ia : ''}
-
 IMPACTO EN OTROS PROCESOS: ${form.impacta_otros_procesos}
 ${form.otros_procesos_afectados ? 'Otros procesos: ' + form.otros_procesos_afectados : ''}
 
 EQUIPO DE TRABAJO:
 ${equipo.map(e => `- ${e.nombre} (${e.puesto}) - ${e.rol}`).join('\n')}
 
-ANÁLISIS:
-${form.accion_contenedora ? 'Acción Contenedora: ' + form.accion_contenedora : ''}
-${form.actividad_inmediata ? 'Actividad Inmediata: ' + form.actividad_inmediata + ' - ' + form.responsable_actividad_inmediata : ''}
-
-CAUSAS:
-${causas.filter(c => c.causa).map((c, i) => `${i+1}. ${c.causa} (Punt: ${c.puntuacion_sugerida})`).join('\n')}
+${causaPrincipal ? 'CAUSA PRINCIPAL:\n' + causaPrincipal.causa : ''}
 
 ACTIVIDADES:
 ${actividades.map((a, i) => `${i+1}. ${a.actividades}\n   Responsable: ${a.responsable}\n   Fecha: ${a.fecha_termino_sugerida}\n   Evidencia: ${a.evidencia_esperada}`).join('\n\n')}
@@ -1068,7 +1063,6 @@ ${actividades.map((a, i) => `${i+1}. ${a.actividades}\n   Responsable: ${a.respo
 ESTADO: ${getEstadoLabel(form.estado)}
       `;
       
-      // Crear archivo para descargar
       const blob = new Blob([contenido], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1080,116 +1074,161 @@ ESTADO: ${getEstadoLabel(form.estado)}
     
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-bold text-[#002855]">Acción Correctiva</h2>
-            <p className="text-sm text-slate-500">Folio: {form.folio_codigo}</p>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#002855] to-[#004a80] text-white p-6 rounded-xl">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold">Acción Correctiva</h2>
+              <p className="text-lg mt-1 opacity-90">{form.area}</p>
+              <p className="text-sm opacity-75 mt-2">Folio: {form.folio_codigo || 'Pendiente de aprobación'}</p>
+            </div>
+            <span className={`px-4 py-2 rounded-lg font-bold ${getEstadoColor(form.estado)}`}>
+              {getEstadoLabel(form.estado)}
+            </span>
           </div>
-          <span className={`px-3 py-1 rounded ${getEstadoColor(form.estado)}`}>
-            {getEstadoLabel(form.estado)}
-          </span>
         </div>
 
-        {/* Datos Generales */}
-        <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">📋 Datos Generales</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div><span className="text-slate-500">Área:</span> {form.area}</div>
-            <div><span className="text-slate-500">Proceso:</span> {form.proceso}</div>
-            <div><span className="text-slate-500">Origen:</span> {form.origen}</div>
-            <div><span className="text-slate-500">No. Auditoría:</span> {form.numero_auditoria || 'N/A'}</div>
+        {/* Datos Generales - Tarjetas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p className="text-xs text-slate-500 uppercase">Proceso</p>
+            <p className="font-semibold text-[#002855]">{form.proceso || '-'}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p className="text-xs text-slate-500 uppercase">Origen</p>
+            <p className="font-semibold text-[#002855]">{form.origen || '-'}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p className="text-xs text-slate-500 uppercase">No. Auditoría</p>
+            <p className="font-semibold text-[#002855]">{form.numero_auditoria || 'N/A'}</p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <p className="text-xs text-slate-500 uppercase">Impacto</p>
+            <p className={`font-semibold ${form.impacta_otros_procesos === 'SI' ? 'text-red-600' : 'text-green-600'}`}>
+              {form.impacta_otros_procesos}
+            </p>
           </div>
         </div>
 
         {/* Descripción */}
-        <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">⚠️ Descripción de la No Conformidad</h3>
-          <p className="text-sm whitespace-pre-wrap">{form.descripcion_no_conformidad_original}</p>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 className="font-bold text-[#002855] mb-3 flex items-center gap-2">
+            <span>⚠️</span> Descripción de la No Conformidad
+          </h3>
+          <p className="text-slate-700 whitespace-pre-wrap">{form.descripcion_no_conformidad_original}</p>
         </div>
 
-        {/* Impacto */}
-        <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">🔗 Impacto en Otros Procesos</h3>
-          <p className="text-sm">{form.impacta_otros_procesos}</p>
-          {form.otros_procesos_afectados && <p className="text-sm mt-2">{form.otros_procesos_afectados}</p>}
+        {/* Equipo - Tarjetas visuales */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+            <span>👥</span> Equipo de Trabajo
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {equipo.filter(e => e.nombre).map((e, i) => (
+              <div key={i} className={`p-4 rounded-lg ${e.es_responsable_principal ? 'bg-amber-50 border-2 border-amber-300' : 'bg-slate-50'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-[#002855] text-white flex items-center justify-center font-bold text-sm">
+                    {e.nombre.charAt(0).toUpperCase()}
+                  </div>
+                  {e.es_responsable_principal && (
+                    <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">Responsable</span>
+                  )}
+                </div>
+                <p className="font-semibold text-[#002855]">{e.nombre}</p>
+                <p className="text-sm text-slate-600">{e.puesto}</p>
+                <p className="text-xs text-slate-500 mt-1">{e.rol}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Equipo */}
-        <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">👥 Equipo de Trabajo</h3>
-          <table className="w-full text-sm">
-            <thead className="bg-slate-100">
-              <tr><th className="p-2 text-left">Nombre</th><th className="p-2 text-left">Puesto</th><th className="p-2 text-left">Área</th><th className="p-2 text-left">Rol</th></tr>
-            </thead>
-            <tbody>
-              {equipo.filter(e => e.nombre).map((e, i) => (
-                <tr key={i}><td className="p-2">{e.nombre}</td><td className="p-2">{e.puesto}</td><td className="p-2">{e.area}</td><td className="p-2">{e.rol}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Análisis / Causas */}
-        {causas.filter(c => c.causa).length > 0 && (
-          <div className="bg-slate-50 p-4 rounded-xl">
-            <h3 className="font-bold text-[#002855] mb-4">💡 Análisis de Causas</h3>
-            <table className="w-full text-sm">
-              <thead className="bg-slate-100">
-                <tr><th className="p-2 text-center">#</th><th className="p-2 text-left">Causa</th><th className="p-2 text-center">Puntuación</th></tr>
-              </thead>
-              <tbody>
-                {causas.filter(c => c.causa).map((c, i) => (
-                  <tr key={c.id}><td className="p-2 text-center">{i+1}</td><td className="p-2">{c.causa}</td><td className="p-2 text-center font-bold">{c.puntuacion_sugerida}</td></tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Causa Principal */}
+        {causaPrincipal && (
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl border-2 border-red-200">
+            <h3 className="font-bold text-red-800 mb-3 flex items-center gap-2">
+              <span>🎯</span> Causa Principal a Atacar
+            </h3>
+            <p className="text-lg text-red-900 font-medium">{causaPrincipal.causa}</p>
+            <p className="text-sm text-red-600 mt-2">Puntuación: {causaPrincipal.puntuacion_sugerida}</p>
           </div>
         )}
 
-        {/* Actividades */}
+        {/* Plan de Actividades - Tarjetas profesionales */}
         {actividades.length > 0 && (
-          <div className="bg-slate-50 p-4 rounded-xl">
-            <h3 className="font-bold text-[#002855] mb-4">📋 Plan de Actividades</h3>
-            <table className="w-full text-sm">
-              <thead className="bg-slate-100">
-                <tr><th className="p-2 text-center">#</th><th className="p-2 text-left">Actividad</th><th className="p-2 text-left">Responsable</th><th className="p-2 text-left">Fecha</th><th className="p-2 text-left">Evidencia</th></tr>
-              </thead>
-              <tbody>
-                {actividades.map((a, i) => (
-                  <tr key={a.id}>
-                    <td className="p-2 text-center">{i+1}</td>
-                    <td className="p-2">{a.actividad}</td>
-                    <td className="p-2">{a.responsable}</td>
-                    <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
-                    <td className="p-2">{a.evidencia_esperada || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+              <span>📋</span> Plan de Actividades Correctivas
+            </h3>
+            <div className="space-y-4">
+              {actividades.map((a, i) => (
+                <div key={a.id} className="flex gap-4 p-4 bg-slate-50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-[#002855] text-white flex items-center justify-center font-bold shrink-0">
+                    {i + 1}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-[#002855]">{a.actividad}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-sm">
+                      <div>
+                        <p className="text-slate-500">Responsable</p>
+                        <p className="font-medium">{a.responsable}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Fecha límite</p>
+                        <p className="font-medium">{a.fecha_termino_sugerida || 'Sin fecha'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Evidencia</p>
+                        <p className="font-medium">{a.evidencia_esperada || 'Por definir'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Fechas */}
-        <div className="bg-slate-50 p-4 rounded-xl">
-          <h3 className="font-bold text-[#002855] mb-4">📅 Trazabilidad</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            {form.fecha_creacion_borrador && <div><span className="text-slate-500">Creación:</span> {new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX')}</div>}
-            {form.fecha_envio_sgc && <div><span className="text-slate-500">Envío a SGC:</span> {new Date(form.fecha_envio_sgc).toLocaleDateString('es-MX')}</div>}
-            {form.fecha_aprobacion_sgc && <div><span className="text-slate-500">Aprobación:</span> {new Date(form.fecha_aprobacion_sgc).toLocaleDateString('es-MX')}</div>}
-            {form.fecha_apertura && <div><span className="text-slate-500">Apertura:</span> {new Date(form.fecha_apertura).toLocaleDateString('es-MX')}</div>}
+        {/* Trazabilidad */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+            <span>📅</span> Trazabilidad
+          </h3>
+          <div className="flex flex-wrap gap-6 text-sm">
+            {form.fecha_creacion_borrador && (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                <span className="text-slate-500">Creado:</span>
+                <span className="font-medium">{new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX')}</span>
+              </div>
+            )}
+            {form.fecha_envio_sgc && (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                <span className="text-slate-500">Enviado a SGC:</span>
+                <span className="font-medium">{new Date(form.fecha_envio_sgc).toLocaleDateString('es-MX')}</span>
+              </div>
+            )}
+            {form.fecha_aprobacion_sgc && (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                <span className="text-slate-500">Aprobado:</span>
+                <span className="font-medium">{new Date(form.fecha_aprobacion_sgc).toLocaleDateString('es-MX')}</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex gap-3 flex-wrap">
-          <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
+        {/* Botones */}
+        <div className="flex gap-3 flex-wrap pt-4">
+          <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">
             ← Volver a Lista
           </button>
-          <button onClick={generarInforme} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            📄 Generar Informe
+          <button onClick={generarInforme} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+            <span>📄</span> Generar Informe
           </button>
           {form.estado === 'ENVIADO_SGC' && (
-            <button onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              ✓ Aprobar y Asignar Folio
+            <button onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+              <span>✓</span> Aprobar y Asignar Folio
             </button>
           )}
         </div>
