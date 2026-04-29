@@ -1360,38 +1360,67 @@ ESTADO: ${getEstadoLabel(form.estado)}
           </div>
         )}
 
-        {/* Plan de Actividades}
-        {actividades.length > 0 && (
+        {/* Plan de Actividades -Editable según estado */}
+        {(actividades.length > 0 || form.folio_codigo) && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
               <span>📋</span> Plan de Actividades Correctivas
             </h3>
-            <div className="space-y-4">
-              {actividades.map((a, i) => (
-                <div key={a.id} className="flex gap-4 p-4 bg-slate-50 rounded-lg">
-                  <div className="w-10 h-10 rounded-full bg-[#002855] text-white flex items-center justify-center font-bold shrink-0">
-                    {i + 1}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-[#002855]">{a.actividad}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-sm">
-                      <div>
-                        <p className="text-slate-500">Responsable</p>
-                        <p className="font-medium">{a.responsable}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">Fecha límite</p>
-                        <p className="font-medium">{a.fecha_termino_sugerida || 'Sin fecha'}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">Evidencia</p>
-                        <p className="font-medium">{a.evidencia_esperada || 'Por definir'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="p-2 text-center">#</th>
+                    <th className="p-2 text-left">Actividad</th>
+                    <th className="p-2 text-left">Responsable</th>
+                    <th className="p-2 text-left">Fecha Límite</th>
+                    <th className="p-2 text-left">Evidencia Esperada</th>
+                    {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
+                      <th className="p-2 text-left bg-purple-50">Evidence Subida</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {actividades.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-slate-400">
+                        No hay actividades registradas
+                      </td>
+                    </tr>
+                  ) : (
+                    actividades.map((a, i) => (
+                      <tr key={a.id || i} className="border-b">
+                        <td className="p-2 text-center">{i + 1}</td>
+                        <td className="p-2">{a.actividad || a.actividades || '-'}</td>
+                        <td className="p-2">{a.responsable || '-'}</td>
+                        <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
+                        <td className="p-2">{a.evidencia_esperada || '-'}</td>
+                        {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
+                          <td className="p-2 bg-purple-50">
+                            <input 
+                              type="text" 
+                              value={a.evidencia_real || ''}
+                              onChange={(e) => {
+                                const nuevo = [...actividades];
+                                nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
+                                setActividades(nuevo);
+                              }}
+                              placeholder="Link/descripción evidencia"
+                              className="w-full p-1 border border-purple-300 rounded text-sm"
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
+            {actividades.length > 0 && form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' && (
+              <button onClick={guardarBorrador} className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm">
+                💾 Guardar Evidencias
+              </button>
+            )}
           </div>
         )}
 
