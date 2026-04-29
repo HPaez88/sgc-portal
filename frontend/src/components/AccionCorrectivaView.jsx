@@ -687,15 +687,40 @@ const aprobarSGC = () => {
                       <div className="flex gap-2 justify-center">
                         <button onClick={() => { 
                           setForm(ac); 
-                          // Cargar equipo y causas desde JSON si existen
+                          // Cargar equipo desde JSON o usar estructura old
                           if (ac.equipo_json) {
-                            try { setEquipo(JSON.parse(ac.equipo_json)); } catch(e) { console.error('Error loading equipo:', e); }
+                            try { setEquipo(JSON.parse(ac.equipo_json)); } catch(e) { 
+                              // Si no hay JSON, cargar desde estructura old
+                              if (ac.equipo && Array.isArray(ac.equipo)) {
+                                setEquipo(ac.equipo);
+                              }
+                            }
+                          } else if (ac.equipo && Array.isArray(ac.equipo)) {
+                            setEquipo(ac.equipo);
+                          } else {
+                            setEquipo([{ id: 1, nombre: ac.responsable_actividad_inmediata || '', puesto: '', area: ac.area || '', rol: 'Responsable principal', es_responsable_principal: true, firma_digital: '' }]);
                           }
+                          // Cargar causas desde JSON o usar estructura old
                           if (ac.causas_json) {
-                            try { setCausas(JSON.parse(ac.causas_json)); } catch(e) { console.error('Error loading causas:', e); }
+                            try { setCausas(JSON.parse(ac.causas_json)); } catch(e) { 
+                              if (ac.causa) {
+                                setCausas([{ id: 1, numero: 1, causa: ac.causa, puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: true }]);
+                              }
+                            }
+                          } else if (ac.causa) {
+                            setCausas([{ id: 1, numero: 1, causa: ac.causa, puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: true }]);
                           }
+                          // Cargar actividades desde JSON o usar estructura old
                           if (ac.actividades_json) {
-                            try { setActividades(JSON.parse(ac.actividades_json)); } catch(e) { console.error('Error loading actividades:', e); }
+                            try { setActividades(JSON.parse(ac.actividades_json)); } catch(e) { 
+                              if (ac.actividad_inmediata) {
+                                setActividades([{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }]);
+                              }
+                            }
+                          } else if (ac.actividad_inmediata) {
+                            setActividades([{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }]);
+                          } else if (ac.actividades && Array.isArray(ac.actividades)) {
+                            setActividades(ac.actividades);
                           }
                           setVista('ver'); 
                           setStep(1); 
@@ -1226,9 +1251,12 @@ ESTADO: ${getEstadoLabel(form.estado)}
               <p className="text-lg mt-1 opacity-90">{form.area}</p>
               <p className="text-sm opacity-75 mt-2">Folio: {form.folio_codigo || 'Pendiente de aprobación'}</p>
             </div>
-            <span className={`px-4 py-2 rounded-lg font-bold ${getEstadoColor(form.estado)}`}>
-              {getEstadoLabel(form.estado)}
-            </span>
+            <div className="text-right">
+              <span className={`px-4 py-2 rounded-lg font-bold ${getEstadoColor(form.estado)}`}>
+                {getEstadoLabel(form.estado)}
+              </span>
+              <p className="text-xs mt-2 opacity-75">Estado: {form.estado}</p>
+            </div>
           </div>
         </div>
 
