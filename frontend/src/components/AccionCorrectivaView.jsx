@@ -710,16 +710,12 @@ const aprobarSGC = () => {
                           } else if (ac.causa) {
                             setCausas([{ id: 1, numero: 1, causa: ac.causa, puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: true }]);
                           }
-                          // Cargar actividades desde JSON o usar estructura old
-                          console.log('Debug cargar - actividades_json:', ac.actividades_json);
-                          console.log('Debug cargar - actividad_inmediata:', ac.actividad_inmediata);
+                          // Cargar actividades desde JSON o estructura old
                           if (ac.actividades_json) {
                             try { 
                               const parsed = JSON.parse(ac.actividades_json);
-                              console.log('Debug parsed actividades:', parsed);
                               setActividades(Array.isArray(parsed) ? parsed : [parsed]); 
                             } catch(e) { 
-                              console.log('Debug error parse:', e);
                               if (ac.actividad_inmediata) {
                                 setActividades([{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }]);
                               }
@@ -1323,18 +1319,84 @@ ESTADO: ${getEstadoLabel(form.estado)}
           </div>
         </div>
 
-        {/* Causa Principal */}
+        {/* Causa Principal - ARRIBA de todo */}
         {causaPrincipal && (
           <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl border-2 border-red-200">
             <h3 className="font-bold text-red-800 mb-3 flex items-center gap-2">
-              <span>🎯</span> Causa Principal a Atacar
+              <span>🎯</span> Causa Principal de la No Conformidad
             </h3>
             <p className="text-lg text-red-900 font-medium">{causaPrincipal.causa}</p>
-            <p className="text-sm text-red-600 mt-2">Puntuación: {causaPrincipal.puntuacion_sugerida}</p>
+            {causaPrincipal.puntuacion_sugerida > 0 && (
+              <p className="text-sm text-red-600 mt-2">Puntuación: {causaPrincipal.puntuacion_sugerida}</p>
+            )}
           </div>
         )}
 
-        {/* Auditor Asignado (si aplica) */}
+        {/* Plan de Actividades -Editable según estado */}
+        {(actividades.length > 0 || form.folio_codigo) && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+              <span>📋</span> Plan de Actividades Correctivas
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="p-2 text-center">#</th>
+                    <th className="p-2 text-left">Actividad</th>
+                    <th className="p-2 text-left">Responsable</th>
+                    <th className="p-2 text-left">Fecha Límite</th>
+                    <th className="p-2 text-left">Evidencia Esperada</th>
+                    {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
+                      <th className="p-2 text-left bg-purple-50">Evidencia Real</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {actividades.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-slate-400">
+                        No hay actividades registradas
+                      </td>
+                    </tr>
+                  ) : (
+                    actividades.map((a, i) => (
+                      <tr key={a.id || i} className="border-b">
+                        <td className="p-2 text-center">{i + 1}</td>
+                        <td className="p-2">{a.actividad || a.actividades || '-'}</td>
+                        <td className="p-2">{a.responsable || '-'}</td>
+                        <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
+                        <td className="p-2">{a.evidencia_esperada || '-'}</td>
+                        {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
+                          <td className="p-2 bg-purple-50">
+                            <input 
+                              type="text" 
+                              value={a.evidencia_real || ''}
+                              onChange={(e) => {
+                                const nuevo = [...actividades];
+                                nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
+                                setActividades(nuevo);
+                              }}
+                              placeholder="Link/descripción"
+                              className="w-full p-1 border border-purple-300 rounded text-sm"
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {actividades.length > 0 && form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' && (
+              <button onClick={guardarBorrador} className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm">
+                💾 Guardar Evidencias
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Auditor Asignado
         {(form.auditor_cierre || form.estado === 'REVISION_AUDITOR' || form.estado === 'CERRADO_EFECTIVO' || form.estado === 'CERRADO_NO_EFECTIVO') && (
           <div className="bg-purple-50 p-6 rounded-xl border-2 border-purple-200">
             <h3 className="font-bold text-purple-800 mb-4 flex items-center gap-2">
@@ -1367,102 +1429,8 @@ ESTADO: ${getEstadoLabel(form.estado)}
               </div>
             )}
           </div>
-        )}
-
-        {/* Plan de Actividades -Editable según estado */}
-        {(actividades.length > 0 || form.folio_codigo) && (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
-              <span>📋</span> Plan de Actividades Correctivas
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-100">
-                  <tr>
-                    <th className="p-2 text-center">#</th>
-                    <th className="p-2 text-left">Actividad</th>
-                    <th className="p-2 text-left">Responsable</th>
-                    <th className="p-2 text-left">Fecha Límite</th>
-                    <th className="p-2 text-left">Evidencia Esperada</th>
-                    {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
-                      <th className="p-2 text-left bg-purple-50">Evidence Subida</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {actividades.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-slate-400">
-                        No hay actividades registradas
-                      </td>
-                    </tr>
-                  ) : (
-                    actividades.map((a, i) => (
-                      <tr key={a.id || i} className="border-b">
-                        <td className="p-2 text-center">{i + 1}</td>
-                        <td className="p-2">{a.actividad || a.actividades || '-'}</td>
-                        <td className="p-2">{a.responsable || '-'}</td>
-                        <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
-                        <td className="p-2">{a.evidencia_esperada || '-'}</td>
-                        {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
-                          <td className="p-2 bg-purple-50">
-                            <input 
-                              type="text" 
-                              value={a.evidencia_real || ''}
-                              onChange={(e) => {
-                                const nuevo = [...actividades];
-                                nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
-                                setActividades(nuevo);
-                              }}
-                              placeholder="Link/descripción evidencia"
-                              className="w-full p-1 border border-purple-300 rounded text-sm"
-                            />
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {actividades.length > 0 && form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' && (
-              <button onClick={guardarBorrador} className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm">
-                💾 Guardar Evidencias
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Trazabilidad */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
-            <span>📅</span> Trazabilidad
-          </h3>
-          <div className="flex flex-wrap gap-6 text-sm">
-            {form.fecha_creacion_borrador && (
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-slate-400"></div>
-                <span className="text-slate-500">Creado:</span>
-                <span className="font-medium">{new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX')}</span>
-              </div>
-            )}
-            {form.fecha_envio_sgc && (
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-                <span className="text-slate-500">Enviado a SGC:</span>
-                <span className="font-medium">{new Date(form.fecha_envio_sgc).toLocaleDateString('es-MX')}</span>
-              </div>
-            )}
-            {form.fecha_aprobacion_sgc && (
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                <span className="text-slate-500">Aprobado:</span>
-                <span className="font-medium">{new Date(form.fecha_aprobacion_sgc).toLocaleDateString('es-MX')}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
+)}
+        
         {/* Botones */}
         <div className="flex gap-3 flex-wrap pt-4">
           <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">
