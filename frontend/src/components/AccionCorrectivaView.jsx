@@ -1349,7 +1349,7 @@ ESTADO: ${getEstadoLabel(form.estado)}
           </div>
         )}
 
-        {/* Plan de Actividades -Editable según estado */}
+        {/* Plan de Actividades - Mostrar todas */}
         {(actividades.length > 0 || form.folio_codigo) && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
@@ -1359,10 +1359,10 @@ ESTADO: ${getEstadoLabel(form.estado)}
               <table className="w-full text-sm">
                 <thead className="bg-slate-100">
                   <tr>
-                    <th className="p-2 text-center">#</th>
+                    <th className="p-2 text-center w-10">#</th>
                     <th className="p-2 text-left">Actividad</th>
-                    <th className="p-2 text-left">Responsable</th>
-                    <th className="p-2 text-left">Fecha Límite</th>
+                    <th className="p-2 text-left w-28">Responsable</th>
+                    <th className="p-2 text-left w-24">Fecha Límite</th>
                     <th className="p-2 text-left">Evidencia Esperada</th>
                     {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
                       <th className="p-2 text-left bg-purple-50">Evidencia Real</th>
@@ -1372,7 +1372,7 @@ ESTADO: ${getEstadoLabel(form.estado)}
 <tbody>
                 {actividades.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-4 text-center text-slate-400">
+                    <td colSpan={5} className="p-4 text-center text-slate-400">
                       No hay actividades registradas
                     </td>
                   </tr>
@@ -1381,13 +1381,12 @@ ESTADO: ${getEstadoLabel(form.estado)}
                     <tr key={a.id || i} className="border-b">
                       <td className="p-2 text-center font-medium">{i + 1}</td>
                       <td className="p-2">
-                        <div className="max-w-xs truncate" title={a.actividad || a.actividades}>{a.actividad || a.actividades || '-'}</div>
+                        <div className="max-w-xl" title={a.actividad || a.actividades}>{a.actividad || a.actividades || '-'}</div>
                       </td>
                       <td className="p-2">{a.responsable || '-'}</td>
-                      <td className="p-2">{a.indicador_progreso || '-'}</td>
                       <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
                       <td className="p-2">
-                        <div className="max-w-xs truncate" title={a.evidencia_esperada}>{a.evidencia_esperada || '-'}</div>
+                        <div className="max-w-xs" title={a.evidencia_esperada}>{a.evidencia_esperada || '-'}</div>
                       </td>
                       {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
                         <td className="p-2 bg-purple-50">
