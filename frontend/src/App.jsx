@@ -139,17 +139,29 @@ function App() {
     }
   }, []);
 
-  // Sync todos los módulos al cargar
+  // Sync todos los módulos al cargar Y cada vez que se monta el componente de Acciones Correctivas
   useEffect(() => {
     setIsLoaded(true);
     
     async function syncAllData() {
-      await syncWithSupabase('usuarios', usuarios, setUsuarios, 'sgc-usuarios');
-      await syncWithSupabase('acciones_correctivas', accionesCorrectivas, setAccionesCorrectivas, 'sgc-acciones-correctivas');
-      await syncWithSupabase('planes_mejora', planesMejora, setPlanesMejora, 'sgc-planes-mejora');
-      await syncWithSupabase('riesgos', riesgos, setRiesgos, 'sgc-riesgos');
-      await syncWithSupabase('documentos', documentos, setDocList, 'sgc-documentos');
-      await syncWithSupabase('auditorias', auditorias, setAuditorias, 'sgc-auditorias');
+      try {
+        // Sync desde Supabase (trae datos nuevos)
+        const { data: sbData } = await supabase.from('acciones_correctivas').select('*').order('id');
+        if (sbData && sbData.length > 0) {
+          const mapped = sbData.map(({ created_at, ...rest }) => rest);
+          setAccionesCorrectivas(mapped);
+          localStorage.setItem('sgc-acciones-correctivas', JSON.stringify(mapped));
+          console.log('Synced AC from Supabase:', mapped.length);
+        }
+        
+        await syncWithSupabase('usuarios', usuarios, setUsuarios, 'sgc-usuarios');
+        await syncWithSupabase('planes_mejora', planesMejora, setPlanesMejora, 'sgc-planes-mejora');
+        await syncWithSupabase('riesgos', riesgos, setRiesgos, 'sgc-riesgos');
+        await syncWithSupabase('documentos', documentos, setDocList, 'sgc-documentos');
+        await syncWithSupabase('auditorias', auditorias, setAuditorias, 'sgc-auditorias');
+      } catch (e) {
+        console.error('Sync error:', e);
+      }
     }
     
     syncAllData();
