@@ -710,23 +710,25 @@ const aprobarSGC = () => {
                           } else if (ac.causa) {
                             setCausas([{ id: 1, numero: 1, causa: ac.causa, puntuacion_sugerida: 0, porcentaje_sugerido: 0, es_causa_principal: true }]);
                           }
-                          // Cargar actividades desde JSON o estructura old
+                          // Cargar actividades desde cualquier fuente disponible
+                          let acts = [];
+                          // 1. Desde JSON guardado por IA
                           if (ac.actividades_json) {
                             try { 
                               const parsed = JSON.parse(ac.actividades_json);
-                              setActividades(Array.isArray(parsed) ? parsed : [parsed]); 
-                            } catch(e) { 
-                              if (ac.actividad_inmediata) {
-                                setActividades([{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }]);
-                              }
-                            }
-                          } else if (ac.actividad_inmediata) {
-                            setActividades([{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }]);
-                          } else if (ac.actividades && Array.isArray(ac.actividades)) {
-                            setActividades(ac.actividades);
-                          } else {
-                            setActividades([]);
+                              if (Array.isArray(parsed)) acts = parsed;
+                              else if (parsed.actividad) acts = [parsed];
+                            } catch(e) { console.log('Error parse actividades_json:', e); }
                           }
+                          // 2. Desde campo actividad_inmediata (una sola)
+                          if (acts.length === 0 && ac.actividad_inmediata) {
+                            acts = [{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }];
+                          }
+                          // 3. Desde array viejo
+                          if (acts.length === 0 && ac.actividades && Array.isArray(ac.actividades)) {
+                            acts = ac.actividades;
+                          }
+                          setActividades(acts.length > 0 ? acts : []);
                           setVista('ver'); 
                           setStep(1); 
                         }}
