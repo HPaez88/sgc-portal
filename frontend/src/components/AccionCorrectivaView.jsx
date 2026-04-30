@@ -1365,7 +1365,7 @@ ESTADO: ${getEstadoLabel(form.estado)}
                     <th className="p-2 text-left w-24">Fecha Límite</th>
                     <th className="p-2 text-left">Evidencia Esperada</th>
                     {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
-                      <th className="p-2 text-left bg-purple-50">Evidencia Real</th>
+                      <th className="p-2 text-left bg-purple-50 w-32">Evidencia Real</th>
                     )}
                   </tr>
                 </thead>
@@ -1390,14 +1390,26 @@ ESTADO: ${getEstadoLabel(form.estado)}
                       </td>
                       {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
                         <td className="p-2 bg-purple-50">
-                          <input type="text" value={a.evidencia_real || ''} 
-                            onChange={(e) => {
-                              const nuevo = [...actividades];
-                              nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
-                              setActividades(nuevo);
-                            }}
-                            placeholder="Link/Descripción"
-                            className="w-full p-1 border border-purple-300 rounded text-sm" />
+                          <div className="flex flex-col gap-1">
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input type="checkbox" checked={a.evidencia_real_check || false}
+                                onChange={(e) => {
+                                  const nuevo = [...actividades];
+                                  nuevo[i] = {...nuevo[i], evidencia_real_check: e.target.checked};
+                                  setActividades(nuevo);
+                                }}
+                                className="w-4 h-4" />
+                              <span className="text-xs">Revisada ✓</span>
+                            </label>
+                            <input type="text" value={a.evidencia_real || ''} 
+                              onChange={(e) => {
+                                const nuevo = [...actividades];
+                                nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
+                                setActividades(nuevo);
+                              }}
+                              placeholder="Link evidencia o descripción"
+                              className="w-full p-1 border border-purple-300 rounded text-xs" />
+                          </div>
                         </td>
                       )}
                     </tr>
