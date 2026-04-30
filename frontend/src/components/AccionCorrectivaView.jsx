@@ -463,6 +463,11 @@ JSON de salida esperado:
       fecha_envio_sgc: new Date().toISOString() 
     }));
     guardarBorrador();
+    // Regresar a la lista después de enviar
+    setTimeout(() => {
+      setVista('lista');
+      setMensaje('📤 Enviado a SGC para revisión');
+    }, 500);
   };
 
 const aprobarSGC = () => {
@@ -480,6 +485,11 @@ const aprobarSGC = () => {
       fecha_apertura: new Date().toISOString()
     }));
     guardarBorrador();
+    // Regresar a la lista después de aprobar
+    setTimeout(() => {
+      setVista('lista');
+      setMensaje('✅ Folio asignado: ' + folioCodigo);
+    }, 500);
   };
 
   const asignarAuditor = () => {
@@ -493,7 +503,9 @@ const aprobarSGC = () => {
     }));
     guardarBorrador();
     setMensaje('📋 Auditor asignado para revisión');
-    setTimeout(() => setMensaje(''), 3000);
+    setTimeout(() => {
+      setVista('lista');
+    }, 500);
   };
 
   const cerrarAccion = (efectiva) => {
@@ -506,7 +518,9 @@ const aprobarSGC = () => {
     }));
     guardarBorrador();
     setMensaje(efectiva ? '✅ Acción cerrada efectiva' : '❌ Acción cerrada no efectiva');
-    setTimeout(() => setMensaje(''), 3000);
+    setTimeout(() => {
+      setVista('lista');
+    }, 500);
   };
 
   const getEstadoLabel = (id) => ESTADOS.find(e => e.id === id)?.label || id;
@@ -712,21 +726,23 @@ const aprobarSGC = () => {
                           }
                           // Cargar actividades desde cualquier fuente disponible
                           let acts = [];
-                          // 1. Desde JSON guardado por IA
+                          // 1. Desde JSON guardado por IA (array completo)
                           if (ac.actividades_json) {
                             try { 
                               const parsed = JSON.parse(ac.actividades_json);
+                              // Es un array de actividades o tiene actividades_correctivas
                               if (Array.isArray(parsed)) acts = parsed;
+                              else if (parsed.actividades_correctivas) acts = parsed.actividades_correctivas;
                               else if (parsed.actividad) acts = [parsed];
-                            } catch(e) { console.log('Error parse actividades_json:', e); }
+                            } catch(e) { console.log('Error parse:', e); }
                           }
-                          // 2. Desde campo actividad_inmediata (una sola)
-                          if (acts.length === 0 && ac.actividad_inmediata) {
-                            acts = [{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }];
-                          }
-                          // 3. Desde array viejo
+                          // 2. Desde actividades array
                           if (acts.length === 0 && ac.actividades && Array.isArray(ac.actividades)) {
                             acts = ac.actividades;
+                          }
+                          // 3. Desde actividad_inmediata (una sola)
+                          if (acts.length === 0 && ac.actividad_inmediata) {
+                            acts = [{ id: 1, actividad: ac.actividad_inmediata, responsable: ac.responsable_actividad_inmediata || '', indicador_progreso: '', fecha_termino_sugerida: ac.fecha_actividad_inmediata || '', evidencia_esperada: '' }];
                           }
                           setActividades(acts.length > 0 ? acts : []);
                           setVista('ver'); 
@@ -1079,14 +1095,14 @@ const aprobarSGC = () => {
             <table className="w-full text-sm">
               <thead className="bg-slate-100">
                 <tr>
-                  <th className="p-2 text-center">#</th>
+                  <th className="p-2 text-center w-12">#</th>
                   <th className="p-2 text-left">Actividad</th>
-                  <th className="p-2 text-left">Responsable</th>
-                  <th className="p-2 text-left">Indicador</th>
-                  <th className="p-2 text-left">Fecha Término</th>
-                  <th className="p-2 text-left">Evidencia Esperada</th>
+                  <th className="p-2 text-left w-32">Responsable</th>
+                  <th className="p-2 text-left w-24">Indicador</th>
+                  <th className="p-2 text-left w-24">Fecha</th>
+                  <th className="p-2 text-left w-40">Evidencia Esperada</th>
                   {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
-                    <th className="p-2 text-left bg-purple-50">Evidencia Real</th>
+                    <th className="p-2 text-left bg-purple-50 w-40">Evidencia Real</th>
                   )}
                 </tr>
               </thead>
@@ -1353,40 +1369,42 @@ ESTADO: ${getEstadoLabel(form.estado)}
                     )}
                   </tr>
                 </thead>
-                <tbody>
-                  {actividades.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-slate-400">
-                        No hay actividades registradas
+<tbody>
+                {actividades.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-slate-400">
+                      No hay actividades registradas
+                    </td>
+                  </tr>
+                ) : (
+                  actividades.map((a, i) => (
+                    <tr key={a.id || i} className="border-b">
+                      <td className="p-2 text-center font-medium">{i + 1}</td>
+                      <td className="p-2">
+                        <div className="max-w-xs truncate" title={a.actividad || a.actividades}>{a.actividad || a.actividades || '-'}</div>
                       </td>
+                      <td className="p-2">{a.responsable || '-'}</td>
+                      <td className="p-2">{a.indicador_progreso || '-'}</td>
+                      <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
+                      <td className="p-2">
+                        <div className="max-w-xs truncate" title={a.evidencia_esperada}>{a.evidencia_esperada || '-'}</div>
+                      </td>
+                      {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
+                        <td className="p-2 bg-purple-50">
+                          <input type="text" value={a.evidencia_real || ''} 
+                            onChange={(e) => {
+                              const nuevo = [...actividades];
+                              nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
+                              setActividades(nuevo);
+                            }}
+                            placeholder="Link/Descripción"
+                            className="w-full p-1 border border-purple-300 rounded text-sm" />
+                        </td>
+                      )}
                     </tr>
-                  ) : (
-                    actividades.map((a, i) => (
-                      <tr key={a.id || i} className="border-b">
-                        <td className="p-2 text-center">{i + 1}</td>
-                        <td className="p-2">{a.actividad || a.actividades || '-'}</td>
-                        <td className="p-2">{a.responsable || '-'}</td>
-                        <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
-                        <td className="p-2">{a.evidencia_esperada || '-'}</td>
-                        {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
-                          <td className="p-2 bg-purple-50">
-                            <input 
-                              type="text" 
-                              value={a.evidencia_real || ''}
-                              onChange={(e) => {
-                                const nuevo = [...actividades];
-                                nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
-                                setActividades(nuevo);
-                              }}
-                              placeholder="Link/descripción"
-                              className="w-full p-1 border border-purple-300 rounded text-sm"
-                            />
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
+                  ))
+                )}
+              </tbody>
               </table>
             </div>
             {actividades.length > 0 && form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' && (
