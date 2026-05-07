@@ -45,6 +45,7 @@ const ESTADOS = [
 ];
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
+  console.log('[AC] Rendering, vista:', vista, 'accionesCorrectivas:', accionesCorrectivas?.length);
   const [vista, setVista] = useState('lista');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
