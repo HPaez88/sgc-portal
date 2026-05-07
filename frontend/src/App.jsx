@@ -541,7 +541,7 @@ function App() {
             {activeTab === 'ac' && (
               <AccionCorrectivaViewExternal 
                 accionesCorrectivas={accionesCorrectivas} 
-                setAccionesCorrectivas={setAccionesCorrectivas}
+                setAccionesCorrectivas={setAccionesCorrectivasSync}
                 evidencias={evidencias}
                 setEvidencias={setEvidencias}
                 usuarios={usuarios}

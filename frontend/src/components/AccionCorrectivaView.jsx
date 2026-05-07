@@ -427,61 +427,48 @@ JSON de salida esperado:
       fecha_creacion_borrador: form.fecha_creacion_borrador || new Date().toISOString()
     };
     
-    // GUARDAR EN SUPABASE PRIMERO (internet) - fuente principal
+// GUARDAR EN SUPABASE PRIMERO (internet) - fuente principal
     try {
       console.log('[AC] Guardando en Supabase...');
-      const { data, error } = await supabase.from('acciones_correctivas').upsert({
-        id: nuevo.id,
-        codigo: nuevo.folio_codigo,
-        estado: nuevo.estado,
-        area: nuevo.area,
-        proceso: nuevo.proceso,
-        origen: nuevo.origen,
-        numero_auditoria: nuevo.numero_auditoria,
-        descripcion_no_conformidad_original: nuevo.descripcion_no_conformidad_original,
-        descripcion_no_conformidad_ia: nuevo.descripcion_no_conformidad_ia,
-        descripcion_no_conformidad_final: nuevo.descripcion_no_conformidad_final,
-        impacta_otros_procesos: nuevo.impacta_otros_procesos,
-        otros_procesos_afectados: nuevo.otros_procesos_afectados,
-        accion_contenedora: nuevo.accion_contenedora,
-        actividad_inmediata: nuevo.actividad_inmediata,
-        responsable_actividad_inmediata: nuevo.responsable_actividad_inmediata,
-        fecha_actividad_inmediata: nuevo.fecha_actividad_inmediata,
-        herramienta_analisis: nuevo.herramienta_analisis,
-        requiere_actualizar_matriz_riesgos: nuevo.requiere_actualizar_matriz_riesgos,
-        descripcion_riesgo_oportunidad: nuevo.descripcion_riesgo_oportunidad,
-        requiere_cambio_sgc: nuevo.requiere_cambio_sgc,
-        fecha_creacion_borrador: nuevo.fecha_creacion_borrador,
-        fecha_generacion_ia: nuevo.fecha_generacion_ia,
-        fecha_envio_sgc: nuevo.fecha_envio_sgc,
-        fecha_aprobacion_sgc: nuevo.fecha_aprobacion_sgc,
-        fecha_apertura: nuevo.fecha_apertura,
-        fecha_cierre: nuevo.fecha_cierre,
-        usuario_solicitante: nuevo.usuario_solicitante,
-        aprobado_por_sgc: nuevo.aprobado_por_sgc,
-        auditor_cierre: nuevo.auditor_cierre,
-        resultado_cierre: nuevo.resultado_cierre,
-        evidencia_objetiva_revisada: nuevo.evidencia_objetiva_revisada,
-        conclusion_eficacia: nuevo.conclusion_eficacia,
-        clave_formato: nuevo.clave_formato,
-        revision_formato: nuevo.revision_formato,
-        equipo_json: JSON.stringify(equipo),
-        causas_json: JSON.stringify(causas),
-        actividades_json: JSON.stringify(actividades),
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
       
+      // Mapear campos correctamente para la tabla de Supabase
+      const datosSupabase = {
+        id: nuevo.id,
+        codigo: nuevo.folio_codigo || `AC-${Date.now()}`,
+        fecha_deteccion: nuevo.fecha_creacion_borrador?.split('T')[0] || new Date().toISOString().split('T')[0],
+        proceso: nuevo.proceso,
+        area: nuevo.area,
+        origen: nuevo.origen,
+        num_auditoria: nuevo.numero_auditoria || null,
+        indicador_ref: null,
+        descripcion_nc: nuevo.descripcion_no_conformidad_original,
+        posibles_causas: causas.filter(c => c.causa).map(c => c.causa).join('; '),
+        causa_raiz: causaPrincipal?.causa || '',
+        clasificacion: nuevo.origen || null,
+        tipo_accion: 'Correctiva',
+        accion_contencion: nuevo.accion_contenedora,
+        evidencia_contencion: nuevo.actividad_inmediata,
+        eficacia: nuevo.conclusion_eficacia || null,
+        actividades: JSON.stringify(actividades),
+        estado: nuevo.estado,
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('[AC] Datos a guardar:', datosSupabase);
+      
+      const { data, error } = await supabase.from('acciones_correctivas').upsert(datosSupabase, { onConflict: 'id' });
+       
       if (error) {
         console.error('[AC] Error Supabase:', error);
-        setError('Error al guardar en servidor: ' + error.message);
+        setError('Error al guardar: ' + error.message);
         setLoading(false);
         return;
       }
-      
+       
       console.log('[AC] Guardado en Supabase OK');
       setMensaje('💾 Guardado en servidor');
-      
-      // Solo actualizar estado local si guardó en Supabase
+       
+      // Actualizar estado local
       let listasActualizadas;
       if (form.id) {
         listasActualizadas = accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac);
@@ -489,10 +476,10 @@ JSON de salida esperado:
         listasActualizadas = [...accionesCorrectivas, nuevo];
       }
       setAccionesCorrectivas(listasActualizadas);
-      
+       
     } catch (e) {
       console.error('[AC] Error catch:', e);
-      setError('Error de conexión. Verifica tu internet.');
+      setError('Error de conexión: ' + e.message);
       setLoading(false);
       return;
     }
@@ -614,7 +601,7 @@ const aprobarSGC = () => {
           <button key="enviar" onClick={() => {
             setForm(f => ({...f, estado: 'ENVIADO_SGC', fecha_envio_sgc: new Date().toISOString()}));
             guardarBorrador();
-            setMensaje('📤 Enviado a SGC');
+            setMensaje('📤 Enviado a SGC para revisión');
           }} className="px-6 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40]">
             📤 Enviar a SGC
           </button>
@@ -622,21 +609,13 @@ const aprobarSGC = () => {
         break;
       case 'ENVIADO_SGC':
         botones.push(
-          <button key="aprobar" onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            ✓ Aprobar y Asignar Folio
-          </button>,
-          <button key="devolver" onClick={() => {
-            const obs = prompt('Observaciones para devolución:');
-            if (obs) {
-              setForm(f => ({...f, estado: 'EN_REVISION_USUARIO', observation: obs}));
-              guardarBorrador();
-              setMensaje('↩️ Devuelto al usuario');
-            }
-          }} className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
-            ↩️ Devolver
-          </button>
+          <div key="espera" className="flex items-center gap-2 text-amber-600">
+            <span className="text-2xl">⏳</span>
+            <span className="font-medium">En espera de aprobación</span>
+          </div>
         );
         break;
+      case 'APROBADO':
       case 'FOLIO_ASIGNADO':
       case 'EN_SEGUIMIENTO':
         botones.push(
@@ -1232,7 +1211,6 @@ const aprobarSGC = () => {
                   <th className="p-2 text-center w-12">#</th>
                   <th className="p-2 text-left">Actividad</th>
                   <th className="p-2 text-left w-32">Responsable</th>
-                  <th className="p-2 text-left w-24">Indicador</th>
                   <th className="p-2 text-left w-24">Fecha</th>
                   <th className="p-2 text-left w-40">Evidencia Esperada</th>
                   {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
@@ -1267,16 +1245,6 @@ const aprobarSGC = () => {
                           setActividades(nuevo);
                         }}
                         className="w-full p-2 border rounded" />
-                    </td>
-                    <td className="p-2">
-                      <input type="text" value={act.indicador_progreso} 
-                        disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
-                        onChange={(e) => {
-                          const nuevo = [...actividades];
-                          nuevo[i].indicador_progreso = e.target.value;
-                          setActividades(nuevo);
-                        }}
-                        className="w-full p-1 border rounded" />
                     </td>
                     <td className="p-2">
                       <input type="date" value={act.fecha_termino_sugerida} 
