@@ -45,7 +45,7 @@ const ESTADOS = [
 ];
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
-  console.log('[AC] Rendering, vista:', vista, 'accionesCorrectivas:', accionesCorrectivas?.length);
+  console.log('[AC External] rendering, accionesCorrectivas:', accionesCorrectivas?.length);
   const [vista, setVista] = useState('lista');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -591,36 +591,6 @@ const aprobarSGC = () => {
     setError('');
   };
 
-  console.log('[AC] Module loaded, props:', { puedeTodasAreas, areaUsuario });
-  try {
-    console.log('[AC] AccionCorrectivaView rendering');
-    console.log('[AC] accionesCorrectivas:', accionesCorrectivas);
-    console.log('[AC] vista:', vista);
-  } catch(e) {
-    console.error('[AC] Error:', e);
-    return <div className="p-4 text-red-500">Error: {e.message}</div>;
-  }
-  
-  // Debug: mostrar un banner visible si no hay datos
-  const hasData = accionesCorrectivas && accionesCorrectivas.length > 0;
-  console.log('[AC] hasData:', hasData);
-  
-  // DEBUG: Si no hay datos, mostrar banner visible
-  if (!hasData) {
-    return (
-      <div className="p-8">
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
-          <p className="font-bold">Debug: No Hay Datos</p>
-          <p>accionesCorrectivas está undefined o vacío</p>
-          <p className="text-sm">vue: {vista}, puedeTodasAreas: {String(puedeTodasAreas)}</p>
-        </div>
-        <button onClick={() => setVista('nuevo')} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
-          + Nueva AC
-        </button>
-      </div>
-    );
-  }
-  
   // ===== VISTA: LISTA =====
   if (vista === 'lista') {
     // Obtener años únicos de las acciones
