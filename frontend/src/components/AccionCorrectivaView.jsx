@@ -427,6 +427,57 @@ setLoading(true);
     // Obtener causa principal
     const causaPrincipal = causas.find(c => c.es_causa_principal) || causas.filter(c => c.causa)[0];
     
+    // GUARDAR EN SUPABASE
+    try {
+      console.log('[AC] Guardando en Supabase... Estado:', estadoActual);
+      
+      const datosSupabase = {
+        id: nuevo.id,
+        codigo: nuevo.folio_codigo || `AC-${Date.now()}`,
+        fecha_deteccion: nuevo.fecha_creacion_borrador?.split('T')[0] || new Date().toISOString().split('T')[0],
+        proceso: nuevo.proceso,
+        area: nuevo.area,
+        origen: nuevo.origen,
+        num_auditoria: nuevo.numero_auditoria || null,
+        descripcion_nc: nuevo.descripcion_no_conformidad_original,
+        posibles_causas: causas.filter(c => c.causa).map(c => c.causa).join('; '),
+        causa_raiz: causaPrincipal?.causa || '',
+        actividades: JSON.stringify(actividades),
+        estado: estadoActual,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase.from('acciones_correctivas').upsert(datosSupabase, { onConflict: 'id' });
+      
+      if (error) {
+        console.error('[AC] Error Supabase:', error);
+        setError('Error: ' + error.message);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('[AC] Guardado OK');
+      setMensaje('💾 Guardado');
+      
+      // Actualizar lista local
+      let listasActualizadas;
+      if (form.id) {
+        listasActualizadas = accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac);
+      } else {
+        listasActualizadas = [...accionesCorrectivas, nuevo];
+      }
+      setAccionesCorrectivas(listasActualizadas);
+      
+    } catch (e) {
+      console.error('[AC] Error:', e);
+      setError('Error de conexión');
+      setLoading(false);
+      return;
+    }
+    
+    setForm({...form, id: nuevo.id});
+    setLoading(false);
+    
     const generarInformePDF = () => {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
