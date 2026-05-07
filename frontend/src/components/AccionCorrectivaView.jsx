@@ -592,7 +592,9 @@ const aprobarSGC = () => {
   };
 
   // ===== VISTA: LISTA =====
-  if (vista === 'lista') {
+// DEBUG: checking accionesCorrectivas
+console.log('[AC] In lista view, accionesCorrectivas:', accionesCorrectivas, 'length:', accionesCorrectivas?.length);
+if (vista === 'lista') {
     // Obtener años únicos de las acciones
     const aniosRaw = accionesCorrectivas.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
     const años = [...new Set(aniosRaw)].sort((a,b) => b - a);
