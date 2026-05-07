@@ -1244,15 +1244,19 @@ const aprobarSGC = () => {
                 {actividades.map((act, i) => (
                   <tr key={act.id} className="border-b">
                     <td className="p-2 text-center">{i + 1}</td>
-                    <td className="p-2">
-                      <input type="text" value={act.actividad} 
+                    <td className="p-2 min-w-[200px]">
+                      <textarea 
+                        value={act.actividad} 
                         disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].actividad = e.target.value;
                           setActividades(nuevo);
                         }}
-                        className="w-full p-1 border rounded" />
+                        rows={2}
+                        className="w-full p-2 border rounded text-sm" 
+                        placeholder="Actividad a realizar..."
+                      />
                     </td>
                     <td className="p-2">
                       <input type="text" value={act.responsable} 
@@ -1262,7 +1266,7 @@ const aprobarSGC = () => {
                           nuevo[i].responsable = e.target.value;
                           setActividades(nuevo);
                         }}
-                        className="w-full p-1 border rounded" />
+                        className="w-full p-2 border rounded" />
                     </td>
                     <td className="p-2">
                       <input type="text" value={act.indicador_progreso} 
@@ -1285,25 +1289,32 @@ const aprobarSGC = () => {
                         className="w-full p-1 border rounded" />
                     </td>
                     <td className="p-2">
-                      <input type="text" value={act.evidencia_esperada} 
+                      <textarea 
+                        value={act.evidencia_esperada} 
                         disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].evidencia_esperada = e.target.value;
                           setActividades(nuevo);
                         }}
-                        className="w-full p-1 border rounded" />
+                        rows={2}
+                        className="w-full p-2 border rounded text-sm" 
+                        placeholder="Evidencia esperada..."
+                      />
                     </td>
                     {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
                       <td className="p-2 bg-purple-50">
-                        <input type="text" value={act.evidencia_real || ''} 
+                        <textarea 
+                          value={act.evidencia_real || ''} 
                           onChange={(e) => {
                             const nuevo = [...actividades];
                             nuevo[i].evidencia_real = e.target.value;
                             setActividades(nuevo);
                           }}
+                          rows={2}
                           placeholder="Link o descripción"
-                          className="w-full p-1 border border-purple-300 rounded" />
+                          className="w-full p-2 border border-purple-300 rounded text-sm" 
+                        />
                       </td>
                     )}
                   </tr>
@@ -1557,20 +1568,20 @@ const causaPrincipal = causas.find(c => c.es_causa_principal) || causas.filter(c
                       No hay actividades registradas
                     </td>
                   </tr>
-                ) : (
+) : (
                   actividades.map((a, i) => (
                     <tr key={a.id || i} className="border-b">
-                      <td className="p-2 text-center font-medium">{i + 1}</td>
-                      <td className="p-2">
-                        <div className="max-w-xl" title={a.actividad || a.actividades}>{a.actividad || a.actividades || '-'}</div>
+                      <td className="p-2 text-center font-medium w-8">{i + 1}</td>
+                      <td className="p-2 min-w-[250px]">
+                        <div className="whitespace-normal break-words">{a.actividad || a.actividades || '-'}</div>
                       </td>
-                      <td className="p-2">{a.responsable || '-'}</td>
-                      <td className="p-2">{a.fecha_termino_sugerida || '-'}</td>
-                      <td className="p-2">
-                        <div className="max-w-xs" title={a.evidencia_esperada}>{a.evidencia_esperada || '-'}</div>
+                      <td className="p-2 w-32">{a.responsable || '-'}</td>
+                      <td className="p-2 w-28">{a.fecha_termino_sugerida || '-'}</td>
+                      <td className="p-2 min-w-[200px]">
+                        <div className="whitespace-normal break-words text-sm">{a.evidencia_esperada || '-'}</div>
                       </td>
                       {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
-                        <td className="p-2 bg-purple-50">
+                        <td className="p-2 bg-purple-50 min-w-[180px]">
                           <div className="flex flex-col gap-1">
                             {a.evidencia_real && a.evidencia_real.startsWith('http') ? (
                               <a href={a.evidencia_real} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">
@@ -1591,17 +1602,19 @@ const causaPrincipal = causas.find(c => c.es_causa_principal) || causas.filter(c
                                 <span>📎 Subir archivo</span>
                               </label>
                             )}
-                            <input type="text" value={a.evidencia_real || ''} 
+                            <textarea value={a.evidencia_real || ''} 
                               onChange={(e) => {
-                                const nuevo = [...actividades];
+                                const nuevo = [...activividades];
                                 nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
                                 setActividades(nuevo);
                               }}
+                              rows={2}
                               placeholder="Link o descripción"
-                              className="w-full p-1 border border-purple-300 rounded text-xs" />
+                              className="w-full p-2 border border-purple-300 rounded text-sm" 
+                            />
                           </div>
                         </td>
-                      )}
+)}
                     </tr>
                   ))
                 )}
