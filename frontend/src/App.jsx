@@ -48,7 +48,6 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [testReady, setTestReady] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Helper para guardar en Supabase
@@ -168,18 +167,17 @@ function App() {
     syncAllData();
   }, []);
 
-  const esAdmin = usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Auditor' || usuarioLogueado?.rol === 'Super Admin';
-  const puedeGestor = ['Admin', 'Auditor', 'Super Admin'].includes(usuarioLogueado?.rol);
-  
+  const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
+  const puedeTodasAreas = usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Auditor' || usuarioLogueado?.rol === 'Super Admin';
   const areaUsuario = usuarioLogueado?.area || '';
-  
+
   const navItems = [
     { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
     { id: 'ac', label: 'Acciones Correctivas', icon: AlertTriangle },
     { id: 'pm', label: 'Planes de Mejora', icon: CheckCircle2 },
     { id: 'indicadores', label: 'Indicadores', icon: Target },
     { id: 'riesgos', label: 'Matriz de Riesgos', icon: AlertOctagon },
-    ...(puedeGestor ? [{ id: 'gestor', label: 'Aprobaciones', icon: FileEdit }] : []),
+    { id: 'gestor', label: 'Aprobaciones', icon: FileEdit },
     { id: 'documents', label: 'Documentos', icon: FileText },
     { id: 'audits', label: 'Auditorías', icon: ClipboardCheck },
     { id: 'settings', label: 'Configuración', icon: Settings },
@@ -543,7 +541,7 @@ function App() {
             {activeTab === 'ac' && (
               <AccionCorrectivaViewExternal 
                 accionesCorrectivas={accionesCorrectivas} 
-                setAccionesCorrectivas={setAccionesCorrectivasSync}
+                setAccionesCorrectivas={setAccionesCorrectivas}
                 evidencias={evidencias}
                 setEvidencias={setEvidencias}
                 usuarios={usuarios}
