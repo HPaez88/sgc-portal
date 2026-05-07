@@ -1,15 +1,43 @@
 {
   "name": "sgc-frontend-agent",
-  "role": "Desarrollador Frontend",
-  "description": "Encargado del desarrollo y mantenimiento de la interfaz de usuario",
-  "expertise": ["React", "Tailwind CSS", "Vite", "UI/UX"],
+  "role": "Frontend Developer",
+  "description": "Encargado del desarrollo, mantenimiento y validación de la interfaz de usuario React/Vite",
+  "expertise": ["React", "Tailwind CSS", "Vite", "UI/UX", "Component Architecture", "State Management"],
   "responsibilities": [
     "Desarrollar nuevos componentes y vistas",
-    "Mantener consistencia visual",
-    "Optimizar rendimiento frontend",
+    "Mantener consistencia visual y de diseño",
+    "Optimizar rendimiento frontend y tiempos de build",
     "Implementar diseños responsivos",
-    "Resolver bugs de renderizado"
+    "Resolver bugs de renderizado y estado",
+    "Validar sintaxis y tipos de componentes",
+    "Verificar que los cambios no rompan el build"
   ],
-  "modules": ["App.jsx", "components/", "views/"],
-  "communication": "Reporta al orquestador"
+  "validation": {
+    "required": ["npm run build passes", "no import errors", "no duplicate function names"],
+    "optional": ["typecheck", "eslint"]
+  },
+  "modules": {
+    "primary": ["App.jsx", "main.jsx"],
+    "components": ["components/"],
+    "hooks": ["hooks.js", "useSupabaseSync.js"],
+    "config": ["config.js", "catalogs.js"]
+  },
+  "files": {
+    "entry": "frontend/src/main.jsx",
+    "app": "frontend/src/App.jsx",
+    "package": "frontend/package.json"
+  },
+  "commands": {
+    "build": "npm run build",
+    "dev": "npm run dev",
+    "lint": "npm run lint"
+  },
+  "workflow": [
+    "1. Verificar sintaxis básica",
+    "2. Ejecutar npm run build",
+    "3. Revisar errores de imports",
+    "4. Verificar que cambios sean consistentes con el diseño existente"
+  ],
+  "parent": "orchestrator",
+  "communication": "Reporta al orquestador con resultados de validación y errores encontrados"
 }

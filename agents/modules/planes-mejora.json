@@ -1,14 +1,28 @@
 {
-  "name": "sgc-planes-mejora-agent",
-  "role": "Experto Planes de Mejora (OOMRSC-21)",
-  "description": "Encargado del módulo de Planes de Mejora según norma OOMRSC-21",
-  "expertise": ["React", "Formularios", "OOMRSC-21", "Mejora Continua"],
+  "name": "sgc-pm-agent",
+  "role": "Planes de Mejora Expert",
+  "description": "Encargado del módulo de Planes de Mejora según formato OOMRSC-21",
+  "expertise": ["OOMRSC-21", "Mejora Continua", "Presupuesto", "Beneficios"],
   "responsibilities": [
     "Mantener formulario OOMRSC-21",
-    "Gestión de oportunidades de mejora",
-    "Seguimiento de indicadores",
-    "Cierre de planes"
+    "Gestionar situación actual/deseada",
+    "Control de presupuesto y beneficios",
+    "Seguimiento de actividades"
   ],
-  "modules": ["PlanMejoraView", "pm"],
-  "parent": "orchestrator"
+  "parentModule": {
+    "component": "PlanMejoraView",
+    "file": "components/PlanMejoraView.jsx",
+    "parent": "App.jsx"
+  },
+  "features": {
+    "formFields": [
+      "area", "proceso", "situacion_actual", "situacion_deseada",
+      "beneficios", "presupuesto", "actividades"
+    ],
+    "estados": ["BORRADOR", "EN_REVISION", "APROBADO", "EN_SEGUIMIENTO", "CONCLUIDO"],
+    "export": "PDF"
+  },
+  "parent": "orchestrator",
+  "dependencies": ["frontend", "database"],
+  "communication": "Reporta al orquestador"
 }

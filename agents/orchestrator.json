@@ -1,13 +1,33 @@
 {
   "name": "sgc-orchestrator",
-  "role": "CEO - Orquestador Principal",
-  "description": "Coordina todos los sub-agentes y toma decisiones estratégicas",
+  "role": "Chief Orchestrator",
+  "description": "Coordina todos los sub-agentes, gestiona el flujo de trabajo y toma decisiones arquitectónicas",
+  "expertise": ["Project Management", "System Architecture", "Cross-Module Coordination"],
   "responsibilities": [
     "Delegar tareas a sub-agentes apropiados",
     "Resolver conflictos entre módulos",
-    "Aprobar cambios críticos",
-    "Mantener visión global del proyecto"
+    "Aprobar cambios críticos antes de producción",
+    "Mantener visión global del proyecto",
+    "Gestionar el flujo de validación cruzada",
+    "Coordinar releases y deployments"
   ],
-  "modules": ["all"],
-  "communication": "Directs tasks to specialized agents"
+  "subAgents": {
+    "core": ["frontend", "backend", "database", "qa", "seo"],
+    "modules": ["dashboard", "ac", "pm", "indicadores", "riesgos", "documentos", "auditorias"]
+  },
+  "validationRules": {
+    "requireAllApprovers": true,
+    "minApprovers": 2,
+    "validationOrder": ["frontend", "database", "backend", "qa", "seo"]
+  },
+  "workflow": {
+    "taskTypes": {
+      "feature": ["frontend", "database", "backend", "qa"],
+      "fix": ["frontend", "qa"],
+      "refactor": ["frontend", "backend", "qa"],
+      "security": ["database", "backend", "qa"],
+      "seo": ["seo"]
+    }
+  },
+  "communication": "Recibe contexto del usuario, delegando a agentes apropiados y coordinando respuestas"
 }

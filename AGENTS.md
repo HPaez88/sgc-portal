@@ -1,32 +1,97 @@
-# PROTOCOLO DE VALIDACIÓN CRUZADA - SGC Portal
+# SGC Portal - Sistema de Agentes
 
-**Fecha:** 2026-04-28
-**Versión:** 1.0
+**Versión:** 2.0
+**Basado en:** Everything Claude Code (ECC)
+**Fecha:** 2026-05-07
 
 ---
 
-## PROTOCOLO DE VALIDACIÓN PARA CAMBIOS
+## Arquitectura de Agentes
+
+```
+                    ┌─────────────────────┐
+                    │   ORCHESTRATOR     │
+                    │  (Chief Execute)  │
+                    └────────┬────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+   ┌────▼────┐        ┌─────▼─────┐       ┌────▼────┐
+   │FRONTEND │        │ DATABASE │       │ BACKEND │
+   └────┬────┘        └──────┬───┘       └───┬────┘
+        │                   │               │
+   ┌────┴────┐        ┌────┴────┐    ┌────┴────┐
+   │  QA    │        │   SEO   │    │  AI    │
+   └────────┘        └─────────┘    └────────┘
+        │
+   ┌────┴───────┬───────────┬──────────┬──────────┐
+   │           │           │          │          │
+┌──▼──┐  ┌───▼──┐ ┌──▼──┐ ┌──▼──┐ ┌──▼──┐ ┌──────┐
+│ AC  │  │ PM  │ │ Indic│ │RIESG│ │ DOC │ │AUDIT │
+└─────┘  └─────┘ └─────┘ └─────┘ └─────┘ └──────┘
+```
+
+---
+
+## Agentes Core
+
+| Agente | Rol | Responsabilidad Principal |
+|--------|-----|---------------------|
+| orchestrator | Chief | Coordinar flujo de trabajo, aprobar changes |
+| frontend | UI Dev | Componentes React, build, estilos |
+| backend | API Dev | Endpoints FastAPI, lógica de negocio |
+| database | DB Architect | Esquemas Supabase, RLS, sync |
+| qa | Quality | Testing, flujos de usuario |
+| seo | SEO | Metadata, schema.org, performance |
+
+---
+
+## Agentes por Módulo
+
+### AC (Acciones Correctivas)
+- **Agente:** sgc-ac-agent
+- **Componente:** `AccionCorrectivaView.jsx`
+- **Formulario:** OOMRSC-20
+- **Estados:** BORRADOR → ENVIADO_SGC → APROBADO → EN_SEGUIMIENTO → REVISION_AUDITOR → CERRADO
+
+### PM (Planes de Mejora)
+- **Agente:** sgc-pm-agent
+- **Componente:** `PlanMejoraView.jsx`
+- **Formulario:** OOMRSC-21
+
+### Indicadores
+- **Agente:** sgc-indicadores-agent
+- **Componente:** `IndicadoresView.jsx`
+- **CANTIDAD:** 86 indicadores
+
+### Riesgos
+- **Agente:** sgc-riesgos-agent
+- **Componente:** `RiesgosView.jsx`
+
+### Documentos
+- **Agente:** sgc-documentos-agent
+- **Componente:** `DocumentosView.jsx`
+
+### Auditorías
+- **Agente:** sgc-auditorias-agent
+- **Componente:** `AuditoriasView.jsx`
+
+---
+
+## Flujo de Validación Cruzada
 
 ### Regla Principal
-> **TODO cambio debe ser validado por TODOS los agentes relevantes ANTES de hacer commit a producción**
+> **TODO cambio debe ser validado por TODOS los agentes relevantes ANTES de producción**
 
-### Flujo de Validación
+### Orden de Validación
 
-1. **Frontend Agent** → Verifica imports, renderizado, sintaxis
-2. **Database Agent** → Verifica compatibilidad de esquemas
-3. **Backend Agent** → Verifica APIs y endpoints
-4. **QA Agent** → Verifica testing y flujos de usuario
-5. **SEO Agent** → Verifica impacto en SEO si aplica
+1. **Frontend** → Verifica build, imports, sintaxis
+2. **Database** → Verifica esquemas compatibles
+3. **Backend** → Verifica APIs y endpoints
+4. **QA** → Verifica flujos de usuario
+5. **SEO** → Verifica metadata (si aplica)
 
-### Checklist de Validación
-
-- [ ] Build compila sin errores (`npm run build`)
-- [x] No hay funciones duplicadas con mismo nombre
-- [ ] schemas de DB son compatibles con el componente
-- [ ] APIs funcionan con los nuevos campos
-- [ ] Testing cubre el cambio
-
-### Comandos de Validación
+### Commands de Validación
 
 ```bash
 # Frontend
@@ -34,122 +99,51 @@ npm run build
 
 # Verificar imports
 grep -n "import.*from" src/App.jsx | head -20
+
+# Database
+# Verificar que tablas existen en Supabase
 ```
 
 ---
 
-# REPORTE DE AUDITORÍA COMPLETA - SGC Portal
+## Skills y Comandos
 
-**Fecha:** 2026-04-28
-**Estado:** 🟢 FUNCIONAL (con warnings menores)
+### Comandos Disponibles
 
----
+| Comando | Descripción |
+|---------|------------|
+| /build | Ejecutar build de frontend |
+| /test | Ejecutar pruebas |
+| /audit | Auditoría completa del sistema |
+| /deploy | Desplegar a producción |
 
-## RESULTADO DE AUDITORÍA POR AGENTE
+### Skills por Módulo
 
-### FRONTEND AGENT ✅
-| Archivo | Líneas | Estado |
-|---------|--------|---------|
-| App.jsx | 3699 | OK (con funciones inline duplicadas) |
-| components/AccionCorrectivaView.jsx | 1035 | OK (rebuild OOMRSC-20) |
-| components/PlanForm.jsx | 101 | OK |
-| package.json | 34 dependencias | OK |
-
-**Hallazgos:**
-- Componentes externos funcionan correctamente
-- Build pasa sin errores
+- **AC:** Generar con IA, Export PDF, Workflow estados
+- **PM:** Generación automática, Presupuesto
+- **Indicadores:** Semáforo, Captura mensual
 
 ---
 
-### BACKEND AGENT ✅
-| Archivo | Estado |
-|---------|--------|
-| main.py (219 líneas) | OK |
-| routers/acciones.py | OK |
-| routers/planes.py | OK |
-| routers/ai.py | OK |
-| routers/catalogo.py | OK |
-| models.py (357 líneas) | OK |
-| database.py | OK |
+## Checklist de Release
 
-**Hallazgos:**
-- 8 routers definidos
-- APIs CRUD completas
-- Sistema de folio automático
-- Integración con OpenAI para análisis
+- [ ] `npm run build` pasa sin errores
+- [ ] No hay funciones duplicadas
+- [ ] Schemas de DB son compatibles
+- [ ] APIs funcionan con nuevos campos
+- [ ] Testing cubre el cambio
+- [ ] Metadata SEO actualizada
 
 ---
 
-### DATABASE AGENT ⚠️
-| Archivo | Estado |
-|---------|--------|
-| supabase-tables.sql | OK (149 líneas) |
+## Contactos
 
-**Hallazgos:**
-- Esquemas definidos para: usuarios, acciones_correctivas, planes_mejora, indicadores_data, riesgos, documentos, auditorias
-- Diferencias menores con modelos Python (nombres de campos)
-- Sync localStorage → Supabase puede tener issues
+- **Proyecto:** Lic. Héctor Manuel Páez León
+- **Desarrollo:** opencode AI + Agentes SGC
+- **Producción:** https://sgc-portal-933s.onrender.com
+- **Supabase:** https://yrjlmqxpakjiwrfwhgaj.supabase.co
 
 ---
 
-### QA AGENT ⚠️
-| Área | Estado |
-|-----|---------|
-| Flujo de datos | Pendiente de testing real |
-| SYNC a Supabase | Puede fallar por mismatch |
-
-**Hallazgos:**
-- localStorage funciona como backup
-- SYNC a Supabase usa upsert con onConflict='id'
-- Los componentes externos simplificados guardan primero en localStorage
-
----
-
-### SEO AGENT ✅
-| Área | Estado |
-|-----|---------|
-| Config | OK |
-| Dependencies | OK |
-| Performance | OK |
-
-**Hallazgos:**
-- Vite + React + Tailwind = stack sólido
-- Build optimizado (122KB gzip)
-
----
-
-## PROBLEMAS IDENTIFICADOS
-
-| Prioridad | Problema | Estado |
-|-----------|---------|--------|
-| Baja | Funciones inline duplicadas en App.jsx | No causa errores |
-| Baja | Diferencias nombres campos SQL | No causa errores visibles |
-| Media | SYNC a Supabase puede fallar | localStorage como backup |
-
----
-
-## RECOMENDACIONES
-
-1. **Testing real** - Necesita prueba en producción
-2. **Limpiar código** - Eliminar funciones inline duplicadas
-3. **Documentar** - AGENTS.md necesita más detalle
-
----
-
-## AGENTES CREADOS
-
-**Core:**
-- orchestrator.json
-- frontend.json
-- backend.json  
-- database.json
-- qa.json
-- seo.json
-
-**Por módulo:**
-- modules/dashboard.json
-- modules/documentos.json
-- modules/acciones-correctivas.json
-- modules/planes-mejora.json
-- modules/indicadores.json
-- modules/auditorias.json
+*Documento actualizado: 7 mayo 2026*
+*Versión: 2.0*

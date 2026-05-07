@@ -7,10 +7,33 @@
 
 **Nombre:** Portal SGC (Sistema de Gestión de Calidad)  
 **Organización:** OOMAPASC de Cajeme (Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme)  
-**Versión:** 4.4.0  
+**Versión:** 4.5.0  
 **Tecnología:** React + Vite + TailwindCSS + Supabase
 **URL Producción:** https://sgc-portal-933s.onrender.com
 **Repositorio:** https://github.com/HPaez88/sgc-portal
+
+---
+
+## 2. ARQUITECTURA DE AGENTES (v2.0)
+
+### Agentes Core
+- **Orchestrator** - Coordina todos los sub-agentes
+- **Frontend** - UI React/Vite
+- **Backend** - APIs Python/FastAPI
+- **Database** - Supabase/PostgreSQL
+- **QA** - Testing y validación
+- **SEO** - Optimización
+
+### Agentes por Módulo
+- **AC** - Acciones Correctivas (OOMRSC-20)
+- **PM** - Planes de Mejora (OOMRSC-21)
+- **Indicadores** - 86 indicadores
+- **Riesgos** - Matriz de riesgos
+- **Documentos** - Gestión documental
+- **Auditorías** - Auditorías e informes
+
+### Flujo de Validación
+> TODO cambio → Frontend → Database → Backend → QA → SEO → Producción
 
 ---
 
@@ -193,6 +216,9 @@ Otra
 - [x] Módulo Auditorías con lista de informes
 - [x] Modal visor de informes
 - [x] IA para generar AC, PM y Riesgos
+- [x] **Export PDF formato OOMRSC-20** (NUEVO)
+- [x] **Subir evidencias como archivos** (NUEVO)
+- [x] **Workflow de estados mejorado** (NUEVO)
 
 ---
 

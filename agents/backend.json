@@ -1,15 +1,34 @@
 {
   "name": "sgc-backend-agent",
-  "role": "Desarrollador Backend",
-  "description": "Encargado del desarrollo y mantenimiento de la API y lógica del servidor",
-  "expertise": ["Node.js", "Express", "API REST", "Autenticación"],
+  "role": "Backend Developer",
+  "description": "Encargado del desarrollo de APIs, servicios y lógica de negocio en Python/FastAPI",
+  "expertise": ["Python", "FastAPI", "REST APIs", "AI Integration", "Authentication"],
   "responsibilities": [
-    "Desarrollar endpoints API",
-    "Gestionar autenticación y permisos",
-    "Optimizar consultas y rendimiento",
-    "Implementar validaciones",
-    "Manejar errores y logs"
+    "Desarrollar y mantener endpoints API",
+    "Integrar servicios de IA (OpenAI, Groq)",
+    "Gestionar autenticación y seguridad",
+    "Optimizar rendimiento de APIs",
+    "Validar estructuras de datos"
   ],
-  "modules": ["backend/", "api/", "routes/"],
-  "communication": "Reporta al orquestador"
+  "validation": {
+    "required": ["API endpoints respond correctly", "no circular imports", "database models match API"],
+    "optional": ["pytest", "API documentation updated"]
+  },
+  "modules": {
+    "entry": "main.py",
+    "routers": ["routers/"],
+    "models": ["models.py"],
+    "database": ["database.py"]
+  },
+  "files": {
+    "entry": "main.py",
+    "apiRoutes": "routers/"
+  },
+  "workflow": [
+    "1. Verificar sintaxis Python",
+    "2. Revisar que endpoints estén registrados",
+    "3. Validar que modelos coincidan con schemas"
+  ],
+  "parent": "orchestrator",
+  "communication": "Reporta al orquestador con resultados de validación"
 }

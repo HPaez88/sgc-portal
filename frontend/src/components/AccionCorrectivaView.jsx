@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../supabase';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const AREAS = [
   "Agencia Esperanza", "Agencia Marte R. Gómez", "Agencia Providencia", "Agencia Pueblo Yaqui",
@@ -97,6 +99,8 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     revision_formato: 'Rev. 18'
   });
   
+  const [evidenciaFile, setEvidenciaFile] = useState(null);
+  
   const [equipo, setEquipo] = useState([
     { id: 1, nombre: '', puesto: '', area: '', rol: 'Responsable principal', es_responsable_principal: true, firma_digital: '' }
   ]);
@@ -114,6 +118,49 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     const { name, value } = e.target;
     setForm({...form, [name]: value});
     setError('');
+  };
+  
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError('El archivo no puede exceder 10MB');
+        return;
+      }
+      setEvidenciaFile(file);
+    }
+  };
+  
+  const uploadEvidencia = async (actividadIndex) => {
+    if (!evidenciaFile || !form.id) {
+      setError('Primero guarda la acción correctiva');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const fileName = `${form.id}_evidencia_${actividadIndex}_${Date.now()}_${evidenciaFile.name}`;
+      const { data, error } = await supabase.storage
+        .from('evidencias')
+        .upload(fileName, evidenciaFile);
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('evidencias')
+        .getPublicUrl(fileName);
+      
+      const nuevo = [...actividades];
+      nuevo[actividadIndex] = {...nuevo[actividadIndex], evidencia_real: publicUrl, evidencia_real_check: true};
+      setActividades(nuevo);
+      guardarBorrador();
+      setEvidenciaFile(null);
+      setMensaje('📎 Evidencia cargada');
+    } catch (e) {
+      console.error('Upload error:', e);
+      setError('Error al subir archivo');
+    }
+    setLoading(false);
   };
 
   const agregarIntegrante = () => {
@@ -347,31 +394,52 @@ JSON de salida esperado:
   };
 
   const guardarBorrador = async () => {
-    console.log('GuardarBorrador called, form:', form);
+    console.log('[AC] guardarBorrador called');
     setLoading(true);
+    setError('');
+    
+    // Validar campos requeridos
+    if (!form.area) {
+      setError('Selecciona el área');
+      setLoading(false);
+      return;
+    }
+    
+    if (!form.descripcion_no_conformidad_original) {
+      setError('Describe la no conformidad');
+      setLoading(false);
+      return;
+    }
     
     // Si la acción ya tenía folio (estaba aprobada/abierta), vuelve a BORRADOR para re-aprobación
-    // Mantenemos la fecha de creación original
     let estadoFinal = form.estado;
     if (form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') {
       estadoFinal = 'BORRADOR';
-      console.log('Acción editada tras aprobación - requiere re-aprobación');
     }
+    
+    const nuevoId = form.id || Date.now();
+    console.log('[AC] Guardando con ID:', nuevoId);
     
     const nuevo = {
       ...form,
-      id: form.id || Date.now(),
+      id: nuevoId,
       estado: estadoFinal,
-      equipo: equipo,
-      causas: causas,
-      actividades: actividades,
-      // Preservar fecha de creación original, no modificar si ya existía
       fecha_creacion_borrador: form.fecha_creacion_borrador || new Date().toISOString()
     };
     
-    // Guardar en Supabase (internet)
+    // Guardar primero en localStorage (siempre funciona)
+    let listasActualizadas;
+    if (form.id) {
+      listasActualizadas = accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac);
+    } else {
+      listasActualizadas = [...accionesCorrectivas, nuevo];
+    }
+    setAccionesCorrectivas(listasActualizadas);
+    
+    // Guardar en Supabase (puede fallar por internet/RLS)
     try {
-      const { error } = await supabase.from('acciones_correctivas').upsert({
+      console.log('[AC] Intentando guardar en Supabase...');
+      const { data, error } = await supabase.from('acciones_correctivas').upsert({
         id: nuevo.id,
         codigo: nuevo.folio_codigo,
         estado: nuevo.estado,
@@ -406,40 +474,30 @@ JSON de salida esperado:
         conclusion_eficacia: nuevo.conclusion_eficacia,
         clave_formato: nuevo.clave_formato,
         revision_formato: nuevo.revision_formato,
-        // Guardar equipo como JSON
         equipo_json: JSON.stringify(equipo),
-        // Guardar causas como JSON
         causas_json: JSON.stringify(causas),
-        // Guardar actividades como JSON
         actividades_json: JSON.stringify(actividades),
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
       
       if (error) {
-        console.error('Error saving to Supabase:', error);
-      } else {
-        console.log('Saved to Supabase successfully');
+        console.error('[AC] Error Supabase:', error);
+        setMensaje('⚠️ Guardado local (error en servidor)');
+} else {
+        console.log('[AC] Guardado en Supabase OK');
+        setMensaje('💾 Guardado');
       }
     } catch (e) {
-      console.error('Supabase error:', e);
+      console.error('[AC] Error catch:', e);
+      setMensaje('⚠️ Guardado local');
     }
     
-    // También guardar en localStorage como backup
-    if (form.id) {
-      setAccionesCorrectivas(accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac));
-    } else {
-      setAccionesCorrectivas([...accionesCorrectivas, nuevo]);
-    }
-    
-    setLoading(false);
-    setGuardado(true);
-    setMensaje('💾 Guardado en servidor');
     setForm({...form, id: nuevo.id});
-    setTimeout(() => setGuardado(false), 2000);
+    setLoading(false);
     setTimeout(() => setMensaje(''), 3000);
   };
 
-  const eliminarAC = async (id) => {
+const eliminarAC = async (id) => {
     if (!confirm('¿Estás seguro de eliminar esta acción correctiva?')) return;
     
     setLoading(true);
@@ -533,10 +591,81 @@ const aprobarSGC = () => {
       'APROBADO_SGC': 'bg-cyan-100 text-cyan-700',
       'FOLIO_ASIGNADO': 'bg-emerald-100 text-emerald-700',
       'EN_SEGUIMIENTO': 'bg-cyan-100 text-cyan-700',
+      'CON_REPLANTEO': 'bg-orange-100 text-orange-700',
+      'REVISION_AUDITOR': 'bg-purple-100 text-purple-700',
       'CERRADO_EFECTIVO': 'bg-green-100 text-green-700',
-      'CERRADO_NO_EFECTIVO': 'bg-red-100 text-red-700'
+      'CERRADO_NO_EFECTIVO': 'bg-red-100 text-red-700',
+      'CANCELADO': 'bg-gray-100 text-gray-700'
     };
     return colors[estado] || 'bg-slate-100 text-slate-700';
+  };
+  
+  const getBotonesWorkflow = () => {
+    const botones = [];
+    switch (form.estado) {
+      case 'BORRADOR':
+      case 'GENERADO_IA':
+        botones.push(
+          <button key="enviar" onClick={() => {
+            setForm(f => ({...f, estado: 'ENVIADO_SGC', fecha_envio_sgc: new Date().toISOString()}));
+            guardarBorrador();
+            setMensaje('📤 Enviado a SGC');
+          }} className="px-6 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40]">
+            📤 Enviar a SGC
+          </button>
+        );
+        break;
+      case 'ENVIADO_SGC':
+        botones.push(
+          <button key="aprobar" onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            ✓ Aprobar y Asignar Folio
+          </button>,
+          <button key="devolver" onClick={() => {
+            const obs = prompt('Observaciones para devolución:');
+            if (obs) {
+              setForm(f => ({...f, estado: 'EN_REVISION_USUARIO', observation: obs}));
+              guardarBorrador();
+              setMensaje('↩️ Devuelto al usuario');
+            }
+          }} className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+            ↩️ Devolver
+          </button>
+        );
+        break;
+      case 'FOLIO_ASIGNADO':
+      case 'EN_SEGUIMIENTO':
+        botones.push(
+          <button key="auditor" onClick={asignarAuditor} className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+            👤 Asignar Auditor
+          </button>
+        );
+        break;
+      case 'REVISION_AUDITOR':
+        botones.push(
+          <button key="efectiva" onClick={() => cerrarAccion(true)} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            ✓ Cerrar Efectiva
+          </button>,
+          <button key="noefectiva" onClick={() => cerrarAccion(false)} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+            ✗ Cerrar No Efectiva
+          </button>
+        );
+        break;
+      case 'CERRADO_EFECTIVO':
+      case 'CERRADO_NO_EFECTIVO':
+        botones.push(
+          <button key="reabrir" onClick={() => {
+            if (confirm('¿Reabrir esta acción correctiva?')) {
+              setForm(f => ({...f, estado: 'EN_SEGUIMIENTO', fecha_reapertura: new Date().toISOString()}));
+              guardarBorrador();
+              setMensaje('🔓 Reabierta');
+            }
+          }} className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">
+            🔓 Reabrir
+          </button>
+        );
+        break;
+    }
+    return botones;
   };
 
   const resetForm = () => {
@@ -1197,29 +1326,7 @@ const aprobarSGC = () => {
           <button onClick={guardarBorrador} disabled={loading} className="px-6 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">
             {loading ? '💾 Guardando...' : '💾 Guardar'}
           </button>
-          {form.estado === 'ENVIADO_SGC' && (
-            <button onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              ✓ Aprobar Folio
-            </button>
-          )}
-          {(form.estado === 'FOLIO_ASIGNADO' || form.estado === 'EN_SEGUIMIENTO') && (
-            <button onClick={asignarAuditor} className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-              👤 Asignar Auditor
-            </button>
-          )}
-          {form.estado === 'REVISION_AUDITOR' && (
-            <>
-              <button onClick={() => cerrarAccion(true)} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                ✓ Cerrar Efectiva
-              </button>
-              <button onClick={() => cerrarAccion(false)} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                ✗ Cerrar No Efectiva
-              </button>
-            </>
-          )}
-          <button onClick={enviarSGC} className="px-6 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40]">
-            📤 Enviar a SGC
-          </button>
+          {getBotonesWorkflow()}
         </div>
       </div>
     );
@@ -1227,41 +1334,110 @@ const aprobarSGC = () => {
 
   // ===== VISTA: VER (ver detalle) =====
   if (vista === 'ver') {
-    const causaPrincipal = causas.find(c => c.es_causa_principal) || causas.filter(c => c.causa)[0];
+const causaPrincipal = causas.find(c => c.es_causa_principal) || causas.filter(c => c.causa)[0];
     
-    const generarInforme = () => {
-      const contenido = `
-ACCIÓN CORRECTIVA - ${form.folio_codigo || 'Pendiente de aprobación'}
-=====================================
-ÁREA: ${form.area}
-PROCESO: ${form.proceso}
-ORIGEN: ${form.origen}
-${form.numero_auditoria ? 'NÚMERO DE AUDITORÍA: ' + form.numero_auditoria : ''}
-
-DESCRIPCIÓN DE LA NO CONFORMIDAD:
-${form.descripcion_no_conformidad_original}
-
-IMPACTO EN OTROS PROCESOS: ${form.impacta_otros_procesos}
-${form.otros_procesos_afectados ? 'Otros procesos: ' + form.otros_procesos_afectados : ''}
-
-EQUIPO DE TRABAJO:
-${equipo.map(e => `- ${e.nombre} (${e.puesto}) - ${e.rol}`).join('\n')}
-
-${causaPrincipal ? 'CAUSA PRINCIPAL:\n' + causaPrincipal.causa : ''}
-
-ACTIVIDADES:
-${actividades.map((a, i) => `${i+1}. ${a.actividades}\n   Responsable: ${a.responsable}\n   Fecha: ${a.fecha_termino_sugerida}\n   Evidencia: ${a.evidencia_esperada}`).join('\n\n')}
-
-ESTADO: ${getEstadoLabel(form.estado)}
-      `;
+    const generarInformePDF = () => {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 20;
       
-      const blob = new Blob([contenido], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `AC_${form.folio_codigo || 'borrador'}_${new Date().toISOString().split('T')[0]}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ACCIÓN CORRECTIVA - OOMRSC-20', pageWidth / 2, y, { align: 'center' });
+      y += 10;
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(form.folio_codigo || 'Pendiente de aprobación', pageWidth / 2, y, { align: 'center' });
+      y += 15;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DATOS GENERALES', 14, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Área: ${form.area || '-'}`, 14, y); y += 6;
+      doc.text(`Proceso: ${form.proceso || '-'}`, 14, y); y += 6;
+      doc.text(`Origen: ${form.origen || '-'}`, 14, y); y += 6;
+      if (form.numero_auditoria) { doc.text(`No. Auditoría: ${form.numero_auditoria}`, 14, y); y += 6; }
+      doc.text(`Estado: ${getEstadoLabel(form.estado)}`, 14, y); y += 12;
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('DESCRIPCIÓN DE LA NO CONFORMIDAD', 14, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      const descLines = doc.splitTextToSize(form.descripcion_no_conformidad_original || '-', pageWidth - 28);
+      doc.text(descLines, 14, y);
+      y += descLines.length * 5 + 10;
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Impacto en otros procesos: ${form.impacta_otros_procesos || 'NO'}`, 14, y);
+      y += 10;
+      
+      if (equipo.filter(e => e.nombre).length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('EQUIPO DE TRABAJO', 14, y);
+        y += 8;
+        doc.setFont('helvetica', 'normal');
+        equipo.filter(e => e.nombre).forEach((e, i) => {
+          doc.text(`${i + 1}. ${e.nombre} - ${e.puesto} (${e.rol})`, 14, y);
+          y += 6;
+        });
+        y += 10;
+      }
+      
+      if (causaPrincipal) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('ANÁLISIS DE CAUSA', 14, y);
+        y += 8;
+        doc.setFont('helvetica', 'normal');
+        const causaLines = doc.splitTextToSize(causaPrincipal.causa, pageWidth - 28);
+        doc.text(causaLines, 14, y);
+        y += causaLines.length * 5 + 10;
+      }
+      
+      if (actividades.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('PLAN DE ACTIVIDADES', 14, y);
+        y += 8;
+        
+        const tableData = actividades.map((a, i) => [
+          i + 1,
+          (a.actividad || a.actividades || '-').substring(0, 50),
+          a.responsable || '-',
+          a.fecha_termino_sugerida || '-',
+          a.evidencia_esperada ? 'Sí' : 'No'
+        ]);
+        
+        doc.autoTable({
+          startY: y,
+          head: [['#', 'Actividad', 'Responsable', 'Fecha', 'Evidencia']],
+          body: tableData,
+          theme: 'striped',
+          fontSize: 8,
+          headStyles: { fillColor: [0, 40, 85] }
+        });
+      }
+      
+      y = doc.lastAutoTable.finalY + 15;
+      
+      if (y > 250) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SEGUIMIENTO', 14, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Fecha de creación: ${form.fecha_creacion_borrador ? new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}`, 14, y); y += 6;
+      if (form.fecha_apertura) { doc.text(`Fecha de apertura: ${new Date(form.fecha_apertura).toLocaleDateString('es-MX')}`, 14, y); y += 6; }
+      if (form.fecha_cierre) { doc.text(`Fecha de cierre: ${new Date(form.fecha_cierre).toLocaleDateString('es-MX')}`, 14, y); y += 6; }
+      doc.text(`Resultado: ${form.resultado_cierre || 'En proceso'}`, 14, y);
+      
+      const fecha = new Date().toISOString().split('T')[0];
+      doc.save(`AC_${form.folio_codigo || 'borrador'}_${fecha}.pdf`);
     };
     
     return (
@@ -1391,23 +1567,32 @@ ESTADO: ${getEstadoLabel(form.estado)}
                       {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
                         <td className="p-2 bg-purple-50">
                           <div className="flex flex-col gap-1">
-                            <label className="flex items-center gap-1 cursor-pointer">
-                              <input type="checkbox" checked={a.evidencia_real_check || false}
-                                onChange={(e) => {
-                                  const nuevo = [...actividades];
-                                  nuevo[i] = {...nuevo[i], evidencia_real_check: e.target.checked};
-                                  setActividades(nuevo);
-                                }}
-                                className="w-4 h-4" />
-                              <span className="text-xs">Revisada ✓</span>
-                            </label>
+                            {a.evidencia_real && a.evidencia_real.startsWith('http') ? (
+                              <a href={a.evidencia_real} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">
+                                📎 Ver archivo
+                              </a>
+                            ) : (
+                              <label className="flex items-center gap-1 cursor-pointer bg-purple-100 hover:bg-purple-200 px-2 py-1 rounded text-xs w-fit">
+                                <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    if (file.size > 10 * 1024 * 1024) {
+                                      setError('Máx 10MB');
+                                      return;
+                                    }
+                                    setForm(f => ({...f, evidenciaFile: file, evidenciaFileName: file.name}));
+                                  }
+                                }} className="hidden" />
+                                <span>📎 Subir archivo</span>
+                              </label>
+                            )}
                             <input type="text" value={a.evidencia_real || ''} 
                               onChange={(e) => {
                                 const nuevo = [...actividades];
                                 nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
                                 setActividades(nuevo);
                               }}
-                              placeholder="Link evidencia o descripción"
+                              placeholder="Link o descripción"
                               className="w-full p-1 border border-purple-300 rounded text-xs" />
                           </div>
                         </td>
@@ -1466,29 +1651,10 @@ ESTADO: ${getEstadoLabel(form.estado)}
           <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">
             ← Volver a Lista
           </button>
-          <button onClick={generarInforme} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
-            <span>📄</span> Generar Informe
+          <button onClick={generarInformePDF} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+            <span>📄</span> Exportar PDF
           </button>
-          {form.estado === 'ENVIADO_SGC' && (
-            <button onClick={aprobarSGC} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
-              <span>✓</span> Aprobar y Asignar Folio
-            </button>
-          )}
-          {(form.estado === 'FOLIO_ASIGNADO' || form.estado === 'EN_SEGUIMIENTO') && (
-            <button onClick={asignarAuditor} className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2">
-              <span>👤</span> Asignar Auditor
-            </button>
-          )}
-          {form.estado === 'REVISION_AUDITOR' && (
-            <>
-              <button onClick={() => cerrarAccion(true)} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
-                <span>✓</span> Cerrar Efectiva
-              </button>
-              <button onClick={() => cerrarAccion(false)} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
-                <span>✗</span> Cerrar No Efectiva
-              </button>
-            </>
-          )}
+          {getBotonesWorkflow()}
         </div>
       </div>
     );

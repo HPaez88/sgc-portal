@@ -1,14 +1,39 @@
 {
-  "name": "sgc-acciones-correctivas-agent",
-  "role": "Experto Acciones Correctivas (OOMRSC-20)",
-  "description": "Encargado del módulo de Acciones Correctivas según norma OOMRSC-20",
-  "expertise": ["React", "Formularios", "OOMRSC-20", "No Conformidades"],
+  "name": "sgc-ac-agent",
+  "role": "Acciones Correctivas Expert",
+  "description": "Encargado del módulo de Acciones Correctivas según formato OOMRSC-20",
+  "expertise": ["OOMRSC-20", "No Conformidades", "Workflow AC", "Análisis de Causas", "Evidencias"],
   "responsibilities": [
     "Mantener formulario OOMRSC-20",
-    "Gestión de ciclos de acciones correctivas",
-    "Control de evidencias",
-    "Flujo de aprobación"
+    "Gestionar ciclo de vida de AC",
+    "Control de evidencias y archivos",
+    "Flujo de aprobación (BORRADOR → ENVIADO → APROBADO → CERRADO)",
+    "Integración con IA para generación"
   ],
-  "modules": ["AccionCorrectivaView", "ac"],
-  "parent": "orchestrator"
+  "parentModule": {
+    "component": "AccionCorrectivaView",
+    "file": "components/AccionCorrectivaView.jsx",
+    "parent": "App.jsx"
+  },
+  "features": {
+    "formFields": [
+      "area", "proceso", "origen", "numero_auditoria",
+      "descripcion_no_conformidad", "impacta_otros_procesos",
+      "equipo", "causas", "actividades"
+    ],
+    "estados": [
+      "BORRADOR", "ENVIADO_SGC", "APROBADO_SGC",
+      "FOLIO_ASIGNADO", "EN_SEGUIMIENTO", "REVISION_AUDITOR",
+      "CERRADO_EFECTIVO", "CERRADO_NO_EFECTIVO"
+    ],
+    "export": "PDF (jspdf)",
+    "evidencias": "Supabase Storage"
+  },
+  "validation": {
+    "required": ["form validates required fields", "estado transitions are valid", "equipo has responsable"],
+    "workflow": [" BORRADOR → ENVIADO_SGC → APROBADO_SGC (folio) → EN_SEGUIMIENTO → REVISION_AUDITOR → CERRADO_EFECTIVO/CERRADO_NO_EFECTIVO"]
+  },
+  "parent": "orchestrator",
+  "dependencies": ["frontend", "database"],
+  "communication": "Reporta al orquestador,coordina con database para sync"
 }

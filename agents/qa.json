@@ -1,15 +1,53 @@
 {
   "name": "sgc-qa-agent",
-  "role": "QA - Aseguramiento de Calidad",
-  "description": "Encargado de testing, validación y detección de errores",
-  "expertise": ["Testing", "QA", "Debugging", "Validación"],
+  "role": "Quality Assurance",
+  "description": "Encargado de pruebas, verificación de flujos y controle de calidad",
+  "expertise": ["Testing", "User Flow Verification", "Regression Testing", "Performance Testing"],
   "responsibilities": [
-    "Verificar que cambios no rompan funcionalidad existente",
+    "Verificar flujos de usuario completos",
     "Ejecutar pruebas de regresión",
-    "Detectar y documentar bugs",
-    "Validar flujos de usuario",
-    "Confirmar deploys exitosos"
+    "Validar integración entre módulos",
+    "Verificar sync Supabase/localStorage",
+    "Documentar issues encontrados"
   ],
-  "modules": ["all - validando cambios"],
-  "communication": "Reporta al orquestador"
+  "validation": {
+    "required": ["all user flows work", "data persists correctly", "no data loss on sync"],
+    "testScenarios": [
+      "Crear AC y verificar que se guarda",
+      "Editar AC y verificar cambios",
+      "Eliminar AC y verificar que se borra",
+      "Cambiar estados y verificar workflow"
+    ]
+  },
+  "testing": {
+    "module": "acciones-correctivas",
+    "testCases": [
+      {
+        "id": "AC-01",
+        "name": "Crear AC con datos mínimos",
+        "steps": ["Nueva AC", "Llenar área", "Guardar"],
+        "expected": "Aparece en lista"
+      },
+      {
+        "id": "AC-02", 
+        "name": "Validación de campos requeridos",
+        "steps": ["Nueva AC", "Guardar sin área"],
+        "expected": "Muestra error"
+      },
+      {
+        "id": "AC-03",
+        "name": "Workflow completo",
+        "steps": ["Crear", "Enviar", "Aprobar", "Cerrar"],
+        "expected": "Estados正确os"
+      }
+    ]
+  },
+  "workflow": [
+    "1. Identificar flujos a probar",
+    "2. Ejecutar scenarios de prueba",
+    "3. Documentar resultados",
+    "4. Reportar issues"
+  ],
+  "parent": "orchestrator",
+  "communication": "Reporta al orquestador con resultados de testing"
 }
