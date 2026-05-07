@@ -790,7 +790,7 @@ setLoading(true);
           </div>
 )}
         
-        {/* Botones */}
+        {/*
         <div className="flex gap-3 flex-wrap pt-4">
           <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">
             ← Volver a Lista
@@ -798,8 +798,42 @@ setLoading(true);
           <button onClick={generarInformePDF} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
             <span>📄</span> Exportar PDF
           </button>
-          {getBotonesWorkflow()}
         </div>
+        */}
+        
+        {form.estado === 'BORRADOR' && (
+          <div className="flex gap-3 flex-wrap pt-4">
+            <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">
+              ← Volver a Lista
+            </button>
+            <button onClick={guardarBorrador} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              💾 Guardar
+            </button>
+            <button onClick={async () => {
+              setForm({...form, estado: 'ENVIADO_SGC'});
+              await guardarBorrador();
+            }} className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+              📤 Enviar a SGC
+            </button>
+            <button onClick={generarInformePDF} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              📄 Exportar PDF
+            </button>
+          </div>
+        )}
+        
+        {form.estado !== 'BORRADOR' && (
+          <div className="flex gap-3 flex-wrap pt-4">
+            <button onClick={() => setVista('lista')} className="px-6 py-2 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50">
+              ← Volver a Lista
+            </button>
+            <button onClick={guardarBorrador} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              💾 Guardar
+            </button>
+            <button onClick={generarInformePDF} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              📄 Exportar PDF
+            </button>
+          </div>
+        )}
       </div>
     );
   }
