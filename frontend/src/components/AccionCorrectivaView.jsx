@@ -32,18 +32,11 @@ const ROLES_EQUIPO = [
 
 const ESTADOS = [
   { id: 'BORRADOR', label: 'Borrador' },
-  { id: 'GENERADO_IA', label: 'Pendiente' },
-  { id: 'EN_REVISION_USUARIO', label: 'Pendiente' },
-  { id: 'ENVIADO_SGC', label: 'En revisión SGC' },
-  { id: 'DEVUELTO_SGC', label: 'Devuelto' },
-  { id: 'APROBADO_SGC', label: 'Aprobado' },
-  { id: 'FOLIO_ASIGNADO', label: 'Abierta' },
-  { id: 'EN_SEGUIMIENTO', label: 'Abierta' },
-  { id: 'CON_REPLANTEO', label: 'Abierta' },
-  { id: 'REVISION_AUDITOR', label: 'En cierre' },
-  { id: 'CERRADO_EFECTIVO', label: 'Cerrada efectiva' },
-  { id: 'CERRADO_NO_EFECTIVO', label: 'Cerrada no efectiva' },
-  { id: 'CANCELADO', label: 'Cancelado' }
+  { id: 'EN_REVISION', label: 'En Revisión' },
+  { id: 'APROBADO', label: 'Aprobado' },
+  { id: 'RECHAZADO', label: 'Rechazado' },
+  { id: 'EN_SEGUIMIENTO', label: 'En Seguimiento' },
+  { id: 'CERRADO', label: 'Cerrado' }
 ];
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
@@ -343,7 +336,7 @@ JSON de salida esperado:
             requiere_actualizar_matriz_riesgos: ia.analisis?.requiere_actualizar_matriz_riesgos || 'NO',
             descripcion_riesgo_oportunidad: ia.analisis?.descripcion_riesgo_oportunidad || '',
             requiere_cambio_sgc: ia.actividades?.requiere_cambio_sgc || 'NO',
-            estado: 'GENERADO_IA',
+            estado: 'BORRADOR',
             fecha_generacion_ia: new Date().toISOString()
           }));
           

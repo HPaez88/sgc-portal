@@ -42,7 +42,7 @@ import { AGENTS, callAgent, parseAgentResponse, generatePrompt } from './agents'
 import { AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, getColorNivel, getNivelRiesgo, getEstadoColor, getRolColor, INDICADORES, getIndicadoresByArea } from './catalogs';
 import { useLocalStorage, useFormValidation } from './hooks';
 import AccionCorrectivaViewExternal from './components/AccionCorrectivaView';
-import PlanMejoraViewExternal from './components/PlanForm';
+import PlanMejoraViewExternal from './components/PlanMejoraForm';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -167,17 +167,18 @@ function App() {
     syncAllData();
   }, []);
 
-  const usuarioLogueado = usuarios && usuarios.length > 0 ? usuarios[0] : null;
-  const puedeTodasAreas = usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Auditor' || usuarioLogueado?.rol === 'Super Admin';
+  const esAdmin = usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Auditor' || usuarioLogueado?.rol === 'Super Admin';
+  const puedeGestor = ['Admin', 'Auditor', 'Super Admin'].includes(usuarioLogueado?.rol);
+  
   const areaUsuario = usuarioLogueado?.area || '';
-
+  
   const navItems = [
     { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
     { id: 'ac', label: 'Acciones Correctivas', icon: AlertTriangle },
     { id: 'pm', label: 'Planes de Mejora', icon: CheckCircle2 },
     { id: 'indicadores', label: 'Indicadores', icon: Target },
     { id: 'riesgos', label: 'Matriz de Riesgos', icon: AlertOctagon },
-    { id: 'gestor', label: 'Aprobaciones', icon: FileEdit },
+    ...(puedeGestor ? [{ id: 'gestor', label: 'Aprobaciones', icon: FileEdit }] : []),
     { id: 'documents', label: 'Documentos', icon: FileText },
     { id: 'audits', label: 'Auditorías', icon: ClipboardCheck },
     { id: 'settings', label: 'Configuración', icon: Settings },
