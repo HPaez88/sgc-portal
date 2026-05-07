@@ -411,7 +411,7 @@ JSON de salida esperado:
       return;
     }
     
-    // Si la acción ya tenía folio (estaba aprobada/abierta), vuelve a BORRADOR para re-aprobación
+    // Si la acción ya tenía folio, vuelve a BORRADOR para re-aprobación
     let estadoFinal = form.estado;
     if (form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') {
       estadoFinal = 'BORRADOR';
@@ -427,18 +427,9 @@ JSON de salida esperado:
       fecha_creacion_borrador: form.fecha_creacion_borrador || new Date().toISOString()
     };
     
-    // Guardar primero en localStorage (siempre funciona)
-    let listasActualizadas;
-    if (form.id) {
-      listasActualizadas = accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac);
-    } else {
-      listasActualizadas = [...accionesCorrectivas, nuevo];
-    }
-    setAccionesCorrectivas(listasActualizadas);
-    
-    // Guardar en Supabase (puede fallar por internet/RLS)
+    // GUARDAR EN SUPABASE PRIMERO (internet) - fuente principal
     try {
-      console.log('[AC] Intentando guardar en Supabase...');
+      console.log('[AC] Guardando en Supabase...');
       const { data, error } = await supabase.from('acciones_correctivas').upsert({
         id: nuevo.id,
         codigo: nuevo.folio_codigo,
@@ -482,14 +473,28 @@ JSON de salida esperado:
       
       if (error) {
         console.error('[AC] Error Supabase:', error);
-        setMensaje('⚠️ Guardado local (error en servidor)');
-} else {
-        console.log('[AC] Guardado en Supabase OK');
-        setMensaje('💾 Guardado');
+        setError('Error al guardar en servidor: ' + error.message);
+        setLoading(false);
+        return;
       }
+      
+      console.log('[AC] Guardado en Supabase OK');
+      setMensaje('💾 Guardado en servidor');
+      
+      // Solo actualizar estado local si guardó en Supabase
+      let listasActualizadas;
+      if (form.id) {
+        listasActualizadas = accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac);
+      } else {
+        listasActualizadas = [...accionesCorrectivas, nuevo];
+      }
+      setAccionesCorrectivas(listasActualizadas);
+      
     } catch (e) {
       console.error('[AC] Error catch:', e);
-      setMensaje('⚠️ Guardado local');
+      setError('Error de conexión. Verifica tu internet.');
+      setLoading(false);
+      return;
     }
     
     setForm({...form, id: nuevo.id});
@@ -497,7 +502,7 @@ JSON de salida esperado:
     setTimeout(() => setMensaje(''), 3000);
   };
 
-const eliminarAC = async (id) => {
+  const eliminarAC = async (id) => {
     if (!confirm('¿Estás seguro de eliminar esta acción correctiva?')) return;
     
     setLoading(true);
