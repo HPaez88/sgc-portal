@@ -601,6 +601,26 @@ const aprobarSGC = () => {
     return <div className="p-4 text-red-500">Error: {e.message}</div>;
   }
   
+  // Debug: mostrar un banner visible si no hay datos
+  const hasData = accionesCorrectivas && accionesCorrectivas.length > 0;
+  console.log('[AC] hasData:', hasData);
+  
+  // DEBUG: Si no hay datos, mostrar banner visible
+  if (!hasData) {
+    return (
+      <div className="p-8">
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+          <p className="font-bold">Debug: No Hay Datos</p>
+          <p>accionesCorrectivas está undefined o vacío</p>
+          <p className="text-sm">vue: {vista}, puedeTodasAreas: {String(puedeTodasAreas)}</p>
+        </div>
+        <button onClick={() => setVista('nuevo')} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+          + Nueva AC
+        </button>
+      </div>
+    );
+  }
+  
   // ===== VISTA: LISTA =====
   if (vista === 'lista') {
     // Obtener años únicos de las acciones
