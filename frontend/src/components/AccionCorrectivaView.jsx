@@ -591,10 +591,18 @@ const aprobarSGC = () => {
     setError('');
   };
 
+  console.log('[AC] Module loaded, props:', { puedeTodasAreas, areaUsuario });
+  try {
+    console.log('[AC] AccionCorrectivaView rendering');
+    console.log('[AC] accionesCorrectivas:', accionesCorrectivas);
+    console.log('[AC] vista:', vista);
+  } catch(e) {
+    console.error('[AC] Error:', e);
+    return <div className="p-4 text-red-500">Error: {e.message}</div>;
+  }
+  
   // ===== VISTA: LISTA =====
-// DEBUG: checking accionesCorrectivas
-console.log('[AC] In lista view, accionesCorrectivas:', accionesCorrectivas, 'length:', accionesCorrectivas?.length);
-if (vista === 'lista') {
+  if (vista === 'lista') {
     // Obtener años únicos de las acciones
     const aniosRaw = accionesCorrectivas.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
     const años = [...new Set(aniosRaw)].sort((a,b) => b - a);
