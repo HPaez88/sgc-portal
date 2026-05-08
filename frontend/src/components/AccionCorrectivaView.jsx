@@ -426,10 +426,11 @@ JSON de salida esperado:
     }
     
     // También guardar en localStorage como backup
+    const currentList = Array.isArray(accionesCorrectivas) ? accionesCorrectivas : [];
     if (form.id) {
-      setAccionesCorrectivas(accionesCorrectivas.map(ac => ac.id === form.id ? nuevo : ac));
+      setAccionesCorrectivas(currentList.map(ac => ac.id === form.id ? nuevo : ac));
     } else {
-      setAccionesCorrectivas([...accionesCorrectivas, nuevo]);
+      setAccionesCorrectivas([...currentList, nuevo]);
     }
     
     setLoading(false);
@@ -450,7 +451,8 @@ JSON de salida esperado:
       console.error('Error deleting:', e);
     }
     
-    setAccionesCorrectivas(accionesCorrectivas.filter(ac => ac.id !== id));
+    const currentList = Array.isArray(accionesCorrectivas) ? accionesCorrectivas : [];
+    setAccionesCorrectivas(currentList.filter(ac => ac.id !== id));
     setLoading(false);
     setMensaje('🗑️ Eliminado');
     setTimeout(() => setMensaje(''), 3000);
@@ -593,12 +595,15 @@ const aprobarSGC = () => {
 
   // ===== VISTA: LISTA =====
   if (vista === 'lista') {
+    // Safety check - ensure accionesCorrectivas is an array
+    const acList = Array.isArray(accionesCorrectivas) ? accionesCorrectivas : [];
+    
     // Obtener años únicos de las acciones
-    const aniosRaw = accionesCorrectivas.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
+    const aniosRaw = acList.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
     const años = [...new Set(aniosRaw)].sort((a,b) => b - a);
     
     // Filtrar acciones
-    const accionesFiltradas = accionesCorrectivas.filter(ac => {
+    const accionesFiltradas = acList.filter(ac => {
       const anioAC = ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null;
       if (filtroAnio && anioAC !== parseInt(filtroAnio)) return false;
       if (filtroEstado) {
