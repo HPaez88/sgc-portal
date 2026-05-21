@@ -189,25 +189,6 @@ def get_dashboard(session: Session = Depends(get_session)):
     }
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CATÁLOGOS — Datos para dropdowns
-# ═══════════════════════════════════════════════════════════════════════════════
-@app.get("/api/v1/catalogos", tags=["Catálogos"])
-def obtener_catalogos():
-    """Catálogos del sistema."""
-    return {
-        "direcciones": DIRECCIONES,
-        "areas": AREAS,
-        "procesos": PROCESOS,
-        "origenes_ac": ORIGENES_AC,
-        "origenes_pm": ORIGENES_PM,
-        "categorias_mejora": CATEGORIAS_MEJORA,
-        "periodos": PERIODOS,
-        "estados": ESTADOS_SGC,
-        "transiciones": TRANSICIONES,
-    }
-
-
 @app.get("/", tags=["Root"])
 def root():
     if os.getenv("ENVIRONMENT") == "production":

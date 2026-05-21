@@ -19,13 +19,24 @@ router = APIRouter(prefix="/api/v1/planes-mejora", tags=["Planes de Mejora"])
 
 
 def _generar_folio_pm(session: Session) -> str:
-    """Genera folio: PM-YYYY/NNN (ej. PM-2026/001)"""
+    """Genera folio: PM-YYYY/NNN (ej. PM-2026/001).
+    Usa MAX() + transacción para evitar race conditions bajo concurrencia."""
+    from sqlalchemy import text
     year = datetime.utcnow().year
-    pms = session.exec(
-        select(PlanDeMejora).where(PlanDeMejora.folio.like(f"PM-{year}/%"))
-    ).all()
-    siguiente = len(pms) + 1
-    return f"PM-{year}/{siguiente:03d}"
+    session.exec(text("BEGIN IMMEDIATE"))
+    try:
+        result = session.exec(text(
+            f"SELECT MAX(CAST(SUBSTR(folio, LENGTH('PM-{year}') + 2) AS INTEGER)) "
+            f"FROM planes_mejora WHERE folio LIKE 'PM-{year}/%'"
+        )).one()
+        max_num = result[0] if result[0] is not None else 0
+        siguiente = max_num + 1
+        folio = f"PM-{year}/{siguiente:03d}"
+        session.commit()
+        return folio
+    except Exception:
+        session.rollback()
+        raise
 
 
 def _asignar_direccion(area: str) -> str:

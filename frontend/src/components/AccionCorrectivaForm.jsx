@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getApiUrl } from '../config';
-
-const COLORES = {
-  azul: '#2A78B0',
-  azulClaro: '#3d8cc2',
-  azulOscuro: '#1e5a84',
-  amarillo: '#dddd26',
-  verde: '#28a745',
-  rojo: '#dc3545',
-  blanco: '#ffffff',
-  grisClaro: '#f8f9fa',
-  grisBorde: '#dee2e6',
-  grisTexto: '#495057',
-  negro: '#212529',
-};
+import { COLORES } from '../constants';
 
 const SectionTitle = ({ children, required }) => (
   <div style={{
@@ -231,10 +218,33 @@ const AccionCorrectivaForm = ({ onSuccess }) => {
     }
   };
 
+  const validateForm = () => {
+    const errors = [];
+    if (!form.descripcion_no_conformidad?.trim()) errors.push('Descripción de la No Conformidad');
+    if (!form.proceso) errors.push('Proceso');
+    if (!form.area) errors.push('Área');
+    if (!form.origen) errors.push('Origen');
+    if (!form.direccion) errors.push('Dirección');
+    if (!form.accion_contenedora?.trim()) errors.push('Acción Contenedora');
+    const causasValidas = causas.filter(c => c.causa?.trim());
+    if (causasValidas.length === 0) errors.push('Al menos una Causa');
+    if (!form.causa_raiz_seleccionada) errors.push('Causa Raíz seleccionada');
+    const actividadesValidas = actividades.filter(a => a.descripcion?.trim());
+    if (actividadesValidas.length === 0) errors.push('Al menos una Actividad');
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setStatus({ type: '', msg: '' });
+
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setStatus({ type: 'error', msg: `Campos requeridos faltantes: ${errors.join(', ')}` });
+      return;
+    }
+
+    setLoading(true);
 
     const payload = {
       ...form,

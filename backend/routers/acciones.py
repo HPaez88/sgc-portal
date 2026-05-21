@@ -19,13 +19,25 @@ router = APIRouter(prefix="/api/v1/acciones-correctivas", tags=["Acciones Correc
 
 
 def _generar_folio_ac(session: Session) -> str:
-    """Genera folio: AC-YYYY/NNN (ej. AC-2026/001)"""
+    """Genera folio: AC-YYYY/NNN (ej. AC-2026/001).
+    Usa MAX() + transacción para evitar race conditions bajo concurrencia."""
+    from sqlalchemy import text
     year = datetime.utcnow().year
-    acs = session.exec(
-        select(AccionCorrectiva).where(AccionCorrectiva.folio.like(f"AC-{year}/%"))
-    ).all()
-    siguiente = len(acs) + 1
-    return f"AC-{year}/{siguiente:03d}"
+    # Bloqueo explícito para SQLite: BEGIN IMMEDIATE obtiene write lock
+    session.exec(text("BEGIN IMMEDIATE"))
+    try:
+        result = session.exec(text(
+            f"SELECT MAX(CAST(SUBSTR(folio, LENGTH('AC-{year}') + 2) AS INTEGER)) "
+            f"FROM acciones_correctivas WHERE folio LIKE 'AC-{year}/%'"
+        )).one()
+        max_num = result[0] if result[0] is not None else 0
+        siguiente = max_num + 1
+        folio = f"AC-{year}/{siguiente:03d}"
+        session.commit()
+        return folio
+    except Exception:
+        session.rollback()
+        raise
 
 
 def _asignar_direccion(area: str) -> str:

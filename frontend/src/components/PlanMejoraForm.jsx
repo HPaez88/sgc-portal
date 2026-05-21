@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getApiUrl } from '../config';
-
-const COLORES = {
-  azul: '#2A78B0',
-  azulClaro: '#3d8cc2',
-  azulOscuro: '#1e5a84',
-  amarillo: '#dddd26',
-  verde: '#28a745',
-  rojo: '#dc3545',
-  blanco: '#ffffff',
-  grisClaro: '#f8f9fa',
-  grisBorde: '#dee2e6',
-  grisTexto: '#495057',
-  negro: '#212529',
-};
+import { COLORES } from '../constants';
 
 const SectionTitle = ({ children, required }) => (
   <div style={{
@@ -180,10 +167,30 @@ const PlanMejoraForm = ({ onSuccess }) => {
     }
   };
 
+  const validateForm = () => {
+    const errors = [];
+    if (!form.titulo_mejora?.trim()) errors.push('Título de Mejora');
+    if (!form.gerencia_coordinacion) errors.push('Gerencia/Coordinación');
+    if (!form.categoria_mejora) errors.push('Categoría de Mejora');
+    if (!form.descripcion_situacion_actual?.trim()) errors.push('Situación Actual');
+    if (!form.situacion_deseada?.trim()) errors.push('Situación Deseada');
+    if (!form.responsable?.trim()) errors.push('Responsable');
+    const actividadesValidas = actividades.filter(a => a.descripcion?.trim());
+    if (actividadesValidas.length === 0) errors.push('Al menos una Actividad');
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setStatus({ type: '', msg: '' });
+
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setStatus({ type: 'error', msg: `Campos requeridos faltantes: ${errors.join(', ')}` });
+      return;
+    }
+
+    setLoading(true);
 
     const payload = {
       ...form,

@@ -1,45 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getApiUrl } from '../config';
-
-const COLORES = {
-  azul: '#2A78B0',
-  azulClaro: '#4a9fc9',
-  azulOscuro: '#1e5a84',
-  amarillo: '#f4c430',
-  amarilloClaro: '#fff59d',
-  verde: '#2e7d32',
-  verdeClaro: '#a5d6a7',
-  rojo: '#c62828',
-  rojoClaro: '#ef9a9a',
-  naranja: '#f57c00',
-  naranjaClaro: '#ffcc80',
-  grisClaro: '#f5f5f5',
-  grisBorde: '#e0e0e0',
-  blanco: '#ffffff',
-  negro: '#212121',
-  texto: '#424242',
-};
-
-const ESTADO_LABELS = {
-  BORRADOR: 'Borrador',
-  EN_REVISION: 'En Revisión',
-  APROBADO: 'Aprobado',
-  RECHAZADO: 'Rechazado',
-};
-
-const ESTADO_COLORS = {
-  BORRADOR: COLORES.grisClaro,
-  EN_REVISION: COLORES.naranja,
-  APROBADO: COLORES.verde,
-  RECHAZADO: COLORES.rojo,
-};
-
-const ESTADO_BG = {
-  BORRADOR: '#f5f5f5',
-  EN_REVISION: '#fff3e0',
-  APROBADO: '#e8f5e9',
-  RECHAZADO: '#ffebee',
-};
+import { COLORES, ESTADO_LABELS, ESTADO_COLORS, ESTADO_BG } from '../constants';
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
@@ -106,7 +67,7 @@ const Dashboard = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <KPICard title="Acciones Correctivas" value={totales.acciones_correctivas || 0} icon="⚡" />
         <KPICard title="Planes de Mejora" value={totales.planes_mejora || 0} icon="🎯" />
-        <KPICard title="Documentos Abiertos" value={totales.abiertos || 0} icon="📂" />
+        <KPICard title="Documentos Abiertos" value={totales.abiertas || 0} icon="📂" />
         <KPICard title="Documentos Cerrados" value={totales.cerradas || 0} icon="✅" />
       </div>
 

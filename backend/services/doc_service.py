@@ -246,7 +246,7 @@ def generar_accion_correctiva_docx(ac) -> bytes:
             t_act.cell(0, j).paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
             t_act.cell(0, j).paragraphs[0].runs[0].font.size = Pt(9)
         for i, act in enumerate(actividades, 1):
-            t_act.cell(i, 0).text = act.get("actividad", "")
+            t_act.cell(i, 0).text = act.get("descripcion", act.get("actividad", ""))
             t_act.cell(i, 1).text = act.get("responsable", "")
             t_act.cell(i, 2).text = act.get("fecha_termino", "")
             t_act.cell(i, 3).text = act.get("evidencia", "")
@@ -376,7 +376,7 @@ def generar_plan_mejora_docx(pm) -> bytes:
             t_act.cell(0, j).paragraphs[0].runs[0].font.size = Pt(8)
         for i, act in enumerate(actividades, 1):
             row_vals = [
-                act.get("actividad", ""),
+                act.get("descripcion", act.get("actividad", "")),
                 act.get("responsable", ""),
                 act.get("indicador", ""),
                 act.get("fecha_termino", ""),
