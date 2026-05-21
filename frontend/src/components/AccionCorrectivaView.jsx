@@ -1227,7 +1227,6 @@ const aprobarSGC = () => {
                   <th className="p-2 text-center w-12">#</th>
                   <th className="p-2 text-left">Actividad</th>
                   <th className="p-2 text-left w-32">Responsable</th>
-                  <th className="p-2 text-left w-24">Indicador</th>
                   <th className="p-2 text-left w-24">Fecha</th>
                   <th className="p-2 text-left w-40">Evidencia Esperada</th>
                   {(form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación') && (
@@ -1255,16 +1254,6 @@ const aprobarSGC = () => {
                         onChange={(e) => {
                           const nuevo = [...actividades];
                           nuevo[i].responsable = e.target.value;
-                          setActividades(nuevo);
-                        }}
-                        className="w-full p-1 border rounded" />
-                    </td>
-                    <td className="p-2">
-                      <input type="text" value={act.indicador_progreso} 
-                        disabled={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación'}
-                        onChange={(e) => {
-                          const nuevo = [...actividades];
-                          nuevo[i].indicador_progreso = e.target.value;
                           setActividades(nuevo);
                         }}
                         className="w-full p-1 border rounded" />

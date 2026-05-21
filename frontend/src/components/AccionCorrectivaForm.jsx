@@ -132,7 +132,7 @@ const AccionCorrectivaForm = ({ onSuccess }) => {
   const [equipo, setEquipo] = useState([{ nombre: '', rol: '' }]);
   const [causas, setCausas] = useState([{ causa: '', categoria: '', puntuacion: '' }]);
   const [actividades, setActividades] = useState([
-    { descripcion: '', tipo: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' }
+    { descripcion: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' }
   ]);
 
   useEffect(() => {
@@ -206,7 +206,7 @@ const AccionCorrectivaForm = ({ onSuccess }) => {
       }
       if (data.actividades) {
         const acts = typeof data.actividades === 'string' ? JSON.parse(data.actividades) : data.actividades;
-        setActividades(acts.length > 0 ? acts : [{ descripcion: '', tipo: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' }]);
+        setActividades(acts.length > 0 ? acts : [{ descripcion: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' }]);
       }
 
       setStatus({ type: 'success', msg: '✅ IA generó el documento completo..Revisa y corrige antes de guardar.' });
@@ -268,10 +268,68 @@ const AccionCorrectivaForm = ({ onSuccess }) => {
         setForm(emptyForm);
         setEquipo([{ nombre: '', rol: '' }]);
         setCausas([{ causa: '', categoria: '', puntuacion: '' }]);
-        setActividades([{ descripcion: '', tipo: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' }]);
+        setActividades([{ descripcion: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' }]);
         onSuccess?.();
       } else {
         setStatus({ type: 'error', msg: data.detail || 'Error al guardar' });
+      }
+    } catch {
+      setStatus({ type: 'error', msg: 'Error de conexión.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEnviarSGC = async (e) => {
+    e.preventDefault();
+    setStatus({ type: '', msg: '' });
+
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setStatus({ type: 'error', msg: `Campos requeridos faltantes: ${errors.join(', ')}` });
+      return;
+    }
+
+    setLoading(true);
+
+    const payload = {
+      ...form,
+      equipo_trabajo: JSON.stringify(equipo.filter(m => m.nombre)),
+      causas: JSON.stringify(causas.filter(c => c.causa)),
+      actividades: JSON.stringify(actividades.filter(a => a.descripcion)),
+    };
+
+    try {
+      const resp = await fetch(getApiUrl('/api/v1/acciones-correctivas'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+      
+      if (!resp.ok) {
+        setStatus({ type: 'error', msg: data.detail || 'Error al guardar' });
+        return;
+      }
+
+      const estadoResp = await fetch(getApiUrl(`/api/v1/acciones-correctivas/${data.id}/estado`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'EN_REVISION' }),
+      });
+
+      if (estadoResp.ok) {
+        setStatus({ type: 'success', msg: `✅ Acción Correctiva enviada a SGC (Folio: ${data.folio || 'pendiente'})` });
+        setPaso(1);
+        setDescripcionNC('');
+        setForm(emptyForm);
+        setEquipo([{ nombre: '', rol: '' }]);
+        setCausas([{ causa: '', categoria: '', puntuacion: '' }]);
+        setActividades([{ descripcion: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' }]);
+        onSuccess?.();
+      } else {
+        const errData = await estadoResp.json();
+        setStatus({ type: 'error', msg: `Guardada pero no se pudo enviar: ${errData.detail || 'error desconocido'}` });
       }
     } catch {
       setStatus({ type: 'error', msg: 'Error de conexión.' });
@@ -522,7 +580,7 @@ const AccionCorrectivaForm = ({ onSuccess }) => {
         ))}
         <button
           type="button"
-          onClick={() => addRow(setActividades, { descripcion: '', tipo: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' })}
+          onClick={() => addRow(setActividades, { descripcion: '', responsable: '', fecha_termino: '', evidencia: '', estado: 'Pendiente' })}
           style={{
             padding: '0.5rem 1rem',
             background: 'none',
@@ -539,7 +597,8 @@ const AccionCorrectivaForm = ({ onSuccess }) => {
 
         <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
           <Boton variant="secundario" onClick={() => setPaso(1)}>← Cancelar</Boton>
-          <Boton onClick={handleSubmit} loading={loading} variant="success">💾 Guardar Acción Correctiva</Boton>
+          <Boton onClick={handleSubmit} loading={loading} variant="secundario">💾 Guardar Borrador</Boton>
+          <Boton onClick={handleEnviarSGC} loading={loading} variant="success">📤 Enviar a SGC</Boton>
         </div>
       </form>
     </div>
