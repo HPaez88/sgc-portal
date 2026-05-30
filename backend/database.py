@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS replanteos (
     fecha_nueva DATETIME,
     justificacion VARCHAR,
     estado VARCHAR DEFAULT 'PENDIENTE',
-    correo_enviado BOOLEAN DEFAULT 0,
+    solicitud_correo BOOLEAN DEFAULT 0,
     formato_firmado BOOLEAN DEFAULT 0
 )
 """

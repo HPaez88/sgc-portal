@@ -17,7 +17,7 @@ from backend.database import create_db_and_tables, get_session
 from backend.models import (
     AccionCorrectiva, PlanDeMejora, Auditor, Replanteo,
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
-    CATEGORIAS_MEJORA, ORIGENES_PM, PERIODOS, ESTADOS_SGC, TRANSICIONES
+    CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
 )
 from backend.routers import acciones, planes, ai, catalogo
 
@@ -187,6 +187,10 @@ def get_dashboard(session: Session = Depends(get_session)):
             "pm_cerrados": len([pm for pm in pm_año if pm.estado == "CERRADO"]),
         },
     }
+
+
+# NOTA: Los catálogos están disponibles en /api/v1/catalogos
+# a través de routers/catalogo.py
 
 
 @app.get("/", tags=["Root"])

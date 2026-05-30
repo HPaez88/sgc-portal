@@ -13,4 +13,6 @@ services:
         value: "https://sgc-portal-933s.onrender.com"
       - key: ENVIRONMENT
         value: production
+      - key: GROQ_API_KEY
+        sync: false
     autoDeploy: true
