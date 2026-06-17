@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://yrjlmqxpakjiwrfwhgaj.supabase.co';
-const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyamxxeHBhY2ppd3Jmd2hnYWoiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjQ4Mzg2MzgzLjEwMSwiZXhwIjoxOTYzOTYyMzgzfQ.dCXvC6xCvWChDSxG4H7Qj4R2vBj5XQGdNvzHnG7Cq9Q';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  throw new Error('Define SUPABASE_URL y SUPABASE_SERVICE_KEY para ejecutar este script.');
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 

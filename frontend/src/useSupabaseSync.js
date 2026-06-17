@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from './supabase';
+import { isSupabaseConfigured, supabase } from './supabase';
 
 const TABLE_MAP = {
   'sgc-usuarios': 'usuarios',
@@ -17,15 +17,16 @@ const TABLE_MAP = {
 export function useSupabaseSync(key, initialValue, options = {}) {
   const { debounceMs = 1000, tableName = TABLE_MAP[key] || key, skip = false } = options;
   const [data, setData] = useState(initialValue);
-  const [loading, setLoading] = useState(!skip);
+  const [loading, setLoading] = useState(!skip && isSupabaseConfigured);
   const [error, setError] = useState(null);
   const [synced, setSynced] = useState(false);
   const debounceRef = useRef(null);
 
   // Load from Supabase on mount
   useEffect(() => {
-    if (skip) {
+    if (skip || !isSupabaseConfigured || !supabase) {
       setLoading(false);
+      setSynced(true);
       return;
     }
 
@@ -77,12 +78,16 @@ export function useSupabaseSync(key, initialValue, options = {}) {
   // Save to both localStorage and Supabase
   const setDataWithSync = useCallback((value) => {
     setData(prev => {
-      const newValue = value instanceof Function ? value(prev) : value;
+      const newValue = typeof value === 'function' ? value(prev) : value;
       
       // Save to localStorage immediately
       localStorage.setItem(key, JSON.stringify(newValue));
       
       // Debounced Supabase sync
+      if (!isSupabaseConfigured || !supabase) {
+        return newValue;
+      }
+
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
@@ -139,6 +144,9 @@ export function useSupabaseSync(key, initialValue, options = {}) {
 
 // Helper to check if Supabase is available
 export async function checkSupabaseConnection() {
+  if (!isSupabaseConfigured || !supabase) {
+    return { connected: false, error: 'Supabase no esta configurado.' };
+  }
   try {
     const { data, error } = await supabase.from('usuarios').select('id').limit(1);
     return { connected: !error, error };

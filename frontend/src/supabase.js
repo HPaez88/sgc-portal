@@ -1,11 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://yrjlmqxpakjiwrfwhgaj.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyamxxeHBhY2ppd3Jmd2hnYWoiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0ODM4NjM4MywiZXhwIjoxOTYzOTYyMzgzfQ.K4AXLx0VHI6Uw2ThcHj7dXjZNL5N3zK6Q4zFzFj7TZY';
+const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+export const supabase = isSupabaseConfigured
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+const missingConfigResult = () => ({
+  error: 'Supabase no esta configurado. Define VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+});
 
 export async function loadFromSupabase(table) {
+  if (!supabase) return [];
   try {
     const { data, error } = await supabase.from(table).select('*');
     if (error) throw error;
@@ -17,6 +25,7 @@ export async function loadFromSupabase(table) {
 }
 
 export async function saveToSupabase(table, data) {
+  if (!supabase) return missingConfigResult();
   try {
     const { error } = await supabase.from(table).upsert(data, { onConflict: 'id' });
     if (error) throw error;
@@ -28,6 +37,7 @@ export async function saveToSupabase(table, data) {
 }
 
 export async function insertToSupabase(table, data) {
+  if (!supabase) return missingConfigResult();
   try {
     const { error } = await supabase.from(table).insert(data);
     if (error) throw error;
@@ -39,6 +49,7 @@ export async function insertToSupabase(table, data) {
 }
 
 export async function deleteFromSupabase(table, id) {
+  if (!supabase) return missingConfigResult();
   try {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
@@ -57,5 +68,5 @@ export const tables = {
   riesgos: 'riesgos',
   documentos: 'documentos',
   auditorias: 'auditorias',
-  evidencias: 'evidencias'
+  evidencias: 'evidencias',
 };

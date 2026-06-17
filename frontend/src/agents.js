@@ -1,6 +1,4 @@
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const DEFAULT_MODEL = 'llama-3.1-8b-instant';
-const API_KEY = import.meta.env?.VITE_GROQ_API_KEY || 'gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+import { getApiUrl } from './config';
 
 export const AGENT_PERSONALITY = `Eres un AGENTE EXPERTO ISO 9001 del Sistema de Gestión de Calidad de OOMAPASC de Cajeme.
 Tu rol es asistir en la gestión de calidad, mejora continua y cumplimiento normativo.
@@ -47,20 +45,14 @@ export async function callAgent(agentType, userPrompt, options = {}) {
   }
 
   try {
-    const response = await fetch(GROQ_API_URL, {
+    const response = await fetch(getApiUrl('/api/v1/ai/generar-json'), {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: options.model || DEFAULT_MODEL,
-        messages: [
-          { role: 'system', content: agent.system },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: options.temperature || 0.3,
-        max_tokens: options.maxTokens || 2000
+        prompt: userPrompt,
+        context: agent.system
       })
     });
 
@@ -68,13 +60,7 @@ export async function callAgent(agentType, userPrompt, options = {}) {
       throw new Error(`Error de API: ${response.status}`);
     }
 
-    const data = await response.json();
-    
-    if (data.choices && data.choices[0]?.message?.content) {
-      return data.choices[0].message.content;
-    }
-    
-    throw new Error('No se recibió respuesta del agente');
+    return JSON.stringify(await response.json());
     
   } catch (error) {
     console.error('Error en agente:', error);
@@ -190,6 +176,6 @@ Responde en JSON con:
 }`;
 
     default:
-      return userPrompt;
+      return '';
   }
 }

@@ -4,13 +4,32 @@ routers/ai.py — Endpoints de Inteligencia Artificial (Ollama local)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.models import AIPrompt
-from backend.services.ai_service import sugerir_con_ia, generar_ac_completo, generar_pm_completo
+from backend.services.ai_service import (
+    generar_ac_completo,
+    generar_json_desde_prompt,
+    generar_pm_completo,
+    sugerir_con_ia,
+)
 
 router = APIRouter(prefix="/api/v1/ai", tags=["Inteligencia Artificial"])
 
 
 class DescripcionInput(BaseModel):
     descripcion: str
+
+
+class JsonPromptInput(BaseModel):
+    prompt: str
+    context: str = "Eres asistente experto del Sistema de Gestion de Calidad ISO 9001. Responde solo con JSON valido."
+
+
+@router.post("/generar-json")
+def generar_json(body: JsonPromptInput):
+    """
+    Genera JSON con Groq desde el backend para no exponer claves en el frontend.
+    """
+    datos = generar_json_desde_prompt(body.prompt, body.context)
+    return datos
 
 
 @router.post("/generar-ac")

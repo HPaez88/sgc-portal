@@ -15,4 +15,8 @@ services:
         value: production
       - key: GROQ_API_KEY
         sync: false
+      - key: VITE_SUPABASE_URL
+        value: "https://yrjlmqxpakjiwrfwhgaj.supabase.co"
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
     autoDeploy: true

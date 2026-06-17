@@ -66,6 +66,12 @@ def _call_ai(prompt: str, context: str) -> str:
         )
 
 
+def generar_json_desde_prompt(prompt: str, context: str) -> dict:
+    """Genera y valida una respuesta JSON usando Groq sin exponer la clave al frontend."""
+    raw = _call_ai(prompt, context)
+    return _extraer_json(raw)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # GENERADORES: Acción Correctiva
 # ─────────────────────────────────────────────────────────────────────────────
