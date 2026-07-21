@@ -98,7 +98,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       <div className="grid grid-cols-2 md:grid-cols-8 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Total Usuarios</p>
-          <p className="text-2xl font-bold text-white">{usuariosList.length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuariosList.length}</p>
         </div>
         <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
           <p className="text-xs text-yellow-600">Super Admin</p>
@@ -106,7 +106,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Admins</p>
-          <p className="text-2xl font-bold text-white">{usuariosList.filter(u => u.rol === 'Admin').length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuariosList.filter(u => u.rol === 'Admin').length}</p>
         </div>
         <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
           <p className="text-xs text-blue-600">Auditores</p>
@@ -114,19 +114,19 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Encargados</p>
-          <p className="text-2xl font-bold text-white">{usuariosList.filter(u => u.rol === 'Encargado').length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{usuariosList.filter(u => u.rol === 'Encargado').length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Áreas</p>
-          <p className="text-2xl font-bold text-white">{areas.length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{areas.length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Direcciones</p>
-          <p className="text-2xl font-bold text-white">{direcciones.length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{direcciones.length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <p className="text-xs text-slate-500">Procesos</p>
-          <p className="text-2xl font-bold text-white">{procesos.length}</p>
+          <p className="text-2xl font-bold text-[#002855]">{procesos.length}</p>
         </div>
       </div>
 
