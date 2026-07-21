@@ -5,6 +5,7 @@ Versión 3.1 — Cumplimiento con Control 6
 from fastapi import APIRouter, Depends
 from sqlmodel import select
 from backend.database import get_session
+from backend.tenant import get_organismo_id
 from backend.models import (
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, Auditor, DatosArea, ESTADOS_SGC, TRANSICIONES
@@ -49,10 +50,16 @@ def obtener_direcciones():
 
 
 @router.get("/auditores")
-def obtener_auditores(session=Depends(get_session)):
+def obtener_auditores(
+    session=Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
     """Lista de auditores activos."""
     auditores = session.exec(
-        select(Auditor).where(Auditor.activo == True)
+        select(Auditor).where(
+            Auditor.organismo_id == organismo_id,
+            Auditor.activo == True,
+        )
     ).all()
     return [{"id": a.id, "nombre": a.nombre, "email": a.email, "area": a.area} for a in auditores]
 

@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 sqlmodel
 sqlalchemy
+psycopg[binary]
 python-docx
 openpyxl
 openai>=1.0

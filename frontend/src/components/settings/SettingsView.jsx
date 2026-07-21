@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { AREAS, PROCESOS, DIRECCIONES, getRolColor, USUARIOS_INICIALES } from '../../constants';
+import { AREAS, PROCESOS, DIRECCIONES, getRolColor } from '../../constants';
 import { useLocalStorage } from '../../hooks';
-import { Users, Building, Plus, Trash2, CheckCircle2, X, Edit, Phone, Mail } from 'lucide-react';
+import { Users, Building, Plus, Trash2, CheckCircle2, Edit } from 'lucide-react';
 export default function SettingsView({ usuarios = [], setUsuarios }) {
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
-  const [procesos, setProcesos] = useState(PROCESOS);
-  const [areas, setAreas] = useState(AREAS);
-  const [direcciones, setDirecciones] = useState(DIRECCIONES);
+  const [procesos, setProcesos] = useLocalStorage('sgc-config-procesos', PROCESOS);
+  const [areas, setAreas] = useLocalStorage('sgc-config-areas', AREAS);
+  const [direcciones, setDirecciones] = useLocalStorage('sgc-config-direcciones', DIRECCIONES);
   const [nuevoProceso, setNuevoProceso] = useState('');
   const [nuevaArea, setNuevaArea] = useState('');
   const [nuevaDireccion, setNuevaDireccion] = useState('');
@@ -26,8 +26,9 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   };
   
   const agregarProceso = () => {
-    if (nuevoProceso && !procesos.includes(nuevoProceso)) {
-      setProcesos([...procesos, nuevoProceso]);
+    const value = nuevoProceso.trim();
+    if (value && !procesos.includes(value)) {
+      setProcesos([...procesos, value]);
       setNuevoProceso('');
     }
   };
@@ -40,8 +41,9 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   };
   
   const agregarArea = () => {
-    if (nuevaArea && !areas.includes(nuevaArea)) {
-      setAreas([...areas, nuevaArea]);
+    const value = nuevaArea.trim();
+    if (value && !areas.includes(value)) {
+      setAreas([...areas, value]);
       setNuevaArea('');
     }
   };
@@ -54,8 +56,9 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   };
   
   const agregarDireccion = () => {
-    if (nuevaDireccion && !direcciones.includes(nuevaDireccion)) {
-      setDirecciones([...direcciones, nuevaDireccion]);
+    const value = nuevaDireccion.trim();
+    if (value && !direcciones.includes(value)) {
+      setDirecciones([...direcciones, value]);
       setNuevaDireccion('');
     }
   };
@@ -68,8 +71,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   };
   
   const agregarUsuario = () => {
-    if (!nuevoUsuario.nombre || !nuevoUsuario.email || !nuevoUsuario.area) return;
-    safeSetUsuarios(prev => [...prev, { ...nuevoUsuario, id: prev.length + 1 }]);
+    if (!nuevoUsuario.nombre.trim() || !nuevoUsuario.email.trim() || !nuevoUsuario.area) return;
+    safeSetUsuarios(prev => [...prev, { ...nuevoUsuario, id: Date.now() }]);
     setNuevoUsuario({ nombre: '', email: '', telefono: '', area: '', rol: 'Usuario', direccion: '', password: '' });
     setMostrarModalUser(false);
   };
@@ -302,17 +305,6 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
         </div>
       </div>
 
-      {/* Ideas Futures */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <h3 className="font-semibold text-amber-800 mb-2">Ideas para Desarrollo Future</h3>
-        <ul className="text-sm text-amber-700 space-y-1">
-          <li>• Chatbot para WhatsApp/Telegram por área</li>
-          <li>• Notificaciones por correo electrónico automáticas</li>
-          <li>• Sistema de alertas por vencimiento de indicadores</li>
-          <li>• Dashboard personalizado por usuario</li>
-        </ul>
-      </div>
-
       {/* Modal Confirmación Eliminar */}
       {confirmDelete.show && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -436,4 +428,4 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       )}
     </div>
   );
-}
+}

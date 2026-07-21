@@ -1,160 +1,155 @@
 """
-routers/acciones.py — Endpoints de Acción Correctiva
-Versión 3.1 — Con Control 6 y Workflow completo
+Endpoints de Acción Correctiva, con soporte multi-organismo.
 """
 from datetime import datetime, timedelta
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlmodel import Session, select
 
 from backend.database import get_session
+from backend.tenant import get_organismo_id
 from backend.models import (
-    AccionCorrectiva, AccionCorrectivaCreate,
-    EstadoUpdate, HistorialCambio, Replanteo,
-    AuditoriaCierreRequest, TRANSICIONES, AREAS, DIRECCIONES
+    AuditoriaCierreRequest,
+    EstadoUpdate,
+    HistorialCambio,
+    TRANSICIONES,
+)
+from backend.routers._sgc_common import (
+    AREAS_DIRECCION,
+    _normalizar,
+    _asignar_direccion,
+    _get_sgc,
+    _generar_folio_sgc,
+    _crear_sgc,
+    _cambiar_estado_sgc,
+    _cerrar_sgc,
+    _listar_sgc,
+    _exportar_sgc_word,
 )
 from backend.services.doc_service import generar_accion_correctiva_docx
 
 router = APIRouter(prefix="/api/v1/acciones-correctivas", tags=["Acciones Correctivas"])
 
 
-def _generar_folio_ac(session: Session) -> str:
-    """Genera folio: AC-YYYY/NNN (ej. AC-2026/001).
-    Usa MAX() + transacción para evitar race conditions bajo concurrencia."""
-    from sqlalchemy import text
-    year = datetime.utcnow().year
-    # Bloqueo explícito para SQLite: BEGIN IMMEDIATE obtiene write lock
-    session.exec(text("BEGIN IMMEDIATE"))
-    try:
-        result = session.exec(text(
-            f"SELECT MAX(CAST(SUBSTR(folio, LENGTH('AC-{year}') + 2) AS INTEGER)) "
-            f"FROM acciones_correctivas WHERE folio LIKE 'AC-{year}/%'"
-        )).one()
-        max_num = result[0] if result[0] is not None else 0
-        siguiente = max_num + 1
-        folio = f"AC-{year}/{siguiente:03d}"
-        session.commit()
-        return folio
-    except Exception:
-        session.rollback()
-        raise
+AREAS_DIRECCION = {
+    "Mantenimiento de Redes": "TECNICA",
+    "Alcantarillado y Saneamiento": "TECNICA",
+    "Plantas Potabilizadoras": "TECNICA",
+    "Control de Calidad": "TECNICA",
+    "Sectorizacion hidrometrica e innovacion": "TECNICA",
+    "Suburbano Tecnico": "TECNICA",
+    "Supervision y control de obras": "TECNICA",
+    "Tramites Tecnicos": "TECNICA",
+    "Proyectos e Infraestructura": "TECNICA",
+    "Padron de Usuarios": "COMERCIAL",
+    "Control y Servicios": "COMERCIAL",
+    "Contratos y Servicios": "COMERCIAL",
+    "Atencion Ciudadana": "COMERCIAL",
+    "Verificacion y Lectura": "COMERCIAL",
+    "Agencia Esperanza": "COMERCIAL",
+    "Agencia Marte R. Gomez": "COMERCIAL",
+    "Agencia Providencia": "COMERCIAL",
+    "Agencia Pueblo Yaqui": "COMERCIAL",
+    "Recursos Humanos": "ADMINISTRATIVA",
+    "Recursos Materiales": "ADMINISTRATIVA",
+    "Contabilidad": "ADMINISTRATIVA",
+    "Comunicacion e Imagen Institucional": "ADMINISTRATIVA",
+    "Informatica": "ADMINISTRATIVA",
+    "Licitaciones": "ADMINISTRATIVA",
+    "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
+    "Trabajo Social": "ADMINISTRATIVA",
+    "Programas Sociales": "ADMINISTRATIVA",
+    "Organo de Control Interno": "ORGANO DE CONTROL INTERNO",
+    "Juridico": "JURIDICA",
+    "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
+    "Linea OOMAPASC": "GENERAL",
+    "Seguridad Industrial": "TECNICA",
+    "Sistema de Gestion de Calidad": "GENERAL",
+}
+
+
+def _normalizar(texto: Optional[str]) -> str:
+    if not texto:
+        return ""
+    replacements = {
+        "Ã¡": "a",
+        "Ã©": "e",
+        "Ã­": "i",
+        "Ã³": "o",
+        "Ãº": "u",
+        "Ã": "A",
+        "Ã‰": "E",
+        "Ã": "I",
+        "Ã“": "O",
+        "Ãš": "U",
+        "Ã±": "n",
+        "Ã‘": "N",
+    }
+    for source, target in replacements.items():
+        texto = texto.replace(source, target)
+    return texto
 
 
 def _asignar_direccion(area: str) -> str:
-    """Asocia área a dirección según estructura organizacional."""
-    areas_direccion = {
-        # TÉCNICA
-        "Mantenimiento de Redes": "TÉCNICA",
-        "Alcantarillado y Saneamiento": "TÉCNICA",
-        "Plantas Potabilizadoras": "TÉCNICA",
-        "Control de Calidad": "TÉCNICA",
-        "Sectorización hidrométrica e innovación": "TÉCNICA",
-        "Suburbano Técnico": "TÉCNICA",
-        "Supervisión y control de obras": "TÉCNICA",
-        "Trámites Técnicos": "TÉCNICA",
-        "Proyectos e Infraestructura": "TÉCNICA",
-        # COMERCIAL
-        "Padrón de Usuarios": "COMERCIAL",
-        "Control y Servicios": "COMERCIAL",
-        "Contratos y Servicios": "COMERCIAL",
-        "Atención Ciudadana": "COMERCIAL",
-        "Verificación y Lectura": "COMERCIAL",
-        "Agencia Esperanza": "COMERCIAL",
-        "Agencia Marte R. Gómez": "COMERCIAL",
-        "Agencia Providencia": "COMERCIAL",
-        "Agencia Pueblo Yaqui": "COMERCIAL",
-        # ADMINISTRATIVA
-        "Recursos Humanos": "ADMINISTRATIVA",
-        "Recursos Materiales": "ADMINISTRATIVA",
-        "Contabilidad": "ADMINISTRATIVA",
-        "Comunicación e Imagen Institucional": "ADMINISTRATIVA",
-        "Informática": "ADMINISTRATIVA",
-        "Licitaciones": "ADMINISTRATIVA",
-        "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
-        "Trabajo Social": "ADMINISTRATIVA",
-        "Programas Sociales": "ADMINISTRATIVA",
-        # ÓRGANO DE CONTROL
-        "Órgano de Control Interno": "ÓRGANO DE CONTROL INTERNO",
-        # JURÍDICA
-        "Jurídico": "JURÍDICA",
-        # PROGRAMAS SOCIALES
-        "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-        # OTRAS
-        "Línea OOMAPASC": "GENERAL",
-        "Seguridad Industrial": "TÉCNICA",
-        "Sistema de Gestión de Calidad": "GENERAL",
-    }
-    return areas_direccion.get(area, "GENERAL")
+    return AREAS_DIRECCION.get(_normalizar(area), "GENERAL")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CRUD BÁSICO
-# ═════════════════════���═════════════════════════════════════════════════════════
+def _get_ac(
+    session: Session,
+    ac_id: int,
+    organismo_id: int,
+) -> Optional[AccionCorrectiva]:
+    return _get_sgc(session, "AC", ac_id, organismo_id)
+
+
+def _generar_folio_ac(session: Session, organismo_id: int) -> str:
+    return _generar_folio_sgc(session, "AC", organismo_id)
+
 
 @router.post("", response_model=AccionCorrectiva, status_code=201)
-def crear_ac(ac: AccionCorrectivaCreate, session: Session = Depends(get_session)):
-    """Crea nueva AC en estado BORRADOR. Folio se asigna al aprobar."""
-    nuevo = AccionCorrectiva.model_validate(ac)
-    nuevo.folio = None
-    nuevo.estado = "BORRADOR"
-    
-    # Asignar dirección automáticamente
-    if not nuevo.direccion:
-        nuevo.direccion = _asignar_direccion(nuevo.area)
-    
-    # Calcular fecha de cierre estimada (6 meses)
-    nuevo.fecha_cierre_estimada = datetime.utcnow() + timedelta(days=180)
-    
-    session.add(nuevo)
-    session.commit()
-    session.refresh(nuevo)
-    return nuevo
-
-
-@router.get("", response_model=list[AccionCorrectiva])
-def listar_ac(
-    estado: str = None,
-    area: str = None,
-    direccion: str = None,
-    session: Session = Depends(get_session)
+def crear_ac(
+    ac: AccionCorrectivaCreate,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
 ):
-    """Lista ACs con filtros."""
-    query = select(AccionCorrectiva).order_by(AccionCorrectiva.id.desc())
-    
-    if estado:
-        query = query.where(AccionCorrectiva.estado == estado)
-    if area:
-        query = query.where(AccionCorrectiva.area == area)
-    if direccion:
-        query = query.where(AccionCorrectiva.direccion == direccion)
-    
-    return session.exec(query).all()
-
-
+    datos = ac.model_dump(exclude_unset=True)
 @router.get("/{ac_id}", response_model=AccionCorrectiva)
-def obtener_ac(ac_id: int, session: Session = Depends(get_session)):
-    ac = session.get(AccionCorrectiva, ac_id)
+def obtener_ac(
+    ac_id: int,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
+    ac = _get_ac(session, ac_id, organismo_id)
     if not ac:
-        raise HTTPException(status_code=404, detail="Acción Correctiva no encontrada.")
+        raise HTTPException(status_code=404, detail="Accion Correctiva no encontrada.")
     return ac
 
 
 @router.put("/{ac_id}", response_model=AccionCorrectiva)
-def actualizar_ac(ac_id: int, ac_data: AccionCorrectivaCreate, session: Session = Depends(get_session)):
-    """Actualiza AC (solo en BORRADOR)."""
-    ac = session.get(AccionCorrectiva, ac_id)
+def actualizar_ac(
+    ac_id: int,
+    ac_data: AccionCorrectivaCreate,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
+    ac = _get_ac(session, ac_id, organismo_id)
     if not ac:
-        raise HTTPException(status_code=404, detail="Acción Correctiva no encontrada.")
+        raise HTTPException(status_code=404, detail="Accion Correctiva no encontrada.")
     if ac.estado not in ["BORRADOR", "RECHAZADO"]:
-        raise HTTPException(status_code=409, detail="No se puede editar. Estado debe ser BORRADOR o RECHAZADO.")
+        raise HTTPException(
+            status_code=409,
+            detail="No se puede editar. Estado debe ser BORRADOR o RECHAZADO.",
+        )
 
     datos = ac_data.model_dump(exclude_unset=True)
     datos.pop("folio", None)
-    
-    # Actualizar dirección si cambia área
+    datos.pop("organismo_id", None)
+
     if "area" in datos and datos["area"] != ac.area:
         datos["direccion"] = _asignar_direccion(datos["area"])
-    
+
     for campo, valor in datos.items():
         setattr(ac, campo, valor)
 
@@ -164,90 +159,55 @@ def actualizar_ac(ac_id: int, ac_data: AccionCorrectivaCreate, session: Session 
     return ac
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# WORKFLOW — Cambios de estado
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.put("/{ac_id}/estado", response_model=AccionCorrectiva)
-def cambiar_estado_ac(ac_id: int, update: EstadoUpdate, session: Session = Depends(get_session)):
-    """Cambia estado de AC según workflow."""
-    ac = session.get(AccionCorrectiva, ac_id)
+def cambiar_estado_ac(
+    ac_id: int,
+    update: EstadoUpdate,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
+    return _cambiar_estado_sgc(session, "AC", ac_id, organismo_id, update)
+
+
+@router.put("/{ac_id}/asignar-auditor", response_model=AccionCorrectiva)
+def asignar_auditor(
+    ac_id: int,
+    auditor: str,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
+    ac = _get_ac(session, ac_id, organismo_id)
     if not ac:
-        raise HTTPException(status_code=404, detail="Acción Correctiva no encontrada.")
-
-    nuevo_estado = update.estado.upper()
-    transiciones_permitidas = TRANSICIONES.get(ac.estado, [])
-
-    if nuevo_estado not in transiciones_permitidas:
+        raise HTTPException(status_code=404, detail="Accion Correctiva no encontrada.")
+    if ac.estado not in ["APROBADO", "EN_SEGUIMIENTO"]:
         raise HTTPException(
-            status_code=422,
-            detail=f"Transición inválida: '{ac.estado}' → '{nuevo_estado}'. Permitidas: {transiciones_permitidas}"
+            status_code=409,
+            detail="Solo se puede asignar auditor en estados APROBADO o EN_SEGUIMIENTO.",
         )
 
-    if nuevo_estado == "RECHAZADO" and not (update.comentarios_revision or "").strip():
-        raise HTTPException(status_code=422, detail="Se requieren comentarios para rechazar.")
-
-    # Folio al aprobar
-    if nuevo_estado == "APROBADO" and not ac.folio:
-        ac.folio = _generar_folio_ac(session)
-        ac.fecha_cierre_estimada = datetime.utcnow() + timedelta(days=180)
-
-    # Registrar cambio
-    historial = HistorialCambio(
-        entidad_tipo="AC",
-        entidad_id=ac_id,
-        campo="estado",
-        valor_anterior=ac.estado,
-        valor_nuevo=nuevo_estado,
-        usuario=update.usuario,
-    )
-    session.add(historial)
-
-    ac.estado = nuevo_estado
-    if update.comentarios_revision is not None:
-        ac.comentarios_revision = update.comentarios_revision
-
+    ac.auditor_asignado = auditor
     session.add(ac)
     session.commit()
     session.refresh(ac)
     return ac
 
 
-@router.put("/{ac_id}/asignar-auditor", response_model=AccionCorrectiva)
-def asignar_auditor(ac_id: int, auditor: str, session: Session = Depends(get_session)):
-    """Asigna auditor a una AC."""
-    ac = session.get(AccionCorrectiva, ac_id)
-    if not ac:
-        raise HTTPException(status_code=404, detail="Acción Correctiva no encontrada.")
-    if ac.estado not in ["APROBADO", "EN_SEGUIMIENTO"]:
-        raise HTTPException(status_code=409, detail="Solo se puede asignar auditor en estados APROBADO o EN_SEGUIMIENTO.")
-
-    ac.auditor_asignado = auditor
-    session.add(ac)
-    session.commit()
-    return ac
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# REPLANTEOS — Extensiones de tiempo
-# ═══════════════════════════════════════════════════════════════════════
-
 @router.post("/{ac_id}/replanteo", response_model=Replanteo)
 def solicitar_replanteo(
     ac_id: int,
     numero: int,
     justificacion: str,
-    fecha_nueva: datetime = None,
-    session: Session = Depends(get_session)
+    fecha_nueva: Optional[datetime] = None,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
 ):
-    """Solicita replanteo (1 o 2)."""
-    ac = session.get(AccionCorrectiva, ac_id)
+    ac = _get_ac(session, ac_id, organismo_id)
     if not ac:
-        raise HTTPException(status_code=404, detail="Acción Correctiva no encontrada.")
-    
+        raise HTTPException(status_code=404, detail="Accion Correctiva no encontrada.")
+
     if ac.estado not in ["APROBADO", "EN_SEGUIMIENTO"]:
-        raise HTTPException(status_code=409, detail="Solo replanteos en ejecución.")
-    
+        raise HTTPException(status_code=409, detail="Solo replanteos en ejecucion.")
+
     if numero == 1:
         if ac.primer_replanteo:
             raise HTTPException(status_code=422, detail="Ya tiene 1er replanteo asignado.")
@@ -257,10 +217,10 @@ def solicitar_replanteo(
         if ac.segundo_replanteo:
             raise HTTPException(status_code=422, detail="Ya tiene 2do replanteo asignado.")
     else:
-        raise HTTPException(status_code=422, detail="Número de replanteo inválido. Usar 1 o 2.")
-    
-    # Crear registro de replanteo
+        raise HTTPException(status_code=422, detail="Numero de replanteo invalido. Usar 1 o 2.")
+
     replanteo = Replanteo(
+        organismo_id=organismo_id,
         entidad_tipo="AC",
         entidad_id=ac_id,
         numero=numero,
@@ -269,81 +229,55 @@ def solicitar_replanteo(
         estado="APROBADO",
     )
     session.add(replanteo)
-    
-    # Actualizar AC
+
     if numero == 1:
         ac.primer_replanteo = fecha_nueva
     else:
         ac.segundo_replanteo = fecha_nueva
-    
+
     session.add(ac)
     session.commit()
     session.refresh(replanteo)
     return replanteo
 
 
-# ═════════════���═���═══════════════════════════════════════════════════════════════
-# AUDITORÍA — Cierre y evaluación de eficacia
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @router.put("/{ac_id}/cerrar", response_model=AccionCorrectiva)
 def cerrar_ac(
     ac_id: int,
     auditoria: AuditoriaCierreRequest,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
 ):
-    """Cierra AC con evaluación de eficacia."""
-    ac = session.get(AccionCorrectiva, ac_id)
-    if not ac:
-        raise HTTPException(status_code=404, detail="Acción Correctiva no encontrada.")
-    
-    if ac.estado not in ["APROBADO", "EN_SEGUIMIENTO"]:
-        raise HTTPException(status_code=409, detail="Solo se puede cerrar en ejecución.")
+    return _cerrar_sgc(session, "AC", ac_id, organismo_id, auditoria)
 
-    ac.estado = "CERRADO"
-    ac.fecha_cierre_real = datetime.utcnow()
-    ac.evaluacion_eficacia = auditoria.evaluacion_eficacia
-    ac.evidencia_revisada = auditoria.evidencia_revisada
-    ac.conclusion_auditor = auditoria.conclusion
-    ac.nombre_auditor_cierre = auditoria.nombre_auditor
-    
-    # Historial
-    historial = HistorialCambio(
-        entidad_tipo="AC",
-        entidad_id=ac_id,
-        campo="estado",
-        valor_anterior=ac.estado,
-        valor_nuevo="CERRADO",
-        usuario=auditoria.nombre_auditor,
-    )
-    session.add(historial)
-    
-    session.add(ac)
-    session.commit()
-    session.refresh(ac)
-    return ac
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# EXPORTACIÓN Y CONSULTAS
-# ════════════════════════════════��══════════════════════════════════════════════
 
 @router.get("/{ac_id}/historial", response_model=list[HistorialCambio])
-def historial_ac(ac_id: int, session: Session = Depends(get_session)):
-    """Historial de cambios."""
+def historial_ac(
+    ac_id: int,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
     return session.exec(
         select(HistorialCambio)
-        .where(HistorialCambio.entidad_tipo == "AC", HistorialCambio.entidad_id == ac_id)
+        .where(
+            HistorialCambio.organismo_id == organismo_id,
+            HistorialCambio.entidad_tipo == "AC",
+            HistorialCambio.entidad_id == ac_id,
+        )
         .order_by(HistorialCambio.fecha)
     ).all()
 
 
 @router.get("/{ac_id}/exportar-word")
-def exportar_ac_word(ac_id: int, session: Session = Depends(get_session)):
-    """Exporta a Word para formato oficial."""
-    ac = session.get(AccionCorrectiva, ac_id)
+def exportar_ac_word(
+    ac_id: int,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
+    ac = _get_ac(session, ac_id, organismo_id)
     if not ac:
-        raise HTTPException(status_code=404, detail="Acción Correctiva no encontrada.")
+        raise HTTPException(status_code=404, detail="Accion Correctiva no encontrada.")
+
     folio_safe = (ac.folio or f"BORRADOR-{ac.id}").replace("/", "-").replace("#", "")
     docx_bytes = generar_accion_correctiva_docx(ac)
     filename = f"AC_{folio_safe}_{ac.id}.docx"

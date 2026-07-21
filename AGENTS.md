@@ -52,7 +52,7 @@
 - **Agente:** sgc-ac-agent
 - **Componente:** `AccionCorrectivaView.jsx`
 - **Formulario:** OOMRSC-20
-- **Estados:** BORRADOR → ENVIADO_SGC → APROBADO → EN_SEGUIMIENTO → REVISION_AUDITOR → CERRADO
+- **Estados:** BORRADOR → RECHAZADO → APROBADO → EN_SEGUIMIENTO → CERRADO (con transiciones para: actualizar, reabrir, aprobar, cerrar, asignar auditor, solicitar replanteo)
 
 ### PM (Planes de Mejora)
 - **Agente:** sgc-pm-agent

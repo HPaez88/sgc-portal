@@ -8,15 +8,24 @@ services:
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        value: sqlite:///./sgc_portal.db
+        fromDatabase:
+          name: sgc-portal-db
+          property: connectionString
       - key: ALLOWED_ORIGINS
         value: "https://sgc-portal-933s.onrender.com"
       - key: ENVIRONMENT
         value: production
+      - key: DEFAULT_ORGANISMO_ID
+        value: "1"
+      - key: DEFAULT_ORGANISMO_NOMBRE
+        value: "OOMAPASC de Cajeme"
+      - key: DEFAULT_ORGANISMO_SLUG
+        value: "oomapasc"
       - key: GROQ_API_KEY
         sync: false
-      - key: VITE_SUPABASE_URL
-        value: "https://yrjlmqxpakjiwrfwhgaj.supabase.co"
-      - key: VITE_SUPABASE_ANON_KEY
-        sync: false
     autoDeploy: true
+
+databases:
+  - name: sgc-portal-db
+    databaseName: sgc_portal
+    user: sgc_portal

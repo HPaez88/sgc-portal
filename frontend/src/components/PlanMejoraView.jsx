@@ -81,22 +81,25 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     setStep(1);
   };
 
-  const guardarBorrador = async () => {
+  const guardarBorrador = async (overrideData = null) => {
     setLoading(true);
     setError('');
     
-    if (!form.titulo_mejora) { setError('Falta título'); setLoading(false); return; }
+    const datosActuales = overrideData ? { ...form, ...overrideData } : form;
+    if (!datosActuales.titulo_mejora) { setError('Falta título'); setLoading(false); return; }
     
-    const nuevoId = form.id || Date.now();
+    const nuevoId = datosActuales.id || Date.now();
     const nuevo = {
-      ...form,
+      ...datosActuales,
       id: nuevoId,
-      created_at: form.created_at || new Date().toISOString()
+      created_at: datosActuales.created_at || new Date().toISOString(),
+      integrantes: JSON.stringify(equipo),
+      actividades: JSON.stringify(actividades)
     };
     
     let listasActualizadas;
-    if (form.id) {
-      listasActualizadas = planesMejora.map(pm => pm.id === form.id ? nuevo : pm);
+    if (datosActuales.id) {
+      listasActualizadas = planesMejora.map(pm => pm.id === datosActuales.id ? nuevo : pm);
     } else {
       listasActualizadas = [...planesMejora, nuevo];
     }
@@ -120,7 +123,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       setMensaje('⚠️ Guardado local');
     }
     
-    setForm({...form, id: nuevoId});
+    setForm({ ...datosActuales, id: nuevoId });
     setLoading(false);
     setTimeout(() => setMensaje(''), 3000);
   };

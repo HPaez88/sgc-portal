@@ -145,10 +145,23 @@ TRANSICIONES = {
 # ═══════════════════════════════════════════════════════════════════════════════
 # MODELO: AUDITORES (catálogo de Control 6)
 # ═══════════════════════════════════════════════════════════════════════════════
+class Organismo(SQLModel, table=True):
+    __tablename__ = "organismos"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nombre: str = Field(index=True)
+    slug: str = Field(
+        sa_column=Column(String, nullable=False, unique=True, index=True),
+    )
+    activo: bool = Field(default=True, index=True)
+    fecha_alta: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Auditor(SQLModel, table=True):
     __tablename__ = "auditores"
     
     id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
     nombre: str
     email: Optional[str] = None
     area: Optional[str] = None
@@ -163,6 +176,7 @@ class DatosArea(SQLModel, table=True):
     __tablename__ = "datos_areas"
     
     id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
     area: str
     encargado: Optional[str] = None
     email: Optional[str] = None
@@ -178,6 +192,7 @@ class HistorialCambio(SQLModel, table=True):
     __tablename__ = "historial_cambios"
     
     id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
     entidad_tipo: str  # "AC" o "PM"
     entidad_id: int
     campo: str  # campo que cambió
@@ -194,6 +209,7 @@ class Replanteo(SQLModel, table=True):
     __tablename__ = "replanteos"
     
     id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
     entidad_tipo: str  # "AC" o "PM"
     entidad_id: int
     numero: int  # 1 o 2
@@ -209,6 +225,8 @@ class Replanteo(SQLModel, table=True):
 # MODELO: ACCIÓN CORRECTIVA — Formato oficial completo
 # ═══════════════════════════════════════════════════════════════════════════════
 class AccionCorrectivaBase(SQLModel):
+    organismo_id: int = Field(default=1, index=True)
+
     # Datos Generales (hoja REGISTRO)
     proceso: str
     area: str
@@ -271,6 +289,8 @@ class AccionCorrectiva(AccionCorrectivaBase, table=True):
 # MODELO: PLAN DE MEJORA — Formato oficial completo
 # ═══════════════════════════════════════════════════════════════════════════════
 class PlanDeMejoraBase(SQLModel):
+    organismo_id: int = Field(default=1, index=True)
+
     # Datos Generales (hoja REGISTRO)
     titulo_mejora: str
     gerencia_coordinacion: str

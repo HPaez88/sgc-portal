@@ -14,12 +14,13 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session, select, func
 
 from backend.database import create_db_and_tables, get_session
+from backend.tenant import get_organismo_id
 from backend.models import (
     AccionCorrectiva, PlanDeMejora, Auditor, Replanteo,
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
 )
-from backend.routers import acciones, planes, ai, catalogo
+from backend.routers import acciones, planes, ai, catalogo, organismos
 
 load_dotenv()
 
@@ -59,16 +60,22 @@ app.include_router(acciones.router)
 app.include_router(planes.router)
 app.include_router(ai.router)
 app.include_router(catalogo.router)
+app.include_router(organismos.router)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DASHBOARD — Estadísticas estilo Control 6
 # ═══════════════════════════════════════════════════════════════════════════════
 @app.get("/api/v1/dashboard", tags=["Dashboard"])
-def get_dashboard(session: Session = Depends(get_session)):
+def get_dashboard(
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
     """Dashboard con métricas de Control 6."""
     # === ACCIONES CORRECTIVAS ===
-    ac_todos = session.exec(select(AccionCorrectiva)).all()
+    ac_todos = session.exec(
+        select(AccionCorrectiva).where(AccionCorrectiva.organismo_id == organismo_id)
+    ).all()
     ac_abiertos = [ac for ac in ac_todos if ac.estado != "CERRADO"]
     ac_cerradas = [ac for ac in ac_todos if ac.estado == "CERRADO"]
     
@@ -89,7 +96,9 @@ def get_dashboard(session: Session = Depends(get_session)):
             ac_en_tiempo += 1
     
     # === PLANES DE MEJORA ===
-    pm_todos = session.exec(select(PlanDeMejora)).all()
+    pm_todos = session.exec(
+        select(PlanDeMejora).where(PlanDeMejora.organismo_id == organismo_id)
+    ).all()
     pm_abiertos = [pm for pm in pm_todos if pm.estado != "CERRADO"]
     pm_cerrados = [pm for pm in pm_todos if pm.estado == "CERRADO"]
     
