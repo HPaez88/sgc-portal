@@ -326,10 +326,10 @@ def _cerrar_sgc(
 def _listar_sgc(
     session: Session,
     entidad_tipo: str,
+    organismo_id: int,
     estado: Optional[str] = None,
     area: Optional[str] = None,
     direccion: Optional[str] = None,
-    organismo_id: int,
 ) -> Any:
     if entidad_tipo == "AC":
         from backend.models import AccionCorrectiva
