@@ -5,6 +5,7 @@ import { useSGC } from './SGCContext';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import BackgroundAnimation from './components/layout/BackgroundAnimation';
+import LandingView from './components/landing/LandingView';
 
 // Módulos PRIORITARIOS
 import DashboardView from './components/dashboard/DashboardView';
@@ -24,6 +25,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [haIngresado, setHaIngresado] = useState(false);
 
   const {
     isLoaded,
@@ -157,6 +159,10 @@ function App() {
     { id: 'settings', label: 'Configuración' },
   ];
   const activeItem = navItems.find(item => item.id === activeTab);
+
+  if (!haIngresado) {
+    return <LandingView onEnter={() => setHaIngresado(true)} />;
+  }
 
   return (
     <div className="flex h-screen bg-[#f8fafc] font-sans text-slate-800 overflow-hidden">
