@@ -397,6 +397,8 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
           getEstadoLabel={getEstadoLabel}
           guardarBorrador={guardarBorrador}
           setError={setError}
+          mensaje={mensaje}
+          setMensaje={setMensaje}
         />
       </>
     );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Search, Bell, Plus } from 'lucide-react';
+import { Menu, Search, Bell, HelpCircle } from 'lucide-react';
 import { isSupabaseConfigured } from '../../supabase';
 
 const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen, setActiveTab }) => {
@@ -45,7 +45,7 @@ const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen, setAc
         </button>
 
         <button 
-          onClick={() => setActiveTab('documents')}
+          onClick={() => alert('El Centro de Ayuda estará disponible próximamente.')}
           className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
           style={{
             background: 'rgba(0, 132, 201, 0.4)',
@@ -54,8 +54,8 @@ const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen, setAc
             backdropFilter: 'blur(4px)'
           }}
         >
-          <Plus size={16} className="text-cyan-300" />
-          Nuevo Documento
+          <HelpCircle size={16} className="text-cyan-300" />
+          Centro de Ayuda
         </button>
       </div>
     </header>

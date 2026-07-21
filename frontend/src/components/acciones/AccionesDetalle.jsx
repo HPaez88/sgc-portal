@@ -14,7 +14,9 @@ export default function AccionesDetalle({
   getEstadoColor, 
   getEstadoLabel,
   guardarBorrador,
-  setError
+  setError,
+  mensaje,
+  setMensaje
 }) {
   const causaPrincipal = causas.find(c => c.es_causa_principal) || causas.filter(c => c.causa)[0];
   const causasConDatos = causas.filter(c => c.causa && c.causa.trim());
@@ -412,7 +414,12 @@ export default function AccionesDetalle({
             </table>
           </div>
           {actividades.length > 0 && tieneFolio && !estaCerrada && (
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex items-center justify-end gap-4">
+              {mensaje && (
+                <div className="text-emerald-400 font-bold text-sm animate-pulse flex items-center gap-1">
+                  ✓ {mensaje}
+                </div>
+              )}
               <button onClick={() => guardarBorrador()} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg shadow-md transition-colors flex items-center gap-2">
                 💾 Guardar Evidencias
               </button>
