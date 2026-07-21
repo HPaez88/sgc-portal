@@ -11,9 +11,12 @@ from sqlmodel import Session, select
 from backend.database import get_session
 from backend.tenant import get_organismo_id
 from backend.models import (
+    AccionCorrectiva,
+    AccionCorrectivaCreate,
     AuditoriaCierreRequest,
     EstadoUpdate,
     HistorialCambio,
+    Replanteo,
     TRANSICIONES,
 )
 from backend.routers._sgc_common import (
