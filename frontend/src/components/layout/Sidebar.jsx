@@ -15,46 +15,52 @@ const Sidebar = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, sid
   ];
 
   return (
-    <aside className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-50 ${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen bg-[#001f42] text-white flex flex-col transition-all duration-300 ease-in-out`}>
+    <aside className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-50 ${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen flex flex-col transition-all duration-300 ease-in-out`}
+           style={{
+             background: 'rgba(0, 21, 46, 0.4)', // #00152e with transparency
+             backdropFilter: 'blur(20px)',
+             borderRight: '1px solid rgba(34, 211, 238, 0.15)' // cyan-400 border subtle
+           }}
+    >
       {/* Sidebar Header */}
-      <div className="h-20 flex items-center justify-between px-6 bg-[#00152e]">
+      <div className="h-20 flex items-center justify-between px-6 border-b border-cyan-400/10">
         <div className="flex items-center gap-3">
-          <Droplet className="text-cyan-400 shrink-0" size={28} />
-          {!sidebarCollapsed && <span className="font-extrabold text-xl tracking-wide whitespace-nowrap">SGC <span className="text-cyan-400">Portal</span></span>}
+          <Droplet className="text-cyan-400 shrink-0 filter drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" size={28} />
+          {!sidebarCollapsed && <span className="font-['Fustat'] font-extrabold text-xl tracking-wide text-white whitespace-nowrap">SGC <span className="text-cyan-400">Portal</span></span>}
         </div>
-        <button className="md:hidden text-slate-400 hover:text-white" onClick={() => setIsSidebarOpen(false)}>
+        <button className="md:hidden text-slate-400 hover:text-white transition-colors" onClick={() => setIsSidebarOpen(false)}>
           <X size={24} />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group ${
               activeTab === item.id 
-                ? 'bg-cyan-500/20 text-cyan-400 border-l-4 border-cyan-400 shadow-sm' 
-                : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                ? 'bg-cyan-500/10 text-white shadow-[inset_4px_0_0_0_#22d3ee] border border-cyan-500/20' 
+                : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'
             }`}
           >
-            <item.icon size={22} className={`shrink-0 ${activeTab === item.id ? 'text-cyan-400' : 'text-slate-400 group-hover:text-white'}`} />
-            {!sidebarCollapsed && <span className="font-medium whitespace-nowrap text-left">{item.label}</span>}
+            <item.icon size={22} className={`shrink-0 transition-colors ${activeTab === item.id ? 'text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'text-slate-500 group-hover:text-cyan-200'}`} />
+            {!sidebarCollapsed && <span className="font-['Inter'] font-medium whitespace-nowrap text-left">{item.label}</span>}
           </button>
         ))}
       </nav>
 
       {/* User Footer */}
-      <div className="p-4 bg-[#00152e]">
+      <div className="p-4 border-t border-cyan-400/10 bg-black/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center shrink-0">
-            {usuarioLogueado?.nombre ? usuarioLogueado.nombre.charAt(0) : 'U'}
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+            <span className="text-white font-bold">{usuarioLogueado?.nombre ? usuarioLogueado.nombre.charAt(0) : 'U'}</span>
           </div>
           {!sidebarCollapsed && (
             <div className="overflow-hidden">
-              <p className="text-sm font-semibold truncate">{usuarioLogueado?.nombre || 'Usuario'}</p>
-              <p className="text-xs text-cyan-400 truncate">{usuarioLogueado?.rol || 'Invitado'}</p>
+              <p className="text-sm font-['Inter'] font-semibold text-white truncate">{usuarioLogueado?.nombre || 'Usuario'}</p>
+              <p className="text-xs font-['Inter'] text-cyan-400 truncate">{usuarioLogueado?.rol || 'Invitado'}</p>
             </div>
           )}
         </div>
