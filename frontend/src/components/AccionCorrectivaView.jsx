@@ -353,15 +353,15 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
 
   const modalAuditor = mostrarModalAuditor && (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-card-dark rounded-2xl shadow-2xl p-6 w-full max-w-md animate-fade-in-up">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-fade-in-up">
+        <h3 className="text-lg font-bold text-[#002855] mb-4 flex items-center gap-2">
           <span className="text-xl">👤</span> Asignar Auditor
         </h3>
-        <p className="text-sm text-slate-400 mb-4">Selecciona un auditor de la lista de usuarios registrados:</p>
+        <p className="text-sm text-slate-500 mb-4">Selecciona un auditor de la lista de usuarios registrados:</p>
         <select 
           value={auditorSeleccionado} 
           onChange={(e) => setAuditorSeleccionado(e.target.value)}
-          className="w-full p-3 border-2 border-cyan-500/20 rounded-xl focus:border-[#002855] outline-none text-sm font-medium transition-colors"
+          className="w-full p-3 border-2 border-slate-200 rounded-xl focus:border-[#002855] outline-none text-sm font-medium transition-colors"
         >
           <option value="">-- Seleccionar Auditor --</option>
           {auditoresDisponibles.map(u => (
@@ -369,7 +369,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
           ))}
         </select>
         <div className="flex gap-3 mt-6 justify-end">
-          <button onClick={() => { setMostrarModalAuditor(false); setAuditorSeleccionado(''); }} className="px-5 py-2.5 border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header transition-colors">
+          <button onClick={() => { setMostrarModalAuditor(false); setAuditorSeleccionado(''); }} className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
             Cancelar
           </button>
           <button onClick={confirmarAuditor} disabled={!auditorSeleccionado} className="px-5 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">

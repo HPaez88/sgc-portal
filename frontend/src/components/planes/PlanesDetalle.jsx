@@ -106,16 +106,16 @@ export default function PlanesDetalle({
         <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
-              <span className="bg-white/20 p-2 rounded-lg text-xl">🚀</span>
+              <span className="bg-blue-100 text-blue-700 p-2 rounded-lg text-xl">🚀</span>
               Plan de Mejora
             </h2>
             <p className="text-lg mt-2 font-medium text-cyan-100">{form.titulo_mejora || 'Sin título'}</p>
             <p className="text-sm opacity-80 mt-1 flex items-center gap-2">
-              <span className="font-mono bg-white/10 px-2 py-0.5 rounded">Folio: {form.folio_codigo || form.folio || 'Pendiente'}</span>
+              <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">Folio: {form.folio_codigo || form.folio || 'Pendiente'}</span>
             </p>
           </div>
           <div className="text-left md:text-right">
-            <span className={`inline-block px-4 py-2 rounded-lg font-bold border-2 glass-card-dark ${getEstadoColor(form.estado)}`}>
+            <span className={`inline-block px-4 py-2 rounded-lg font-bold border-2 bg-white ${getEstadoColor(form.estado)}`}>
               {getEstadoLabel(form.estado)}
             </span>
             <p className="text-xs opacity-70 mt-2">
@@ -127,43 +127,43 @@ export default function PlanesDetalle({
 
       {/* Datos Generales - Tarjetas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-400 font-bold mb-1">ÁREA / GERENCIA</p>
-          <p className="font-semibold text-white">{form.gerencia_coordinacion || '-'}</p>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-500 font-bold mb-1">ÁREA / GERENCIA</p>
+          <p className="font-semibold text-slate-800">{form.gerencia_coordinacion || '-'}</p>
         </div>
-        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-400 font-bold mb-1">CATEGORÍA</p>
-          <p className="font-semibold text-white">{form.categoria_mejora || '-'}</p>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-500 font-bold mb-1">CATEGORÍA</p>
+          <p className="font-semibold text-slate-800">{form.categoria_mejora || '-'}</p>
         </div>
-        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-400 font-bold mb-1">ORIGEN</p>
-          <p className="font-semibold text-white">{form.origen || '-'}</p>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-500 font-bold mb-1">ORIGEN</p>
+          <p className="font-semibold text-slate-800">{form.origen || '-'}</p>
         </div>
-        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-400 font-bold mb-1">PERÍODO</p>
-          <p className="font-semibold text-white">{form.periodo_mejora || '-'}</p>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-500 font-bold mb-1">PERÍODO</p>
+          <p className="font-semibold text-slate-800">{form.periodo_mejora || '-'}</p>
         </div>
       </div>
 
       {/* Descripciones */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20 relative overflow-hidden">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-orange-400"></div>
-          <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-[#002855] mb-3 flex items-center gap-2">
             <span className="text-xl">⚠️</span> Situación Actual
           </h3>
-          <div className="glass-card-dark-header p-4 rounded-lg border border-cyan-500/20 h-full">
-            <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">{form.descripcion_situacion_actual || '-'}</p>
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 h-full">
+            <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{form.descripcion_situacion_actual || '-'}</p>
           </div>
         </div>
 
-        <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20 relative overflow-hidden">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400"></div>
-          <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+          <h3 className="font-bold text-[#002855] mb-3 flex items-center gap-2">
             <span className="text-xl">🎯</span> Situación Deseada
           </h3>
-          <div className="glass-card-dark-header p-4 rounded-lg border border-cyan-500/20 h-full">
-            <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">{form.situacion_deseada || '-'}</p>
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 h-full">
+            <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{form.situacion_deseada || '-'}</p>
           </div>
         </div>
       </div>
@@ -178,34 +178,34 @@ export default function PlanesDetalle({
       )}
 
       {/* Equipo - Tarjetas visuales */}
-      <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20">
-        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
           <span className="text-xl">👥</span> Equipo de Trabajo
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {equipo.filter(e => e.nombre).map((e, i) => (
-            <div key={i} className={`p-4 rounded-xl border glass-card-dark-header border-cyan-500/20`}>
+            <div key={i} className={`p-4 rounded-xl border bg-slate-50 border-slate-200`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-inner">
                   {e.nombre.charAt(0).toUpperCase()}
                 </div>
               </div>
-              <p className="font-bold text-white truncate" title={e.nombre}>{e.nombre}</p>
-              <p className="text-sm text-slate-300 font-medium truncate" title={e.puesto}>{e.puesto}</p>
-              <p className="text-xs text-slate-400 mt-1 glass-card-dark px-2 py-1 rounded border inline-block">{e.rol}</p>
+              <p className="font-bold text-[#002855] truncate" title={e.nombre}>{e.nombre}</p>
+              <p className="text-sm text-slate-700 font-medium truncate" title={e.puesto}>{e.puesto}</p>
+              <p className="text-xs text-slate-500 mt-1 bg-white px-2 py-1 rounded border inline-block">{e.rol}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Plan de Actividades */}
-      <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20">
-        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
           <span className="text-xl">📋</span> Plan de Actividades
         </h3>
-        <div className="overflow-x-auto rounded-lg border border-cyan-500/20">
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full text-sm text-left">
-            <thead className="glass-card-dark-header text-slate-300 font-semibold border-b border-cyan-500/20">
+            <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
               <tr>
                 <th className="p-3 text-center w-10">#</th>
                 <th className="p-3">Actividad</th>
@@ -217,21 +217,21 @@ export default function PlanesDetalle({
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-cyan-500/10">
+            <tbody className="divide-y divide-slate-100">
               {actividades.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-400 bg-slate-50/50 font-medium">
+                  <td colSpan={6} className="p-8 text-center text-slate-500 bg-slate-50/50 font-medium">
                     No hay actividades registradas
                   </td>
                 </tr>
               ) : (
                 actividades.map((a, i) => (
-                  <tr key={a.id || i} className="hover:glass-card-dark-header transition-colors">
-                    <td className="p-3 text-center font-medium text-slate-400">{i + 1}</td>
-                    <td className="p-3 font-medium text-slate-300">{a.actividad || '-'}</td>
-                    <td className="p-3 text-slate-300">{a.responsable || '-'}</td>
+                  <tr key={a.id || i} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-3 text-center font-medium text-slate-500">{i + 1}</td>
+                    <td className="p-3 font-medium text-slate-700">{a.actividad || '-'}</td>
+                    <td className="p-3 text-slate-700">{a.responsable || '-'}</td>
                     <td className="p-3 font-mono text-xs">{a.fecha_termino_sugerida ? new Date(a.fecha_termino_sugerida).toLocaleDateString() : '-'}</td>
-                    <td className="p-3 text-slate-400 text-xs">{a.indicador || '-'}</td>
+                    <td className="p-3 text-slate-500 text-xs">{a.indicador || '-'}</td>
                     {form.estado !== 'BORRADOR' && form.estado !== 'EN_REVISION' && (
                       <td className="p-3 bg-purple-50 border-l border-purple-100">
                         <input type="text" value={a.evidencia_real || ''} 
@@ -241,7 +241,7 @@ export default function PlanesDetalle({
                             setActividades(nuevo);
                           }}
                           placeholder="Link o descripción"
-                          className="w-full p-2 glass-card-dark border border-purple-200 focus:border-purple-500 rounded text-xs outline-none" />
+                          className="w-full p-2 bg-white border border-purple-200 focus:border-purple-500 rounded text-xs outline-none" />
                       </td>
                     )}
                   </tr>
@@ -266,7 +266,7 @@ export default function PlanesDetalle({
           <h3 className="font-bold text-emerald-900 mb-4 flex items-center gap-2">
             <span className="text-xl">👤</span> Revisión del Auditor
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 glass-card-dark p-4 rounded-lg border border-emerald-100 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-lg border border-emerald-100 mb-4">
             <div>
               <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Auditor asignado</p>
               <p className="font-semibold text-emerald-950 text-lg">{form.auditor_cierre || 'Por asignar'}</p>
@@ -281,7 +281,7 @@ export default function PlanesDetalle({
             )}
           </div>
           {form.comentarios_revision && (
-            <div className="mt-4 glass-card-dark p-4 rounded-lg border border-emerald-100">
+            <div className="mt-4 bg-white p-4 rounded-lg border border-emerald-100">
               <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Comentarios</p>
               <p className="text-emerald-950">{form.comentarios_revision}</p>
             </div>
@@ -291,10 +291,10 @@ export default function PlanesDetalle({
       
       {/* Botones de acción general */}
       <div className="flex gap-3 flex-wrap pt-6 border-t mt-8">
-        <button onClick={() => setVista('lista')} className="px-6 py-2.5 border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header transition-colors mr-auto">
+        <button onClick={() => setVista('lista')} className="px-6 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors mr-auto">
           ← Volver a Lista
         </button>
-        <button onClick={generarInformePDF} className="px-6 py-2.5 glass-card-dark border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header shadow-sm transition-all flex items-center gap-2">
+        <button onClick={generarInformePDF} className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 shadow-sm transition-all flex items-center gap-2">
           <span>📄</span> Exportar PDF
         </button>
         {getBotonesWorkflow()}

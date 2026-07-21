@@ -52,7 +52,7 @@ export default function GestorAprobacionesView({
 
   const getPrioridadColor = (p) => {
     const colors = { 'Alta': 'bg-red-100 text-red-700 border-red-200', 'Media': 'bg-amber-100 text-amber-700 border-amber-200', 'Baja': 'bg-emerald-100 text-emerald-700 border-emerald-200' };
-    return colors[p] || 'bg-[#00152e]/50 text-slate-300 border-cyan-500/20';
+    return colors[p] || 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
   const aprobarDocumento = (app) => {
@@ -124,15 +124,15 @@ export default function GestorAprobacionesView({
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex justify-between items-center glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20">
+      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div className="flex items-center gap-3">
           <span className="text-2xl bg-cyan-100 p-2 rounded-lg">✅</span>
           <div>
             <h2 className="text-xl font-bold text-white">Gestor de Aprobaciones</h2>
-            <p className="text-sm text-slate-400 font-medium">Bandeja de entrada del SGC</p>
+            <p className="text-sm text-slate-500 font-medium">Bandeja de entrada del SGC</p>
           </div>
         </div>
-        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className="px-4 py-2 glass-card-dark-header border border-cyan-500/20 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 outline-none transition-all">
+        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 outline-none transition-all">
           <option value="">Todos los tipos</option>
           <option value="Acción Correctiva">Acciones Correctivas</option>
           <option value="Plan de Mejora">Planes de Mejora</option>
@@ -146,29 +146,29 @@ export default function GestorAprobacionesView({
       )}
 
       {appsFiltradas.length === 0 ? (
-        <div className="text-center py-16 text-slate-400 glass-card-dark rounded-xl shadow-sm border border-cyan-500/20">
+        <div className="text-center py-16 text-slate-500 bg-white rounded-xl shadow-sm border border-slate-200">
           <p className="text-5xl mb-4 opacity-50">🎉</p>
-          <p className="text-lg font-bold text-slate-300">¡Bandeja Limpia!</p>
+          <p className="text-lg font-bold text-slate-700">¡Bandeja Limpia!</p>
           <p className="font-medium mt-1">No hay documentos pendientes de aprobación por el momento.</p>
         </div>
       ) : (
-        <div className="glass-card-dark rounded-xl shadow-sm border border-cyan-500/20 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="glass-card-dark-header border-b border-cyan-500/20">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="p-4 text-sm font-bold text-slate-300">Documento</th>
-                  <th className="p-4 text-sm font-bold text-slate-300">Tipo</th>
-                  <th className="p-4 text-sm font-bold text-slate-300">Área</th>
-                  <th className="p-4 text-sm font-bold text-slate-300">Fecha Envío</th>
-                  <th className="p-4 text-sm font-bold text-slate-300">Prioridad</th>
-                  <th className="p-4 text-sm font-bold text-slate-300">Estado</th>
-                  <th className="p-4 text-sm font-bold text-slate-300 text-center">Acciones SGC</th>
+                  <th className="p-4 text-sm font-bold text-slate-700">Documento</th>
+                  <th className="p-4 text-sm font-bold text-slate-700">Tipo</th>
+                  <th className="p-4 text-sm font-bold text-slate-700">Área</th>
+                  <th className="p-4 text-sm font-bold text-slate-700">Fecha Envío</th>
+                  <th className="p-4 text-sm font-bold text-slate-700">Prioridad</th>
+                  <th className="p-4 text-sm font-bold text-slate-700">Estado</th>
+                  <th className="p-4 text-sm font-bold text-slate-700 text-center">Acciones SGC</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-cyan-500/10">
+              <tbody className="divide-y divide-slate-100">
                 {appsFiltradas.map(app => (
-                  <tr key={`${app.tipo}-${app.id_original}`} className="hover:bg-white/5/50 transition-colors group">
+                  <tr key={`${app.tipo}-${app.id_original}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="p-4 font-mono font-bold text-white text-sm">
                       {app.documento}
                     </td>
@@ -177,8 +177,8 @@ export default function GestorAprobacionesView({
                         {app.tipo}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-slate-300 font-medium">{app.area}</td>
-                    <td className="p-4 text-sm text-slate-400">
+                    <td className="p-4 text-sm text-slate-700 font-medium">{app.area}</td>
+                    <td className="p-4 text-sm text-slate-500">
                       {app.fecha ? new Date(app.fecha).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}
                     </td>
                     <td className="p-4">
@@ -202,7 +202,7 @@ export default function GestorAprobacionesView({
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 font-medium italic">Solo lectura</span>
+                        <span className="text-xs text-slate-500 font-medium italic">Solo lectura</span>
                       )}
                     </td>
                   </tr>

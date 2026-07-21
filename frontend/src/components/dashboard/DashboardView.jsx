@@ -41,14 +41,14 @@ export default function DashboardView({ accionesCorrectivas, planesMejora, docum
   const KPICard = ({ title, value, icon: Icon, colorClass, bgClass, onClick }) => (
     <div 
       onClick={onClick}
-      className={`glass-card-dark rounded-2xl p-5 border border-cyan-500/20 shadow-sm flex items-center gap-4 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden`}
+      className={`bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden`}
     >
       <div className={`absolute -right-4 -top-4 w-16 h-16 rounded-full ${bgClass} opacity-20 group-hover:scale-150 transition-transform`}></div>
       <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${bgClass} ${colorClass}`}>
         <Icon size={24} strokeWidth={2.5} />
       </div>
       <div>
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">{title}</p>
+        <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">{title}</p>
         <p className={`text-3xl font-black ${colorClass.replace('text-', 'text-').split(' ')[0]}`}>{value}</p>
       </div>
     </div>
@@ -92,35 +92,35 @@ export default function DashboardView({ accionesCorrectivas, planesMejora, docum
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Actividad Reciente */}
-        <div className="lg:col-span-2 glass-card-dark rounded-2xl shadow-sm border border-cyan-500/20 overflow-hidden">
-          <div className="px-6 py-4 glass-card-dark-header border-b border-cyan-500/20 flex justify-between items-center">
-            <h2 className="font-bold text-white flex items-center gap-2"><FileBarChart size={18} className="text-cyan-600"/> Actividad Reciente</h2>
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <h2 className="font-bold text-[#002855] flex items-center gap-2"><FileBarChart size={18} className="text-cyan-600"/> Actividad Reciente</h2>
           </div>
-          <div className="divide-y divide-cyan-500/10">
+          <div className="divide-y divide-slate-100">
             {actividadesRecientes.length > 0 ? actividadesRecientes.map((act) => (
-              <div key={`${act.tipoDoc}-${act.id}`} className="p-4 hover:glass-card-dark-header transition-colors flex items-center justify-between group cursor-pointer" onClick={() => setActiveTab(act.tipoDoc === 'AC' ? 'ac' : 'pm')}>
+              <div key={`${act.tipoDoc}-${act.id}`} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer" onClick={() => setActiveTab(act.tipoDoc === 'AC' ? 'ac' : 'pm')}>
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${act.tipoDoc === 'AC' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
                     {act.tipoDoc}
                   </div>
                   <div>
-                    <p className="font-bold text-white group-hover:text-cyan-600 transition-colors">
+                    <p className="font-bold text-[#002855] group-hover:text-cyan-600 transition-colors">
                       {act.folio_codigo || act.folio || `${act.tipoDoc} Borrador`}
                     </p>
-                    <p className="text-xs text-slate-400 font-medium">{act.area || act.gerencia_coordinacion || 'Sin área asignada'}</p>
+                    <p className="text-xs text-slate-500 font-medium">{act.area || act.gerencia_coordinacion || 'Sin área asignada'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getEstadoColor(act.estado)}`}>
                     {getEstadoLabel(act.estado)}
                   </span>
-                  <span className="text-slate-400 group-hover:text-cyan-500">→</span>
+                  <span className="text-slate-500 group-hover:text-cyan-500">→</span>
                 </div>
               </div>
             )) : (
-              <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-                <div className="bg-[#00152e]/50 p-4 rounded-full mb-3"><FileText size={32} className="text-slate-400"/></div>
-                <p className="font-bold text-slate-300">No hay actividad reciente</p>
+              <div className="p-12 text-center text-slate-500 flex flex-col items-center">
+                <div className="bg-slate-100 p-4 rounded-full mb-3"><FileText size={32} className="text-slate-500"/></div>
+                <p className="font-bold text-slate-700">No hay actividad reciente</p>
                 <p className="text-sm">Comienza creando una Acción Correctiva o Plan de Mejora.</p>
               </div>
             )}
@@ -130,37 +130,37 @@ export default function DashboardView({ accionesCorrectivas, planesMejora, docum
         {/* Panel Lateral: Áreas con más AC y Estado de Auditorías */}
         <div className="space-y-6">
           {/* Top Áreas */}
-          <div className="glass-card-dark rounded-2xl shadow-sm border border-cyan-500/20 overflow-hidden">
-            <div className="px-5 py-4 glass-card-dark-header border-b border-cyan-500/20">
-              <h2 className="font-bold text-white flex items-center gap-2"><Users size={18} className="text-cyan-600"/> Áreas con más Hallazgos</h2>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200">
+              <h2 className="font-bold text-[#002855] flex items-center gap-2"><Users size={18} className="text-cyan-600"/> Áreas con más Hallazgos</h2>
             </div>
             <div className="p-5 space-y-4">
               {topAreas.length > 0 ? topAreas.map(([area, count], idx) => (
                 <div key={area} className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-400 w-4">{idx + 1}.</span>
-                    <span className="text-sm font-semibold text-slate-300 truncate max-w-[150px]" title={area}>{area}</span>
+                    <span className="text-xs font-bold text-slate-500 w-4">{idx + 1}.</span>
+                    <span className="text-sm font-semibold text-slate-700 truncate max-w-[150px]" title={area}>{area}</span>
                   </div>
                   <span className="bg-red-50 text-red-600 border border-red-100 px-2.5 py-0.5 rounded-full text-xs font-bold">
                     {count}
                   </span>
                 </div>
               )) : (
-                <p className="text-sm text-slate-400 text-center py-2">No hay datos de áreas</p>
+                <p className="text-sm text-slate-500 text-center py-2">No hay datos de áreas</p>
               )}
             </div>
           </div>
 
           {/* Resumen de Auditorías */}
-          <div className="glass-card-dark rounded-2xl shadow-sm border border-cyan-500/20 overflow-hidden">
-            <div className="px-5 py-4 glass-card-dark-header border-b border-cyan-500/20">
-              <h2 className="font-bold text-white flex items-center gap-2"><CheckCircle2 size={18} className="text-cyan-600"/> Avance de Auditorías</h2>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200">
+              <h2 className="font-bold text-[#002855] flex items-center gap-2"><CheckCircle2 size={18} className="text-cyan-600"/> Avance de Auditorías</h2>
             </div>
             <div className="p-5">
               <div className="flex justify-between items-end mb-2">
                 <div>
-                  <p className="text-3xl font-black text-white">{auditoriasCompletadas} <span className="text-sm text-slate-400 font-medium">/ {safeAuditorias.length}</span></p>
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Completadas</p>
+                  <p className="text-3xl font-black text-[#002855]">{auditoriasCompletadas} <span className="text-sm text-slate-500 font-medium">/ {safeAuditorias.length}</span></p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">Completadas</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xl font-bold text-emerald-500">
@@ -168,7 +168,7 @@ export default function DashboardView({ accionesCorrectivas, planesMejora, docum
                   </p>
                 </div>
               </div>
-              <div className="w-full bg-[#00152e]/50 rounded-full h-2.5 mt-4 overflow-hidden">
+              <div className="w-full bg-slate-100 rounded-full h-2.5 mt-4 overflow-hidden">
                 <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${safeAuditorias.length > 0 ? (auditoriasCompletadas / safeAuditorias.length) * 100 : 0}%` }}></div>
               </div>
             </div>

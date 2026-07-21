@@ -41,20 +41,20 @@ export default function PlanesLista({
       </div>
       
       {/* Filtros */}
-      <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20">
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">ÁREA / GERENCIA</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">ÁREA / GERENCIA</label>
             <select value={filtroArea} onChange={(e) => setFiltroArea(e.target.value)}
-              className="border border-cyan-500/20 glass-card-dark-header rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
+              className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
               <option value="">Todas</option>
               {areas.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">ESTADO</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">ESTADO</label>
             <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}
-              className="border border-cyan-500/20 glass-card-dark-header rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
+              className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
               <option value="">Todos</option>
               <option value="BORRADOR">Borrador</option>
               <option value="EN_REVISION">En Revisión</option>
@@ -66,24 +66,24 @@ export default function PlanesLista({
           </div>
           <div className="flex items-end">
             <button onClick={() => { setFiltroArea(''); setFiltroEstado(''); }}
-              className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300 hover:bg-[#00152e]/50 rounded-lg transition-colors">
+              className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
               Limpiar filtros
             </button>
           </div>
         </div>
-        <p className="text-xs text-slate-400 mt-3 font-medium">Mostrando {planesFiltrados.length} de {planesMejora.length} planes</p>
+        <p className="text-xs text-slate-500 mt-3 font-medium">Mostrando {planesFiltrados.length} de {planesMejora.length} planes</p>
       </div>
       
       {planesFiltrados.length === 0 ? (
-        <div className="text-center py-12 text-slate-400 glass-card-dark rounded-xl border border-cyan-500/20">
+        <div className="text-center py-12 text-slate-500 bg-white rounded-xl border border-slate-200">
           <p className="text-4xl mb-4 opacity-50">📭</p>
           <p className="font-medium">No hay planes de mejora con los filtros seleccionados</p>
         </div>
       ) : (
-        <div className="glass-card-dark rounded-xl shadow-sm border border-cyan-500/20 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="glass-card-dark-header text-slate-300 font-semibold border-b border-cyan-500/20">
+              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
                   <th className="p-4">Folio</th>
                   <th className="p-4">Título</th>
@@ -94,23 +94,23 @@ export default function PlanesLista({
                   <th className="p-4 text-center">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-cyan-500/10">
+              <tbody className="divide-y divide-slate-100">
                 {planesFiltrados.map((pm, idx) => (
-                  <tr key={pm.id || idx} className="hover:bg-white/5/50 transition-colors group">
-                    <td className="p-4 font-mono text-xs font-semibold text-slate-300">
+                  <tr key={pm.id || idx} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="p-4 font-mono text-xs font-semibold text-slate-700">
                       {pm.folio || pm.folio_codigo || 'Pendiente'}
                     </td>
                     <td className="p-4 font-semibold text-white max-w-xs truncate" title={pm.titulo_mejora}>
                       {pm.titulo_mejora || '-'}
                     </td>
-                    <td className="p-4 text-slate-300">{pm.gerencia_coordinacion || '-'}</td>
-                    <td className="p-4 text-slate-400">{pm.categoria_mejora || '-'}</td>
+                    <td className="p-4 text-slate-700">{pm.gerencia_coordinacion || '-'}</td>
+                    <td className="p-4 text-slate-500">{pm.categoria_mejora || '-'}</td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getEstadoColor(pm.estado)}`}>
                         {getEstadoLabel(pm.estado)}
                       </span>
                     </td>
-                    <td className="p-4 text-xs text-slate-400 font-medium">
+                    <td className="p-4 text-xs text-slate-500 font-medium">
                       {pm.created_at ? new Date(pm.created_at).toLocaleDateString('es-MX') : '-'}
                     </td>
                     <td className="p-4 text-center">

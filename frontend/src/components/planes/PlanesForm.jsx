@@ -107,7 +107,7 @@ export default function PlanesForm({
       {/* Encabezado y alertas */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-white">Nuevo Plan de Mejora</h2>
-        <span className="text-sm font-medium text-slate-400 bg-[#00152e]/50 px-3 py-1 rounded-full border border-cyan-500/20">
+        <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
           Paso {step} de 2
         </span>
       </div>
@@ -126,7 +126,7 @@ export default function PlanesForm({
 
       {/* STEP 1: Generación con IA */}
       {step === 1 && (
-        <div className="glass-card-dark rounded-xl shadow-sm border border-cyan-500/20 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-gradient-to-r from-[#002855] to-[#004a80] p-6 text-white">
             <div className="flex items-center gap-3">
               <span className="text-3xl">🎯</span>
@@ -140,20 +140,20 @@ export default function PlanesForm({
           </div>
           
           <div className="p-6">
-            <label className="block text-sm font-semibold text-slate-300 mb-2">Situación Actual a Mejorar *</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Situación Actual a Mejorar *</label>
             <textarea
               value={descripcionSA}
               onChange={e => { setDescripcionSA(e.target.value); setError(''); }}
               placeholder="Ej: Los tiempos de respuesta en atención de fallas técnicas son mayores a 48 horas debido a la falta de un sistema centralizado..."
               rows={6}
-              className="w-full p-3 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none resize-y mb-2"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none resize-y mb-2"
             />
-            <p className="text-xs text-slate-400 mb-6 font-medium">
+            <p className="text-xs text-slate-500 mb-6 font-medium">
               {descripcionSA.length} caracteres · Mínimo 15 recomendado
             </p>
 
             <div className="flex gap-4">
-              <button onClick={() => setVista('lista')} className="px-6 py-3 glass-card-dark border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header transition-colors w-full md:w-auto">
+              <button onClick={() => setVista('lista')} className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors w-full md:w-auto">
                 Cancelar
               </button>
               <button onClick={procesarGeneracionIA} disabled={generandoIA || descripcionSA.trim().length < 15} 
@@ -171,7 +171,7 @@ export default function PlanesForm({
             </div>
             
             <div className="mt-6 text-center border-t pt-4">
-              <button onClick={() => setStep(2)} className="text-sm font-medium text-slate-400 hover:text-cyan-600 transition-colors">
+              <button onClick={() => setStep(2)} className="text-sm font-medium text-slate-500 hover:text-cyan-600 transition-colors">
                 Saltar IA e ingresar manualmente →
               </button>
             </div>
@@ -182,69 +182,69 @@ export default function PlanesForm({
       {/* STEP 2: Revisión Manual / Captura de Plan */}
       {step === 2 && (
         <>
-          <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20">
-            <h3 className="font-bold text-white mb-5 border-b pb-2">📋 Datos Generales</h3>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-[#002855] mb-5 border-b pb-2">📋 Datos Generales</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Título de la Mejora *</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Título de la Mejora *</label>
                 <input type="text" name="titulo_mejora" value={form.titulo_mejora} onChange={handleChange}
-                  className="w-full p-2.5 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" placeholder="Ej: Implementación de sistema de tickets" />
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" placeholder="Ej: Implementación de sistema de tickets" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Área / Gerencia *</label>
-                <select name="gerencia_coordinacion" value={form.gerencia_coordinacion} onChange={handleChange} className="w-full p-2.5 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Área / Gerencia *</label>
+                <select name="gerencia_coordinacion" value={form.gerencia_coordinacion} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
                   <option value="">Seleccionar área</option>
                   {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Categoría *</label>
-                <select name="categoria_mejora" value={form.categoria_mejora} onChange={handleChange} className="w-full p-2.5 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Categoría *</label>
+                <select name="categoria_mejora" value={form.categoria_mejora} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
                   <option value="">Seleccionar categoría</option>
                   {CATEGORIAS_MEJORA.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Origen *</label>
-                <select name="origen" value={form.origen} onChange={handleChange} className="w-full p-2.5 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Origen *</label>
+                <select name="origen" value={form.origen} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
                   <option value="">Seleccionar origen</option>
                   {ORIGENES_PM.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Período</label>
-                <select name="periodo_mejora" value={form.periodo_mejora} onChange={handleChange} className="w-full p-2.5 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Período</label>
+                <select name="periodo_mejora" value={form.periodo_mejora} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
                   <option value="">Seleccionar período</option>
                   {PERIODOS.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
             </div>
             
-            <h3 className="font-bold text-white mb-4 border-b pb-2 mt-6">📝 Descripción y Beneficios</h3>
+            <h3 className="font-bold text-[#002855] mb-4 border-b pb-2 mt-6">📝 Descripción y Beneficios</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Situación Actual *</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Situación Actual *</label>
                 <textarea name="descripcion_situacion_actual" value={form.descripcion_situacion_actual} onChange={handleChange}
-                  rows={4} className="w-full p-3 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" />
+                  rows={4} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Situación Deseada *</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Situación Deseada *</label>
                 <textarea name="situacion_deseada" value={form.situacion_deseada} onChange={handleChange}
-                  rows={4} className="w-full p-3 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" />
+                  rows={4} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Beneficios Esperados</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Beneficios Esperados</label>
                 <textarea name="beneficios" value={form.beneficios} onChange={handleChange}
-                  rows={2} className="w-full p-3 glass-card-dark-header border border-cyan-500/20 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" />
+                  rows={2} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none" />
               </div>
             </div>
           </div>
 
-          <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20">
-            <h3 className="font-bold text-white mb-4 border-b pb-2">👥 Equipo de Trabajo</h3>
-            <div className="overflow-x-auto rounded-lg border border-cyan-500/20 mb-4">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-[#002855] mb-4 border-b pb-2">👥 Equipo de Trabajo</h3>
+            <div className="overflow-x-auto rounded-lg border border-slate-200 mb-4">
               <table className="w-full text-sm text-left">
-                <thead className="glass-card-dark-header text-slate-300 font-semibold border-b border-cyan-500/20">
+                <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3">Nombre</th>
                     <th className="p-3">Puesto</th>
@@ -252,20 +252,20 @@ export default function PlanesForm({
                     <th className="p-3"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-cyan-500/10">
+                <tbody className="divide-y divide-slate-100">
                   {equipo.map((integrante) => (
-                    <tr key={integrante.id} className="hover:glass-card-dark-header transition-colors">
+                    <tr key={integrante.id} className="hover:bg-slate-50 transition-colors">
                       <td className="p-2">
                         <input type="text" value={integrante.nombre} onChange={(e) => actualizarIntegrante(integrante.id, 'nombre', e.target.value)}
-                          className="w-full p-2 glass-card-dark border border-cyan-500/30 rounded focus:border-cyan-500 outline-none transition-all" placeholder="Nombre completo" />
+                          className="w-full p-2 bg-white border border-slate-300 rounded focus:border-cyan-500 outline-none transition-all" placeholder="Nombre completo" />
                       </td>
                       <td className="p-2">
                         <input type="text" value={integrante.puesto} onChange={(e) => actualizarIntegrante(integrante.id, 'puesto', e.target.value)}
-                          className="w-full p-2 glass-card-dark border border-cyan-500/30 rounded focus:border-cyan-500 outline-none transition-all" placeholder="Puesto" />
+                          className="w-full p-2 bg-white border border-slate-300 rounded focus:border-cyan-500 outline-none transition-all" placeholder="Puesto" />
                       </td>
                       <td className="p-2">
                         <select value={integrante.rol} onChange={(e) => actualizarIntegrante(integrante.id, 'rol', e.target.value)}
-                          className="w-full p-2 glass-card-dark border border-cyan-500/30 rounded focus:border-cyan-500 outline-none transition-all">
+                          className="w-full p-2 bg-white border border-slate-300 rounded focus:border-cyan-500 outline-none transition-all">
                           {ROLES_EQUIPO.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </td>
@@ -286,13 +286,13 @@ export default function PlanesForm({
             </button>
           </div>
 
-          <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20">
-            <h3 className="font-bold text-white mb-4 border-b pb-2">📋 Plan de Actividades</h3>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-[#002855] mb-4 border-b pb-2">📋 Plan de Actividades</h3>
             <div className="space-y-4">
               {actividades.map((act, i) => (
-                <div key={act.id || i} className="glass-card-dark-header p-4 rounded-xl border border-cyan-500/20 relative">
+                <div key={act.id || i} className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-bold text-slate-300">Actividad {i + 1}</span>
+                    <span className="font-bold text-slate-700">Actividad {i + 1}</span>
                     {actividades.length > 1 && (
                       <button onClick={() => setActividades(actividades.filter((_, idx) => idx !== i))}
                         className="text-red-500 hover:text-red-700 text-sm font-medium">
@@ -304,27 +304,27 @@ export default function PlanesForm({
                     <div className="md:col-span-2">
                       <input type="text" placeholder="Descripción de la actividad" value={act.actividad}
                         onChange={(e) => { const n = [...actividades]; n[i].actividad = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 glass-card-dark border border-cyan-500/30 rounded-lg focus:border-cyan-500 outline-none" />
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
                     </div>
                     <div>
                       <input type="text" placeholder="Indicador" value={act.indicador}
                         onChange={(e) => { const n = [...actividades]; n[i].indicador = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 glass-card-dark border border-cyan-500/30 rounded-lg focus:border-cyan-500 outline-none" />
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
                     </div>
                     <div>
                       <input type="date" value={act.fecha_termino_sugerida}
                         onChange={(e) => { const n = [...actividades]; n[i].fecha_termino_sugerida = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 glass-card-dark border border-cyan-500/30 rounded-lg focus:border-cyan-500 outline-none" />
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
                     </div>
                     <div className="lg:col-span-2">
                       <input type="text" placeholder="Responsable" value={act.responsable}
                         onChange={(e) => { const n = [...actividades]; n[i].responsable = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 glass-card-dark border border-cyan-500/30 rounded-lg focus:border-cyan-500 outline-none" />
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
                     </div>
                     <div className="lg:col-span-2">
                       <input type="text" placeholder="Evidencia Esperada" value={act.evidencia_esperada}
                         onChange={(e) => { const n = [...actividades]; n[i].evidencia_esperada = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 glass-card-dark border border-cyan-500/30 rounded-lg focus:border-cyan-500 outline-none" />
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
                     </div>
                   </div>
                 </div>
@@ -337,10 +337,10 @@ export default function PlanesForm({
           </div>
 
           <div className="flex gap-3 justify-end border-t pt-4">
-            <button onClick={() => setStep(1)} className="px-6 py-2.5 glass-card-dark border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header transition-colors mr-auto">
+            <button onClick={() => setStep(1)} className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors mr-auto">
               ← Atrás (IA)
             </button>
-            <button onClick={guardarBorrador} disabled={loading} className="px-6 py-2.5 glass-card-dark border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header transition-colors">
+            <button onClick={guardarBorrador} disabled={loading} className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
               {loading ? 'Guardando...' : 'Guardar Borrador'}
             </button>
             {getBotonesWorkflow()}

@@ -93,20 +93,20 @@ export default function AccionesLista({
       </div>
       
       {/* Filtros */}
-      <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20">
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">AÑO</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">AÑO</label>
             <select value={filtroAnio} onChange={(e) => setFiltroAnio(e.target.value)}
-              className="border border-cyan-500/20 glass-card-dark-header rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
+              className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
               <option value="">Todos</option>
               {años.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">ESTADO</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">ESTADO</label>
             <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}
-              className="border border-cyan-500/20 glass-card-dark-header rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
+              className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
               <option value="">Todos</option>
               <option value="BORRADOR">Borrador</option>
               <option value="GENERADO_IA">Pendiente</option>
@@ -117,33 +117,33 @@ export default function AccionesLista({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">ORIGEN</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">ORIGEN</label>
             <select value={filtroOrigen} onChange={(e) => setFiltroOrigen(e.target.value)}
-              className="border border-cyan-500/20 glass-card-dark-header rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
+              className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
               <option value="">Todos</option>
               {ORIGENES_AC.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div className="flex items-end">
             <button onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroOrigen(''); }}
-              className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300 hover:bg-[#00152e]/50 rounded-lg transition-colors">
+              className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
               Limpiar filtros
             </button>
           </div>
         </div>
-        <p className="text-xs text-slate-400 mt-3 font-medium">Mostrando {accionesFiltradas.length} de {accionesCorrectivas.length} acciones</p>
+        <p className="text-xs text-slate-500 mt-3 font-medium">Mostrando {accionesFiltradas.length} de {accionesCorrectivas.length} acciones</p>
       </div>
       
       {accionesFiltradas.length === 0 ? (
-        <div className="text-center py-12 text-slate-400 glass-card-dark rounded-xl border border-cyan-500/20">
+        <div className="text-center py-12 text-slate-500 bg-white rounded-xl border border-slate-200">
           <p className="text-4xl mb-4 opacity-50">📭</p>
           <p className="font-medium">No hay acciones correctivas con los filtros seleccionados</p>
         </div>
       ) : (
-        <div className="glass-card-dark rounded-xl shadow-sm border border-cyan-500/20 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="glass-card-dark-header text-slate-300 font-semibold border-b border-cyan-500/20">
+              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
                   <th className="p-4">Folio</th>
                   <th className="p-4">Área</th>
@@ -154,21 +154,21 @@ export default function AccionesLista({
                   <th className="p-4 text-center">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-cyan-500/10">
+              <tbody className="divide-y divide-slate-100">
                 {accionesFiltradas.map((ac, idx) => (
-                  <tr key={ac.id || idx} className="hover:bg-white/5/50 transition-colors group">
-                    <td className="p-4 font-mono text-xs font-semibold text-slate-300">
+                  <tr key={ac.id || idx} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="p-4 font-mono text-xs font-semibold text-slate-700">
                       {ac.folio_codigo || 'Pendiente'}
                     </td>
                     <td className="p-4 text-white">{ac.area || '-'}</td>
-                    <td className="p-4 text-slate-300">{ac.proceso || '-'}</td>
-                    <td className="p-4 text-slate-400">{ac.origen || '-'}</td>
+                    <td className="p-4 text-slate-700">{ac.proceso || '-'}</td>
+                    <td className="p-4 text-slate-500">{ac.origen || '-'}</td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getEstadoColor(ac.estado)}`}>
                         {getEstadoLabel(ac.estado)}
                       </span>
                     </td>
-                    <td className="p-4 text-xs text-slate-400 font-medium">
+                    <td className="p-4 text-xs text-slate-500 font-medium">
                       {ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}
                     </td>
                     <td className="p-4 text-center">
