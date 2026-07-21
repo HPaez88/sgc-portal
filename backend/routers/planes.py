@@ -14,6 +14,9 @@ from backend.models import (
     AuditoriaCierreRequest,
     EstadoUpdate,
     HistorialCambio,
+    PlanDeMejora,
+    PlanDeMejoraCreate,
+    Replanteo,
     TRANSICIONES,
 )
 from backend.routers._sgc_common import (
