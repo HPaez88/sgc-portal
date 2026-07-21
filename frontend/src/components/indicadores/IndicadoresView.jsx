@@ -190,7 +190,7 @@ export default function IndicadoresView({
   );
 
   const renderToolbar = () => (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-wrap justify-between gap-3">
+    <div className="glass-card-dark border border-cyan-500/20 rounded-xl p-4 shadow-sm flex flex-wrap justify-between gap-3">
       <div className="flex flex-wrap gap-2">
         {[
           ['mensual', CalendarDays, 'Mensual'],
@@ -202,7 +202,7 @@ export default function IndicadoresView({
             type="button"
             onClick={() => setVista(id)}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              vista === id ? 'bg-[#002855] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              vista === id ? 'bg-[#002855] text-white' : 'bg-[#00152e]/50 text-slate-300 hover:bg-slate-200'
             }`}
           >
             <Icon size={16} />
@@ -212,16 +212,16 @@ export default function IndicadoresView({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <select value={filtroArea} onChange={(e) => setFiltroArea(e.target.value)} className="px-3 py-2 text-sm border border-slate-200 rounded-lg">
+        <select value={filtroArea} onChange={(e) => setFiltroArea(e.target.value)} className="px-3 py-2 text-sm border border-cyan-500/20 rounded-lg">
           <option value="">Todas las areas</option>
           {areasUnicas.map((area) => <option key={area} value={area}>{area}</option>)}
         </select>
-        <select value={filtroProceso} onChange={(e) => setFiltroProceso(e.target.value)} className="px-3 py-2 text-sm border border-slate-200 rounded-lg">
+        <select value={filtroProceso} onChange={(e) => setFiltroProceso(e.target.value)} className="px-3 py-2 text-sm border border-cyan-500/20 rounded-lg">
           <option value="">Todos los procesos</option>
           {procesosUnicos.map((proceso) => <option key={proceso} value={proceso}>{proceso}</option>)}
         </select>
         {(filtroArea || filtroProceso) && (
-          <button type="button" onClick={() => { setFiltroArea(''); setFiltroProceso(''); }} className="px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
+          <button type="button" onClick={() => { setFiltroArea(''); setFiltroProceso(''); }} className="px-3 py-2 text-sm text-slate-300 hover:bg-[#00152e]/50 rounded-lg">
             Limpiar
           </button>
         )}
@@ -238,7 +238,7 @@ export default function IndicadoresView({
               key={t}
               type="button"
               onClick={() => setTrimestre(t)}
-              className={`px-3 py-1.5 rounded-lg text-sm ${trimestre === t ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+              className={`px-3 py-1.5 rounded-lg text-sm ${trimestre === t ? 'bg-cyan-600 text-white' : 'bg-[#00152e]/50 text-slate-300'}`}
             >
               T{t}
             </button>
@@ -259,11 +259,11 @@ export default function IndicadoresView({
         return (
           <div key={stat.proceso} className={`p-4 rounded-xl border ${sem.bg} ${sem.border}`}>
             <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-700 leading-tight">{stat.proceso}</p>
+              <p className="text-sm font-semibold text-slate-300 leading-tight">{stat.proceso}</p>
               <span className={`w-3 h-3 rounded-full mt-1 ${sem.dot}`} />
             </div>
             <p className={`text-3xl font-bold mt-3 ${sem.text}`}>{cumplimiento}%</p>
-            <p className="text-xs text-slate-500 mt-1">{stat.count} indicadores</p>
+            <p className="text-xs text-slate-400 mt-1">{stat.count} indicadores</p>
           </div>
         );
       })}
@@ -287,35 +287,35 @@ export default function IndicadoresView({
   };
 
   const renderTabla = (mesesEval) => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <h2 className="font-bold text-[#002855]">Indicadores {ANIO_ACTUAL}</h2>
-        <span className="text-xs text-slate-500">{indicadoresFiltrados.length} visibles</span>
+    <div className="glass-card-dark rounded-xl shadow-sm border border-cyan-500/20 overflow-hidden">
+      <div className="px-5 py-4 glass-card-dark-header border-b border-cyan-500/20 flex items-center justify-between">
+        <h2 className="font-bold text-white">Indicadores {ANIO_ACTUAL}</h2>
+        <span className="text-xs text-slate-400">{indicadoresFiltrados.length} visibles</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left">
+          <thead className="glass-card-dark-header text-left">
             <tr>
-              <th className="p-3 font-semibold text-slate-600 min-w-64">Indicador</th>
-              <th className="p-3 font-semibold text-slate-600">Area</th>
-              <th className="p-3 font-semibold text-slate-600">Meta</th>
-              {mesesEval.map((mes) => <th key={mes} className="p-2 font-semibold text-slate-500 text-center">{mes}</th>)}
-              <th className="p-3 font-semibold text-slate-600">Cumplimiento</th>
-              <th className="p-3 font-semibold text-slate-600">Acciones</th>
+              <th className="p-3 font-semibold text-slate-300 min-w-64">Indicador</th>
+              <th className="p-3 font-semibold text-slate-300">Area</th>
+              <th className="p-3 font-semibold text-slate-300">Meta</th>
+              {mesesEval.map((mes) => <th key={mes} className="p-2 font-semibold text-slate-400 text-center">{mes}</th>)}
+              <th className="p-3 font-semibold text-slate-300">Cumplimiento</th>
+              <th className="p-3 font-semibold text-slate-300">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-cyan-500/10">
             {indicadoresFiltrados.map((ind) => {
               const cumplimiento = calcularCumplimiento(ind, mesesEval);
               const sem = getSemaforo(cumplimiento);
               return (
-                <tr key={ind.id} className="hover:bg-slate-50/70">
+                <tr key={ind.id} className="hover:bg-white/5/70">
                   <td className="p-3">
-                    <div className="font-semibold text-[#002855]">{ind.nombre}</div>
-                    <div className="text-xs text-slate-500">{ind.proceso || 'Sin proceso'}</div>
+                    <div className="font-semibold text-white">{ind.nombre}</div>
+                    <div className="text-xs text-slate-400">{ind.proceso || 'Sin proceso'}</div>
                   </td>
-                  <td className="p-3 text-slate-600">{ind.area}</td>
-                  <td className="p-3 text-slate-600">{ind.es_menor ? '<= ' : '>= '}{parseMeta(ind.meta).valor} {ind.unidad}</td>
+                  <td className="p-3 text-slate-300">{ind.area}</td>
+                  <td className="p-3 text-slate-300">{ind.es_menor ? '<= ' : '>= '}{parseMeta(ind.meta).valor} {ind.unidad}</td>
                   {mesesEval.map((mes) => {
                     const key = valueKey(ind.id, mes);
                     const isEditing = editando === key;
@@ -335,7 +335,7 @@ export default function IndicadoresView({
                             </button>
                           </div>
                         ) : (
-                          <button type="button" onClick={() => iniciarEdicion(ind.id, mes)} className="min-w-12 px-2 py-1 rounded text-xs hover:bg-cyan-50 text-slate-700">
+                          <button type="button" onClick={() => iniciarEdicion(ind.id, mes)} className="min-w-12 px-2 py-1 rounded text-xs hover:bg-cyan-50 text-slate-300">
                             {getValor(ind.id, mes) || '-'}
                           </button>
                         )}
@@ -386,17 +386,17 @@ export default function IndicadoresView({
       )}
 
       {vista === 'graficos' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-5">
-          <h2 className="font-bold text-[#002855]">Desempeno por proceso</h2>
+        <div className="glass-card-dark rounded-xl shadow-sm border border-cyan-500/20 p-6 space-y-5">
+          <h2 className="font-bold text-white">Desempeno por proceso</h2>
           {procesoStats.map((stat) => {
             const sem = getSemaforo(stat.cumplimiento);
             return (
               <div key={stat.proceso}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-slate-700">{stat.proceso}</span>
+                  <span className="text-sm font-semibold text-slate-300">{stat.proceso}</span>
                   <span className={`text-sm font-bold ${sem.text}`}>{stat.cumplimiento}%</span>
                 </div>
-                <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-[#00152e]/50 rounded-full overflow-hidden">
                   <div className={`h-full ${sem.dot}`} style={{ width: `${stat.cumplimiento}%` }} />
                 </div>
               </div>
@@ -407,36 +407,36 @@ export default function IndicadoresView({
 
       {modalIndicador && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+          <div className="glass-card-dark rounded-xl p-6 w-full max-w-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-[#002855]">Nuevo indicador</h3>
-              <button type="button" onClick={() => setModalIndicador(false)} className="p-1.5 text-slate-500 hover:bg-slate-100 rounded">
+              <h3 className="font-bold text-white">Nuevo indicador</h3>
+              <button type="button" onClick={() => setModalIndicador(false)} className="p-1.5 text-slate-400 hover:bg-[#00152e]/50 rounded">
                 <X size={18} />
               </button>
             </div>
             <div className="space-y-4">
-              <input value={nuevoIndicador.nombre} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, nombre: e.target.value })} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Nombre del indicador" />
+              <input value={nuevoIndicador.nombre} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, nombre: e.target.value })} className="w-full p-2.5 border border-cyan-500/20 rounded-lg" placeholder="Nombre del indicador" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select value={nuevoIndicador.area} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, area: e.target.value })} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                <select value={nuevoIndicador.area} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, area: e.target.value })} className="w-full p-2.5 border border-cyan-500/20 rounded-lg">
                   <option value="">Area</option>
                   {AREAS.map((area) => <option key={area} value={area}>{area}</option>)}
                 </select>
-                <select value={nuevoIndicador.proceso} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, proceso: e.target.value })} className="w-full p-2.5 border border-slate-200 rounded-lg">
+                <select value={nuevoIndicador.proceso} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, proceso: e.target.value })} className="w-full p-2.5 border border-cyan-500/20 rounded-lg">
                   <option value="">Proceso</option>
                   {PROCESOS.map((proceso) => <option key={proceso} value={proceso}>{proceso}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input value={nuevoIndicador.meta} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, meta: e.target.value })} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Meta, ej. >= 90" />
-                <input value={nuevoIndicador.unidad} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, unidad: e.target.value })} className="w-full p-2.5 border border-slate-200 rounded-lg" placeholder="Unidad" />
-                <label className="flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600">
+                <input value={nuevoIndicador.meta} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, meta: e.target.value })} className="w-full p-2.5 border border-cyan-500/20 rounded-lg" placeholder="Meta, ej. >= 90" />
+                <input value={nuevoIndicador.unidad} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, unidad: e.target.value })} className="w-full p-2.5 border border-cyan-500/20 rounded-lg" placeholder="Unidad" />
+                <label className="flex items-center gap-2 px-3 py-2.5 border border-cyan-500/20 rounded-lg text-sm text-slate-300">
                   <input type="checkbox" checked={nuevoIndicador.es_menor} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, es_menor: e.target.checked })} />
                   Menor es mejor
                 </label>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button type="button" onClick={() => setModalIndicador(false)} className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+              <button type="button" onClick={() => setModalIndicador(false)} className="flex-1 px-4 py-2 border border-cyan-500/20 text-slate-300 rounded-lg">Cancelar</button>
               <button type="button" onClick={agregarIndicador} className="flex-1 px-4 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001f42]">Guardar</button>
             </div>
           </div>
@@ -445,9 +445,9 @@ export default function IndicadoresView({
 
       {seguimiento && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <h3 className="font-bold text-[#002855] mb-2">Registrar seguimiento</h3>
-            <p className="text-sm text-slate-600 mb-4">{seguimiento.nombre}</p>
+          <div className="glass-card-dark rounded-xl p-6 w-full max-w-lg">
+            <h3 className="font-bold text-white mb-2">Registrar seguimiento</h3>
+            <p className="text-sm text-slate-300 mb-4">{seguimiento.nombre}</p>
             <div className="space-y-3">
               <button type="button" onClick={() => registrarSeguimiento('AC')} className="w-full p-3 border border-red-200 bg-red-50 rounded-lg text-left hover:bg-red-100">
                 <span className="font-semibold text-red-700">Accion correctiva</span>
@@ -462,7 +462,7 @@ export default function IndicadoresView({
                 <p className="text-xs text-blue-600">Deja constancia para revision de comite.</p>
               </button>
             </div>
-            <button type="button" onClick={() => setSeguimiento(null)} className="w-full mt-5 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg">Cancelar</button>
+            <button type="button" onClick={() => setSeguimiento(null)} className="w-full mt-5 px-4 py-2 border border-cyan-500/20 text-slate-300 rounded-lg">Cancelar</button>
           </div>
         </div>
       )}

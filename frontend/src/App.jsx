@@ -165,7 +165,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] font-sans text-slate-800 overflow-hidden">
+    <div className="flex h-screen bg-transparent font-sans text-slate-200 overflow-hidden">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -183,11 +183,12 @@ function App() {
         />
       )}
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f8fafc]">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-transparent">
         <Header
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
           setIsSidebarOpen={setIsSidebarOpen}
+          setActiveTab={setActiveTab}
         />
 
         <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
@@ -197,7 +198,7 @@ function App() {
             <div className="max-w-7xl mx-auto space-y-8">
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-extrabold text-[#002855] tracking-tight">
+                  <h1 className="text-3xl font-extrabold text-white tracking-tight">
                     {activeItem?.label}
                   </h1>
                   <p className="text-slate-500 mt-1.5 text-sm">

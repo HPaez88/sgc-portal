@@ -128,9 +128,9 @@ export default function AccionesDetalle({
   };
 
   const SeccionCard = ({ titulo, icono, children, accentColor = 'slate', className = '' }) => (
-    <div className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden ${className}`}>
+    <div className={`glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20 relative overflow-hidden ${className}`}>
       <div className={`absolute top-0 left-0 w-1 h-full bg-${accentColor}-500`}></div>
-      <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+      <h3 className="font-bold text-white mb-4 flex items-center gap-2">
         <span className="text-xl">{icono}</span> {titulo}
       </h3>
       {children}
@@ -153,7 +153,7 @@ export default function AccionesDetalle({
             </p>
           </div>
           <div className="text-left md:text-right">
-            <span className={`inline-block px-4 py-2 rounded-lg font-bold border-2 bg-white ${getEstadoColor(form.estado)}`}>
+            <span className={`inline-block px-4 py-2 rounded-lg font-bold border-2 glass-card-dark ${getEstadoColor(form.estado)}`}>
               {getEstadoLabel(form.estado)}
             </span>
             <p className="text-xs opacity-70 mt-2">
@@ -170,20 +170,20 @@ export default function AccionesDetalle({
 
       {/* ═══════════════ DATOS GENERALES ═══════════════ */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-500 font-bold mb-1">PROCESO</p>
-          <p className="font-semibold text-[#002855]">{form.proceso || '-'}</p>
+        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-400 font-bold mb-1">PROCESO</p>
+          <p className="font-semibold text-white">{form.proceso || '-'}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-500 font-bold mb-1">ORIGEN</p>
-          <p className="font-semibold text-[#002855]">{form.origen || '-'}</p>
+        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-400 font-bold mb-1">ORIGEN</p>
+          <p className="font-semibold text-white">{form.origen || '-'}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-500 font-bold mb-1">NO. AUDITORÍA</p>
-          <p className="font-semibold text-[#002855]">{form.numero_auditoria || 'N/A'}</p>
+        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-400 font-bold mb-1">NO. AUDITORÍA</p>
+          <p className="font-semibold text-white">{form.numero_auditoria || 'N/A'}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-cyan-200 transition-colors">
-          <p className="text-xs text-slate-500 font-bold mb-1">IMPACTO EN OTROS</p>
+        <div className="glass-card-dark p-4 rounded-xl shadow-sm border border-cyan-500/20 hover:border-cyan-200 transition-colors">
+          <p className="text-xs text-slate-400 font-bold mb-1">IMPACTO EN OTROS</p>
           <p className={`font-semibold ${form.impacta_otros_procesos === 'SI' ? 'text-red-600' : 'text-green-600'}`}>
             {form.impacta_otros_procesos}
           </p>
@@ -192,8 +192,8 @@ export default function AccionesDetalle({
 
       {/* ═══════════════ DESCRIPCIÓN NO CONFORMIDAD ═══════════════ */}
       <SeccionCard titulo="No Conformidad" icono="⚠️" accentColor="amber">
-        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-          <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
+        <div className="glass-card-dark-header p-4 rounded-lg border border-cyan-500/20">
+          <p className="text-slate-300 whitespace-pre-wrap leading-relaxed">
             {tieneDescripcionMejorada ? form.descripcion_no_conformidad_ia : form.descripcion_no_conformidad_original}
           </p>
         </div>
@@ -209,7 +209,7 @@ export default function AccionesDetalle({
       <SeccionCard titulo="Equipo de Trabajo" icono="👥" accentColor="cyan">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {equipo.filter(e => e.nombre).map((e, i) => (
-            <div key={i} className={`p-4 rounded-xl border ${e.es_responsable_principal ? 'bg-amber-50 border-amber-300 shadow-sm' : 'bg-slate-50 border-slate-200'}`}>
+            <div key={i} className={`p-4 rounded-xl border ${e.es_responsable_principal ? 'bg-amber-50 border-amber-300 shadow-sm' : 'glass-card-dark-header border-cyan-500/20'}`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#002855] to-cyan-600 text-white flex items-center justify-center font-bold text-lg shadow-inner">
                   {e.nombre.charAt(0).toUpperCase()}
@@ -218,9 +218,9 @@ export default function AccionesDetalle({
                   <span className="text-xs bg-amber-200 text-amber-800 px-2 py-1 rounded-full font-bold shadow-sm">Responsable</span>
                 )}
               </div>
-              <p className="font-bold text-[#002855] truncate" title={e.nombre}>{e.nombre}</p>
-              <p className="text-sm text-slate-600 font-medium truncate" title={e.puesto}>{e.puesto}</p>
-              <p className="text-xs text-slate-500 mt-1 bg-white px-2 py-1 rounded border inline-block">{e.rol}</p>
+              <p className="font-bold text-white truncate" title={e.nombre}>{e.nombre}</p>
+              <p className="text-sm text-slate-300 font-medium truncate" title={e.puesto}>{e.puesto}</p>
+              <p className="text-xs text-slate-400 mt-1 glass-card-dark px-2 py-1 rounded border inline-block">{e.rol}</p>
               {e.area && <p className="text-xs text-slate-400 mt-1">{e.area}</p>}
             </div>
           ))}
@@ -238,21 +238,21 @@ export default function AccionesDetalle({
           )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {form.actividad_inmediata && (
-              <div className="bg-white p-3 rounded-lg border border-slate-200">
-                <p className="text-xs font-bold text-slate-500 mb-1">ACTIVIDAD ESPECÍFICA</p>
-                <p className="font-medium text-[#002855]">{form.actividad_inmediata}</p>
+              <div className="glass-card-dark p-3 rounded-lg border border-cyan-500/20">
+                <p className="text-xs font-bold text-slate-400 mb-1">ACTIVIDAD ESPECÍFICA</p>
+                <p className="font-medium text-white">{form.actividad_inmediata}</p>
               </div>
             )}
             {form.responsable_actividad_inmediata && (
-              <div className="bg-white p-3 rounded-lg border border-slate-200">
-                <p className="text-xs font-bold text-slate-500 mb-1">RESPONSABLE</p>
-                <p className="font-medium text-[#002855]">{form.responsable_actividad_inmediata}</p>
+              <div className="glass-card-dark p-3 rounded-lg border border-cyan-500/20">
+                <p className="text-xs font-bold text-slate-400 mb-1">RESPONSABLE</p>
+                <p className="font-medium text-white">{form.responsable_actividad_inmediata}</p>
               </div>
             )}
             {form.fecha_actividad_inmediata && (
-              <div className="bg-white p-3 rounded-lg border border-slate-200">
-                <p className="text-xs font-bold text-slate-500 mb-1">FECHA DE TÉRMINO</p>
-                <p className="font-medium text-[#002855] font-mono">{new Date(form.fecha_actividad_inmediata).toLocaleDateString('es-MX')}</p>
+              <div className="glass-card-dark p-3 rounded-lg border border-cyan-500/20">
+                <p className="text-xs font-bold text-slate-400 mb-1">FECHA DE TÉRMINO</p>
+                <p className="font-medium text-white font-mono">{new Date(form.fecha_actividad_inmediata).toLocaleDateString('es-MX')}</p>
               </div>
             )}
           </div>
@@ -262,9 +262,9 @@ export default function AccionesDetalle({
       {/* ═══════════════ ANÁLISIS DE CAUSAS (COMPLETO) ═══════════════ */}
       {causasConDatos.length > 0 && (
         <SeccionCard titulo="Análisis de Causas (Lluvia de Ideas)" icono="💡" accentColor="amber">
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <div className="overflow-x-auto rounded-lg border border-cyan-500/20">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+              <thead className="glass-card-dark-header text-slate-300 font-semibold border-b border-cyan-500/20">
                 <tr>
                   <th className="p-3 text-center w-12">#</th>
                   <th className="p-3">Descripción de la Causa</th>
@@ -272,17 +272,17 @@ export default function AccionesDetalle({
                   <th className="p-3 text-center w-28">¿Principal?</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-cyan-500/10">
                 {causasConDatos.map((c, i) => (
-                  <tr key={c.id || i} className={`${c.es_causa_principal ? 'bg-amber-50 font-semibold' : 'hover:bg-slate-50'} transition-colors`}>
-                    <td className="p-3 text-center font-medium text-slate-500">{i + 1}</td>
-                    <td className="p-3 text-slate-700">
+                  <tr key={c.id || i} className={`${c.es_causa_principal ? 'bg-amber-50 font-semibold' : 'hover:bg-white/5'} transition-colors`}>
+                    <td className="p-3 text-center font-medium text-slate-400">{i + 1}</td>
+                    <td className="p-3 text-slate-300">
                       {c.es_causa_principal && <span className="inline-block mr-2 text-amber-600">🎯</span>}
                       {c.causa}
                     </td>
                     <td className="p-3 text-center">
                       {c.puntuacion_sugerida > 0 && (
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${c.es_causa_principal ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${c.es_causa_principal ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 text-slate-300'}`}>
                           {c.puntuacion_sugerida}
                         </span>
                       )}
@@ -304,13 +304,13 @@ export default function AccionesDetalle({
 
       {/* ═══════════════ PLAN DE ACTIVIDADES ═══════════════ */}
       {(actividades.length > 0 || tieneFolio) && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+        <div className="glass-card-dark p-6 rounded-xl shadow-sm border border-cyan-500/20">
+          <h3 className="font-bold text-white mb-4 flex items-center gap-2">
             <span className="text-xl">📋</span> Plan de Actividades Correctivas
           </h3>
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <div className="overflow-x-auto rounded-lg border border-cyan-500/20">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+              <thead className="glass-card-dark-header text-slate-300 font-semibold border-b border-cyan-500/20">
                 <tr>
                   <th className="p-3 text-center w-10">#</th>
                   <th className="p-3">Actividad</th>
@@ -322,7 +322,7 @@ export default function AccionesDetalle({
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-cyan-500/10">
                 {actividades.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-slate-400 bg-slate-50/50 font-medium">
@@ -331,16 +331,16 @@ export default function AccionesDetalle({
                   </tr>
                 ) : (
                   actividades.map((a, i) => (
-                    <tr key={a.id || i} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3 text-center font-medium text-slate-500">{i + 1}</td>
-                      <td className="p-3 font-medium text-slate-700">
+                    <tr key={a.id || i} className="hover:glass-card-dark-header transition-colors">
+                      <td className="p-3 text-center font-medium text-slate-400">{i + 1}</td>
+                      <td className="p-3 font-medium text-slate-300">
                         {a.actividad || a.actividades || '-'}
                       </td>
-                      <td className="p-3 text-slate-600">{a.responsable || '-'}</td>
+                      <td className="p-3 text-slate-300">{a.responsable || '-'}</td>
                       <td className="p-3 font-mono text-xs">
                         {a.fecha_termino_sugerida ? new Date(a.fecha_termino_sugerida).toLocaleDateString('es-MX') : '-'}
                       </td>
-                      <td className="p-3 text-slate-500 italic text-xs">
+                      <td className="p-3 text-slate-400 italic text-xs">
                         {a.evidencia_esperada || '-'}
                       </td>
                       {tieneFolio && (
@@ -354,9 +354,9 @@ export default function AccionesDetalle({
                                       📎 {a.evidencia_real.startsWith('[Archivo]') ? a.evidencia_real : 'Ver evidencia adjunta'}
                                     </a>
                                   ) : (
-                                    <p className="text-xs text-slate-700 font-medium">{a.evidencia_real}</p>
+                                    <p className="text-xs text-slate-300 font-medium">{a.evidencia_real}</p>
                                   )}
-                                  <label className="flex items-center gap-2 mt-1 cursor-pointer bg-white p-2 rounded border border-emerald-200 hover:bg-emerald-50 transition-colors">
+                                  <label className="flex items-center gap-2 mt-1 cursor-pointer glass-card-dark p-2 rounded border border-emerald-200 hover:bg-emerald-50 transition-colors">
                                     <input type="checkbox" checked={a.evidencia_aprobada || false} disabled={estaCerrada} onChange={(e) => {
                                       const nuevo = [...actividades];
                                       nuevo[i] = {...nuevo[i], evidencia_aprobada: e.target.checked};
@@ -376,7 +376,7 @@ export default function AccionesDetalle({
                                   📎 {a.evidencia_real.startsWith('[Archivo]') ? a.evidencia_real : 'Ver archivo adjunto'}
                                 </a>
                               ) : (
-                                <label className="flex items-center gap-1 cursor-pointer bg-white border border-purple-200 hover:border-purple-400 text-purple-700 px-2 py-1.5 rounded text-xs font-medium transition-colors w-fit shadow-sm">
+                                <label className="flex items-center gap-1 cursor-pointer glass-card-dark border border-purple-200 hover:border-purple-400 text-purple-700 px-2 py-1.5 rounded text-xs font-medium transition-colors w-fit shadow-sm">
                                   <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={(e) => {
                                     const file = e.target.files[0];
                                     if (file) {
@@ -400,7 +400,7 @@ export default function AccionesDetalle({
                                   setActividades(nuevo);
                                 }}
                                 placeholder="O pega link/descripción"
-                                className="w-full p-2 bg-white border border-purple-200 focus:border-purple-500 rounded text-xs outline-none transition-colors" />
+                                className="w-full p-2 glass-card-dark border border-purple-200 focus:border-purple-500 rounded text-xs outline-none transition-colors" />
                             </div>
                           )}
                         </td>
@@ -432,7 +432,7 @@ export default function AccionesDetalle({
               </h3>
               <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Requiere actualización</p>
               {form.descripcion_riesgo_oportunidad && (
-                <div className="bg-white p-3 rounded-lg border border-amber-100 mt-2">
+                <div className="glass-card-dark p-3 rounded-lg border border-amber-100 mt-2">
                   <p className="text-amber-900 font-medium">{form.descripcion_riesgo_oportunidad}</p>
                 </div>
               )}
@@ -457,7 +457,7 @@ export default function AccionesDetalle({
           <h3 className="font-bold text-emerald-900 mb-4 flex items-center gap-2">
             <span className="text-xl">👤</span> Revisión del Auditor
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-lg border border-emerald-100 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 glass-card-dark p-4 rounded-lg border border-emerald-100 mb-4">
             <div>
               <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Auditor asignado</p>
               <p className="font-semibold text-emerald-950 text-lg">{form.auditor_cierre || 'Por asignar'}</p>
@@ -472,13 +472,13 @@ export default function AccionesDetalle({
             )}
           </div>
           {form.evidencia_objetiva_revisada && (
-            <div className="mt-4 bg-white p-4 rounded-lg border border-emerald-100">
+            <div className="mt-4 glass-card-dark p-4 rounded-lg border border-emerald-100">
               <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Evidencia revisada</p>
               <p className="text-emerald-950">{form.evidencia_objetiva_revisada}</p>
             </div>
           )}
           {form.conclusion_eficacia && (
-            <div className="mt-4 bg-white p-4 rounded-lg border border-emerald-100">
+            <div className="mt-4 glass-card-dark p-4 rounded-lg border border-emerald-100">
               <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Conclusión de eficacia</p>
               <p className="text-emerald-950 font-medium italic">"{form.conclusion_eficacia}"</p>
             </div>
@@ -487,47 +487,47 @@ export default function AccionesDetalle({
       )}
 
       {/* ═══════════════ SEGUIMIENTO / FECHAS ═══════════════ */}
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <h3 className="font-bold text-[#002855] mb-4 flex items-center gap-2">
+      <div className="glass-card-dark p-5 rounded-xl shadow-sm border border-cyan-500/20">
+        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
           <span className="text-xl">📅</span> Seguimiento y Fechas
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <p className="text-xs font-bold text-slate-500 mb-1">CREACIÓN</p>
-            <p className="font-mono text-sm font-medium text-[#002855]">
+          <div className="text-center p-3 glass-card-dark-header rounded-lg border border-cyan-500/20">
+            <p className="text-xs font-bold text-slate-400 mb-1">CREACIÓN</p>
+            <p className="font-mono text-sm font-medium text-white">
               {form.fecha_creacion_borrador ? new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}
             </p>
           </div>
-          <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <p className="text-xs font-bold text-slate-500 mb-1">ENVÍO A SGC</p>
-            <p className="font-mono text-sm font-medium text-[#002855]">
+          <div className="text-center p-3 glass-card-dark-header rounded-lg border border-cyan-500/20">
+            <p className="text-xs font-bold text-slate-400 mb-1">ENVÍO A SGC</p>
+            <p className="font-mono text-sm font-medium text-white">
               {form.fecha_envio_sgc ? new Date(form.fecha_envio_sgc).toLocaleDateString('es-MX') : '-'}
             </p>
           </div>
-          <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <p className="text-xs font-bold text-slate-500 mb-1">APERTURA</p>
-            <p className="font-mono text-sm font-medium text-[#002855]">
+          <div className="text-center p-3 glass-card-dark-header rounded-lg border border-cyan-500/20">
+            <p className="text-xs font-bold text-slate-400 mb-1">APERTURA</p>
+            <p className="font-mono text-sm font-medium text-white">
               {form.fecha_apertura ? new Date(form.fecha_apertura).toLocaleDateString('es-MX') : '-'}
             </p>
           </div>
-          <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <p className="text-xs font-bold text-slate-500 mb-1">CIERRE</p>
-            <p className="font-mono text-sm font-medium text-[#002855]">
+          <div className="text-center p-3 glass-card-dark-header rounded-lg border border-cyan-500/20">
+            <p className="text-xs font-bold text-slate-400 mb-1">CIERRE</p>
+            <p className="font-mono text-sm font-medium text-white">
               {form.fecha_cierre ? new Date(form.fecha_cierre).toLocaleDateString('es-MX') : '-'}
             </p>
           </div>
         </div>
         {form.aprobado_por_sgc && (
-          <p className="text-xs text-slate-500 mt-3">Aprobado por: <strong>{form.aprobado_por_sgc}</strong></p>
+          <p className="text-xs text-slate-400 mt-3">Aprobado por: <strong>{form.aprobado_por_sgc}</strong></p>
         )}
       </div>
       
       {/* ═══════════════ BOTONES DE ACCIÓN ═══════════════ */}
       <div className="flex gap-3 flex-wrap pt-6 border-t mt-8">
-        <button onClick={() => setVista('lista')} className="px-6 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors mr-auto">
+        <button onClick={() => setVista('lista')} className="px-6 py-2.5 border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header transition-colors mr-auto">
           ← Volver a Lista
         </button>
-        <button onClick={generarInformePDF} className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 shadow-sm transition-all flex items-center gap-2">
+        <button onClick={generarInformePDF} className="px-6 py-2.5 glass-card-dark border border-cyan-500/20 text-slate-300 font-medium rounded-lg hover:glass-card-dark-header shadow-sm transition-all flex items-center gap-2">
           <span>📄</span> Exportar PDF
         </button>
         {getBotonesWorkflow()}

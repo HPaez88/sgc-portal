@@ -2,7 +2,7 @@ import React from 'react';
 import { Menu, Search, Bell, Plus } from 'lucide-react';
 import { isSupabaseConfigured } from '../../supabase';
 
-const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen }) => {
+const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen, setActiveTab }) => {
   return (
     <header 
       className="h-20 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30 transition-all duration-300"
@@ -37,13 +37,7 @@ const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen }) => 
       </div>
 
       <div className="flex items-center gap-4">
-        <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border bg-black/20 backdrop-blur-sm ${isSupabaseConfigured ? 'text-emerald-400 border-emerald-500/30' : 'text-amber-400 border-amber-500/30'}`}>
-          <span className="relative flex h-2 w-2">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSupabaseConfigured ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-          </span>
-          <span className="text-xs font-medium font-['Inter']">{isSupabaseConfigured ? 'Supabase Activo' : 'Modo Local'}</span>
-        </div>
+
 
         <button className="relative p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
           <Bell size={20} />
@@ -51,6 +45,7 @@ const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen }) => 
         </button>
 
         <button 
+          onClick={() => setActiveTab('documents')}
           className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
           style={{
             background: 'rgba(0, 132, 201, 0.4)',
