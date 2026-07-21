@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { AREAS, PROCESOS, DIRECCIONES, getRolColor } from '../../constants';
+import { getRolColor } from '../../constants';
 import { useLocalStorage } from '../../hooks';
+import { useSGC } from '../../SGCContext';
 import { Users, Building, Plus, Trash2, CheckCircle2, Edit } from 'lucide-react';
 export default function SettingsView({ usuarios = [], setUsuarios }) {
+  const { areas, setAreas, procesos, setProcesos, direcciones, setDirecciones } = useSGC();
   const [mostrarModalUser, setMostrarModalUser] = useState(false);
-  const [procesos, setProcesos] = useLocalStorage('sgc-config-procesos', PROCESOS);
-  const [areas, setAreas] = useLocalStorage('sgc-config-areas', AREAS);
-  const [direcciones, setDirecciones] = useLocalStorage('sgc-config-direcciones', DIRECCIONES);
   const [nuevoProceso, setNuevoProceso] = useState('');
   const [nuevaArea, setNuevaArea] = useState('');
   const [nuevaDireccion, setNuevaDireccion] = useState('');

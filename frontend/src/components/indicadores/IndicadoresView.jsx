@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, BarChart3, CalendarDays, LineChart, Plus, Save, Trash2, X } from 'lucide-react';
-import { AREAS, INDICADORES, PROCESOS } from '../../constants';
+import { INDICADORES } from '../../constants';
+import { useSGC } from '../../SGCContext';
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const TRIMESTRES = {
@@ -50,6 +51,7 @@ export default function IndicadoresView({
   puedeTodasAreas,
   areaUsuario,
 }) {
+  const { areas, procesos } = useSGC();
   const [vista, setVista] = useState('mensual');
   const [trimestre, setTrimestre] = useState(1);
   const [filtroArea, setFiltroArea] = useState('');
@@ -419,11 +421,11 @@ export default function IndicadoresView({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select value={nuevoIndicador.area} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, area: e.target.value })} className="w-full p-2.5 border border-slate-200 rounded-lg">
                   <option value="">Area</option>
-                  {AREAS.map((area) => <option key={area} value={area}>{area}</option>)}
+                  {areas.map((area) => <option key={area} value={area}>{area}</option>)}
                 </select>
                 <select value={nuevoIndicador.proceso} onChange={(e) => setNuevoIndicador({ ...nuevoIndicador, proceso: e.target.value })} className="w-full p-2.5 border border-slate-200 rounded-lg">
                   <option value="">Proceso</option>
-                  {PROCESOS.map((proceso) => <option key={proceso} value={proceso}>{proceso}</option>)}
+                  {procesos.map((proceso) => <option key={proceso} value={proceso}>{proceso}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

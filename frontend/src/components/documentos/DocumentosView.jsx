@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { AREAS } from '../../constants';
+import { useSGC } from '../../SGCContext';
 import { Plus, Download, Eye, FileText, CheckCircle2 } from 'lucide-react';
 
 export default function DocumentosView({ documentos = [], setDocumentos, puedeTodasAreas, areaUsuario }) {
+  const { areas } = useSGC();
   const safeDocs = documentos || [];
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
@@ -175,7 +176,7 @@ Fecha de exportación: ${new Date().toLocaleDateString('es-MX')}
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Área Propietaria</label>
                 <select value={nuevoDoc.area} onChange={e => setNuevoDoc({...nuevoDoc, area: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none">
                   <option value="">Seleccionar área...</option>
-                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  {areas.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
               <div>

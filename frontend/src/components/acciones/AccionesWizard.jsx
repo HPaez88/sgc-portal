@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AREAS, PROCESOS, ORIGENES_AC } from '../../constants';
+import { ORIGENES_AC } from '../../constants';
+import { useSGC } from '../../SGCContext';
 import { generarPropuestaIA } from './AccionesAI';
 
 const ROLES_EQUIPO = [
@@ -12,6 +13,7 @@ export default function AccionesWizard({
   equipo, setEquipo, causas, setCausas, actividades, setActividades,
   loading, guardarBorrador, setVista, getBotonesWorkflow, getEstadoColor, getEstadoLabel
 }) {
+  const { areas, procesos } = useSGC();
   const [generandoIA, setGenerandoIA] = useState(false);
 
   const handleChange = (e) => {
@@ -174,14 +176,14 @@ export default function AccionesWizard({
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Área *</label>
                 <select name="area" value={form.area} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
                   <option value="">Seleccionar área</option>
-                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  {areas.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Proceso *</label>
                 <select name="proceso" value={form.proceso} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
                   <option value="">Seleccionar proceso</option>
-                  {PROCESOS.map(p => <option key={p} value={p}>{p}</option>)}
+                  {procesos.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>

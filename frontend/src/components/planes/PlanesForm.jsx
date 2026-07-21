@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AREAS, CATEGORIAS_MEJORA, PERIODOS, ORIGENES_PM } from '../../constants';
+import { CATEGORIAS_MEJORA, PERIODOS, ORIGENES_PM } from '../../constants';
+import { useSGC } from '../../SGCContext';
 import { generarPlanMejoraIA } from './PlanesAI';
 
 const ROLES_EQUIPO = [
@@ -12,6 +13,7 @@ export default function PlanesForm({
   equipo, setEquipo, actividades, setActividades,
   loading, guardarBorrador, setVista, getBotonesWorkflow
 }) {
+  const { areas } = useSGC();
   const [generandoIA, setGenerandoIA] = useState(false);
   const [descripcionSA, setDescripcionSA] = useState('');
 
@@ -194,7 +196,7 @@ export default function PlanesForm({
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Área / Gerencia *</label>
                 <select name="gerencia_coordinacion" value={form.gerencia_coordinacion} onChange={handleChange} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none">
                   <option value="">Seleccionar área</option>
-                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  {areas.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
               <div>

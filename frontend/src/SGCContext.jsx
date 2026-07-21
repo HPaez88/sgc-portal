@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { isSupabaseConfigured, supabase } from './supabase';
-import { USUARIOS_INICIALES } from './constants';
+import { USUARIOS_INICIALES, AREAS as defaultAreas, PROCESOS as defaultProcesos, DIRECCIONES as defaultDirecciones } from './constants';
 import { useLocalStorage } from './hooks';
 
 const SGCContext = createContext();
@@ -21,7 +21,10 @@ export const useSGC = () => {
       evidencias: [], setEvidencias: () => {},
       usuarioLogueado: null,
       puedeTodasAreas: false,
-      areaUsuario: ''
+      areaUsuario: '',
+      areas: [], setAreas: () => {},
+      procesos: [], setProcesos: () => {},
+      direcciones: [], setDirecciones: () => {}
     };
   }
   return context;
@@ -35,6 +38,11 @@ export const SGCProvider = ({ children }) => {
   const [planesMejora, setPlanesMejora] = useLocalStorage('sgc-planes-mejora', []);
   const [indicadoresData, setIndicadoresData] = useLocalStorage('sgc-indicadores-data', {});
   const [usuarios, setUsuarios] = useLocalStorage('sgc-usuarios', USUARIOS_INICIALES);
+  
+  // Catálogos
+  const [areas, setAreas] = useLocalStorage('sgc-config-areas', defaultAreas);
+  const [procesos, setProcesos] = useLocalStorage('sgc-config-procesos', defaultProcesos);
+  const [direcciones, setDirecciones] = useLocalStorage('sgc-config-direcciones', defaultDirecciones);
   const [riesgos, setRiesgos] = useLocalStorage('sgc-riesgos', [
     { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo', area: 'Operación', direccion: 'Dir. Técnica', proceso: 'Producción', plan_accion: 'Mejorar monitoreo de cloro', fecha_termino: '2026-06-30', evaluacion: 'En proceso', estado_plan: 'EN_PROCESO' },
     { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo', area: 'Mantenimiento de Redes', direccion: 'Dir. Técnica', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
@@ -203,7 +211,10 @@ export const SGCProvider = ({ children }) => {
     setEvidencias: setEvidenciasSync,
     usuarioLogueado,
     puedeTodasAreas,
-    areaUsuario
+    areaUsuario,
+    areas, setAreas,
+    procesos, setProcesos,
+    direcciones, setDirecciones
   };
 
   return (

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { AREAS, DIRECCIONES, PROCESOS } from '../../constants';
+import { useSGC } from '../../SGCContext';
 import { Plus, ShieldAlert, Target, Shield, AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasAreas, areaUsuario }) {
+  const { areas, procesos } = useSGC();
   const safeRiesgos = riesgos || [];
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevoRiesgo, setNuevoRiesgo] = useState({ 
@@ -211,14 +212,14 @@ export default function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasA
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">Área / Departamento</label>
                   <select value={nuevoRiesgo.area} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, area: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none">
                     <option value="">Seleccionar...</option>
-                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                    {areas.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">Proceso Relacionado</label>
                   <select value={nuevoRiesgo.proceso} onChange={(e) => setNuevoRiesgo({...nuevoRiesgo, proceso: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none">
                     <option value="">Seleccionar...</option>
-                    {PROCESOS.map(p => <option key={p} value={p}>{p}</option>)}
+                    {procesos.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
