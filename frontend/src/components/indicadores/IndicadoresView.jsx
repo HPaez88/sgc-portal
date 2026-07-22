@@ -112,10 +112,19 @@ export default function IndicadoresView({
 
     if (valores.length === 0) return 0;
 
-    const cumplidos = valores.filter((valor) => (
-      esMenor ? valor <= metaInfo.valor : valor >= metaInfo.valor
-    )).length;
-    return Math.round((cumplidos / valores.length) * 100);
+    const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
+    if (metaInfo.valor === 0) return promedio > 0 ? (esMenor ? 0 : 100) : 100;
+
+    let cumplimiento = 0;
+    if (esMenor) {
+      if (promedio <= metaInfo.valor) cumplimiento = 100;
+      else cumplimiento = (metaInfo.valor / promedio) * 100;
+    } else {
+      if (promedio >= metaInfo.valor) cumplimiento = 100;
+      else cumplimiento = (promedio / metaInfo.valor) * 100;
+    }
+
+    return Math.max(0, Math.min(100, Math.round(cumplimiento)));
   };
 
   const procesoStats = useMemo(() => {
