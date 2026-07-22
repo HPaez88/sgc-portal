@@ -439,10 +439,11 @@ export default function AccionesDetalle({
                                 </div>
                               ) : (
                                 <label className="flex items-center gap-1 cursor-pointer bg-white border border-purple-200 hover:border-purple-400 text-purple-700 px-2 py-1.5 rounded text-xs font-medium transition-colors w-fit shadow-sm">
-                                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={async (e) => {
+                                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onClick={(e) => { e.target.value = null; }} onChange={async (e) => {
                                     const file = e.target.files[0];
                                     if (file) {
                                       if (file.size > 10 * 1024 * 1024) {
+                                        alert('El archivo es demasiado grande (Máx 10MB)');
                                         setError('Máx 10MB');
                                         return;
                                       }
@@ -450,6 +451,7 @@ export default function AccionesDetalle({
                                       const { url, error } = await uploadEvidencia(file);
                                       if (error) {
                                         setMensaje('');
+                                        alert('Error de conexión o permisos al subir: ' + error);
                                         setError('Error al subir: ' + error);
                                         return;
                                       }
