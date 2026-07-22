@@ -88,12 +88,12 @@ export default function PlanesDetalle({
         (a.actividad || '-').substring(0, 50),
         a.responsable || '-',
         a.fecha_termino_sugerida || '-',
-        a.indicador || '-'
+        a.evidencia_esperada || '-'
       ]);
       
       doc.autoTable({
         startY: y,
-        head: [['#', 'Actividad', 'Responsable', 'Fecha', 'Indicador']],
+        head: [['#', 'Actividad', 'Responsable', 'Fecha', 'Evidencia esperada']],
         body: tableData,
         theme: 'striped',
         fontSize: 8,
@@ -217,7 +217,7 @@ export default function PlanesDetalle({
                 <th className="p-3">Actividad</th>
                 <th className="p-3 w-36">Responsable</th>
                 <th className="p-3 w-28">Fecha Límite</th>
-                <th className="p-3">Indicador</th>
+                <th className="p-3">Evidencia Esperada</th>
                 {form.estado !== 'BORRADOR' && form.estado !== 'EN_REVISION' && (
                   <th className="p-3 bg-purple-50 w-48 text-purple-900 border-l border-purple-100">Evidencia Real</th>
                 )}
@@ -237,7 +237,7 @@ export default function PlanesDetalle({
                     <td className="p-3 font-medium text-slate-700">{a.actividad || '-'}</td>
                     <td className="p-3 text-slate-700">{a.responsable || '-'}</td>
                     <td className="p-3 font-mono text-xs">{a.fecha_termino_sugerida ? new Date(a.fecha_termino_sugerida).toLocaleDateString() : '-'}</td>
-                    <td className="p-3 text-slate-500 text-xs">{a.indicador || '-'}</td>
+                    <td className="p-3 text-slate-500 text-xs">{a.evidencia_esperada || '-'}</td>
                     {form.estado !== 'BORRADOR' && form.estado !== 'EN_REVISION' && (
                       <td className="p-3 bg-purple-50 border-l border-purple-100">
                         <input type="text" value={a.evidencia_real || ''} 

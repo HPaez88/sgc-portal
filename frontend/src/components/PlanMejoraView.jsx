@@ -145,6 +145,15 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   const enviarSGC = () => {
+    if (actividades.length === 0) {
+      alert("Debes agregar al menos una actividad.");
+      return;
+    }
+    const sinFecha = actividades.some(a => !a.fecha_termino_sugerida);
+    if (sinFecha) {
+      alert("Todas las actividades deben tener una Fecha Límite capturada.");
+      return;
+    }
     setForm(f => ({ ...f, estado: 'EN_REVISION', fecha_envio_sgc: new Date().toISOString() }));
     guardarBorrador();
     setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión'); }, 500);

@@ -13,11 +13,11 @@ export const ORIGENES_PM = [
 ];
 
 export const CATEGORIAS_MEJORA = [
-  'Proceso',
-  'Producto',
-  'Sistema de Gestión',
-  'Satisfacción del Cliente',
-  'Desempeño Organizacional'
+  'Fortalecimiento de la Gestión Interna y Mejora Continua',
+  'Desarrollo y Profesionalización del Recurso Humano',
+  'Innovación Tecnológica y Modernización Institucional',
+  'Mejora de los Servicios y Atención al Usuario',
+  'Seguridad Operativa y Sostenibilidad Ambiental'
 ];
 
 export const PERIODOS = [

@@ -304,28 +304,25 @@ export default function PlanesForm({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="md:col-span-2">
-                      <input type="text" placeholder="Descripción de la actividad" value={act.actividad}
+                      <textarea rows={2} placeholder="Descripción de la actividad" value={act.actividad}
                         onChange={(e) => { const n = [...actividades]; n[i].actividad = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none resize-y" />
                     </div>
-                    <div>
-                      <input type="text" placeholder="Indicador" value={act.indicador}
-                        onChange={(e) => { const n = [...actividades]; n[i].indicador = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
+                    <div className="md:col-span-2">
+                      <textarea rows={2} placeholder="Evidencia Esperada" value={act.evidencia_esperada}
+                        onChange={(e) => { const n = [...actividades]; n[i].evidencia_esperada = e.target.value; setActividades(n); }}
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none resize-y" />
                     </div>
-                    <div>
-                      <input type="date" value={act.fecha_termino_sugerida}
-                        onChange={(e) => { const n = [...actividades]; n[i].fecha_termino_sugerida = e.target.value; setActividades(n); }}
-                        className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
-                    </div>
-                    <div className="lg:col-span-2">
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Responsable</label>
                       <input type="text" placeholder="Responsable" value={act.responsable}
                         onChange={(e) => { const n = [...actividades]; n[i].responsable = e.target.value; setActividades(n); }}
                         className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
                     </div>
-                    <div className="lg:col-span-2">
-                      <input type="text" placeholder="Evidencia Esperada" value={act.evidencia_esperada}
-                        onChange={(e) => { const n = [...actividades]; n[i].evidencia_esperada = e.target.value; setActividades(n); }}
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Fecha Límite</label>
+                      <input type="date" value={act.fecha_termino_sugerida}
+                        onChange={(e) => { const n = [...actividades]; n[i].fecha_termino_sugerida = e.target.value; setActividades(n); }}
                         className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:border-cyan-500 outline-none" />
                     </div>
                   </div>

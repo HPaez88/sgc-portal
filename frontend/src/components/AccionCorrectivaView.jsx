@@ -160,6 +160,15 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   };
 
   const enviarSGC = () => {
+    if (actividades.length === 0) {
+      alert("Debes agregar al menos una actividad correctiva.");
+      return;
+    }
+    const sinFecha = actividades.some(a => !a.fecha_termino_sugerida);
+    if (sinFecha) {
+      alert("Todas las actividades deben tener una Fecha Límite capturada.");
+      return;
+    }
     const cambios = { estado: 'EN_REVISION', fecha_envio_sgc: new Date().toISOString() };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
