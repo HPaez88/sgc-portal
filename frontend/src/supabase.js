@@ -70,3 +70,27 @@ export const tables = {
   auditorias: 'auditorias',
   evidencias: 'evidencias',
 };
+
+export async function uploadEvidencia(file) {
+  if (!supabase) return { error: 'Supabase no configurado' };
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    
+    // Asumimos que el bucket se llama 'evidencias' y es público
+    const { error: uploadError } = await supabase.storage
+      .from('evidencias')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('evidencias')
+      .getPublicUrl(fileName);
+
+    return { url: data.publicUrl };
+  } catch (e) {
+    console.error('Error uploading file:', e);
+    return { error: e.message };
+  }
+}

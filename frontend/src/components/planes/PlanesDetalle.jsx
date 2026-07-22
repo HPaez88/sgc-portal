@@ -1,6 +1,7 @@
 import React from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { uploadEvidencia } from '../../supabase';
 
 export default function PlanesDetalle({ 
   form, 
@@ -240,14 +241,46 @@ export default function PlanesDetalle({
                     <td className="p-3 text-slate-500 text-xs">{a.evidencia_esperada || '-'}</td>
                     {form.estado !== 'BORRADOR' && form.estado !== 'EN_REVISION' && (
                       <td className="p-3 bg-purple-50 border-l border-purple-100">
-                        <input type="text" value={a.evidencia_real || ''} 
-                          onChange={(e) => {
-                            const nuevo = [...actividades];
-                            nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
-                            setActividades(nuevo);
-                          }}
-                          placeholder="Link o descripción"
-                          className="w-full p-2 bg-white border border-purple-200 focus:border-purple-500 rounded text-xs outline-none" />
+                        <div className="flex flex-col gap-2">
+                          {a.evidencia_real && a.evidencia_real.startsWith('http') ? (
+                            <a href={a.evidencia_real} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 text-xs font-bold bg-purple-100 hover:bg-purple-200 px-2 py-1.5 rounded transition-colors w-fit">
+                              📎 Ver archivo adjunto
+                            </a>
+                          ) : a.evidencia_real && a.evidencia_real.startsWith('[Archivo]') ? (
+                            <span className="inline-flex items-center gap-1 text-slate-500 text-xs font-bold bg-slate-100 px-2 py-1.5 rounded w-fit">
+                              📎 {a.evidencia_real} (No subido)
+                            </span>
+                          ) : (
+                            <label className="flex items-center gap-1 cursor-pointer bg-white border border-purple-200 hover:border-purple-400 text-purple-700 px-2 py-1.5 rounded text-xs font-medium transition-colors w-fit shadow-sm">
+                              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    if(setError) setError('Máx 10MB');
+                                    return;
+                                  }
+                                  const { url, error } = await uploadEvidencia(file);
+                                  if (error) {
+                                    if(setError) setError('Error al subir: ' + error);
+                                    return;
+                                  }
+                                  const nuevo = [...actividades];
+                                  nuevo[i] = {...nuevo[i], evidencia_real: url};
+                                  setActividades(nuevo);
+                                }
+                              }} className="hidden" />
+                              <span>📎 Adjuntar evidencia</span>
+                            </label>
+                          )}
+                          <input type="text" value={a.evidencia_real && !a.evidencia_real.startsWith('[Archivo]') ? a.evidencia_real : ''} 
+                            onChange={(e) => {
+                              const nuevo = [...actividades];
+                              nuevo[i] = {...nuevo[i], evidencia_real: e.target.value};
+                              setActividades(nuevo);
+                            }}
+                            placeholder="O pega link/descripción"
+                            className="w-full p-2 bg-white border border-purple-200 focus:border-purple-500 rounded text-xs outline-none transition-colors" />
+                        </div>
                       </td>
                     )}
                   </tr>
