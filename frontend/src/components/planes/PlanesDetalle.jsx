@@ -14,7 +14,8 @@ export default function PlanesDetalle({
   getEstadoColor, 
   getEstadoLabel,
   guardarBorrador,
-  setError
+  setError,
+  setMensaje
 }) {
   const [guardandoEvidencia, setGuardandoEvidencia] = React.useState(false);
   
@@ -277,14 +278,17 @@ export default function PlanesDetalle({
                                     if(setError) setError('Máx 10MB');
                                     return;
                                   }
+                                  if(setMensaje) setMensaje('Subiendo archivo...');
                                   const { url, error } = await uploadEvidencia(file);
                                   if (error) {
+                                    if(setMensaje) setMensaje('');
                                     if(setError) setError('Error al subir: ' + error);
                                     return;
                                   }
                                   const nuevo = [...actividades];
                                   nuevo[i] = {...nuevo[i], evidencia_real: url};
                                   setActividades(nuevo);
+                                  if(setMensaje) setMensaje('Archivo subido exitosamente.');
                                 }
                               }} className="hidden" />
                               <span>📎 Adjuntar evidencia</span>

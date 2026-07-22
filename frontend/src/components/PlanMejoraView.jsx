@@ -321,6 +321,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         getEstadoLabel={getEstadoLabel}
         guardarBorrador={guardarBorrador}
         setError={setError}
+        setMensaje={setMensaje}
       />
     );
   }
