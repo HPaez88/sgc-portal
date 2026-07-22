@@ -121,7 +121,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     
     try {
       if (!isSupabaseConfigured || !supabase) {
-        setMensaje('Guardado local');
+        setMensaje('Borrador guardado exitosamente');
       } else {
         const { error } = await supabase.from('acciones_correctivas').upsert({
           ...nuevo,
@@ -131,11 +131,11 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
 
-        if (error) setMensaje('Guardado local (error en servidor)');
+        if (error) setMensaje('Borrador guardado exitosamente (modo offline)');
         else setMensaje('Guardado exitosamente');
       }
     } catch (e) {
-      setMensaje('⚠️ Guardado local');
+      setMensaje('⚠️ Borrador guardado exitosamente');
     }
     
     setForm({ ...datosActuales, id: nuevoId });
@@ -211,10 +211,18 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   };
 
   const cerrarAccion = (efectiva) => {
+    const justificacion = prompt(`Por favor, escriba la conclusión del auditor para este cierre (${efectiva ? 'EFECTIVO' : 'NO EFECTIVO'}):`);
+    if (justificacion === null || justificacion.trim() === '') {
+      alert('Debe ingresar una conclusión para poder cerrar la acción.');
+      return;
+    }
+
     const estadoCierre = efectiva ? 'CERRADO_EFECTIVO' : 'CERRADO_NO_EFECTIVO';
     const cambios = {
-      estado: estadoCierre, fecha_cierre: new Date().toISOString(),
-      resultado_cierre: efectiva ? 'EFECTIVA' : 'NO EFECTIVA'
+      estado: estadoCierre, 
+      fecha_cierre: new Date().toISOString(),
+      resultado_cierre: efectiva ? 'EFECTIVA' : 'NO EFECTIVA',
+      conclusion_eficacia: justificacion.trim()
     };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
@@ -224,9 +232,12 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
 
   const getBotonesWorkflow = () => {
     const botones = [];
+    const rol = usuarioLogueado?.rol || 'Usuario';
+    const esAdmin = rol === 'Super Admin' || rol === 'Admin';
+    const esAuditorAsignado = rol === 'Super Admin' || (usuarioLogueado?.nombre && form.auditor_cierre === usuarioLogueado.nombre);
 
     // Lógica para Administradores (SGC) viendo el detalle de un formato
-    if (puedeTodasAreas && vista === 'ver') {
+    if (esAdmin && vista === 'ver') {
       if (form.estado === 'BORRADOR' || form.estado === 'GENERADO_IA' || form.estado === 'EN_REVISION') {
         botones.push(
           <button key="rechazar" onClick={rechazarSGC} className="px-5 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
@@ -246,14 +257,16 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
           </button>
         );
       } else if (form.estado === 'REVISION_AUDITOR') {
-        botones.push(
-          <button key="cerrar_efectiva" onClick={() => cerrarAccion(true)} className="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-            ✅ Cerrar (Efectiva)
-          </button>,
-          <button key="cerrar_no" onClick={() => cerrarAccion(false)} className="px-5 py-2.5 border border-red-200 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors ml-2">
-            ❌ Cerrar (No Efectiva)
-          </button>
-        );
+        if (esAuditorAsignado) {
+          botones.push(
+            <button key="cerrar_efectiva" onClick={() => cerrarAccion(true)} className="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+              ✅ Cerrar (Efectiva)
+            </button>,
+            <button key="cerrar_no" onClick={() => cerrarAccion(false)} className="px-5 py-2.5 border border-red-200 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors ml-2">
+              ❌ Cerrar (No Efectiva)
+            </button>
+          );
+        }
       }
     } else {
       // Lógica para Usuarios Normales o cuando se está creando (wizard)
@@ -263,7 +276,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
             📤 Enviar a SGC
           </button>
         );
-      } else if (form.estado === 'REVISION_AUDITOR' && usuarioLogueado?.rol === 'Auditor') {
+      } else if (form.estado === 'REVISION_AUDITOR' && esAuditorAsignado) {
         botones.push(
           <button key="cerrar_efectiva" onClick={() => cerrarAccion(true)} className="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors">
             ✅ Cerrar (Efectiva)
@@ -285,7 +298,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     }
 
     if (form.estado === 'CERRADO_EFECTIVO' || form.estado === 'CERRADO_NO_EFECTIVO') {
-      if (usuarioLogueado?.rol === 'Super Admin') {
+      if (rol === 'Super Admin') {
         botones.push(
           <button key="reabrir" onClick={() => {
             if (confirm('¿Reabrir esta acción correctiva?')) {

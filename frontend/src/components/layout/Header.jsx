@@ -5,10 +5,8 @@ import { isSupabaseConfigured } from '../../supabase';
 const Header = ({ sidebarCollapsed, setSidebarCollapsed, setIsSidebarOpen, setActiveTab }) => {
   return (
     <header 
-      className="h-20 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30 transition-all duration-300"
+      className="h-20 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-30 transition-all duration-300 bg-white"
       style={{
-        background: 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
       }}
     >

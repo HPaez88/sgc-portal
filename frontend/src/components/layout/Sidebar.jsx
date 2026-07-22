@@ -15,11 +15,9 @@ const Sidebar = ({ activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, sid
   ];
 
   return (
-    <aside className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-50 ${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen flex flex-col transition-all duration-300 ease-in-out`}
+    <aside className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-50 ${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen flex flex-col transition-all duration-300 ease-in-out bg-[#002855]`}
            style={{
-             background: 'rgba(0, 21, 46, 0.4)', // #00152e with transparency
-             backdropFilter: 'blur(20px)',
-             borderRight: '1px solid rgba(34, 211, 238, 0.15)' // cyan-400 border subtle
+             borderRight: '1px solid rgba(255, 255, 255, 0.1)'
            }}
     >
       {/* Sidebar Header */}

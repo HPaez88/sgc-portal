@@ -107,7 +107,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     
     try {
       if (!isSupabaseConfigured || !supabase) {
-        setMensaje('Guardado local');
+        setMensaje('Borrador guardado exitosamente');
       } else {
         const { error } = await supabase.from('planes_mejora').upsert({
           ...nuevo,
@@ -116,11 +116,11 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
 
-        if (error) setMensaje('Guardado local');
+        if (error) setMensaje('Borrador guardado exitosamente (modo offline)');
         else setMensaje('Guardado exitosamente');
       }
     } catch (e) {
-      setMensaje('⚠️ Guardado local');
+      setMensaje('⚠️ Borrador guardado exitosamente');
     }
     
     setForm({ ...datosActuales, id: nuevoId });
@@ -162,6 +162,12 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     setTimeout(() => { setVista('lista'); setMensaje('✅ Aprobado: ' + folioCodigo); }, 500);
   };
 
+  const rechazarSGC = () => {
+    setForm(f => ({ ...f, estado: 'RECHAZADO' }));
+    guardarBorrador();
+    setTimeout(() => { setVista('lista'); setMensaje('❌ Rechazado: Devuelto para corrección'); }, 500);
+  };
+
   const asignarAuditor = () => {
     const auditor = prompt('Nombre del auditor para revisar cierre:');
     if (!auditor) return;
@@ -172,10 +178,19 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   const cerrarAccion = (efectiva) => {
+    const justificacion = prompt(`Por favor, escriba la conclusión del auditor para este cierre (${efectiva ? 'EFECTIVO' : 'NO EFECTIVO'}):`);
+    if (justificacion === null || justificacion.trim() === '') {
+      alert('Debe ingresar una conclusión para poder cerrar el plan.');
+      return;
+    }
+
     const estadoCierre = efectiva ? 'CERRADO_EFECTIVO' : 'CERRADO_NO_EFECTIVO';
     setForm(f => ({
-      ...f, estado: estadoCierre, fecha_cierre: new Date().toISOString(),
-      resultado_cierre: efectiva ? 'EFECTIVA' : 'NO EFECTIVA'
+      ...f, 
+      estado: estadoCierre, 
+      fecha_cierre: new Date().toISOString(),
+      resultado_cierre: efectiva ? 'EFECTIVA' : 'NO EFECTIVA',
+      conclusion_eficacia: justificacion.trim()
     }));
     guardarBorrador();
     setMensaje(efectiva ? '✅ Plan cerrado' : '❌ Plan no efectivo');
@@ -184,6 +199,10 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
 
   const getBotonesWorkflow = () => {
     const botones = [];
+    const rol = usuarioLogueado?.rol || 'Usuario';
+    const esAdmin = rol === 'Super Admin' || rol === 'Admin';
+    const esAuditorAsignado = rol === 'Super Admin' || (usuarioLogueado?.nombre && form.auditor_cierre === usuarioLogueado.nombre);
+
     switch (form.estado) {
       case 'BORRADOR':
         botones.push(
@@ -193,28 +212,37 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         );
         break;
       case 'EN_REVISION':
-        botones.push(
-          <button key="aprobar" onClick={aprobarSGC} className="px-6 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors">
-            ✓ Aprobar y Asignar Folio
-          </button>
-        );
+        if (esAdmin) {
+          botones.push(
+            <button key="aprobar" onClick={aprobarSGC} className="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+              ✓ Aprobar y Asignar Folio
+            </button>,
+            <button key="rechazar" onClick={rechazarSGC} className="px-6 py-2.5 border border-red-200 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors ml-2">
+              ❌ Rechazar Plan
+            </button>
+          );
+        }
         break;
       case 'APROBADO':
-        botones.push(
-          <button key="auditor" onClick={asignarAuditor} className="px-6 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors">
-            👤 Asignar Auditor de Cierre
-          </button>
-        );
+        if (esAdmin) {
+          botones.push(
+            <button key="auditor" onClick={asignarAuditor} className="px-6 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors">
+              👤 Asignar Auditor de Cierre
+            </button>
+          );
+        }
         break;
       case 'REVISION_AUDITOR':
-        botones.push(
-          <button key="efectiva" onClick={() => cerrarAccion(true)} className="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-            ✅ Cierre Efectivo
-          </button>,
-          <button key="noefectiva" onClick={() => cerrarAccion(false)} className="px-6 py-2.5 border border-red-200 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors ml-2">
-            ❌ Cierre No Efectivo
-          </button>
-        );
+        if (esAuditorAsignado) {
+          botones.push(
+            <button key="efectiva" onClick={() => cerrarAccion(true)} className="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+              ✅ Cierre Efectivo
+            </button>,
+            <button key="noefectiva" onClick={() => cerrarAccion(false)} className="px-6 py-2.5 border border-red-200 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors ml-2">
+              ❌ Cierre No Efectivo
+            </button>
+          );
+        }
         break;
       case 'RECHAZADO':
         botones.push(

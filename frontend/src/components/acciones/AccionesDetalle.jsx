@@ -25,6 +25,13 @@ export default function AccionesDetalle({
   const enFaseAuditoria = ['REVISION_AUDITOR', 'CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO'].includes(form.estado);
   const estaCerrada = form.estado === 'CERRADO_EFECTIVO' || form.estado === 'CERRADO_NO_EFECTIVO';
   
+  const [guardandoEvidencia, setGuardandoEvidencia] = React.useState(false);
+  const handleGuardarEvidencia = async () => {
+    setGuardandoEvidencia(true);
+    await guardarBorrador();
+    setTimeout(() => setGuardandoEvidencia(false), 2000);
+  };
+  
   const generarInformePDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -420,8 +427,8 @@ export default function AccionesDetalle({
                   ✓ {mensaje}
                 </div>
               )}
-              <button onClick={() => guardarBorrador()} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg shadow-md transition-colors flex items-center gap-2">
-                💾 Guardar Evidencias
+              <button onClick={handleGuardarEvidencia} disabled={guardandoEvidencia} className={`px-5 py-2.5 font-medium rounded-lg shadow-md transition-colors flex items-center gap-2 ${guardandoEvidencia ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}>
+                {guardandoEvidencia ? '✓ ¡Evidencias Guardadas!' : '💾 Guardar Evidencias'}
               </button>
             </div>
           )}
