@@ -243,13 +243,31 @@ export default function PlanesDetalle({
                       <td className="p-3 bg-purple-50 border-l border-purple-100">
                         <div className="flex flex-col gap-2">
                           {a.evidencia_real && a.evidencia_real.startsWith('http') ? (
-                            <a href={a.evidencia_real} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 text-xs font-bold bg-purple-100 hover:bg-purple-200 px-2 py-1.5 rounded transition-colors w-fit">
-                              📎 Ver archivo adjunto
-                            </a>
+                            <div className="flex items-center gap-2">
+                              <a href={a.evidencia_real} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 text-xs font-bold bg-purple-100 hover:bg-purple-200 px-2 py-1.5 rounded transition-colors w-fit">
+                                📎 Ver archivo adjunto
+                              </a>
+                              <button onClick={() => {
+                                const nuevo = [...actividades];
+                                nuevo[i] = {...nuevo[i], evidencia_real: ''};
+                                setActividades(nuevo);
+                              }} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded" title="Eliminar evidencia">
+                                🗑️
+                              </button>
+                            </div>
                           ) : a.evidencia_real && a.evidencia_real.startsWith('[Archivo]') ? (
-                            <span className="inline-flex items-center gap-1 text-slate-500 text-xs font-bold bg-slate-100 px-2 py-1.5 rounded w-fit">
-                              📎 {a.evidencia_real} (No subido)
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 text-slate-500 text-xs font-bold bg-slate-100 px-2 py-1.5 rounded w-fit">
+                                📎 {a.evidencia_real} (No subido)
+                              </span>
+                              <button onClick={() => {
+                                const nuevo = [...actividades];
+                                nuevo[i] = {...nuevo[i], evidencia_real: ''};
+                                setActividades(nuevo);
+                              }} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded" title="Eliminar evidencia">
+                                🗑️
+                              </button>
+                            </div>
                           ) : (
                             <label className="flex items-center gap-1 cursor-pointer bg-white border border-purple-200 hover:border-purple-400 text-purple-700 px-2 py-1.5 rounded text-xs font-medium transition-colors w-fit shadow-sm">
                               <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={async (e) => {
