@@ -32,7 +32,7 @@ def get_ai_client() -> OpenAI:
 
 def get_model() -> str:
     """Modelo de Groq disponibles."""
-    return "llama-3.1-8b-instant"
+    return os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
 
 def _extraer_json(raw: str) -> dict:
