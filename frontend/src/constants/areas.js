@@ -1,7 +1,13 @@
 // Catálogo de Áreas y Direcciones - OOMAPASC de Cajeme
+// Direcciones con la nomenclatura oficial usada en usuarios y formatos
 export const DIRECCIONES = [
-  "General", "Técnica", "Administrativa", "Órganos de Control Interno", 
-  "Comercial", "Jurídica", "Programas Sociales y Cultura del Agua"
+  "Dir. General",
+  "Dir. Técnica",
+  "Dir. Comercial",
+  "Dir. Administrativa",
+  "Dir. Órgano de Control Interno",
+  "Dir. Jurídica",
+  "Dir. Programas Sociales y Cultura del Agua"
 ];
 
 export const AREAS = [

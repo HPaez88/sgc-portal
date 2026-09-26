@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ORIGENES_AC } from '../../constants';
+import { ORIGENES_AC, FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
 
 export default function AccionesLista({ 
   accionesCorrectivas, 
@@ -18,23 +18,43 @@ export default function AccionesLista({
   const [filtroAnio, setFiltroAnio] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroOrigen, setFiltroOrigen] = useState('');
+  const [filtroTexto, setFiltroTexto] = useState('');
+  const [filtroVencimiento, setFiltroVencimiento] = useState('');
 
   // Obtener años únicos de las acciones
   const aniosRaw = accionesCorrectivas.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
   const años = [...new Set(aniosRaw)].sort((a,b) => b - a);
   
-  // Filtrar acciones
+  // Filtrar acciones (estado canónico + búsqueda + vencimiento)
   const accionesFiltradas = accionesCorrectivas.filter(ac => {
     const anioAC = ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null;
     if (filtroAnio && anioAC !== parseInt(filtroAnio)) return false;
-    if (filtroEstado) {
-      if (filtroEstado === 'CERRADA') {
-        if (ac.estado !== 'CERRADO_EFECTIVO' && ac.estado !== 'CERRADO_NO_EFECTIVO') return false;
-      } else if (filtroEstado === 'ABIERTA') {
-        if (ac.estado !== 'FOLIO_ASIGNADO' && ac.estado !== 'EN_SEGUIMIENTO') return false;
-      } else if (ac.estado !== filtroEstado) return false;
-    }
+    if (!cumpleFiltroEstado(ac.estado, filtroEstado)) return false;
     if (filtroOrigen && ac.origen !== filtroOrigen) return false;
+
+    if (filtroVencimiento) {
+      const nivel = getVencimiento(ac).nivel;
+      if (nivel !== filtroVencimiento) return false;
+    }
+
+    if (filtroTexto.trim()) {
+      const q = filtroTexto.trim().toLowerCase();
+      const texto = [
+        ac.folio_codigo,
+        ac.folio,
+        ac.area,
+        ac.proceso,
+        ac.origen,
+        ac.numero_auditoria,
+        ac.descripcion_no_conformidad_original,
+        ac.descripcion_no_conformidad_final,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      if (!texto.includes(q)) return false;
+    }
+
     return true;
   });
 
@@ -85,7 +105,7 @@ export default function AccionesLista({
   return (
     <div className="space-y-4 animate-fade-in-up">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-white">📋 Acciones Correctivas</h2>
+        <h2 className="text-xl font-bold text-[#002855]">📋 Acciones Correctivas</h2>
         <button onClick={() => { resetForm(); setVista('nuevo'); }}
           className="px-4 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40] transition-colors">
           + Nueva Acción Correctiva
@@ -95,6 +115,16 @@ export default function AccionesLista({
       {/* Filtros */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div className="flex flex-wrap gap-4">
+          <div className="min-w-[240px] flex-1">
+            <label className="block text-xs font-semibold text-slate-500 mb-1">BUSCAR</label>
+            <input
+              type="text"
+              value={filtroTexto}
+              onChange={(e) => setFiltroTexto(e.target.value)}
+              placeholder="Folio, área, proceso o descripción..."
+              className="w-full border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all"
+            />
+          </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">AÑO</label>
             <select value={filtroAnio} onChange={(e) => setFiltroAnio(e.target.value)}
@@ -107,13 +137,18 @@ export default function AccionesLista({
             <label className="block text-xs font-semibold text-slate-500 mb-1">ESTADO</label>
             <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}
               className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
+              {FILTROS_ESTADO.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">VENCIMIENTO</label>
+            <select value={filtroVencimiento} onChange={(e) => setFiltroVencimiento(e.target.value)}
+              className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all">
               <option value="">Todos</option>
-              <option value="BORRADOR">Borrador</option>
-              <option value="GENERADO_IA">Pendiente</option>
-              <option value="ENVIADO_SGC">En revisión SGC</option>
-              <option value="ABIERTA">Abierta</option>
-              <option value="REVISION_AUDITOR">En cierre</option>
-              <option value="CERRADA">Cerrada</option>
+              <option value="vencido">Vencidos</option>
+              <option value="por_vencer">Por vencer (≤15 días)</option>
+              <option value="en_tiempo">En tiempo</option>
+              <option value="sin_fecha">Sin fecha compromiso</option>
             </select>
           </div>
           <div>
@@ -125,7 +160,7 @@ export default function AccionesLista({
             </select>
           </div>
           <div className="flex items-end">
-            <button onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroOrigen(''); }}
+            <button onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroOrigen(''); setFiltroTexto(''); setFiltroVencimiento(''); }}
               className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
               Limpiar filtros
             </button>
@@ -150,6 +185,7 @@ export default function AccionesLista({
                   <th className="p-4">Proceso</th>
                   <th className="p-4">Origen</th>
                   <th className="p-4">Estado</th>
+                  <th className="p-4">Vencimiento</th>
                   <th className="p-4">Fecha</th>
                   <th className="p-4 text-center">Acciones</th>
                 </tr>
@@ -160,7 +196,7 @@ export default function AccionesLista({
                     <td className="p-4 font-mono text-xs font-semibold text-slate-700">
                       {ac.folio_codigo || 'Pendiente'}
                     </td>
-                    <td className="p-4 text-white">{ac.area || '-'}</td>
+                    <td className="p-4 text-slate-800 font-medium">{ac.area || '-'}</td>
                     <td className="p-4 text-slate-700">{ac.proceso || '-'}</td>
                     <td className="p-4 text-slate-500">{ac.origen || '-'}</td>
                     <td className="p-4">
@@ -168,16 +204,21 @@ export default function AccionesLista({
                         {getEstadoLabel(ac.estado)}
                       </span>
                     </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getVencimiento(ac).color}`}>
+                        {getVencimiento(ac).label}
+                      </span>
+                    </td>
                     <td className="p-4 text-xs text-slate-500 font-medium">
                       {ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}
                     </td>
                     <td className="p-4 text-center">
-                      <div className="flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2 justify-center">
                         <button onClick={() => handleVer(ac)}
                           className="text-cyan-600 bg-cyan-50 hover:bg-cyan-100 hover:text-cyan-700 px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1">
                           👁️ Ver
                         </button>
-                        {(usuarioLogueado?.rol === 'Admin' || usuarioLogueado?.rol === 'Super Admin') && (
+                        {can(usuarioLogueado, 'eliminar') && (
                           <button onClick={() => eliminarAC(ac.id)}
                             className="text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 px-3 py-1.5 rounded-lg transition-colors">
                             🗑️

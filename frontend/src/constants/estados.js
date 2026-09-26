@@ -1,10 +1,13 @@
-// Estados del workflow SGC y funciones de color
+// Estados del workflow SGC (canónicos, incluye cierre efectivo / no efectivo)
 export const ESTADOS_SGC = [
   'BORRADOR',
   'EN_REVISION',
   'APROBADO',
   'EN_SEGUIMIENTO',
+  'REVISION_AUDITOR',
   'RECHAZADO',
+  'CERRADO_EFECTIVO',
+  'CERRADO_NO_EFECTIVO',
   'CERRADO'
 ];
 

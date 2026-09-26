@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Check, X, Eye } from 'lucide-react';
-import { getEstadoColor, getEstadoLabel } from '../../constants';
+import { getEstadoColor, getEstadoLabel, getVencimiento, can } from '../../constants';
 
 export default function GestorAprobacionesView({ 
   accionesCorrectivas, 
@@ -9,10 +9,15 @@ export default function GestorAprobacionesView({
   setPlanesMejora, 
   usuarios, 
   puedeTodasAreas, 
-  areaUsuario 
+  areaUsuario,
+  usuarioLogueado
 }) {
   const [filtroTipo, setFiltroTipo] = useState('');
   const [mensaje, setMensaje] = useState('');
+
+  // Permisos del workflow: solo quien puede aprobar ve los botones de decisión
+  const puedeAprobar = can(usuarioLogueado, 'aprobar');
+  const puedeRechazar = can(usuarioLogueado, 'rechazar');
 
   // Agregar los registros de Acciones Correctivas que requieren aprobación
   const accionesPendientes = accionesCorrectivas
@@ -56,6 +61,10 @@ export default function GestorAprobacionesView({
   };
 
   const aprobarDocumento = (app) => {
+    if (!puedeAprobar) {
+      mostrarMensaje('No tienes permiso para aprobar documentos en el SGC.');
+      return;
+    }
     if (!confirm(`¿Aprobar el documento ${app.documento}?`)) return;
 
     if (app.tipo === 'Acción Correctiva') {
@@ -94,6 +103,10 @@ export default function GestorAprobacionesView({
   };
 
   const rechazarDocumento = (app) => {
+    if (!puedeRechazar) {
+      mostrarMensaje('No tienes permiso para devolver documentos en el SGC.');
+      return;
+    }
     const obs = prompt(`Indique el motivo del rechazo para ${app.documento}:`);
     if (!obs) return;
 
@@ -128,7 +141,7 @@ export default function GestorAprobacionesView({
         <div className="flex items-center gap-3">
           <span className="text-2xl bg-cyan-100 p-2 rounded-lg">✅</span>
           <div>
-            <h2 className="text-xl font-bold text-white">Gestor de Aprobaciones</h2>
+            <h2 className="text-xl font-bold text-[#002855]">Gestor de Aprobaciones</h2>
             <p className="text-sm text-slate-500 font-medium">Bandeja de entrada del SGC</p>
           </div>
         </div>
@@ -163,13 +176,14 @@ export default function GestorAprobacionesView({
                   <th className="p-4 text-sm font-bold text-slate-700">Fecha Envío</th>
                   <th className="p-4 text-sm font-bold text-slate-700">Prioridad</th>
                   <th className="p-4 text-sm font-bold text-slate-700">Estado</th>
+                  <th className="p-4 text-sm font-bold text-slate-700">Vencimiento</th>
                   <th className="p-4 text-sm font-bold text-slate-700 text-center">Acciones SGC</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {appsFiltradas.map(app => (
                   <tr key={`${app.tipo}-${app.id_original}`} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="p-4 font-mono font-bold text-white text-sm">
+                    <td className="p-4 font-mono font-bold text-slate-800 text-sm">
                       {app.documento}
                     </td>
                     <td className="p-4">
@@ -191,9 +205,14 @@ export default function GestorAprobacionesView({
                         {getEstadoLabel(app.estado)}
                       </span>
                     </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getVencimiento(app.objeto_original).color}`}>
+                        {getVencimiento(app.objeto_original).label}
+                      </span>
+                    </td>
                     <td className="p-4 text-center">
-                      {(app.estado === 'ENVIADO_SGC' || app.estado === 'EN_REVISION') && puedeTodasAreas ? (
-                        <div className="flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      {(app.estado === 'ENVIADO_SGC' || app.estado === 'EN_REVISION') && puedeAprobar ? (
+                        <div className="flex gap-2 justify-center">
                           <button onClick={() => aprobarDocumento(app)} className="bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1 shadow-sm">
                             <Check size={16} strokeWidth={3} /> Aprobar
                           </button>

@@ -294,11 +294,34 @@ def _cerrar_sgc(
     if not entidad:
         raise HTTPException(status_code=404, detail=f"{entidad_tipo} no encontrado.")
 
-    if entidad.estado not in ["APROBADO", "EN_SEGUIMIENTO"]:
-        raise HTTPException(status_code=409, detail="Solo se puede cerrar en ejecucion.")
+    if entidad.estado not in ["APROBADO", "EN_SEGUIMIENTO", "REVISION_AUDITOR"]:
+        raise HTTPException(status_code=409, detail="Solo se puede cerrar en ejecucion o revision de auditor.")
 
     estado_anterior = entidad.estado
-    setattr(entidad, "estado", "CERRADO")
+
+    # Cierre efectivo o no efectivo segun la evaluacion del auditor
+    evaluacion = (auditoria.evaluacion_eficacia or "").strip().lower()
+    # Normaliza acentos ("Si"/"Sí") sin depender del encoding del archivo
+    evaluacion_norm = (
+        evaluacion
+        .replace("\u00e1", "a")
+        .replace("\u00e9", "e")
+        .replace("\u00ed", "i")
+        .replace("\u00f3", "o")
+        .replace("\u00fa", "u")
+    )
+    positivos = (
+        ("si", "cumple", "aprobado", "aceptado", "correcto")
+    )
+    eficaz = evaluacion_norm.startswith(positivos) or evaluacion_norm in (
+        "efectiva",
+        "eficaz",
+        "satisfactorio",
+        "verificada",
+    )
+    nuevo_estado = "CERRADO_EFECTIVO" if eficaz else "CERRADO_NO_EFECTIVO"
+
+    setattr(entidad, "estado", nuevo_estado)
     entidad.fecha_cierre_real = datetime.utcnow()
     entidad.evaluacion_eficacia = auditoria.evaluacion_eficacia
     entidad.evidencia_revisada = auditoria.evidencia_revisada
@@ -312,7 +335,7 @@ def _cerrar_sgc(
             entidad_id=entidad_id,
             campo="estado",
             valor_anterior=estado_anterior,
-            valor_nuevo="CERRADO",
+            valor_nuevo=nuevo_estado,
             usuario=auditoria.nombre_auditor,
         )
     )

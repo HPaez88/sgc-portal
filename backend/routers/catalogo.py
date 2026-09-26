@@ -8,8 +8,10 @@ from backend.database import get_session
 from backend.tenant import get_organismo_id
 from backend.models import (
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
-    CATEGORIAS_MEJORA, PERIODOS, Auditor, DatosArea, ESTADOS_SGC, TRANSICIONES
+    CATEGORIAS_MEJORA, PERIODOS, Auditor, DatosArea, ESTADOS_SGC,
+    ESTADOS_CERRADOS, PERMISOS_ROL, ROLES_EQUIPO, TRANSICIONES,
 )
+from backend.routers._sgc_common import AREAS_DIRECCION
 
 router = APIRouter(prefix="/api/v1/catalogos", tags=["Catálogos"])
 
@@ -31,9 +33,17 @@ def obtener_catalogos(session=None):
         "categorias_mejora": CATEGORIAS_MEJORA,
         "periodos": PERIODOS,
         
+        # Equipo de trabajo
+        "roles_equipo": ROLES_EQUIPO,
+
         # Workflow
         "estados": ESTADOS_SGC,
+        "estados_cerrados": ESTADOS_CERRADOS,
         "transiciones": TRANSICIONES,
+        "permisos_rol": PERMISOS_ROL,
+
+        # Mapeo area -> direccion (espejo del backend)
+        "areas_direccion": AREAS_DIRECCION,
     }
 
 

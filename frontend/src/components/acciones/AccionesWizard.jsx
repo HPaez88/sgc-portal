@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import { ORIGENES_AC } from '../../constants';
+import { ORIGENES_AC, ROLES_EQUIPO } from '../../constants';
 import { useSGC } from '../../SGCContext';
 import { generarPropuestaIA } from './AccionesAI';
-
-const ROLES_EQUIPO = [
-  "Responsable principal", "Integrante área involucrada", "Integrante externo", 
-  "Enlace SGC", "Apoyo técnico", "Responsable de evidencias", "Auditor asignado"
-];
 
 export default function AccionesWizard({
   step, setStep, form, setForm, error, setError, mensaje, setMensaje,

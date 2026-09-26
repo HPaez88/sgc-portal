@@ -82,7 +82,7 @@ PROCESOS = [
     "Comunicación",
     "Gestión de Recursos",
     "Mantenimiento y Calibración",
-    "Medición Análisis y Mejora",
+    "Medición, Análisis y Mejora",
     "Producción",
     "Proyectos e Infraestructura",
     "Responsabilidad de la Dirección",
@@ -90,13 +90,15 @@ PROCESOS = [
 
 # Orígenes de Acción Correctiva (formato AC)
 ORIGENES_AC = [
-    "Análisis de datos",
     "Auditoría",
+    "Análisis de datos",
     "Ensayo no conforme",
     "Indicador",
     "Proceso",
     "Producto no conforme",
     "Reclamaciones de cliente",
+    "Queja",
+    "Otra",
 ]
 
 # Orígenes de Plan de Mejora (formato PM)
@@ -114,31 +116,60 @@ CATEGORIAS_MEJORA = [
     "Seguridad Operativa y Sostenibilidad Ambiental",
 ]
 
-# Períodos para Planes de Mejora
-PERIODOS = ["1er. Cuatri", "2do. Cuatri", "3er. Cuatri"]
+# Períodos para Planes de Mejora (nomenclatura corta compatible con folios)
+PERIODOS = ["1er. Cuatri (Ene-Abr)", "2do. Cuatri (May-Ago)", "3er. Cuatri (Sep-Dic)"]
+
+# Roles del equipo de trabajo (compartido por AC y PM)
+ROLES_EQUIPO = [
+    "Responsable principal",
+    "Integrante área involucrada",
+    "Integrante externo",
+    "Enlace SGC",
+    "Apoyo técnico",
+    "Responsable de evidencias",
+    "Auditor asignado",
+]
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ESTADOS Y TRANSICIONES — Workflow completo según formato SGC
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Estados según Control 6
+# Estados según Control 6 (incluye cierre efectivo / no efectivo y estados heredados)
 ESTADOS_SGC = {
     "BORRADOR": "Borrador - En elaboración",
-    "EN_REVISION": "En Revisión - Pendiente aprobación",
-    "APROBADO": "Aprobado - En ejecución",
-    "EN_SEGUIMIENTO": "En Seguimiento - En proceso",
+    "EN_REVISION": "En Revisión SGC - Pendiente aprobación",
+    "APROBADO": "Aprobado - Folio asignado, en ejecución",
+    "EN_SEGUIMIENTO": "En Seguimiento - Actividades en proceso",
+    "REVISION_AUDITOR": "Revisión Auditor - Evaluación de eficacia",
     "RECHAZADO": "Rechazado - Requiere correcciones",
-    "CERRADO": "Cerrado - Completado",
+    "CERRADO_EFECTIVO": "Cerrado - Eficacia comprobada",
+    "CERRADO_NO_EFECTIVO": "Cerrado - Sin eficacia comprobada",
+    "CERRADO": "Cerrado - Registro heredado",
 }
 
-# Transiciones permitidas del workflow
+# Transiciones permitidas del workflow (mismas reglas para AC y PM)
 TRANSICIONES = {
     "BORRADOR": ["EN_REVISION"],
     "EN_REVISION": ["APROBADO", "RECHAZADO"],
     "APROBADO": ["EN_SEGUIMIENTO"],
-    "EN_SEGUIMIENTO": ["CERRADO", "RECHAZADO"],
+    "EN_SEGUIMIENTO": ["REVISION_AUDITOR", "RECHAZADO"],
+    "REVISION_AUDITOR": ["CERRADO_EFECTIVO", "CERRADO_NO_EFECTIVO"],
     "RECHAZADO": ["BORRADOR"],
-    "CERRADO": [],  # Estado final
+    "CERRADO_EFECTIVO": [],
+    "CERRADO_NO_EFECTIVO": [],
+    "CERRADO": [],
+}
+
+# Estados considerados como cerrados (para métricas y filtros)
+ESTADOS_CERRADOS = ["CERRADO_EFECTIVO", "CERRADO_NO_EFECTIVO", "CERRADO"]
+
+# Matriz de permisos por rol — espejo de frontend/src/constants/workflow.js
+PERMISOS_ROL = {
+    "Super Admin": ["crear", "editar", "enviar", "aprobar", "rechazar", "asignar_auditor", "cerrar", "reabrir", "eliminar", "ver_todas_areas"],
+    "Admin": ["crear", "editar", "enviar", "aprobar", "rechazar", "asignar_auditor", "cerrar", "reabrir", "eliminar", "ver_todas_areas"],
+    "Auditor": ["crear", "editar", "cerrar", "rechazar", "ver_todas_areas"],
+    "Encargado": ["crear", "editar", "enviar"],
+    "Usuario": ["crear", "editar"],
 }
 
 

@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import { CATEGORIAS_MEJORA, PERIODOS, ORIGENES_PM } from '../../constants';
+import { CATEGORIAS_MEJORA, PERIODOS, ORIGENES_PM, ROLES_EQUIPO } from '../../constants';
 import { useSGC } from '../../SGCContext';
 import { generarPlanMejoraIA } from './PlanesAI';
-
-const ROLES_EQUIPO = [
-  "Responsable principal", "Integrante área involucrada", "Integrante externo", 
-  "Enlace SGC", "Apoyo técnico", "Responsable de evidencias"
-];
 
 export default function PlanesForm({
   step, setStep, form, setForm, error, setError, mensaje, setMensaje,

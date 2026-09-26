@@ -5,7 +5,18 @@ export const PROCESOS = [
   "Producción", "Proyectos e Infraestructura", "Responsabilidad de la Dirección"
 ];
 
-export const ORIGENES_AC = ["Auditoría", "Indicador", "Queja", "Otra"];
+// Orígenes de Acción Correctiva (unión formato oficial OOMRSC-20 + registros previos)
+export const ORIGENES_AC = [
+  'Auditoría',
+  'Análisis de datos',
+  'Ensayo no conforme',
+  'Indicador',
+  'Proceso',
+  'Producto no conforme',
+  'Reclamaciones de cliente',
+  'Queja',
+  'Otra'
+];
 
 export const ORIGENES_PM = [
   'Objetivo de Calidad',
@@ -20,8 +31,20 @@ export const CATEGORIAS_MEJORA = [
   'Seguridad Operativa y Sostenibilidad Ambiental'
 ];
 
+// Períodos cuatrimestrales (nomenclatura corta compatible con folios y BD)
 export const PERIODOS = [
-  'Primer Cuatrimestre (Ene-Abr)',
-  'Segundo Cuatrimestre (May-Ago)',
-  'Tercer Cuatrimestre (Sep-Dic)'
+  '1er. Cuatri (Ene-Abr)',
+  '2do. Cuatri (May-Ago)',
+  '3er. Cuatri (Sep-Dic)'
+];
+
+// Roles del equipo de trabajo — compartido por Acciones Correctivas y Planes de Mejora
+export const ROLES_EQUIPO = [
+  'Responsable principal',
+  'Integrante área involucrada',
+  'Integrante externo',
+  'Enlace SGC',
+  'Apoyo técnico',
+  'Responsable de evidencias',
+  'Auditor asignado'
 ];
