@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
+import SelectBuscable from '../common/SelectBuscable';
 import { INDICADORES, evalSemaforoOOMRSC05 } from '../../constants/indicadores';
 import { processEvidenceFile } from '../../utils/fileSecurity';
 
@@ -160,32 +161,30 @@ export function ModalActualizarIndicadorIA({
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
-          {/* Selector de Indicador */}
+          {/* Selector de Indicador con Filtro en Tiempo Real */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Seleccionar Indicador Oficial:
-            </label>
-            <select
+            <SelectBuscable
+              label="Seleccionar Indicador Oficial:"
               value={indicadorId}
-              onChange={(e) => {
-                const idSel = Number(e.target.value);
-                setIndicadorId(idSel);
-                const ind = INDICADORES.find(i => i.id === idSel);
-                if (ind) {
-                  const key = `${ind.id}-${mes}-${ejercicio}`;
+              onChange={(idSel, ind) => {
+                const numId = Number(idSel);
+                setIndicadorId(numId);
+                const item = ind || INDICADORES.find(i => i.id === numId);
+                if (item) {
+                  const key = `${item.id}-${mes}-${ejercicio}`;
                   const dataG = indicadoresData?.resultados?.[key];
-                  setValor(dataG?.valor !== undefined ? String(dataG.valor) : (ind.valor_default !== null ? String(ind.valor_default) : ''));
-                  setObservacion(dataG?.observacion || ind.observacion_default || '');
+                  setValor(dataG?.valor !== undefined ? String(dataG.valor) : (item.valor_default !== null ? String(item.valor_default) : ''));
+                  setObservacion(dataG?.observacion || item.observacion_default || '');
                 }
               }}
-              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-            >
-              {INDICADORES.map((ind) => (
-                <option key={ind.id} value={ind.id}>
-                  #{ind.numero !== undefined ? ind.numero : ind.id} - {ind.nombre.substring(0, 75)}... ({ind.area})
-                </option>
-              ))}
-            </select>
+              options={INDICADORES}
+              getOptionValue={(ind) => ind.id}
+              getOptionLabel={(ind) => ind.nombre}
+              getOptionSublabel={(ind) => ind.area}
+              getOptionBadge={(ind) => `#${ind.numero !== undefined ? ind.numero : ind.id}`}
+              searchPlaceholder="Escribe número (#0 a #99), nombre del indicador o área..."
+              placeholder="Buscar indicador oficial por número, nombre o área..."
+            />
           </div>
 
           {/* Ficha rápida del indicador */}
@@ -466,25 +465,23 @@ export function ModalGestionarActividadEvidenciaIA({
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
-          {/* Selector de Acción Correctiva */}
+          {/* Selector de Acción Correctiva con Filtro en Tiempo Real */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Acción Correctiva (Folio / Título):
-            </label>
-            <select
+            <SelectBuscable
+              label="Acción Correctiva (Folio / Título):"
               value={accionId}
-              onChange={(e) => {
-                setAccionId(e.target.value);
+              onChange={(idSel) => {
+                setAccionId(idSel);
                 setActividadIndex(0);
               }}
-              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-            >
-              {accionesCorrectivas.map((ac) => (
-                <option key={ac.id} value={ac.id}>
-                  [{ac.folio || `AC#${ac.id}`}] {ac.titulo || ac.descripcion} ({ac.area}) - Estado: {ac.estado}
-                </option>
-              ))}
-            </select>
+              options={accionesCorrectivas}
+              getOptionValue={(ac) => ac.id}
+              getOptionLabel={(ac) => ac.titulo || ac.descripcion}
+              getOptionSublabel={(ac) => `${ac.area} • Estado: ${ac.estado}`}
+              getOptionBadge={(ac) => ac.folio || `AC#${ac.id}`}
+              searchPlaceholder="Escribe folio (ej. AC-2026-01), área o descripción..."
+              placeholder="Buscar acción correctiva por folio o descripción..."
+            />
           </div>
 
           {/* Ficha Resumen de la AC */}
@@ -734,22 +731,20 @@ export function ModalRatificarDocumentoIA({
 
         {/* Body Form */}
         <form onSubmit={handleRatificar} className="p-6 space-y-5 overflow-y-auto">
-          {/* Selector de Documento */}
+          {/* Selector de Documento con Filtro en Tiempo Real */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Procedimiento / Registro a Ratificar:
-            </label>
-            <select
+            <SelectBuscable
+              label="Procedimiento / Registro a Ratificar:"
               value={docId}
-              onChange={(e) => setDocId(e.target.value)}
-              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-            >
-              {documentos.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  [{doc.clave}] {doc.titulo} ({doc.tipo} - {doc.area}) - Fecha: {doc.fecha || 'Antigua'}
-                </option>
-              ))}
-            </select>
+              onChange={(idSel) => setDocId(idSel)}
+              options={documentos}
+              getOptionValue={(doc) => doc.id}
+              getOptionLabel={(doc) => doc.titulo}
+              getOptionSublabel={(doc) => `${doc.tipo} - ${doc.area} • Rev. ${doc.version || '01'} (${doc.fecha || 'Antigua'})`}
+              getOptionBadge={(doc) => doc.clave}
+              searchPlaceholder="Escribe clave (ej. PR-CS-01, OOMRSC-20), título o área..."
+              placeholder="Buscar documento o procedimiento..."
+            />
           </div>
 
           {/* Ficha Resumen */}
