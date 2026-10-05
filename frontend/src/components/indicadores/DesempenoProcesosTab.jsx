@@ -17,7 +17,8 @@ import {
   Edit3,
   Sparkles,
   Building2,
-  Target
+  Target,
+  FileSpreadsheet
 } from 'lucide-react';
 import { evalSemaforoOOMRSC05 } from '../../constants/indicadores';
 
@@ -54,7 +55,8 @@ export default function DesempenoProcesosTab({
   onCrearAccionCorrectiva,
   onCrearReporteCorreccion,
   esAdminOSGC = false,
-  onEditarIndicador
+  onEditarIndicador,
+  onAbrirFichaAyuntamiento
 }) {
   // Modo de filtro temporal: 'mes' | 'trimestre' | 'anual'
   const [modoTemporal, setModoTemporal] = useState('mes');
@@ -594,7 +596,8 @@ export default function DesempenoProcesosTab({
                             </th>
                             <th className="py-2.5 px-2 text-center w-28">Cumplimiento</th>
                             <th className="py-2.5 px-3 text-center w-36">Acción Correctiva / RC</th>
-                            {esAdminOSGC && <th className="py-2.5 px-2 text-center w-14">Ficha</th>}
+                            <th className="py-2.5 px-2 text-center w-24">Ficha PMD</th>
+                            {esAdminOSGC && <th className="py-2.5 px-2 text-center w-14">Admin</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -693,6 +696,18 @@ export default function DesempenoProcesosTab({
                                       {ind.acc}
                                     </span>
                                   )}
+                                </td>
+
+                                {/* Ficha PMD */}
+                                <td className="py-2.5 px-2 text-center">
+                                  <button
+                                    onClick={() => onAbrirFichaAyuntamiento?.(ind)}
+                                    className="px-2 py-1 text-[10.5px] font-bold bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-900 border border-sky-200 rounded-md shadow-2xs flex items-center gap-1 mx-auto transition-all cursor-pointer"
+                                    title="Ver Ficha Técnica Oficial del Ayuntamiento de Cajeme"
+                                  >
+                                    <FileSpreadsheet size={11} className="text-sky-600" />
+                                    <span>Ficha PMD</span>
+                                  </button>
                                 </td>
 
                                 {/* Ficha Admin */}

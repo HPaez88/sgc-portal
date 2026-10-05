@@ -40,11 +40,16 @@ import {
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import ContenedorModal from '../common/ContenedorModal';
-import StatCard from '../ui/StatCard';
 import { acDesdeIndicador } from '../../services/flujoService';
 import DesempenoProcesosTab from './DesempenoProcesosTab';
 import ModalGestionarIndicador from './ModalGestionarIndicador';
 import ModalGenerarRC from './ModalGenerarRC';
+import FichasGubernamentalesTab from './FichasGubernamentalesTab';
+import ProyectosPresupuestoTab from './ProyectosPresupuestoTab';
+import ModalFichaTecnicaAyuntamiento from './ModalFichaTecnicaAyuntamiento';
+import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamentales';
+
+
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MESES_COMPLETOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -121,6 +126,53 @@ export default function IndicadoresView({
     } catch (e) { /* ignore */ }
     return REPORTES_CORRECCION_INICIALES;
   });
+
+  // Fichas Técnicas Oficiales Gubernamentales (Ayuntamiento de Cajeme)
+  const [fichasPersonalizadas, setFichasPersonalizadas] = useState(() => {
+    try {
+      const g = localStorage.getItem('sgc-fichas-gubernamentales');
+      if (g) return JSON.parse(g);
+    } catch (e) { /* ignore */ }
+    return indicadoresData?.fichasPersonalizadas || {};
+  });
+
+  const [modalFichaAyuntamientoOpen, setModalFichaAyuntamientoOpen] = useState(false);
+  const [fichaParaModal, setFichaParaModal] = useState(null);
+
+  const handleAbrirFichaAyuntamiento = (ind) => {
+    const numId = ind.numero !== undefined ? ind.numero : ind.id;
+    const customData = fichasPersonalizadas[numId] || null;
+    const fichaCompleta = obtenerFichaTecnicaIndicador(ind, customData);
+    setFichaParaModal(fichaCompleta);
+    setModalFichaAyuntamientoOpen(true);
+  };
+
+  const handleGuardarFichaPersonalizada = (fichaActualizada) => {
+    const numId = fichaActualizada.numeroIndicador !== undefined ? fichaActualizada.numeroIndicador : fichaActualizada.id;
+    const nuevo = {
+      ...fichasPersonalizadas,
+      [numId]: fichaActualizada
+    };
+    setFichasPersonalizadas(nuevo);
+    try {
+      localStorage.setItem('sgc-fichas-gubernamentales', JSON.stringify(nuevo));
+    } catch (e) { /* ignore */ }
+    
+    setIndicadoresData?.(prev => ({
+      ...prev,
+      fichasPersonalizadas: nuevo,
+      updatedAt: new Date().toISOString()
+    }));
+
+    registrarMovimiento?.({
+      modulo: 'INDICADORES',
+      accion: 'ACTUALIZAR_FICHA_AYUNTAMIENTO',
+      descripcion: `Actualización de Ficha Técnica PMD / Ayuntamiento para Indicador #${numId}`,
+      detalles: `Programa: ${fichaActualizada.programa_pmd || 'SGC'} · Dimensión: ${fichaActualizada.dimension || 'Eficacia'}`,
+      folio: `FICHA#${numId}`
+    });
+  };
+
 
   // Catálogo dinámico unificado (Base Oficial + Personalizaciones / Creados por Admin)
   const catalogoCustom = indicadoresData?.catalogoPersonalizado || {};
@@ -559,13 +611,15 @@ export default function IndicadoresView({
           </div>
         </div>
 
-        {/* PESTAÑAS (INCLUYENDO DESEMPEÑO POR PROCESOS) */}
+        {/* PESTAÑAS (INCLUYENDO DESEMPEÑO POR PROCESOS, FICHAS PMD Y PROYECTOS) */}
         <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-700/60 overflow-x-auto">
           {[
             { id: 'cuadro', label: '1. Cuadro de Control Mensual (OOMRSC-05)', icon: Target },
-            { id: 'procesos', label: '2. Desempeño por Procesos (Filtros Mes / Trimestre / Anual)', icon: Layers },
-            { id: 'trimestral', label: '3. Evaluación Trimestral & MIR (T1-T4)', icon: BarChart3 },
-            { id: 'correcciones', label: `4. Reportes de Corrección (${reportesCorreccion.length})`, icon: FileWarning }
+            { id: 'procesos', label: '2. Desempeño por Procesos', icon: Layers },
+            { id: 'fichas', label: '3. 🏛️ Fichas Técnicas PMD (Ayuntamiento)', icon: FileSpreadsheet },
+            { id: 'proyectos', label: '4. 📊 Presentación de Proyectos (Presupuesto 2026)', icon: Building2 },
+            { id: 'trimestral', label: '5. Evaluación Trimestral & MIR (T1-T4)', icon: BarChart3 },
+            { id: 'correcciones', label: `6. Reportes de Corrección (${reportesCorreccion.length})`, icon: FileWarning }
           ].map(tab => {
             const Icon = tab.icon;
             const esActiva = tabActiva === tab.id;
@@ -585,6 +639,7 @@ export default function IndicadoresView({
             );
           })}
         </div>
+
       </div>
 
       {/* STATS CARDS DEL MES (SEMÁFOROS OFICIALES) */}
@@ -774,16 +829,18 @@ export default function IndicadoresView({
                     <th className="py-3 px-2 text-center w-28">Cumplimiento</th>
                     <th className="py-3 px-3 min-w-[180px]">Observación Técnica</th>
                     <th className="py-3 px-3 w-36 text-center">Acción / RC</th>
-                    {esAdminOSGC && <th className="py-3 px-2 text-center w-14">Ficha</th>}
+                    <th className="py-3 px-2 text-center w-28">Ficha PMD</th>
+                    {esAdminOSGC && <th className="py-3 px-2 text-center w-14">Admin</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {indicadoresPaginados.length === 0 ? (
                     <tr>
-                      <td colSpan={esAdminOSGC ? 10 : 9} className="py-12 text-center text-slate-400">
+                      <td colSpan={esAdminOSGC ? 11 : 10} className="py-12 text-center text-slate-400">
                         No se encontraron indicadores con los filtros seleccionados.
                       </td>
                     </tr>
+
                   ) : (
                     indicadoresPaginados.map(ind => {
                       const key = `${ind.id}-${mesActivo}-${ejercicio}`;
@@ -897,6 +954,18 @@ export default function IndicadoresView({
                             )}
                           </td>
 
+                          {/* Botón Ficha Técnica PMD / Ayuntamiento */}
+                          <td className="py-3 px-2 text-center">
+                            <button
+                              onClick={() => handleAbrirFichaAyuntamiento(ind)}
+                              className="px-2.5 py-1 text-[11px] font-bold bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-900 border border-sky-200 rounded-lg shadow-2xs flex items-center gap-1.5 mx-auto transition-all cursor-pointer"
+                              title="Ver Ficha Técnica Oficial del Ayuntamiento de Cajeme y descargar DOCX / PDF"
+                            >
+                              <FileSpreadsheet size={12} className="text-sky-600" />
+                              <span>Ficha PMD</span>
+                            </button>
+                          </td>
+
                           {/* Ficha Admin */}
                           {esAdminOSGC && (
                             <td className="py-3 px-2 text-center">
@@ -906,7 +975,7 @@ export default function IndicadoresView({
                                   setModalGestionIndicadorOpen(true);
                                 }}
                                 className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors cursor-pointer"
-                                title="Editar parámetros y ficha oficial del indicador"
+                                title="Editar parámetros y configuración en catálogo oficial"
                               >
                                 <Settings size={14} />
                               </button>
@@ -918,6 +987,7 @@ export default function IndicadoresView({
                   )}
                 </tbody>
               </table>
+
             </div>
 
             {/* Paginación */}
@@ -967,8 +1037,36 @@ export default function IndicadoresView({
             setIndicadorParaGestionar(ind);
             setModalGestionIndicadorOpen(true);
           }}
+          onAbrirFichaAyuntamiento={handleAbrirFichaAyuntamiento}
         />
       )}
+
+      {/* ==================================================================== */}
+      {/* TAB 3: CATÁLOGO OFICIAL DE FICHAS TÉCNICAS PMD (AYUNTAMIENTO)       */}
+      {/* ==================================================================== */}
+      {tabActiva === 'fichas' && (
+        <FichasGubernamentalesTab
+          indicadores={listaIndicadores}
+          resultados={resultados}
+          ejercicio={ejercicio}
+          fichasPersonalizadas={fichasPersonalizadas}
+          onAbrirFicha={(ficha) => {
+            setFichaParaModal(ficha);
+            setModalFichaAyuntamientoOpen(true);
+          }}
+          esAdminOSGC={esAdminOSGC}
+        />
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB 4: FORMATO DE PRESENTACIÓN DE PROYECTOS (PRESUPUESTO 2026)      */}
+      {/* ==================================================================== */}
+      {tabActiva === 'proyectos' && (
+        <ProyectosPresupuestoTab
+          ejercicio={ejercicio}
+        />
+      )}
+
 
       {/* ==================================================================== */}
       {/* TAB 3: EVALUACIÓN TRIMESTRAL & MIR (T1, T2, T3, T4)                 */}
@@ -1285,6 +1383,22 @@ export default function IndicadoresView({
           onConfirmarRC={handleConfirmarRC}
         />
       )}
+
+      {/* MODAL DE FICHA TÉCNICA OFICIAL PMD / AYUNTAMIENTO DE CAJEME */}
+      {modalFichaAyuntamientoOpen && fichaParaModal && (
+        <ModalFichaTecnicaAyuntamiento
+          isOpen={modalFichaAyuntamientoOpen}
+          onClose={() => {
+            setModalFichaAyuntamientoOpen(false);
+            setFichaParaModal(null);
+          }}
+          fichaData={fichaParaModal}
+          onGuardarFicha={handleGuardarFichaPersonalizada}
+          esAdminOSGC={esAdminOSGC}
+          ejercicio={ejercicio}
+        />
+      )}
     </div>
   );
 }
+
