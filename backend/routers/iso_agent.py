@@ -22,6 +22,7 @@ class ConsultaISOInput(BaseModel):
     historial: Optional[List[Dict[str, str]]] = Field(default=[], description="Historial de mensajes previos")
     catalogo_documentos: Optional[List[Dict[str, Any]]] = Field(default=None, description="Catálogo activo de documentos y registros del portal")
     catalogo_procesos: Optional[List[Dict[str, Any]]] = Field(default=None, description="Catálogo activo de procesos institucionales")
+    usuario_contexto: Optional[Dict[str, Any]] = Field(default=None, description="Contexto operativo en tiempo real del usuario logueado (pendientes, indicadores, AC, PM, documentos >1 año)")
 
 
 class GuardarDocumentoInput(BaseModel):
@@ -69,7 +70,8 @@ def consultar_iso(body: ConsultaISOInput):
         norma_id=body.norma_id,
         historial=body.historial,
         catalogo_documentos=body.catalogo_documentos,
-        catalogo_procesos=body.catalogo_procesos
+        catalogo_procesos=body.catalogo_procesos,
+        usuario_contexto=body.usuario_contexto
     )
     return resultado
 

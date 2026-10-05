@@ -59,5 +59,15 @@ export const USUARIOS_INICIALES = [
     rol: 'Admin',
     direccion: 'Dir. General',
     password: ''
+  },
+  {
+    id: 7,
+    nombre: 'Lic. Carmen Leyva',
+    email: 'cleyva@oomapasc.gob.mx',
+    telefono: '6443890123',
+    area: 'Control y Servicios',
+    rol: 'Encargado',
+    direccion: 'Dir. Comercial',
+    password: ''
   }
 ];

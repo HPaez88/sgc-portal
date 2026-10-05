@@ -109,6 +109,45 @@ export const DOCUMENTOS_SGC_INICIALES = [
     estado: 'APROBADO',
     referencias_usadas: ['OOMRSC-20', 'MC-01'],
     descripcion: 'Planificación, ejecución, competencia de auditores e informe de resultados de auditorías internas.'
+  },
+  {
+    id: 9,
+    clave: 'PR-CS-01',
+    titulo: 'Procedimiento de Inspección y Suspensión de Servicios',
+    tipo: 'Procedimiento',
+    area: 'Control y Servicios',
+    version: 'Rev. 02',
+    fecha: '2024-11-10',
+    autor: 'Lic. Carmen Leyva',
+    estado: 'APROBADO',
+    referencias_usadas: ['OOMRSC-20'],
+    descripcion: 'Criterios operativos para la notificación, corte y reconexión de tomas de agua potable en el municipio de Cajeme.'
+  },
+  {
+    id: 10,
+    clave: 'REG-CS-02',
+    titulo: 'Padrón de Órdenes de Servicio y Reconexiones en Campo',
+    tipo: 'Registro',
+    area: 'Control y Servicios',
+    version: 'Rev. 01',
+    fecha: '2025-01-15',
+    autor: 'Lic. Carmen Leyva',
+    estado: 'APROBADO',
+    referencias_usadas: [],
+    descripcion: 'Bitácora y registro físico y digital de turnos y ejecución de órdenes de trabajo en campo.'
+  },
+  {
+    id: 11,
+    clave: 'PR-CS-03',
+    titulo: 'Procedimiento de Verificación de Medidores y Facturación en Sitio',
+    tipo: 'Procedimiento',
+    area: 'Control y Servicios',
+    version: 'Rev. 01',
+    fecha: '2026-04-10',
+    autor: 'Lic. Carmen Leyva',
+    estado: 'BORRADOR',
+    referencias_usadas: [],
+    descripcion: 'Procedimiento nuevo en revisión técnica por la Coordinación del SGC para validación de medidores volumétricos.'
   }
 ];
 

@@ -372,11 +372,12 @@ def consultar_agente_iso(
     norma_id: Optional[str] = None,
     historial: Optional[List[Dict[str, str]]] = None,
     catalogo_documentos: Optional[List[Dict[str, Any]]] = None,
-    catalogo_procesos: Optional[List[Dict[str, Any]]] = None
+    catalogo_procesos: Optional[List[Dict[str, Any]]] = None,
+    usuario_contexto: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Ejecuta la consulta con el Agente ISO con Groundedness estricto en la documentación oficial,
-    procedimientos, formatos y registros del portal SGC de OOMAPASC.
+    procedimientos, formatos, registros y estado operativo en tiempo real del usuario en OOMAPASC.
     """
     contexto = buscar_contexto_relevante(pregunta, norma_id, catalogo_documentos, catalogo_procesos)
     clausulas = contexto["clausulas"]
@@ -386,6 +387,61 @@ def consultar_agente_iso(
     # Construir bloque de conocimiento inyectado
     kb_text = "=== BASE DE CONOCIMIENTO OFICIAL ISO (ARCHIVOS .MD) Y SGC OOMAPASC ===\n\n"
     clausulas_citadas_meta = []
+
+    # 0. Contexto Operativo en Tiempo Real del Usuario Logueado (si está presente)
+    if usuario_contexto:
+        u_nombre = usuario_contexto.get("nombre", "Usuario SGC")
+        u_area = usuario_contexto.get("area", "Área Operativa")
+        u_dir = usuario_contexto.get("direccion", "OOMAPASC")
+        u_rol = usuario_contexto.get("rol", "Usuario")
+        
+        kb_text += "=== ESTADO OPERATIVO EN TIEMPO REAL DEL USUARIO Y SU ÁREA (SGC PORTAL) ===\n"
+        kb_text += f"• Colaborador activo: {u_nombre} | Rol: {u_rol} | Área: {u_area} | Dirección: {u_dir}\n"
+        
+        # ACs
+        acs = usuario_contexto.get("acciones_pendientes", [])
+        kb_text += f"• Acciones Correctivas pendientes del área (OOMRSC-20): {len(acs)}\n"
+        for ac in acs[:8]:
+            plazo = ac.get("fecha_limite") or ac.get("fechaCompromiso") or "Sin fecha límite"
+            auditor = ac.get("auditor_asignado") or ac.get("auditor") or "Por asignar"
+            kb_text += f"  - [{ac.get('folio', 'AC')}] Estado: {ac.get('estado')} | Causa: {ac.get('descripcion', '')[:90]} | Límite: {plazo} | Auditor: {auditor}\n"
+            
+        # PMs
+        pms = usuario_contexto.get("planes_mejora_activos", [])
+        kb_text += f"• Planes de Mejora activos del área (OOMRSC-21): {len(pms)}\n"
+        for pm in pms[:8]:
+            prox_alerta = " [⚠️ ALERTA: PRÓXIMO A VENCER]" if pm.get("es_proximo_vencer") else ""
+            dias_rest = f" ({pm.get('dias_restantes')} días restantes)" if pm.get("dias_restantes") is not None else ""
+            kb_text += f"  - [{pm.get('folio', 'PM')}] \"{pm.get('titulo', 'Plan de Mejora')}\" | Estado: {pm.get('estado')}{prox_alerta} | Término: {pm.get('fechaCompromiso') or pm.get('fecha_termino', 'Sin fecha')}{dias_rest} | Presupuesto: ${pm.get('presupuestoEstimado', 0):,.2f} | Avance: {pm.get('avance', 0)}%\n"
+
+        # Indicadores
+        inds = usuario_contexto.get("indicadores_area", [])
+        inds_incumplidos = [i for i in inds if i.get("cumple") == "NO" or i.get("semaforo") in ["Crítico", "CRITICO", "rose"]]
+        kb_text += f"• Indicadores del área en el Cuadro de Control (OOMRSC-05): {len(inds)} total ({len(inds_incumplidos)} INCUMPLIDOS/CRÍTICOS)\n"
+        for ind in inds[:10]:
+            sem_tag = "🔴 INCUMPLIDO / CRÍTICO (Requiere Reporte de Corrección RC o AC en OOMRSC-20)" if (ind.get("cumple") == "NO" or ind.get("semaforo") in ["Crítico", "CRITICO", "rose"]) else ("🟡 PREVENTIVO" if ind.get("semaforo") in ["Preventivo", "PREVENTIVO", "amber"] else "🟢 ACEPTABLE")
+            kb_text += f"  - #{ind.get('numero', ind.get('id'))}: \"{ind.get('nombre')}\" | Meta: {ind.get('meta_anual') or ind.get('meta')} {ind.get('unidad')} | Real: {ind.get('valor_real', 'Sin captura')} | Semáforo: {sem_tag}\n"
+
+        # Documentos antiguos sin revisar > 1 año
+        docs_antiguos = usuario_contexto.get("documentos_antiguos_sin_revision", [])
+        kb_text += f"• Procedimientos / Formatos del área con MÁS DE 1 AÑO SIN REVISAR/ACTUALIZAR (§ 7.5.3): {len(docs_antiguos)}\n"
+        for da in docs_antiguos[:10]:
+            dias_txt = f" ({da.get('dias_sin_revision')} días de antigüedad)" if da.get("dias_sin_revision") else ""
+            kb_text += f"  - [⚠️ REVISIÓN OBLIGATORIA] [{da.get('clave')}] \"{da.get('titulo')}\" | Tipo: {da.get('tipo')} | Última Rev.: {da.get('fecha')} ({da.get('version')}){dias_txt}\n"
+
+        # Documentos pendientes de aprobación SGC
+        docs_aprob = usuario_contexto.get("documentos_pendientes_aprobacion", [])
+        kb_text += f"• Documentos en borrador o revisión técnica pendientes por aprobar por el SGC: {len(docs_aprob)}\n"
+        for dp in docs_aprob[:6]:
+            kb_text += f"  - [⏳ PENDIENTE APROBACIÓN SGC] [{dp.get('clave')}] \"{dp.get('titulo')}\" | Estado: {dp.get('estado')} | Autor: {dp.get('autor', 'Área')}\n"
+
+        # Formularios de Revisión por la Dirección pendientes
+        rev_pend = usuario_contexto.get("formularios_revision_pendientes", [])
+        if rev_pend:
+            kb_text += f"• Formularios de Revisión por la Dirección (OOMRSC-04) pendientes en los primeros 10 días: {len(rev_pend)}\n"
+            for rp in rev_pend:
+                kb_text += f"  - [📅 OBLIGACIÓN MENSUAL DÍAS 1-10] {rp.get('nombre')} ({rp.get('codigo')})\n"
+        kb_text += "\n"
 
     # 1. Catálogo Activo de Documentos del Portal
     if documentos_activos:
@@ -430,19 +486,26 @@ def consultar_agente_iso(
         "   - Formato Institucional de Acción Correctiva: OOMRSC-20 (Rev. 18) — registro oficial de causa raíz, plan de acción y dictamen de cierre (ISO 9001 § 10.2).\n"
         "   - Procedimiento de Mejora Continua: PR-MEJ-01 (Rev. 03) — formulación, viabilidad y presupuesto.\n"
         "   - Formato de Plan de Mejora Continua: OOMRSC-21 (Rev. 02) — metas cuatrimestrales, presupuesto e indicadores (ISO 9001 § 10.3).\n"
+        "   - Cuadro de Control de Desempeño: OOMRSC-05 (Rev. 37) — 100 indicadores oficiales (#0 a #99) con semáforo Aceptable (≥90%), Preventivo (80-89%) y Crítico (≤79%).\n"
+        "   - Revisión por la Dirección: OOMRSC-04 (Rev. 09) — Cláusula 9.3.\n"
         "   - Procedimiento de Potabilización y Cloración: PR-POT-01 (Rev. 05) — NOM-127-SSA1-2021, límites 0.2 a 1.5 mg/L.\n"
         "   - Bitácora de Cloro en Red: REG-CLORO-01 (Rev. 02) — lecturas diarias por sector hidráulico.\n"
         "   - Procedimiento de Auditorías Internas: PR-AUD-01 (Rev. 04) — ISO 19011:2018, canaliza No Conformidades a OOMRSC-20.\n"
-        "   - 8 Procesos Institucionales: PR-DIR-01, PR-PROD-02, PR-MNT-03, PR-COM-04, PR-REC-05, PR-COM-06, PR-INF-07, PR-MED-08.\n"
-        "   - Matriz de Trazabilidad y Reglas de Control Documental (§ 7.5.3): Bloqueo de eliminación ante Citas Fuertes y Alertas de Referencias Rotas.\n"
-        "   - Puentes Inter-Módulos: Auditoría→AC (OOMRSC-20), Indicador en Rojo (86 Indicadores)→AC (OOMRSC-20), Riesgo Extremo/Alto→PM (OOMRSC-21) / AC.\n\n"
+        "   - Matriz de Trazabilidad y Reglas de Control Documental (§ 7.5.3): Bloqueo de eliminación ante Citas Fuertes, Alertas de Referencias Rotas y Mantenimiento Documental Activo (revisión obligatoria de documentos con >1 año sin actualizar).\n\n"
+        "ATENCIÓN A CONSULTAS DE PENDIENTES Y ESTADO OPERATIVO:\n"
+        "- Si el usuario pregunta qué tiene pendiente, cómo va su área, o pide un resumen ejecutivo de su trabajo, responde con un DIAGNÓSTICO PERSONALIZADO Y ESTRUCTURADO usando los datos en tiempo real inyectados en su contexto:\n"
+        "  1. 📌 Saludo personalizado con su nombre y área asignada.\n"
+        "  2. ⚠️ Acciones Correctivas (OOMRSC-20): Detallar folios abiertos, causas y fecha límite.\n"
+        "  3. 🚀 Planes de Mejora (OOMRSC-21): Estado de avance y alertas de proyectos próximos a vencer.\n"
+        "  4. 🎯 Indicadores SGC (OOMRSC-05): Resumen del mes, indicando cuántos cumplen y cuáles están en semáforo crítico o sin captura.\n"
+        "  5. 📑 Control Documental Activo (ISO § 7.5.3): Listar procedimientos o formatos de su área con MÁS DE 1 AÑO sin actualizar para evitar observaciones en auditoría.\n"
+        "  6. 📝 Formularios de Revisión por la Dirección (OOMRSC-04): Recordar si tiene captura pendiente en los primeros 10 días.\n"
+        "  7. 💡 Recomendaciones Normativas y Prioridad de Acción.\n\n"
         "REGLAS OBLIGATORIAS DE GROUNDEDNESS ESTRICTO:\n"
-        "- Responde ESTRICTAMENTE con base en los documentos, procedimientos, formatos y registros reales que existen en el SGC de OOMAPASC.\n"
-        "- Cita siempre la clave oficial exacta (ej. MC-01, PR-CAL-01, OOMRSC-20, OOMRSC-21, REG-CLORO-01, etc.), su revisión, área responsable y la norma ISO vinculada.\n"
-        "- Si el usuario pregunta por las interacciones entre documentos o cómo interactúa un registro con otros procesos del portal, explica con precisión la cadena de trazabilidad.\n"
-        "- Si el usuario pregunta por un documento inexistente, declara que dicho documento no se encuentra en el catálogo oficial del SGC de OOMAPASC.\n\n"
+        "- Responde ESTRICTAMENTE con base en los documentos, procedimientos, formatos, registros y datos reales del SGC de OOMAPASC.\n"
+        "- Cita siempre la clave oficial exacta (ej. MC-01, PR-CAL-01, OOMRSC-20, OOMRSC-21, OOMRSC-05, OOMRSC-04, etc.).\n\n"
         "ESTRUCTURA DE RESPUESTA EN MARKDOWN:\n"
-        "Utiliza encabezados claros, tablas comparativas estructuradas cuando aplique, listas con viñetas y negritas."
+        "Utiliza encabezados claros, tablas comparativas estructuradas cuando aplique, listas con viñetas, semáforos (🟢, 🟡, 🔴) y negritas."
     )
 
     user_prompt = f"{kb_text}\n\n=== CONSULTA DEL AUDITOR / USUARIO ===\n{pregunta}"

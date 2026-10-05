@@ -17,6 +17,10 @@ export const FORMATO_REVISION_DIRECCION = {
   ]
 };
 
+export const esPeriodoCapturaActivo = () => {
+  return new Date().getDate() <= 10;
+};
+
 // Formulario complementarios asignables a usuarios responsables
 export const FORMULARIOS_COMPLEMENTARIOS_CONFIG = [
   {

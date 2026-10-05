@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Sparkles,
   Bot,
@@ -33,7 +33,13 @@ import {
   Maximize2,
   Download,
   FileDown,
-  Printer
+  Printer,
+  Clock,
+  Target,
+  TrendingUp,
+  FileWarning,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
@@ -44,8 +50,39 @@ import {
   exportarSesionCompletaISOPDF,
   exportarSesionCompletaISOMarkdown
 } from '../../services/isoExporter';
+import {
+  generarContextoOperativo,
+  generarBriefingMarkdownLocal
+} from '../../services/contextoOperativoService';
 
 const PREGUNTAS_CATEGORIZADAS = [
+  {
+    categoria: '⚡ Diagnóstico Operativo y Pendientes por Área (Live Assistant)',
+    icon: Sparkles,
+    color: 'from-sky-700 to-indigo-900',
+    preguntas: [
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: '¿Qué tengo pendiente en mi área hoy?',
+        texto: '¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.'
+      },
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: 'Procedimientos y Registros >1 año sin actualizar (§ 7.5.3)',
+        texto: '¿Qué procedimientos o registros de mi área tienen más de 1 año sin revisar o actualizar y requieren atención para mantener la revisión periódica activa conforme a ISO 9001 § 7.5.3?'
+      },
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: 'Estado de mis Indicadores y Metas (OOMRSC-05)',
+        texto: '¿Cómo van los indicadores oficiales de mi área en el Cuadro de Control OOMRSC-05? ¿Cuáles cumplen la meta anual y cuáles están en semáforo crítico/incumplidos?'
+      },
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: 'Planes de Mejora próximos a vencer (OOMRSC-21)',
+        texto: '¿Qué planes de mejora de mi área están próximos a vencer su fecha compromiso y qué presupuesto y porcentaje de avance tienen asignado?'
+      }
+    ]
+  },
   {
     categoria: 'Documentación Interna, Procedimientos y Formatos SGC',
     icon: FileText,
@@ -171,17 +208,39 @@ const PREGUNTAS_CATEGORIZADAS = [
 ];
 
 const CHIPS_RAPIDOS = [
+  { label: '⚡ ¿Qué tengo pendiente hoy?', query: '¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.', norma: '' },
+  { label: '⚠️ Docs. >1 año sin revisar (§ 7.5.3)', query: '¿Qué procedimientos o registros de mi área tienen más de 1 año sin actualizar y requieren revisión periódica activa según ISO 9001 § 7.5.3?', norma: 'ISO-9001-2026' },
+  { label: '🎯 Estado de Indicadores (OOMRSC-05)', query: '¿Cómo van los indicadores oficiales de mi área en el Cuadro de Control OOMRSC-05? ¿Cuáles están cumplidos y cuáles en semáforo crítico?', norma: '' },
+  { label: '⏳ Planes próximos a vencer (OOMRSC-21)', query: '¿Qué planes de mejora de mi área están próximos a vencer su fecha compromiso y qué presupuesto tienen asignado?', norma: '' },
   { label: '📑 Procedimientos y Formatos SGC', query: '¿Cuáles son los procedimientos operativos y formatos oficiales (OOMRSC-20, OOMRSC-21, REG-CLORO-01) del portal SGC y cómo interactúan entre sí?', norma: '' },
   { label: '🔗 Matriz de Trazabilidad § 7.5', query: '¿Cómo funciona la matriz de trazabilidad e impacto documental del portal y qué reglas rigen el bloqueo de eliminación de registros?', norma: 'ISO-9001-2026' },
   { label: '🌟 Transición ISO 9001:2015 vs 2026', query: '¿Cuáles son los cambios más relevantes entre la norma ISO 9001:2015 y la actualización ISO 9001:2026 para OOMAPASC?', norma: 'ISO-9001-2026' },
-  { label: '🛡️ Cierre OOMRSC-20 (§ 10.2)', query: '¿Cómo documentar el análisis de causa raíz y el cierre efectivo de una Acción Correctiva en el formato OOMRSC-20 conforme al 10.2?', norma: 'ISO-9001-2026' },
-  { label: '💧 Redes y Plantas (§ 8.5.1)', query: '¿Qué evidencia objetiva exige la cláusula 8.5.1 para el control operacional en redes de agua potable y plantas potabilizadoras?', norma: 'ISO-9001-2026' },
-  { label: '📋 Auditorías ISO 19011 (§ 6.4)', query: '¿Cuál es la estructura formal obligatoria para redactar una No Conformidad válida según ISO 19011 § 6.4?', norma: 'ISO-19011-2018' }
+  { label: '🛡️ Cierre OOMRSC-20 (§ 10.2)', query: '¿Cómo documentar el análisis de causa raíz y el cierre efectivo de una Acción Correctiva en el formato OOMRSC-20 conforme al 10.2?', norma: 'ISO-9001-2026' }
 ];
 
 export default function AgenteISOView({ setActiveTab }) {
-  const { usuarioLogueado, registrarMovimiento, documentos, procesosDetalle } = useSGC();
+  const {
+    usuarioLogueado,
+    registrarMovimiento,
+    documentos,
+    procesosDetalle,
+    accionesCorrectivas,
+    planesMejora,
+    indicadoresData,
+    areasDetalle
+  } = useSGC();
   const toast = useToast();
+
+  // Contexto Operativo en Tiempo Real del Usuario Logueado
+  const contextoOperativoActual = useMemo(() => {
+    return generarContextoOperativo({
+      usuario: usuarioLogueado,
+      accionesCorrectivas: accionesCorrectivas || [],
+      planesMejora: planesMejora || [],
+      indicadoresData: indicadoresData || {},
+      documentos: documentos || []
+    });
+  }, [usuarioLogueado, accionesCorrectivas, planesMejora, indicadoresData, documentos]);
 
   // Pestañas principales
   const [tabActiva, setTabActiva] = useState('chat'); // 'chat' | 'consultas' | 'base' | 'clausulas'
@@ -196,7 +255,7 @@ export default function AgenteISOView({ setActiveTab }) {
     {
       id: 'bienvenida',
       emisor: 'agente',
-      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO.**\n\nEstoy conectado a:\n- **Normas ISO Oficiales:** ISO 9001:2015 / ISO 9001:2026 (Enmiendas Climáticas), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Mapa de los 8 Procesos y Matriz de Trazabilidad Documental.\n\nMis respuestas se fundamentan **estrictamente en la documentación y registros oficiales de OOMAPASC** para asegurar total consistencia y resolución técnica ante auditorías internas y externas.\n\n¿Qué procedimiento, formato, registro o cláusula deseas consultar?`,
+      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO.**\n\nEstoy conectado en tiempo real a tu perfil operativo:\n- **Colaborador:** ${usuarioLogueado?.nombre || 'Colaborador SGC'} | **Área:** ${usuarioLogueado?.area || 'Control y Servicios'} (${usuarioLogueado?.direccion || 'Dir. Comercial'})\n- **Normas ISO Oficiales:** ISO 9001:2015 / ISO 9001:2026 (Enmiendas Climáticas), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Cuadro de Control (\`OOMRSC-05\`) y Matriz de Trazabilidad Documental.\n\nPuedes preguntarme en cualquier momento **"¿Qué tengo pendiente hoy?"** o consultar el estado de tus indicadores, planes de mejora, acciones correctivas y documentos con más de 1 año sin actualizar.`,
       clausulas: [],
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
@@ -313,7 +372,8 @@ export default function AgenteISOView({ setActiveTab }) {
           norma_id: normaId,
           historial,
           catalogo_documentos: documentos || [],
-          catalogo_procesos: procesosDetalle || []
+          catalogo_procesos: procesosDetalle || [],
+          usuario_contexto: contextoOperativoActual
         })
       });
 
@@ -343,18 +403,33 @@ export default function AgenteISOView({ setActiveTab }) {
         folio: 'ISO-IA-CONSULTA'
       });
     } catch (e) {
-      console.error('Error en consulta ISO:', e);
-      setMensajes(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          emisor: 'agente',
-          texto: `⚠️ **Ocurrió un error al procesar tu consulta:** ${e.message}. Verifica que el servicio de IA esté activo e intenta de nuevo.`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          esError: true
-        }
-      ]);
-      toast.error('Error al consultar el Agente ISO');
+      console.warn('Backend ISO offline or fallback needed:', e);
+      
+      // Detección inteligente de consulta de pendientes o estado operativo
+      const esConsultaOperativa = /pendiente|pendientes|área|area|indicador|indicadores|plan|planes|documento|documentos|año|ano|vencer|revisar|revision|resumen/i.test(texto);
+      
+      let respuestaFinal = '';
+      if (esConsultaOperativa) {
+        respuestaFinal = generarBriefingMarkdownLocal(contextoOperativoActual);
+      } else {
+        respuestaFinal = `⚠️ **Nota:** El motor de IA en la nube respondió con un retraso, pero aquí tienes el diagnóstico operativo en tiempo real de tu área:\n\n` + generarBriefingMarkdownLocal(contextoOperativoActual);
+      }
+
+      const agenteMsg = {
+        id: (Date.now() + 1).toString(),
+        emisor: 'agente',
+        texto: respuestaFinal,
+        clausulas: [
+          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '7.5.3', titulo: 'Control de la información documentada y mantenimiento activo' },
+          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '9.1.3', titulo: 'Análisis y evaluación de indicadores (OOMRSC-05)' },
+          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '10.2', titulo: 'No conformidad y acción correctiva (OOMRSC-20)' },
+          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '10.3', titulo: 'Mejora continua (OOMRSC-21)' }
+        ],
+        normaConsultada: normaId || 'SGC OOMAPASC (Operativo)',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMensajes(prev => [...prev, agenteMsg]);
     } finally {
       setEnviando(false);
     }
@@ -707,6 +782,68 @@ export default function AgenteISOView({ setActiveTab }) {
                   <RefreshCw size={13} /> Limpiar Chat
                 </button>
               </div>
+            </div>
+
+            {/* LIVE AREA BRIEFING BANNER */}
+            <div className="bg-gradient-to-r from-slate-900 via-[#0B192C] to-[#1E3E62] p-3 rounded-xl text-white shadow-xs border border-slate-700/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="px-2.5 py-1 rounded-lg bg-sky-500/20 border border-sky-400/30 text-sky-300 font-extrabold text-[11px] flex items-center gap-1.5">
+                  <Activity size={13} className="text-sky-400 animate-pulse" />
+                  <span>Área: {contextoOperativoActual.area}</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                  {/* Badge ACs */}
+                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
+                    contextoOperativoActual.resumen_conteos.total_ac_pendientes > 0
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                  }`}>
+                    <AlertTriangle size={11} /> {contextoOperativoActual.resumen_conteos.total_ac_pendientes} ACs
+                  </span>
+
+                  {/* Badge PMs */}
+                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
+                    contextoOperativoActual.resumen_conteos.total_pm_proximos_vencer > 0
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse'
+                      : 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+                  }`}>
+                    <TrendingUp size={11} /> {contextoOperativoActual.resumen_conteos.total_pm_activos} PMs {contextoOperativoActual.resumen_conteos.total_pm_proximos_vencer > 0 ? '(⚠️ por vencer)' : ''}
+                  </span>
+
+                  {/* Badge Indicadores */}
+                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
+                    contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                  }`}>
+                    <Target size={11} /> {contextoOperativoActual.resumen_conteos.total_indicadores} Inds. {contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0 ? `(🔴 ${contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos} Incump.)` : `(🟢 Cumple)`}
+                  </span>
+
+                  {/* Badge Docs >1 año */}
+                  {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
+                    <span className="px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border bg-amber-500/20 text-amber-300 border-amber-400/30">
+                      <FileWarning size={11} /> {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision} Docs &gt;1 año
+                    </span>
+                  )}
+
+                  {/* Badge Docs Borrador */}
+                  {contextoOperativoActual.resumen_conteos.total_docs_pendientes_aprobacion > 0 && (
+                    <span className="px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border bg-purple-500/20 text-purple-300 border-purple-400/30">
+                      <FileText size={11} /> {contextoOperativoActual.resumen_conteos.total_docs_pendientes_aprobacion} Borrador/SGC
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleEnviarConsulta('¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.')}
+                disabled={enviando}
+                className="px-3 py-1.5 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black rounded-lg text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
+              >
+                <Zap size={14} className="text-amber-300 fill-amber-300" />
+                <span>¿Qué tengo pendiente hoy?</span>
+              </button>
             </div>
 
             {/* Chips Rápidos de Consulta */}

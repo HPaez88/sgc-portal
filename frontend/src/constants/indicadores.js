@@ -2588,3 +2588,6 @@ export const REPORTES_CORRECCION_INICIALES = [
     "estado": "CERRADA"
   }
 ];
+
+export const INDICADORES_OOMAPASC_OFICIALES = INDICADORES;
+
