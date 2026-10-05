@@ -20,8 +20,10 @@ import DocumentosView from './components/documentos';
 import AuditoriasView from './components/auditorias';
 import BitacoraView from './components/bitacora';
 import AgenteISOView from './components/iso/AgenteISOView';
+import RevisionDireccionView from './components/revision/RevisionDireccionView';
 import ModalInactividad from './components/common/ModalInactividad';
 import LoginView from './components/common/LoginView';
+import BannerObligacionesCaptura from './components/common/BannerObligacionesCaptura';
 
 
 function App() {
@@ -106,6 +108,13 @@ function App() {
             areaUsuario={areaUsuario}
           />
         );
+      case 'revision_direccion':
+        return (
+          <RevisionDireccionView
+            puedeTodasAreas={puedeTodasAreas}
+            areaUsuario={areaUsuario}
+          />
+        );
       case 'riesgos':
         return (
           <RiesgosView
@@ -174,6 +183,7 @@ function App() {
     { id: 'dashboard', label: 'Panel Principal' },
     { id: 'ac', label: 'Acciones Correctivas' },
     { id: 'pm', label: 'Planes de Mejora' },
+    { id: 'revision_direccion', label: 'Revisión por la Dirección (OOMRSC-04)' },
     { id: 'indicadores', label: 'Indicadores' },
     { id: 'riesgos', label: 'Matriz de Riesgos' },
     { id: 'gestor', label: 'Aprobaciones' },
@@ -218,6 +228,9 @@ function App() {
         <main className={`flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-5 lg:p-6 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
           <div className="relative z-10 w-full">
             <div className="w-full space-y-5">
+              {/* Banner de Obligaciones de Captura SGC (Primeros 10 días del mes) */}
+              <BannerObligacionesCaptura setActiveTab={setActiveTab} />
+
               {activeTab !== 'dashboard' && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
                   <div>

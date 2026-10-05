@@ -9,3 +9,4 @@ export * from './folio';
 export * from './colores';
 export * from './usuarios';
 export * from './documentos';
+export * from './revisionDireccion';

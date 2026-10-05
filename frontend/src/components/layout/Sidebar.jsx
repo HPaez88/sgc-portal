@@ -13,7 +13,8 @@ import {
   X,
   ShieldCheck,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Award
 } from 'lucide-react';
 
 const Sidebar = ({ 
@@ -38,6 +39,7 @@ const Sidebar = ({
     {
       title: 'DESEMPEÑO Y CONTROL',
       items: [
+        { id: 'revision_direccion', icon: Award, label: 'Revisión Dirección', badge: 'OOMRSC-04' },
         { id: 'indicadores', icon: Target, label: 'Indicadores SGC', count: 86 },
         { id: 'riesgos', icon: AlertOctagon, label: 'Matriz de Riesgos' },
         { id: 'audits', icon: ClipboardCheck, label: 'Auditorías' },

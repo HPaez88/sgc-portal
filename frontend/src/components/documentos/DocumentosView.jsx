@@ -22,10 +22,11 @@ import {
   ExternalLink,
   ChevronRight,
   FolderOpen,
-  Link2Off,
-  History
+  History,
+  Sparkles
 } from 'lucide-react';
 import BitacoraView from '../bitacora/BitacoraView';
+import GobernanzaIAView from './GobernanzaIAView';
 import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import { useToast } from '../common/Toast';
 import {
@@ -546,11 +547,21 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
                 : 'text-slate-600 hover:text-slate-900'
                 }`}
             >
-              <History size={14} className="text-amber-600" /> Bitácora de Auditoría
+              <History size={14} className="text-amber-600" /> Bitácora
+            </button>
+            <button
+              onClick={() => setVistaActiva('gobernanza_ia')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${vistaActiva === 'gobernanza_ia'
+                ? 'bg-white text-purple-900 shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
+            >
+              <Sparkles size={14} className="text-purple-600" /> Gobernanza IA & TI
+              <span className="px-1.5 py-0.2 text-[9px] bg-purple-100 text-purple-800 rounded font-mono font-bold">POL-TI-01</span>
             </button>
           </div>
 
-          {vistaActiva !== 'bitacora' && (
+          {vistaActiva !== 'bitacora' && vistaActiva !== 'gobernanza_ia' && (
             <>
               <button
                 onClick={exportarMatrizCSV}
@@ -1021,6 +1032,13 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
       {vistaActiva === 'bitacora' && (
         <div className="space-y-4">
           <BitacoraView />
+        </div>
+      )}
+
+      {/* VISTA 4: POLÍTICA Y GOBERNANZA DE IA & TI (POL-TI-01) */}
+      {vistaActiva === 'gobernanza_ia' && (
+        <div className="space-y-4">
+          <GobernanzaIAView usuarioLogueado={usuarioLogueado} />
         </div>
       )}
 
