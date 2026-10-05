@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { getApiUrl } from '../config';
+import { api, requestBlob, descargarBlob } from '../services/apiClient';
+import { transicionesDesde, cargarWorkflow, normalizarEstado, metaEstado } from '../services/workflowService';
 
-const ESTADOS = {
-  BORRADOR: { label: 'Borrador', badgeClass: 'badge-borrador' },
-  EN_REVISION: { label: 'En Revisión', badgeClass: 'badge-revision' },
-  APROBADO: { label: 'Aprobado', badgeClass: 'badge-aprobado' },
-  RECHAZADO: { label: 'Rechazado', badgeClass: 'badge-rechazado' },
-};
-
-const COLUMNAS = ['BORRADOR', 'EN_REVISION', 'APROBADO', 'RECHAZADO'];
-const COLUMNA_LABELS = { BORRADOR: '📝 Borrador', EN_REVISION: '🔍 En Revisión', APROBADO: '✅ Aprobado', RECHAZADO: '❌ Rechazado' };
+// Columnas del kanban: todos los estados del workflow real del backend,
+// no solo los cuatro iniciales (antes los estados avanzados quedaban invisibles).
+const COLUMNAS = [
+  'BORRADOR',
+  'EN_REVISION',
+  'APROBADO',
+  'EN_SEGUIMIENTO',
+  'SOLICITUD_CIERRE',
+  'REVISION_AUDITOR',
+  'RECHAZADO',
+  'CERRADO_EFECTIVO',
+  'CERRADO_NO_EFECTIVO',
+];
 
 const GestorAprobaciones = () => {
   const [acList, setAcList] = useState([]);
@@ -28,26 +33,34 @@ const GestorAprobaciones = () => {
     setError('');
     try {
       const [acResp, pmResp] = await Promise.all([
-        fetch(getApiUrl('/api/v1/acciones-correctivas')),
-        fetch(getApiUrl('/api/v1/planes-mejora')),
+        api.get('/api/v1/acciones-correctivas'),
+        api.get('/api/v1/planes-mejora'),
       ]);
-      if (acResp.ok) setAcList(await acResp.json());
-      if (pmResp.ok) setPmList(await pmResp.json());
-    } catch {
-      setError('Error de conexión con el backend.');
+
+      const errores = [];
+      if (acResp.ok) setAcList(acResp.data || []);
+      else errores.push(`Acciones Correctivas: ${acResp.error?.message || 'sin respuesta'}`);
+
+      if (pmResp.ok) setPmList(pmResp.data || []);
+      else errores.push(`Planes de Mejora: ${pmResp.error?.message || 'sin respuesta'}`);
+
+      // Antes un fallo dejaba las listas vacías en silencio.
+      if (errores.length > 0) setError(`No se pudieron cargar todos los registros. ${errores.join(' · ')}`);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+    // El backend define las transiciones válidas; se cargan una vez.
+    cargarWorkflow();
+  }, []);
 
   const fetchHistorial = async (item, tipo) => {
-    try {
-      const path = tipo === 'AC' ? 'acciones-correctivas' : 'planes-mejora';
-      const resp = await fetch(getApiUrl(`/api/v1/${path}/${item.id}/historial`));
-      if (resp.ok) setHistorial(await resp.json());
-    } catch { setHistorial([]); }
+    const path = tipo === 'AC' ? 'acciones-correctivas' : 'planes-mejora';
+    const { ok, data } = await api.get(`/api/v1/${path}/${item.id}/historial`);
+    setHistorial(ok && Array.isArray(data) ? data : []);
   };
 
   const openModal = (item, tipo) => {
@@ -69,56 +82,42 @@ const GestorAprobaciones = () => {
 
     // Validación local antes de enviar
     if (nuevoEstado === 'RECHAZADO' && !comentarios.trim()) {
-      alert('Los comentarios son obligatorios para rechazar.');
+      setError('Los comentarios son obligatorios para rechazar.');
       return;
     }
 
     setActionLoading(true);
+    setError('');
     const path = tipo === 'AC' ? 'acciones-correctivas' : 'planes-mejora';
-    try {
-      const resp = await fetch(getApiUrl(`/api/v1/${path}/${item.id}/estado`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: nuevoEstado, comentarios_revision: comentarios }),
-      });
-      const data = await resp.json();
-      if (resp.ok) {
-        closeModal();
-        await fetchAll();
-      } else {
-        alert(`Error: ${data.detail}`);
-      }
-    } catch {
-      alert('Error de conexión al actualizar.');
-    } finally {
-      setActionLoading(false);
+    const { ok, error: apiError } = await api.put(`/api/v1/${path}/${item.id}/estado`, {
+      estado: nuevoEstado,
+      comentarios_revision: comentarios,
+    });
+
+    if (ok) {
+      closeModal();
+      await fetchAll();
+    } else {
+      setError(apiError?.message || 'No se pudo actualizar el estado.');
     }
+    setActionLoading(false);
   };
 
   const exportarWord = async () => {
     if (!selected) return;
     const { item, tipo } = selected;
     setExportLoading(true);
+    setError('');
     const path = tipo === 'AC' ? 'acciones-correctivas' : 'planes-mejora';
-    try {
-      const resp = await fetch(getApiUrl(`/api/v1/${path}/${item.id}/exportar-word`));
-      if (resp.ok) {
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const folio = (tipo === 'AC' ? item.folio : item.folio).replace(/[/#]/g, '-');
-        a.download = `${tipo}_${folio}_${item.id}.docx`;
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        alert('Error al generar el documento Word.');
-      }
-    } catch {
-      alert('Error de conexión al exportar.');
-    } finally {
-      setExportLoading(false);
+    const { ok, blob, error: apiError } = await requestBlob(`/api/v1/${path}/${item.id}/exportar-word`);
+    if (ok) {
+      // item.folio puede ser null en borradores: se usa un respaldo seguro.
+      const folioSeguro = String(item.folio || item.folio_codigo || `BORRADOR-${item.id}`).replace(/[/#]/g, '-');
+      descargarBlob(blob, `${tipo}_${folioSeguro}_${item.id}.docx`);
+    } else {
+      setError(apiError?.message || 'Error al generar el documento Word.');
     }
+    setExportLoading(false);
   };
 
   // Combinar listas según filtro
@@ -128,17 +127,10 @@ const GestorAprobaciones = () => {
   ];
   const filtered = filtro === 'todos' ? allItems : allItems.filter(i => i._tipo === filtro);
 
-  const getColumn = (estado) => filtered.filter(i => i.estado === estado);
+  const getColumn = (estado) => filtered.filter(i => normalizarEstado(i.estado) === estado);
 
-  const transicionesDisponibles = (estado) => {
-    const mapa = {
-      BORRADOR: ['EN_REVISION'],
-      EN_REVISION: ['APROBADO', 'RECHAZADO'],
-      RECHAZADO: ['BORRADOR'],
-      APROBADO: [],
-    };
-    return mapa[estado] || [];
-  };
+  // Transiciones desde la fuente única de verdad (backend), con respaldo local.
+  const transicionesDisponibles = (estado) => transicionesDesde(estado);
 
   const HISTORIAL_COLORS = {
     BORRADOR: 'var(--color-text-muted)',
@@ -183,7 +175,7 @@ const GestorAprobaciones = () => {
             return (
               <div key={estado} className="kanban-col">
                 <div className="flex justify-between items-center mb-3">
-                  <p style={{ fontSize: '0.8rem', fontWeight: 700 }}>{COLUMNA_LABELS[estado]}</p>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 700 }}>{metaEstado(estado).label}</p>
                   <span style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '999px', padding: '0.1rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>
                     {items.length}
                   </span>
@@ -242,8 +234,8 @@ const GestorAprobaciones = () => {
                 </div>
                 <div>
                   <p style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Estado actual</p>
-                  <span className={`badge badge-${selected.item.estado === 'EN_REVISION' ? 'revision' : selected.item.estado.toLowerCase()}`}>
-                    {ESTADOS[selected.item.estado]?.label}
+                  <span className="badge">
+                    {metaEstado(selected.item.estado).label}
                   </span>
                 </div>
                 {selected.tipo === 'AC' && (

@@ -1,0 +1,49 @@
+{
+  "name": "hpaez-harness",
+  "version": "0.7.0",
+  "description": "Discipline for AI coding, portable to any agent. Agent harness combining Gentle-Pi, Spec Kit, BMAD, OpenSpec patterns.",
+  "keywords": [
+    "agents",
+    "agent-harness",
+    "ai-coding",
+    "sdd",
+    "spec-driven-development",
+    "claude-code",
+    "cursor",
+    "openspec",
+    "agents-md",
+    "skills"
+  ],
+  "homepage": "https://github.com/Hpael/hpaez-harness#readme",
+  "bugs": {
+    "url": "https://github.com/Hpael/hpaez-harness/issues"
+  },
+  "license": "MIT",
+  "author": "Hpael",
+  "type": "module",
+  "main": "bin/hpaez.js",
+  "bin": {
+    "hpaez": "bin/hpaez.js"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "templates/",
+    "hooks/",
+    "extensions/",
+    "docs/",
+    "AGENTS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hpael/hpaez-harness.git"
+  }
+}

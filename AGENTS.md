@@ -68,13 +68,20 @@
 - **Agente:** sgc-riesgos-agent
 - **Componente:** `RiesgosView.jsx`
 
-### Documentos
+### Documentos & Trazabilidad
 - **Agente:** sgc-documentos-agent
 - **Componente:** `DocumentosView.jsx`
+- **Pestañas:** Catálogo de Documentos, Matriz de Trazabilidad, Bitácora de Auditoría
 
 ### Auditorías
 - **Agente:** sgc-auditorias-agent
 - **Componente:** `AuditoriasView.jsx`
+
+### Asesor Normativo ISO (IA)
+- **Agente:** sgc-iso-advisor-agent
+- **Componente:** `AgenteISOView.jsx`
+- **Backend Service:** `iso_rag_service.py`
+- **Base de Conocimiento:** `backend/knowledge/isos/` (ISO 9001:2015, ISO 14001:2015, ISO 45001:2018, ISO 19011:2018) y `backend/knowledge/custom/`
 
 ---
 

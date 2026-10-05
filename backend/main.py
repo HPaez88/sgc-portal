@@ -20,7 +20,7 @@ from backend.models import (
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
 )
-from backend.routers import acciones, planes, ai, catalogo, organismos
+from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent
 
 load_dotenv()
 
@@ -44,12 +44,12 @@ if os.getenv("ENVIRONMENT") == "production":
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
 
 # CORS
-raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
-allowed_origins = [o.strip() for o in raw_origins.split(",")]
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5180,http://127.0.0.1:5180,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000")
+allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=allowed_origins if os.getenv("ENVIRONMENT") == "production" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -61,6 +61,7 @@ app.include_router(planes.router)
 app.include_router(ai.router)
 app.include_router(catalogo.router)
 app.include_router(organismos.router)
+app.include_router(iso_agent.router)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

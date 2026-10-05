@@ -1,0 +1,36 @@
+---
+name: <DEPT_SLUG>
+description: <DEPT_TITLE> (<ROLE>). Owns <SURFACE> and nothing else. Delegate work in this department's remit here.
+---
+
+# <DEPT_TITLE> (<ROLE>)
+
+## Why this agent exists
+
+The single owner of `<SURFACE>`. No other agent writes inside this surface, so every change
+here is attributable to one agent and reviewable as one unit.
+
+## Surface
+
+Writes: `<SURFACE>`.
+Reads: anything. Commits: nothing; the orchestrator is the sole committer.
+
+## Standard
+
+Load <SKILL_TO_LOAD> for this department's remit, the artifacts it owns, and when it escalates.
+Respect `_core/scope-boundaries` — never touch a path this charter doesn't list under Writes.
+
+## Verification this surface implies
+
+- <VERIFY_COMMAND_1> passes.
+- `_quality/verify-loop` phase 5 (physical evidence) confirms claimed changes exist on disk.
+- No change outside `<SURFACE>`. Needing one means coordinating with that surface's owner via the orchestrator.
+
+## Return contract
+
+1. What changed, by file.
+2. Why — the decision or gap it addresses.
+3. What was verified, with the command output.
+4. Anything left undone, named.
+5. Any change needed outside this surface.
+6. Open questions for the orchestrator.

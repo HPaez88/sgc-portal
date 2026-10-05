@@ -140,6 +140,7 @@ ESTADOS_SGC = {
     "EN_REVISION": "En Revisión SGC - Pendiente aprobación",
     "APROBADO": "Aprobado - Folio asignado, en ejecución",
     "EN_SEGUIMIENTO": "En Seguimiento - Actividades en proceso",
+    "SOLICITUD_CIERRE": "Solicitud de Cierre - El área concluyó y solicita auditoría",
     "REVISION_AUDITOR": "Revisión Auditor - Evaluación de eficacia",
     "RECHAZADO": "Rechazado - Requiere correcciones",
     "CERRADO_EFECTIVO": "Cerrado - Eficacia comprobada",
@@ -148,25 +149,76 @@ ESTADOS_SGC = {
 }
 
 # Transiciones permitidas del workflow (mismas reglas para AC y PM)
+# Fuente única de verdad: el frontend consume estas reglas vía /api/v1/catalogos/workflow
 TRANSICIONES = {
     "BORRADOR": ["EN_REVISION"],
-    "EN_REVISION": ["APROBADO", "RECHAZADO"],
-    "APROBADO": ["EN_SEGUIMIENTO"],
-    "EN_SEGUIMIENTO": ["REVISION_AUDITOR", "RECHAZADO"],
-    "REVISION_AUDITOR": ["CERRADO_EFECTIVO", "CERRADO_NO_EFECTIVO"],
+    "EN_REVISION": ["APROBADO", "EN_SEGUIMIENTO", "RECHAZADO"],
+    "APROBADO": ["EN_SEGUIMIENTO", "SOLICITUD_CIERRE"],
+    "EN_SEGUIMIENTO": ["SOLICITUD_CIERRE", "REVISION_AUDITOR", "RECHAZADO"],
+    "SOLICITUD_CIERRE": ["REVISION_AUDITOR", "EN_SEGUIMIENTO"],
+    "REVISION_AUDITOR": ["CERRADO_EFECTIVO", "CERRADO_NO_EFECTIVO", "EN_SEGUIMIENTO"],
     "RECHAZADO": ["BORRADOR"],
     "CERRADO_EFECTIVO": [],
-    "CERRADO_NO_EFECTIVO": [],
+    "CERRADO_NO_EFECTIVO": ["EN_SEGUIMIENTO"],
     "CERRADO": [],
 }
 
 # Estados considerados como cerrados (para métricas y filtros)
 ESTADOS_CERRADOS = ["CERRADO_EFECTIVO", "CERRADO_NO_EFECTIVO", "CERRADO"]
 
-# Matriz de permisos por rol — espejo de frontend/src/constants/workflow.js
+# Estados que representan trabajo pendiente
+ESTADOS_ABIERTOS = [
+    "BORRADOR",
+    "EN_REVISION",
+    "APROBADO",
+    "EN_SEGUIMIENTO",
+    "SOLICITUD_CIERRE",
+    "REVISION_AUDITOR",
+    "RECHAZADO",
+]
+
+# Etiquetas legibles de estados heredados que ya no se generan pero pueden existir en BD
+ETIQUETAS_LEGACY = {
+    "GENERADO_IA": "Borrador (IA)",
+    "FOLIO_ASIGNADO": "Folio asignado",
+    "ENVIADO_SGC": "Enviado a SGC",
+    "EN_PROCESO": "En proceso",
+}
+
+# Normalización de estados heredados al flujo canónico
+NORMALIZACION_ESTADOS = {
+    "GENERADO_IA": "BORRADOR",
+    "FOLIO_ASIGNADO": "APROBADO",
+    "ENVIADO_SGC": "EN_REVISION",
+    "EN_PROCESO": "EN_SEGUIMIENTO",
+    "ABIERTA": "EN_SEGUIMIENTO",
+    "CERRADA": "CERRADO",
+}
+
+# Metadatos de presentación por estado (color Tailwind, grupo, descripción)
+ESTADO_META = {
+    "BORRADOR": {"label": "Borrador", "grupo": "abierto", "color": "bg-slate-100 text-slate-600 border-slate-200"},
+    "EN_REVISION": {"label": "En Revisión SGC", "grupo": "abierto", "color": "bg-amber-100 text-amber-700 border-amber-200"},
+    "APROBADO": {"label": "Aprobado", "grupo": "abierto", "color": "bg-emerald-100 text-emerald-700 border-emerald-200"},
+    "EN_SEGUIMIENTO": {"label": "En Seguimiento", "grupo": "abierto", "color": "bg-blue-100 text-blue-700 border-blue-200"},
+    "SOLICITUD_CIERRE": {"label": "Solicitud de Cierre", "grupo": "abierto", "color": "bg-purple-100 text-purple-700 border-purple-200"},
+    "REVISION_AUDITOR": {"label": "Revisión Auditor", "grupo": "abierto", "color": "bg-indigo-100 text-indigo-700 border-indigo-200"},
+    "RECHAZADO": {"label": "Rechazado", "grupo": "abierto", "color": "bg-red-100 text-red-700 border-red-200"},
+    "CERRADO_EFECTIVO": {"label": "Cerrado (Eficaz)", "grupo": "cerrado", "color": "bg-emerald-100 text-emerald-700 border-emerald-200"},
+    "CERRADO_NO_EFECTIVO": {"label": "Cerrado (No eficaz)", "grupo": "cerrado", "color": "bg-red-100 text-red-700 border-red-200"},
+    "CERRADO": {"label": "Cerrado", "grupo": "cerrado", "color": "bg-emerald-100 text-emerald-700 border-emerald-200"},
+}
+
+# Acciones del workflow cubiertas por la matriz de permisos
+ACCIONES_WORKFLOW = [
+    "crear", "editar", "enviar", "aprobar", "rechazar",
+    "asignar_auditor", "cerrar", "reabrir", "eliminar", "ver_todas_areas",
+]
+
+# Matriz de permisos por rol — fuente única de verdad (el frontend la consume vía API)
 PERMISOS_ROL = {
-    "Super Admin": ["crear", "editar", "enviar", "aprobar", "rechazar", "asignar_auditor", "cerrar", "reabrir", "eliminar", "ver_todas_areas"],
-    "Admin": ["crear", "editar", "enviar", "aprobar", "rechazar", "asignar_auditor", "cerrar", "reabrir", "eliminar", "ver_todas_areas"],
+    "Super Admin": list(ACCIONES_WORKFLOW),
+    "Admin": list(ACCIONES_WORKFLOW),
     "Auditor": ["crear", "editar", "cerrar", "rechazar", "ver_todas_areas"],
     "Encargado": ["crear", "editar", "enviar"],
     "Usuario": ["crear", "editar"],

@@ -9,7 +9,8 @@ from backend.tenant import get_organismo_id
 from backend.models import (
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, Auditor, DatosArea, ESTADOS_SGC,
-    ESTADOS_CERRADOS, PERMISOS_ROL, ROLES_EQUIPO, TRANSICIONES,
+    ESTADOS_CERRADOS, ESTADOS_ABIERTOS, PERMISOS_ROL, ROLES_EQUIPO, TRANSICIONES,
+    ESTADO_META, ETIQUETAS_LEGACY, NORMALIZACION_ESTADOS, ACCIONES_WORKFLOW,
 )
 from backend.routers._sgc_common import AREAS_DIRECCION
 
@@ -17,22 +18,22 @@ router = APIRouter(prefix="/api/v1/catalogos", tags=["Catálogos"])
 
 
 @router.get("")
-def obtener_catalogos(session=None):
+def obtener_catalogos():
     """Retorna todos los catálogos del sistema."""
     return {
         # Estructura organizacional
         "direcciones": DIRECCIONES,
         "areas": AREAS,
-        
+
         # Procesos y orígenes
         "procesos": PROCESOS,
         "origenes_ac": ORIGENES_AC,
         "origenes_pm": ORIGENES_PM,
-        
+
         # Mejora
         "categorias_mejora": CATEGORIAS_MEJORA,
         "periodos": PERIODOS,
-        
+
         # Equipo de trabajo
         "roles_equipo": ROLES_EQUIPO,
 
@@ -78,6 +79,33 @@ def obtener_auditores(
 def obtener_estados():
     """Estados del workflow."""
     return ESTADOS_SGC
+
+
+@router.get("/workflow")
+def obtener_workflow():
+    """
+    Workflow completo del SGC como fuente única de verdad.
+
+    El frontend consume este endpoint para no mantener una copia propia de
+    estados, transiciones y permisos (que se desincronizaba del backend).
+    """
+    return {
+        "estados": ESTADOS_SGC,
+        "estados_meta": ESTADO_META,
+        "estados_cerrados": ESTADOS_CERRADOS,
+        "estados_abiertos": ESTADOS_ABIERTOS,
+        "transiciones": TRANSICIONES,
+        "permisos_rol": PERMISOS_ROL,
+        "acciones_workflow": ACCIONES_WORKFLOW,
+        "etiquetas_legacy": ETIQUETAS_LEGACY,
+        "normalizacion_estados": NORMALIZACION_ESTADOS,
+    }
+
+
+@router.get("/workflow/transiciones/{estado_actual}")
+def obtener_transiciones_estado(estado_actual: str):
+    """Transiciones permitidas desde un estado del workflow."""
+    return TRANSICIONES.get(estado_actual.upper(), [])
 
 
 @router.get("/transiciones/{estado_actual}")

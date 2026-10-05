@@ -95,5 +95,13 @@ def create_db_and_tables():
 
 
 def get_session():
-    with Session(engine) as session:
+    """Sesión por request: rollback ante errores y cierre garantizado."""
+    session = Session(engine)
+    try:
         yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

@@ -1,4 +1,4 @@
-import { getApiUrl } from './config';
+import { api } from './services/apiClient';
 
 export const AGENT_PERSONALITY = `Eres un AGENTE EXPERTO ISO 9001 del Sistema de Gestión de Calidad de OOMAPASC de Cajeme.
 Tu rol es asistir en la gestión de calidad, mejora continua y cumplimiento normativo.
@@ -44,28 +44,16 @@ export async function callAgent(agentType, userPrompt, options = {}) {
     throw new Error(`Agente desconocido: ${agentType}`);
   }
 
-  try {
-    const response = await fetch(getApiUrl('/api/v1/ai/generar-json'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        prompt: userPrompt,
-        context: agent.system
-      })
-    });
+  const { ok, data, error } = await api.post('/api/v1/ai/generar-json', {
+    prompt: userPrompt,
+    context: agent.system,
+  });
 
-    if (!response.ok) {
-      throw new Error(`Error de API: ${response.status}`);
-    }
-
-    return JSON.stringify(await response.json());
-    
-  } catch (error) {
-    console.error('Error en agente:', error);
-    throw error;
+  if (!ok) {
+    throw new Error(error?.message || 'El servicio de IA no está disponible.');
   }
+
+  return JSON.stringify(data);
 }
 
 export function parseAgentResponse(response, expectedFields) {

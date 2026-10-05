@@ -57,7 +57,7 @@ export function useSupabaseSync(key, initialValue, options = {}) {
               const { created_at, ...rest } = item;
               return rest;
             });
-            
+
             // Use Supabase data (source of truth)
             setData(mappedData);
             localStorage.setItem(key, JSON.stringify(mappedData));
@@ -79,10 +79,10 @@ export function useSupabaseSync(key, initialValue, options = {}) {
   const setDataWithSync = useCallback((value) => {
     setData(prev => {
       const newValue = typeof value === 'function' ? value(prev) : value;
-      
+
       // Save to localStorage immediately
       localStorage.setItem(key, JSON.stringify(newValue));
-      
+
       // Debounced Supabase sync
       if (!isSupabaseConfigured || !supabase) {
         return newValue;
@@ -91,7 +91,7 @@ export function useSupabaseSync(key, initialValue, options = {}) {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
-      
+
       debounceRef.current = setTimeout(async () => {
         try {
           if (Array.isArray(newValue)) {
@@ -101,14 +101,16 @@ export function useSupabaseSync(key, initialValue, options = {}) {
               const { created_at, ...rest } = item;
               return rest;
             }).filter(item => item.id); // Only items with id
-            
+
             if (itemsToUpsert.length > 0) {
               const { error: sbError } = await supabase
                 .from(tableName)
                 .upsert(itemsToUpsert, { onConflict: 'id' });
-              
+
               if (sbError) {
-                console.warn(`Supabase sync error for ${key}:`, sbError);
+                const msg = `Supabase sync error for ${key}: ${sbError.message}`;
+                console.warn(msg);
+                setError(msg);
               }
             }
           } else if (newValue && typeof newValue === 'object') {
@@ -116,13 +118,16 @@ export function useSupabaseSync(key, initialValue, options = {}) {
             const { error: sbError } = await supabase
               .from(tableName)
               .upsert([{ key, data: JSON.stringify(newValue), updated_at: new Date().toISOString() }], { onConflict: 'key' });
-            
+
             if (sbError) {
-              console.warn(`Supabase sync error for ${key}:`, sbError);
+              const msg = `Supabase sync error for ${key}: ${sbError.message}`;
+              console.warn(msg);
+              setError(msg);
             }
           }
         } catch (e) {
           console.error(`Sync error for ${key}:`, e);
+          setError(e.message);
         }
       }, debounceMs);
       

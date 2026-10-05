@@ -7,6 +7,9 @@ import json
 import re
 from openai import OpenAI
 from fastapi import HTTPException
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from backend.models import (
     AREAS, PROCESOS, ORIGENES_AC, ORIGENES_PM,
@@ -40,8 +43,17 @@ def _extraer_json(raw: str) -> dict:
     raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL)
     match = re.search(r"\{[\s\S]*\}", raw)
     if not match:
-        raise ValueError(f"La IA no devolvió un JSON válido. Respuesta: {raw[:300]}")
-    return json.loads(match.group(0))
+        raise HTTPException(
+            status_code=502,
+            detail=f"La IA no devolvió un JSON válido. Respuesta: {raw[:300]}",
+        )
+    try:
+        return json.loads(match.group(0))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"JSON malformado de la IA ({exc.msg}) en posición {exc.pos}.",
+        )
 
 
 def _call_ai(prompt: str, context: str) -> str:

@@ -2,128 +2,147 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ Scrollbar personalizada */
+:root, html {
+  font-size: 16.5px;
+}
+
+@media (min-width: 1440px) {
+  :root, html {
+    font-size: 17.5px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root, html {
+    font-size: 18px;
+  }
+}
+
+@layer base {
+  * {
+    border-color: rgba(226, 232, 240, 0.8);
+  }
+  
+  body {
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+}
+
+/* Escalar textos mínimos para máxima legibilidad en todo el portal */
+.text-\[9px\] {
+  font-size: 0.74rem !important;
+  line-height: 1.15;
+}
+.text-\[10px\] {
+  font-size: 0.80rem !important;
+  line-height: 1.25;
+}
+.text-\[11px\] {
+  font-size: 0.85rem !important;
+  line-height: 1.3;
+}
+.text-\[12px\] {
+  font-size: 0.90rem !important;
+  line-height: 1.35;
+}
+.text-\[13px\] {
+  font-size: 0.94rem !important;
+  line-height: 1.4;
+}
+
+/* Tabular figures for data, counters, and metrics */
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle executive technical grid background */
+.bg-tech-mesh {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(2, 132, 199, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(11, 25, 44, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(13, 148, 136, 0.02) 0px, transparent 50%);
+}
+
+/* Custom Executive Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #06b6d4, #3b82f6);
-  border-radius: 4px;
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #0891b2, #2563eb);
+  background: #94a3b8;
 }
 
-/* ✅ Tarjetas de indicadores mejoradas - estados visuales */
-.indicator-card {
-  transition: all 0.3s ease;
+/* Interactive Card Elevation */
+.interactive-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
-.indicator-card:hover {
+.interactive-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px -5px rgba(11, 25, 44, 0.08), 0 8px 10px -6px rgba(11, 25, 44, 0.04);
 }
 
-/* ✅ Estado: verde (cumplimiento >= 80%) */
-.status-good {
-  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-  border-left: 4px solid #10b981;
+/* Subtle pulse for live status indicators */
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.92);
+  }
 }
 
-.status-good:hover {
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+.animate-subtle-pulse {
+  animation: subtle-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* ✅ Estado: amarillo (50-79%) */
-.status-warning {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border-left: 4px solid #f59e0b;
+/* Modern animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.status-warning:hover {
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.2);
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ✅ Estado: rojo (< 50%) */
-.status-danger {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  border-left: 4px solid #ef4444;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.status-danger:hover {
-  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
+.animate-slide-down {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
-/* ✅ StatCards del dashboard */
-.stat-card {
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.12);
-}
-
-/* ✅ Tablas */
-.table-header {
-  background: linear-gradient(180deg, #f8fafc, #f1f5f9);
-}
-
-.table-row:hover {
-  background: linear-gradient(90deg, rgba(6, 182, 212, 0.05), transparent);
-}
-
-/* ✅ Botones */
-.btn-primary {
-  background: linear-gradient(135deg, #06b6d4, #0ea5e9);
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #0891b2, #0284c7);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
-}
-
-/* ✅ badges de estado */
-.badge {
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.badge-borrador {
-  background: #f1f5f9;
-  color: #64748b;
-}
-
-.badge-en-revision {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.badge-aprobado {
-  background: #d1fae5;
-  color: #047857;
-}
-
-.badge-rechazado {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.badge-completado {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-/* Removed Dark Glassmorphism Utilities to avoid visual clash */

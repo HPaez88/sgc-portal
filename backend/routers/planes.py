@@ -36,68 +36,6 @@ from backend.services.doc_service import generar_plan_mejora_docx
 router = APIRouter(prefix="/api/v1/planes-mejora", tags=["Planes de Mejora"])
 
 
-AREAS_DIRECCION = {
-    "Mantenimiento de Redes": "TECNICA",
-    "Alcantarillado y Saneamiento": "TECNICA",
-    "Plantas Potabilizadoras": "TECNICA",
-    "Control de Calidad": "TECNICA",
-    "Sectorizacion hidrometrica e innovacion": "TECNICA",
-    "Suburbano Tecnico": "TECNICA",
-    "Supervision y control de obras": "TECNICA",
-    "Tramites Tecnicos": "TECNICA",
-    "Proyectos e Infraestructura": "TECNICA",
-    "Padron de Usuarios": "COMERCIAL",
-    "Control y Servicios": "COMERCIAL",
-    "Contratos y Servicios": "COMERCIAL",
-    "Atencion Ciudadana": "COMERCIAL",
-    "Verificacion y Lectura": "COMERCIAL",
-    "Agencia Esperanza": "COMERCIAL",
-    "Agencia Marte R. Gomez": "COMERCIAL",
-    "Agencia Providencia": "COMERCIAL",
-    "Agencia Pueblo Yaqui": "COMERCIAL",
-    "Recursos Humanos": "ADMINISTRATIVA",
-    "Recursos Materiales": "ADMINISTRATIVA",
-    "Contabilidad": "ADMINISTRATIVA",
-    "Comunicacion e Imagen Institucional": "ADMINISTRATIVA",
-    "Informatica": "ADMINISTRATIVA",
-    "Licitaciones": "ADMINISTRATIVA",
-    "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
-    "Juridico": "JURIDICA",
-    "Organo de Control Interno": "ORGANO DE CONTROL INTERNO",
-    "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-    "Programa Social": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-    "Linea OOMAPASC": "GENERAL",
-    "Seguridad Industrial": "TECNICA",
-    "Sistema de Gestion de Calidad": "GENERAL",
-}
-
-
-def _normalizar(texto: Optional[str]) -> str:
-    if not texto:
-        return ""
-    replacements = {
-        "Ã¡": "a",
-        "Ã©": "e",
-        "Ã­": "i",
-        "Ã³": "o",
-        "Ãº": "u",
-        "Ã": "A",
-        "Ã‰": "E",
-        "Ã": "I",
-        "Ã“": "O",
-        "Ãš": "U",
-        "Ã±": "n",
-        "Ã‘": "N",
-    }
-    for source, target in replacements.items():
-        texto = texto.replace(source, target)
-    return texto
-
-
-def _asignar_direccion(area: str) -> str:
-    return AREAS_DIRECCION.get(_normalizar(area), "GENERAL")
-
-
 def _get_pm(
     session: Session,
     pm_id: int,
@@ -128,7 +66,7 @@ def listar_pm(
     session: Session = Depends(get_session),
     organismo_id: int = Depends(get_organismo_id),
 ):
-    return _listar_sgc(session, "PM", estado, area, direccion, organismo_id)
+    return _listar_sgc(session, "PM", organismo_id, estado, area, direccion)
 
 
 @router.get("/{pm_id}", response_model=PlanDeMejora)

@@ -1,0 +1,1283 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Sparkles,
+  Bot,
+  Send,
+  BookOpen,
+  ShieldCheck,
+  FileText,
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  HelpCircle,
+  Layers,
+  ChevronRight,
+  Copy,
+  Check,
+  RefreshCw,
+  Plus,
+  X,
+  ExternalLink,
+  BookMarked,
+  Scale,
+  Award,
+  ArrowRight,
+  Info,
+  MessageSquare,
+  Bookmark,
+  FileCode,
+  HardHat,
+  Leaf,
+  ClipboardCheck,
+  Eye,
+  Maximize2,
+  Download,
+  FileDown,
+  Printer
+} from 'lucide-react';
+import { useSGC } from '../../SGCContext';
+import { useToast } from '../common/Toast';
+import ContenedorModal from '../common/ContenedorModal';
+import {
+  exportarConsultaISOPDF,
+  exportarConsultaISOMarkdown,
+  exportarSesionCompletaISOPDF,
+  exportarSesionCompletaISOMarkdown
+} from '../../services/isoExporter';
+
+const PREGUNTAS_CATEGORIZADAS = [
+  {
+    categoria: 'Documentación Interna, Procedimientos y Formatos SGC',
+    icon: FileText,
+    color: 'from-blue-700 to-indigo-800',
+    preguntas: [
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: 'Interacción de OOMRSC-20 y PR-CAL-01',
+        texto: '¿Cómo interactúa el formato de Acción Correctiva OOMRSC-20 con el procedimiento PR-CAL-01 y qué estados y firmas recorre en el portal?'
+      },
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: 'Potabilización (PR-POT-01) y Bitácora de Cloro (REG-CLORO-01)',
+        texto: '¿Cómo se vincula el procedimiento operativo PR-POT-01 con la bitácora REG-CLORO-01 y en qué casos se dispara una Acción Correctiva en OOMRSC-20?'
+      },
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: 'Matriz de Trazabilidad y Bloqueo de Eliminación (§ 7.5.3)',
+        texto: '¿Cómo funciona la matriz de trazabilidad documental del portal y por qué el sistema bloquea la eliminación de un documento con citas fuertes?'
+      },
+      {
+        norma: 'SGC OOMAPASC',
+        titulo: 'Plan de Mejora OOMRSC-21 y PR-MEJ-01',
+        texto: '¿Qué información debe capturarse en el formato OOMRSC-21 según el procedimiento PR-MEJ-01 para la evaluación presupuestal de mejoras?'
+      }
+    ]
+  },
+  {
+    categoria: 'Transición y Enmiendas 2026',
+    icon: Sparkles,
+    color: 'from-sky-600 to-blue-700',
+    preguntas: [
+      {
+        norma: 'ISO-9001-2026',
+        titulo: 'Cambios relevantes entre ISO 9001:2015 y 2026',
+        texto: '¿Cuáles son los cambios más relevantes y nuevos requisitos entre la norma ISO 9001:2015 y la actualización ISO 9001:2026 para OOMAPASC?'
+      },
+      {
+        norma: 'ISO-9001-2026',
+        titulo: 'Enmienda de Acción Climática (§ 4.1 y 4.2)',
+        texto: '¿Cómo implementar obligatoriamente la Enmienda de Acción Climática en el análisis de contexto (4.1) y partes interesadas (4.2) en OOMAPASC?'
+      },
+      {
+        norma: 'ISO-9001-2026',
+        titulo: 'Resiliencia Operativa y Ciberseguridad (§ 6.1 y 7.1.3)',
+        texto: '¿Qué exige ISO 9001:2026 sobre resiliencia operativa, ciberseguridad industrial en SCADA y telemetría de pozos?'
+      }
+    ]
+  },
+  {
+    categoria: 'Calidad y Control Operacional (ISO 9001:2026)',
+    icon: ShieldCheck,
+    color: 'from-blue-600 to-indigo-700',
+    preguntas: [
+      {
+        norma: 'ISO-9001-2026',
+        titulo: 'Control Operacional en Redes y Plantas (§ 8.5.1)',
+        texto: '¿Qué evidencia objetiva exige la cláusula 8.5.1 para el control operacional en redes de agua potable y plantas potabilizadoras?'
+      },
+      {
+        norma: 'ISO-9001-2026',
+        titulo: 'Cierre Efectivo de Acciones Correctivas (§ 10.2 / OOMRSC-20)',
+        texto: '¿Cómo documentar el análisis de causa raíz y el cierre efectivo de una Acción Correctiva en el formato OOMRSC-20 conforme al 10.2?'
+      },
+      {
+        norma: 'ISO-9001-2026',
+        titulo: 'Control de Proveedores Críticos (§ 8.4)',
+        texto: '¿Qué debida diligencia y criterios de evaluación exige el 8.4 para proveedores de cloro gas y químicos esenciales?'
+      }
+    ]
+  },
+  {
+    categoria: 'Gestión Ambiental y Sanitaria (ISO 14001:2015)',
+    icon: Leaf,
+    color: 'from-emerald-600 to-teal-700',
+    preguntas: [
+      {
+        norma: 'ISO-14001-2015',
+        titulo: 'Aspectos e Impactos Ambientales (§ 6.1.2)',
+        texto: '¿Cómo identificar y evaluar aspectos e impactos ambientales significativos en plantas de tratamiento y drenes agrícolas según ISO 14001 § 6.1.2?'
+      },
+      {
+        norma: 'ISO-14001-2015',
+        titulo: 'Respuesta a Emergencias Ambientales (§ 8.2)',
+        texto: '¿Qué protocolos de contingencia y simulacros exige ISO 14001 § 8.2 ante fugas de cloro gas o derrames de aguas residuales?'
+      }
+    ]
+  },
+  {
+    categoria: 'Seguridad y Salud Laboral (ISO 45001:2018)',
+    icon: HardHat,
+    color: 'from-amber-600 to-orange-700',
+    preguntas: [
+      {
+        norma: 'ISO-45001-2018',
+        titulo: 'Trabajos en Espacios Confinados (§ 6.1.2 y 8.1.2)',
+        texto: '¿Qué controles operacionales exige ISO 45001 y la NOM-033-STPS para ingreso seguro de cuadrillas a pozos de visita y cárcamos?'
+      },
+      {
+        norma: 'ISO-45001-2018',
+        titulo: 'Manejo Seguro de Cloro Gas (SST)',
+        texto: '¿Qué medidas de seguridad, EPP y monitoreo de fugas se deben documentar en plantas potabilizadoras para cilindros de 1 tonelada de cloro gas?'
+      }
+    ]
+  },
+  {
+    categoria: 'Auditorías y Dictamen de Cierre (ISO 19011:2018)',
+    icon: ClipboardCheck,
+    color: 'from-purple-600 to-slate-800',
+    preguntas: [
+      {
+        norma: 'ISO-19011-2018',
+        titulo: 'Principios y Criterios del Auditor (§ 4.0)',
+        texto: '¿Cuáles son los principios fundamentales de auditoría e independencia del auditor según ISO 19011 § 4.0 para auditorías internas en OOMAPASC?'
+      },
+      {
+        norma: 'ISO-19011-2018',
+        titulo: 'Redacción de Hallazgos y No Conformidades (§ 6.4)',
+        texto: '¿Cuál es la estructura formal obligatoria para redactar una No Conformidad válida (Declaración, Criterio y Evidencia Objetiva)?'
+      }
+    ]
+  }
+];
+
+const CHIPS_RAPIDOS = [
+  { label: '📑 Procedimientos y Formatos SGC', query: '¿Cuáles son los procedimientos operativos y formatos oficiales (OOMRSC-20, OOMRSC-21, REG-CLORO-01) del portal SGC y cómo interactúan entre sí?', norma: '' },
+  { label: '🔗 Matriz de Trazabilidad § 7.5', query: '¿Cómo funciona la matriz de trazabilidad e impacto documental del portal y qué reglas rigen el bloqueo de eliminación de registros?', norma: 'ISO-9001-2026' },
+  { label: '🌟 Transición ISO 9001:2015 vs 2026', query: '¿Cuáles son los cambios más relevantes entre la norma ISO 9001:2015 y la actualización ISO 9001:2026 para OOMAPASC?', norma: 'ISO-9001-2026' },
+  { label: '🛡️ Cierre OOMRSC-20 (§ 10.2)', query: '¿Cómo documentar el análisis de causa raíz y el cierre efectivo de una Acción Correctiva en el formato OOMRSC-20 conforme al 10.2?', norma: 'ISO-9001-2026' },
+  { label: '💧 Redes y Plantas (§ 8.5.1)', query: '¿Qué evidencia objetiva exige la cláusula 8.5.1 para el control operacional en redes de agua potable y plantas potabilizadoras?', norma: 'ISO-9001-2026' },
+  { label: '📋 Auditorías ISO 19011 (§ 6.4)', query: '¿Cuál es la estructura formal obligatoria para redactar una No Conformidad válida según ISO 19011 § 6.4?', norma: 'ISO-19011-2018' }
+];
+
+export default function AgenteISOView({ setActiveTab }) {
+  const { usuarioLogueado, registrarMovimiento, documentos, procesosDetalle } = useSGC();
+  const toast = useToast();
+
+  // Pestañas principales
+  const [tabActiva, setTabActiva] = useState('chat'); // 'chat' | 'consultas' | 'base' | 'clausulas'
+
+  const [normas, setNormas] = useState([]);
+  const [normaSeleccionada, setNormaSeleccionada] = useState(''); // '' = todas
+  const [documentosConocimiento, setDocumentosConocimiento] = useState([]);
+  const [cargandoNormas, setCargandoNormas] = useState(true);
+
+  // Chat State
+  const [mensajes, setMensajes] = useState([
+    {
+      id: 'bienvenida',
+      emisor: 'agente',
+      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO.**\n\nEstoy conectado a:\n- **Normas ISO Oficiales:** ISO 9001:2015 / ISO 9001:2026 (Enmiendas Climáticas), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Mapa de los 8 Procesos y Matriz de Trazabilidad Documental.\n\nMis respuestas se fundamentan **estrictamente en la documentación y registros oficiales de OOMAPASC** para asegurar total consistencia y resolución técnica ante auditorías internas y externas.\n\n¿Qué procedimiento, formato, registro o cláusula deseas consultar?`,
+      clausulas: [],
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+  const [inputPregunta, setInputPregunta] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [copiadoId, setCopiadoId] = useState(null);
+
+  // Explorador de Cláusulas State
+  const [normaExplorando, setNormaExplorando] = useState('ISO-9001-2026');
+  const [clausulasNorma, setClausulasNorma] = useState([]);
+  const [cargandoClausulas, setCargandoClausulas] = useState(false);
+  const [busquedaClausula, setBusquedaClausula] = useState('');
+
+  // Modales
+  const [modalDocCustomAbierto, setModalDocCustomAbierto] = useState(false);
+  const [docCustomForm, setDocCustomForm] = useState({ nombre: '', contenido: '' });
+  const [guardandoDoc, setGuardandoDoc] = useState(false);
+
+  const [docVisorModal, setDocVisorModal] = useState(null); // { nombre, contenido, tipo }
+
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (tabActiva === 'chat') {
+      scrollToBottom();
+    }
+  }, [mensajes, enviando, tabActiva]);
+
+  // Cargar normas y documentos al montar
+  useEffect(() => {
+    cargarNormasYDocumentos();
+  }, []);
+
+  const cargarNormasYDocumentos = async () => {
+    setCargandoNormas(true);
+    try {
+      const resNormas = await fetch('/api/v1/iso/normas');
+      if (resNormas.ok) {
+        const data = await resNormas.json();
+        setNormas(data.normas || []);
+        if (data.normas && data.normas.length > 0) {
+          cargarClausulas(data.normas[0].id);
+          setNormaExplorando(data.normas[0].id);
+        }
+      }
+
+      const resDocs = await fetch('/api/v1/iso/documentos');
+      if (resDocs.ok) {
+        const dataDocs = await resDocs.json();
+        setDocumentosConocimiento(dataDocs.documentos || []);
+      }
+    } catch (e) {
+      console.error('Error cargando base de conocimiento ISO:', e);
+    } finally {
+      setCargandoNormas(false);
+    }
+  };
+
+  const cargarClausulas = async (normaId) => {
+    setCargandoClausulas(true);
+    try {
+      const res = await fetch(`/api/v1/iso/clausulas/${normaId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setClausulasNorma(data.clausulas || []);
+      }
+    } catch (e) {
+      console.error('Error cargando cláusulas:', e);
+      toast.error('No se pudieron cargar las cláusulas');
+    } finally {
+      setCargandoClausulas(false);
+    }
+  };
+
+  const handleEnviarConsulta = async (preguntaTexto = null, normaOverride = null) => {
+    const texto = (preguntaTexto !== null ? preguntaTexto : inputPregunta).trim();
+    if (!texto || enviando) return;
+
+    // Cambiar a la pestaña de chat automáticamente
+    setTabActiva('chat');
+
+    const normaId = normaOverride !== null ? normaOverride : (normaSeleccionada || null);
+
+    const userMsg = {
+      id: Date.now().toString(),
+      emisor: 'usuario',
+      texto,
+      normaId,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMensajes(prev => [...prev, userMsg]);
+    setInputPregunta('');
+    setEnviando(true);
+
+    try {
+      const historial = mensajes
+        .filter(m => m.id !== 'bienvenida')
+        .map(m => ({
+          role: m.emisor === 'usuario' ? 'user' : 'assistant',
+          content: m.texto
+        }));
+
+      const res = await fetch('/api/v1/iso/consultar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pregunta: texto,
+          norma_id: normaId,
+          historial,
+          catalogo_documentos: documentos || [],
+          catalogo_procesos: procesosDetalle || []
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ detail: 'Error en el servidor' }));
+        throw new Error(errorData.detail || 'Fallo en la consulta');
+      }
+
+      const data = await res.json();
+
+      const agenteMsg = {
+        id: (Date.now() + 1).toString(),
+        emisor: 'agente',
+        texto: data.respuesta,
+        clausulas: data.clausulas_citadas || [],
+        normaConsultada: data.norma_consultada,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMensajes(prev => [...prev, agenteMsg]);
+
+      registrarMovimiento?.({
+        modulo: 'AUDITORIA_ISO',
+        accion: 'CONSULTA_IA',
+        descripcion: `Consulta normativa al Asesor ISO: "${texto.substring(0, 45)}..."`,
+        detalles: `Norma: ${data.norma_consultada || 'General'} | Citas: ${(data.clausulas_citadas || []).map(c => c.numero).join(', ')}`,
+        folio: 'ISO-IA-CONSULTA'
+      });
+    } catch (e) {
+      console.error('Error en consulta ISO:', e);
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: `⚠️ **Ocurrió un error al procesar tu consulta:** ${e.message}. Verifica que el servicio de IA esté activo e intenta de nuevo.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          esError: true
+        }
+      ]);
+      toast.error('Error al consultar el Agente ISO');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const copiarAlPortapapeles = (texto, id) => {
+    navigator.clipboard.writeText(texto);
+    setCopiadoId(id);
+    toast.success('Respuesta copiada al portapapeles');
+    setTimeout(() => setCopiadoId(null), 2500);
+  };
+
+  const obtenerPreguntaPrevia = (idx) => {
+    for (let i = idx - 1; i >= 0; i--) {
+      if (mensajes[i]?.emisor === 'usuario') return mensajes[i].texto;
+    }
+    return 'Consulta técnica al Asesor Normativo ISO';
+  };
+
+  const guardarDocumentoPersonalizado = async () => {
+    if (!docCustomForm.nombre.trim() || !docCustomForm.contenido.trim()) {
+      toast.warning('Por favor completa el nombre y contenido del documento');
+      return;
+    }
+    setGuardandoDoc(true);
+    try {
+      const res = await fetch('/api/v1/iso/guardar-documento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre_archivo: docCustomForm.nombre,
+          contenido: docCustomForm.contenido
+        })
+      });
+      if (!res.ok) throw new Error('Error al guardar documento');
+      const data = await res.json();
+      toast.success(data.mensaje || 'Documento indexado en la base de conocimiento');
+      setModalDocCustomAbierto(false);
+      setDocCustomForm({ nombre: '', contenido: '' });
+      cargarNormasYDocumentos();
+    } catch (e) {
+      toast.error(e.message || 'Error al guardar');
+    } finally {
+      setGuardandoDoc(false);
+    }
+  };
+
+  // Formateador robusto de Markdown con soporte para tablas
+  const renderMarkdown = (content) => {
+    if (!content) return null;
+    const lines = content.split('\n');
+    const elements = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Detección de tablas Markdown
+      if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        const tableLines = [];
+        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+          tableLines.push(lines[i].trim());
+          i++;
+        }
+        if (tableLines.length >= 2) {
+          const headerRow = tableLines[0].split('|').slice(1, -1).map(c => c.trim());
+          const hasDelimiter = tableLines.length > 1 && tableLines[1].includes('---');
+          const bodyRows = (hasDelimiter ? tableLines.slice(2) : tableLines.slice(1))
+            .map(row => row.split('|').slice(1, -1).map(c => c.trim()));
+
+          elements.push(
+            <div key={`tbl-${i}`} className="my-3.5 overflow-x-auto rounded-xl border border-slate-200 shadow-xs bg-white">
+              <table className="min-w-full text-xs text-left divide-y divide-slate-200">
+                <thead className="bg-[#0B192C] text-white">
+                  <tr>
+                    {headerRow.map((h, hIdx) => (
+                      <th key={hIdx} className="px-3.5 py-2.5 font-extrabold uppercase tracking-wider text-[11px]">
+                        {formatBold(h)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {bodyRows.map((r, rIdx) => (
+                    <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white hover:bg-sky-50/50' : 'bg-slate-50/70 hover:bg-sky-50/50'}>
+                      {r.map((cell, cIdx) => (
+                        <td key={cIdx} className="px-3.5 py-2.5 text-slate-800 leading-relaxed font-normal">
+                          {formatBold(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+          continue;
+        }
+      }
+
+      // Títulos
+      if (line.startsWith('### ')) {
+        elements.push(
+          <h4 key={i} className="font-black text-sm text-[#002855] mt-4 mb-1.5 flex items-center gap-1.5">
+            {formatBold(line.replace('### ', ''))}
+          </h4>
+        );
+      } else if (line.startsWith('## ')) {
+        elements.push(
+          <h3 key={i} className="font-black text-base text-[#002855] mt-5 mb-2.5 border-b border-slate-200 pb-1.5 flex items-center gap-2">
+            {formatBold(line.replace('## ', ''))}
+          </h3>
+        );
+      } else if (line.startsWith('# ')) {
+        elements.push(
+          <h2 key={i} className="font-black text-lg text-[#002855] mt-5 mb-3">
+            {formatBold(line.replace('# ', ''))}
+          </h2>
+        );
+      } else if (line.trim().startsWith('• ') || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+        elements.push(
+          <li key={i} className="ml-4 list-disc text-xs text-slate-700 my-0.5 leading-relaxed">
+            {formatBold(line.trim().substring(2))}
+          </li>
+        );
+      } else if (line.trim() === '') {
+        elements.push(<div key={i} className="h-1.5" />);
+      } else if (line.trim() === '---') {
+        elements.push(<hr key={i} className="my-3 border-slate-200" />);
+      } else {
+        elements.push(
+          <p key={i} className="text-xs text-slate-700 leading-relaxed my-1">
+            {formatBold(line)}
+          </p>
+        );
+      }
+      i++;
+    }
+
+    return elements;
+  };
+
+  const formatBold = (text) => {
+    if (!text) return text;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
+  const clausulasFiltradas = clausulasNorma.filter(c => {
+    if (!busquedaClausula) return true;
+    const b = busquedaClausula.toLowerCase();
+    return c.numero.toLowerCase().includes(b) ||
+      c.titulo.toLowerCase().includes(b) ||
+      c.requisito.toLowerCase().includes(b) ||
+      c.interpretacion.toLowerCase().includes(b);
+  });
+
+  return (
+    <div className="space-y-5 animate-fade-in-up pb-10">
+      {/* HEADER DEL AGENTE */}
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] p-6 rounded-2xl shadow-xl text-white border border-slate-700/60 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 shrink-0">
+              <Sparkles size={28} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-2xl font-black tracking-tight text-white">
+                  Asesor & Auditor Normativo ISO (IA)
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-sky-400/20 text-sky-300 border border-sky-400/30">
+                  RAG Estricto Grounded
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                  OOMAPASC Calidad
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 font-medium mt-1 max-w-3xl leading-relaxed">
+                Consultas fundamentadas exclusivamente en la documentación oficial de normas ISO (9001, 14001, 45001, 19011) y lineamientos de auditoría para una correcta ejecución y resolución satisfactoria.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+            <button
+              onClick={() => setModalDocCustomAbierto(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold rounded-xl text-xs transition-all shadow-md cursor-pointer"
+            >
+              <Plus size={15} strokeWidth={3} /> Agregar Documento a Base
+            </button>
+          </div>
+        </div>
+
+        {/* NAVEGACIÓN DE PESTAÑAS PRINCIPALES */}
+        <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setTabActiva('chat')}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                tabActiva === 'chat'
+                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
+                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
+              }`}
+            >
+              <MessageSquare size={15} /> Asesor Normativo (Pantalla Completa)
+            </button>
+
+            <button
+              onClick={() => setTabActiva('consultas')}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                tabActiva === 'consultas'
+                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
+                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
+              }`}
+            >
+              <HelpCircle size={15} /> Consultas Frecuentes
+              <span className="px-1.5 py-0.2 bg-black/20 text-[10px] rounded-full font-mono">
+                {PREGUNTAS_CATEGORIZADAS.reduce((acc, c) => acc + c.preguntas.length, 0)}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setTabActiva('base')}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                tabActiva === 'base'
+                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
+                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
+              }`}
+            >
+              <BookMarked size={15} /> Base Indexada & Normas
+              <span className="px-1.5 py-0.2 bg-black/20 text-[10px] rounded-full font-mono">
+                {documentosConocimiento.length || normas.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setTabActiva('clausulas');
+                if (normas.length > 0 && !clausulasNorma.length) {
+                  cargarClausulas(normas[0].id);
+                }
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                tabActiva === 'clausulas'
+                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
+                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
+              }`}
+            >
+              <BookOpen size={15} /> Explorador de Cláusulas
+            </button>
+          </div>
+
+          {/* Filtro por norma activo en chat */}
+          {tabActiva === 'chat' && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
+                <ShieldCheck size={13} className="text-sky-400" /> Norma:
+              </span>
+              <button
+                onClick={() => setNormaSeleccionada('')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                  normaSeleccionada === ''
+                    ? 'bg-white text-slate-950 shadow-xs'
+                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                }`}
+              >
+                Todas
+              </button>
+              {normas.map(n => (
+                <button
+                  key={n.id}
+                  onClick={() => setNormaSeleccionada(n.id)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                    normaSeleccionada === n.id
+                      ? 'bg-white text-slate-950 shadow-xs'
+                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                  }`}
+                >
+                  {n.id.replace(/-/g, ' ')}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* PESTAÑA 1: CHAT A PANTALLA COMPLETA (AMPLIADO 100%) */}
+      {/* ============================================================ */}
+      {tabActiva === 'chat' && (
+        <div className="w-full bg-white rounded-2xl shadow-card-subtle border border-slate-200 flex flex-col h-[740px] overflow-hidden">
+          {/* Header de conversación y chips rápidos */}
+          <div className="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-slate-800">
+                  Sesión Activa con Asesor Normativo ISO
+                </span>
+                {normaSeleccionada ? (
+                  <span className="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded border border-sky-200">
+                    Filtro: {normaSeleccionada}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono font-bold bg-slate-200/70 text-slate-700 px-2 py-0.5 rounded">
+                    Búsqueda Global (4 Normas + Guías de Transición)
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {mensajes.filter(m => m.id !== 'bienvenida').length > 0 && (
+                  <>
+                    <button
+                      onClick={() => {
+                        exportarSesionCompletaISOPDF({ mensajes, usuario: usuarioLogueado });
+                        toast.success('Sesión consolidada descargada en PDF');
+                      }}
+                      className="text-[11px] font-bold text-sky-950 bg-sky-100 hover:bg-sky-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-sky-200 shadow-2xs"
+                      title="Descargar todas las consultas de la sesión en un informe PDF"
+                    >
+                      <Download size={12} className="text-sky-700" /> Descargar Sesión (PDF)
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        exportarSesionCompletaISOMarkdown({ mensajes, usuario: usuarioLogueado });
+                        toast.success('Historial descargado en Markdown (.md)');
+                      }}
+                      className="text-[11px] font-bold text-slate-700 bg-white hover:bg-slate-100 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-slate-200 shadow-2xs"
+                      title="Descargar historial de consultas en archivo Markdown"
+                    >
+                      <FileDown size={12} className="text-slate-600" /> Exportar .MD
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => setMensajes([mensajes[0]])}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors cursor-pointer ml-1"
+                >
+                  <RefreshCw size={13} /> Limpiar Chat
+                </button>
+              </div>
+            </div>
+
+            {/* Chips Rápidos de Consulta */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                Sugerencias:
+              </span>
+              {CHIPS_RAPIDOS.map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleEnviarConsulta(chip.query, chip.norma)}
+                  disabled={enviando}
+                  className="px-2.5 py-1 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg text-[11px] font-medium text-slate-700 hover:text-sky-900 transition-all shrink-0 cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mensajes a ancho completo */}
+          <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6 bg-gradient-to-b from-slate-50/40 to-white">
+            {mensajes.map((m) => {
+              const esUsuario = m.emisor === 'usuario';
+              return (
+                <div
+                  key={m.id}
+                  className={`flex gap-4 ${esUsuario ? 'justify-end' : 'justify-start'}`}
+                >
+                  {!esUsuario && (
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0 mt-0.5">
+                      <Bot size={22} />
+                    </div>
+                  )}
+
+                  <div
+                    className={`max-w-[95%] lg:max-w-[90%] rounded-2xl p-5 shadow-sm text-xs ${
+                      esUsuario
+                        ? 'bg-[#002855] text-white rounded-tr-none'
+                        : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none ring-1 ring-slate-100'
+                    }`}
+                  >
+                    {/* Badge y Timestamp */}
+                    <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-100">
+                      <span className={`font-bold text-xs ${esUsuario ? 'text-sky-300' : 'text-[#002855]'}`}>
+                        {esUsuario ? (usuarioLogueado?.nombre || 'Auditor / Usuario') : 'Agente Asesor Normativo ISO'}
+                      </span>
+                      <span className={`text-[10px] font-mono ${esUsuario ? 'text-slate-300' : 'text-slate-400'}`}>
+                        {m.timestamp}
+                      </span>
+                    </div>
+
+                    {/* Contenido formateado */}
+                    <div className="space-y-1.5 leading-relaxed">
+                      {esUsuario ? (
+                        <p className="leading-relaxed font-semibold text-sm">{m.texto}</p>
+                      ) : (
+                        renderMarkdown(m.texto)
+                      )}
+                    </div>
+
+                    {/* Cláusulas citadas */}
+                    {!esUsuario && m.clausulas && m.clausulas.length > 0 && (
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <Scale size={13} className="text-sky-600" /> Cláusulas Oficiales Citadas:
+                        </span>
+                        {m.clausulas.map((c, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setNormaExplorando(c.norma_id || 'ISO-9001-2026');
+                              cargarClausulas(c.norma_id || 'ISO-9001-2026');
+                              setTabActiva('clausulas');
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[11px] font-mono font-bold text-sky-900 transition-colors cursor-pointer"
+                            title={`${c.norma} § ${c.numero} - ${c.titulo}`}
+                          >
+                            <span>§ {c.numero}</span>
+                            <span className="text-slate-600 font-sans truncate max-w-[200px]">{c.titulo}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Acciones de respuesta */}
+                    {!esUsuario && m.id !== 'bienvenida' && (
+                      <div className="mt-4 pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                        <div className="flex items-center gap-3">
+                          {setActiveTab && (
+                            <button
+                              onClick={() => setActiveTab('ac')}
+                              className="text-[#002855] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                            >
+                              Ir a Acciones Correctivas (OOMRSC-20) <ArrowRight size={12} />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => {
+                              const idx = mensajes.findIndex((item) => item.id === m.id);
+                              const pregunta = obtenerPreguntaPrevia(idx);
+                              exportarConsultaISOPDF({
+                                pregunta,
+                                respuesta: m.texto,
+                                clausulas: m.clausulas || [],
+                                normaConsultada: m.normaConsultada || normaSeleccionada || 'Todas las Normas ISO y SGC',
+                                usuario: usuarioLogueado,
+                                timestamp: m.timestamp
+                              });
+                              toast.success('Dictamen PDF generado y descargado');
+                            }}
+                            className="flex items-center gap-1 text-sky-950 font-bold px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-all cursor-pointer shadow-2xs text-[11px]"
+                            title="Descargar esta respuesta como Dictamen Técnico en PDF"
+                          >
+                            <Download size={13} className="text-sky-700" />
+                            <span>Descargar PDF</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              const idx = mensajes.findIndex((item) => item.id === m.id);
+                              const pregunta = obtenerPreguntaPrevia(idx);
+                              exportarConsultaISOMarkdown({
+                                pregunta,
+                                respuesta: m.texto,
+                                clausulas: m.clausulas || [],
+                                normaConsultada: m.normaConsultada || normaSeleccionada || 'Todas las Normas ISO y SGC',
+                                usuario: usuarioLogueado,
+                                timestamp: m.timestamp
+                              });
+                              toast.success('Archivo Markdown (.md) descargado');
+                            }}
+                            className="flex items-center gap-1 text-slate-700 font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer shadow-2xs text-[11px]"
+                            title="Descargar esta respuesta en formato Markdown (.md)"
+                          >
+                            <FileDown size={13} className="text-slate-600" />
+                            <span>Descargar .MD</span>
+                          </button>
+
+                          <button
+                            onClick={() => copiarAlPortapapeles(m.texto, m.id)}
+                            className="flex items-center gap-1 text-slate-500 hover:text-slate-800 font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer text-[11px]"
+                            title="Copiar texto al portapapeles"
+                          >
+                            {copiadoId === m.id ? (
+                              <>
+                                <Check size={13} className="text-emerald-600" />
+                                <span className="text-emerald-700">Copiado</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={13} />
+                                <span>Copiar</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {enviando && (
+              <div className="flex gap-4 justify-start animate-fade-in">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0">
+                  <Bot size={22} className="animate-spin" />
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-4.5 shadow-sm text-xs text-slate-700 flex items-center gap-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-ping" />
+                  <span className="font-bold text-slate-800">
+                    Analizando base de conocimiento ISO y requisitos técnicos de OOMAPASC...
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Barra de entrada a ancho completo */}
+          <div className="p-4 bg-white border-t border-slate-200">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleEnviarConsulta();
+              }}
+              className="flex items-center gap-3"
+            >
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={inputPregunta}
+                  onChange={(e) => setInputPregunta(e.target.value)}
+                  placeholder="Escribe tu duda sobre cualquier cláusula ISO (ej. ¿Cómo cumplir con el 8.5.1 en redes y plantas?)..."
+                  disabled={enviando}
+                  className="w-full pl-5 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:bg-white outline-none transition-all disabled:opacity-60"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!inputPregunta.trim() || enviando}
+                className="px-6 py-3.5 bg-[#002855] hover:bg-[#001f42] text-white font-black rounded-xl text-xs flex items-center gap-2 transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+              >
+                <span>Consultar</span>
+                <Send size={15} />
+              </button>
+            </form>
+            <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1 font-medium">
+              <Info size={12} className="text-sky-600" />
+              El Asesor Normativo responderá citando cláusulas exactas, evidencias requeridas para auditorías y recomendaciones operativas.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* PESTAÑA 2: CONSULTAS FRECUENTES Y PLANTILLAS */}
+      {/* ============================================================ */}
+      {tabActiva === 'consultas' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-card-subtle border border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <HelpCircle className="text-sky-600" size={20} /> Banco de Consultas Frecuentes y Plantillas de Auditoría
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Selecciona cualquier consulta estructurada para que el Asesor Normativo la procese inmediatamente.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-8">
+              {PREGUNTAS_CATEGORIZADAS.map((cat, cIdx) => {
+                const CatIcon = cat.icon;
+                return (
+                  <div key={cIdx} className="space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-1.5 rounded-lg bg-gradient-to-r ${cat.color} text-white shadow-xs`}>
+                        <CatIcon size={16} />
+                      </div>
+                      <h4 className="font-extrabold text-sm text-slate-900">{cat.categoria}</h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {cat.preguntas.map((p, pIdx) => (
+                        <div
+                          key={pIdx}
+                          className="bg-slate-50 hover:bg-sky-50/50 p-4 rounded-xl border border-slate-200/80 hover:border-sky-300 transition-all flex flex-col justify-between group shadow-xs"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="px-2 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-mono font-extrabold text-slate-600">
+                                {p.norma}
+                              </span>
+                            </div>
+                            <h5 className="font-bold text-xs text-slate-900 group-hover:text-sky-950">
+                              {p.titulo}
+                            </h5>
+                            <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
+                              {p.texto}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 mt-3 border-t border-slate-200/60 flex justify-end">
+                            <button
+                              onClick={() => handleEnviarConsulta(p.texto, p.norma)}
+                              className="w-full py-1.5 bg-[#002855] hover:bg-[#001f42] text-white text-[11px] font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                            >
+                              <span>Consultar con IA</span>
+                              <ArrowRight size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* PESTAÑA 3: BASE DE CONOCIMIENTO INDEXADA */}
+      {/* ============================================================ */}
+      {tabActiva === 'base' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-card-subtle border border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-6">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <BookMarked className="text-emerald-600" size={20} /> Base de Conocimiento Normativa Indexada
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Documentos oficiales en Markdown (.md) que alimentan el motor RAG del Asesor ISO.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setModalDocCustomAbierto(true)}
+                  className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Plus size={15} strokeWidth={3} /> Agregar Documento Personalizado
+                </button>
+              </div>
+            </div>
+
+            {/* Listado de Documentos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {documentosConocimiento.map((doc, idx) => {
+                const esNormaOficial = doc.tipo === 'NORMA_OFICIAL_MD';
+                return (
+                  <div
+                    key={idx}
+                    className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200 hover:border-sky-300 transition-all flex flex-col justify-between shadow-xs"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                          esNormaOficial 
+                            ? 'bg-sky-100 text-sky-800 border border-sky-200' 
+                            : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        }`}>
+                          {esNormaOficial ? 'NORMA OFICIAL ISO' : 'GUÍA / MATRIZ DE TRANSICIÓN'}
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-bold">
+                          ✓ Grounded
+                        </span>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-sky-700 shadow-xs shrink-0 mt-0.5">
+                          <FileCode size={20} />
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-sm text-slate-900 leading-snug">
+                            {doc.nombre}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                            {doc.archivo}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-slate-200/80 flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-slate-600">
+                        {doc.clausulas_count ? `${doc.clausulas_count} cláusulas estructuradas` : `${doc.tamano_bytes || 0} bytes`}
+                      </span>
+
+                      <button
+                        onClick={() => {
+                          if (doc.id && (doc.id.startsWith('ISO-') || doc.clausulas_count)) {
+                            setNormaExplorando(doc.id);
+                            cargarClausulas(doc.id);
+                            setTabActiva('clausulas');
+                          } else {
+                            toast.info(`Documento indexado: ${doc.nombre}`);
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold text-xs rounded-lg flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                      >
+                        <Eye size={13} /> Explorar Contenido
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* PESTAÑA 4: EXPLORADOR DE CLÁUSULAS ISO */}
+      {/* ============================================================ */}
+      {tabActiva === 'clausulas' && (
+        <div className="bg-white rounded-2xl shadow-card-subtle border border-slate-200 overflow-hidden">
+          {/* Header y Filtros */}
+          <div className="p-6 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <BookOpen className="text-sky-600" size={20} /> Explorador de Requisitos & Cláusulas ISO
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Consulta los requisitos oficiales, interpretación para OOMAPASC y evidencia objetiva.
+              </p>
+            </div>
+
+            <div className="relative min-w-[280px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+              <input
+                type="text"
+                value={busquedaClausula}
+                onChange={(e) => setBusquedaClausula(e.target.value)}
+                placeholder="Buscar por número (ej. 4.1, 8.5.1) o texto..."
+                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-sky-500/20"
+              />
+            </div>
+          </div>
+
+          {/* Selector de Norma */}
+          <div className="px-6 py-3 bg-white border-b border-slate-200 flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-extrabold text-slate-700 mr-2">Norma Activa:</span>
+            {normas.map(n => (
+              <button
+                key={n.id}
+                onClick={() => {
+                  setNormaExplorando(n.id);
+                  cargarClausulas(n.id);
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  normaExplorando === n.id
+                    ? 'bg-[#002855] text-white shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                <span>{n.id.replace(/-/g, ' ')}</span>
+                <span className="text-[10px] font-mono opacity-80">({n.total_clausulas})</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Listado de Cláusulas */}
+          <div className="p-6 overflow-y-auto max-h-[650px] space-y-4">
+            {cargandoClausulas ? (
+              <div className="p-16 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
+                <RefreshCw size={24} className="animate-spin text-sky-600" />
+                <span>Cargando cláusulas oficiales de la norma...</span>
+              </div>
+            ) : clausulasFiltradas.length === 0 ? (
+              <div className="p-16 text-center text-xs text-slate-500">
+                No se encontraron cláusulas para los términos ingresados.
+              </div>
+            ) : (
+              clausulasFiltradas.map((cl, idx) => (
+                <div
+                  key={idx}
+                  className="p-5 rounded-2xl border border-slate-200/90 bg-slate-50/40 hover:bg-white hover:border-sky-300 transition-all space-y-3 shadow-xs"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/70">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono text-xs font-black bg-[#002855] text-white px-2.5 py-1 rounded-lg shadow-xs">
+                        § {cl.numero}
+                      </span>
+                      <h4 className="font-black text-sm text-slate-900">{cl.titulo}</h4>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleEnviarConsulta(`Explícame a detalle el cumplimiento de la cláusula ${cl.numero} (${cl.titulo}) para el organismo OOMAPASC y qué evidencia objetiva se requiere.`, normaExplorando);
+                      }}
+                      className="px-3 py-1.5 bg-sky-100 hover:bg-sky-200 text-sky-950 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Bot size={14} /> Consultar con Asesor IA →
+                    </button>
+                  </div>
+
+                  <div className="text-xs space-y-2 text-slate-700 leading-relaxed">
+                    <div className="p-3 bg-white rounded-xl border border-slate-200/70">
+                      <span className="text-[11px] font-extrabold text-slate-900 block mb-0.5">📌 Requisito Oficial:</span>
+                      <p className="text-slate-700">{cl.requisito}</p>
+                    </div>
+
+                    {cl.interpretacion && (
+                      <div className="p-3 bg-sky-50/50 rounded-xl border border-sky-100">
+                        <span className="text-[11px] font-extrabold text-[#002855] block mb-0.5">🛠️ Interpretación Técnica OOMAPASC:</span>
+                        <p className="text-slate-800">{cl.interpretacion}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      {cl.evidencia_objetiva && (
+                        <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                          <span className="text-[11px] font-extrabold text-emerald-900 block mb-0.5">📑 Evidencia Objetiva Requerida:</span>
+                          <p className="text-emerald-950">{cl.evidencia_objetiva}</p>
+                        </div>
+                      )}
+                      {cl.criterio_auditoria && (
+                        <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100">
+                          <span className="text-[11px] font-extrabold text-purple-900 block mb-0.5">💡 Criterio de Auditoría / Cierre:</span>
+                          <p className="text-purple-950">{cl.criterio_auditoria}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL: AGREGAR DOCUMENTO PERSONALIZADO A LA BASE */}
+      {/* ============================================================ */}
+      {modalDocCustomAbierto && (
+        <ContenedorModal
+          isOpen
+          onClose={() => setModalDocCustomAbierto(false)}
+          size="lg"
+          backdropClassName="bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] to-[#002855] text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Plus size={18} className="text-sky-400" />
+                <h3 className="font-extrabold text-sm text-white">Indexar Nuevo Documento a la Base de Conocimiento</h3>
+              </div>
+              <button
+                onClick={() => setModalDocCustomAbierto(false)}
+                className="text-slate-300 hover:text-white cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nombre del Documento / Archivo <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={docCustomForm.nombre}
+                  onChange={(e) => setDocCustomForm({ ...docCustomForm, nombre: e.target.value })}
+                  placeholder="Ej. directriz_auditoria_2026.md o manual_calidad_oomapasc.txt"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Contenido de Texto / Markdown <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={8}
+                  value={docCustomForm.contenido}
+                  onChange={(e) => setDocCustomForm({ ...docCustomForm, contenido: e.target.value })}
+                  placeholder="Pega aquí el contenido, directrices, cláusulas específicas o manual para que el Asesor ISO lo aprenda y lo utilice en sus respuestas..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-sky-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+              <button
+                onClick={() => setModalDocCustomAbierto(false)}
+                className="px-4 py-2 border border-slate-200 bg-white font-bold text-slate-700 rounded-xl hover:bg-slate-100 text-xs cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={guardarDocumentoPersonalizado}
+                disabled={guardandoDoc}
+                className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {guardandoDoc ? 'Indexando...' : 'Indexar en Base de Conocimiento'}
+              </button>
+            </div>
+          </div>
+        </ContenedorModal>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,23 @@
+# Changelog
+
+> **Append-only.** Entradas ordenadas por fecha DESCENDENTE (más reciente arriba). Cada agente escribe aquí después de hacer cualquier cambio material. Nadie edita entradas viejas — si algo cambió, se agrega una nueva entrada arriba.
+>
+> **Formato de cada entrada:**
+> ```
+> ## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto
+> Descripción en 1-4 líneas. Qué se hizo y por qué.
+> - Archivos: rutas/relativas/al/proyecto.ext
+> - Tareas STATE: T0.1, T1.2 (si aplica)
+> - Deploy: SÍ/NO (si tocó infra o requiere sync al server)
+> - Notas: (opcional) contexto que la próxima sesión necesita
+> ```
+>
+> **Tags:** `[DEPLOY]` `[INFRA]` `[AUDIT]` `[FIX]` `[FEATURE]` `[DOCS]` `[MEMORY]` `[CLEANUP]` `[SECURITY]`
+
+---
+
+## {{DATE}}T00:00Z · @human · [DOCS] · Proyecto inicializado con hpaez-harness
+Instalado el harness para disciplina agentic. Archivos base creados: AGENTS.md, STATE.md, CHANGELOG.md, SKILLS.md, CONSTITUTION.md, skills/.
+- Archivos: AGENTS.md, STATE.md, CHANGELOG.md, SKILLS.md, CONSTITUTION.md, skills/
+- Deploy: NO
+- Notas: Editar CONSTITUTION.md con los principios inmutables del proyecto.

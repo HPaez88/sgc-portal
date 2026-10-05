@@ -2,6 +2,7 @@
 Shared Common SGC modules for routers actions (AC/PM).
 """
 from datetime import datetime, timedelta
+import unicodedata
 from typing import Optional, Type, Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,6 +29,7 @@ AREAS_DIRECCION = {
     "Supervision y control de obras": "TECNICA",
     "Tramites Tecnicos": "TECNICA",
     "Proyectos e Infraestructura": "TECNICA",
+    "Seguridad Industrial": "TECNICA",
     "Padron de Usuarios": "COMERCIAL",
     "Control y Servicios": "COMERCIAL",
     "Contratos y Servicios": "COMERCIAL",
@@ -44,76 +46,13 @@ AREAS_DIRECCION = {
     "Informatica": "ADMINISTRATIVA",
     "Licitaciones": "ADMINISTRATIVA",
     "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
+    "Trabajo Social": "ADMINISTRATIVA",
+    "Programas Sociales": "ADMINISTRATIVA",
     "Juridico": "JURIDICA",
     "Organo de Control Interno": "ORGANO DE CONTROL INTERNO",
     "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
     "Programa Social": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
     "Linea OOMAPASC": "GENERAL",
-    "Seguridad Industrial": "TECNICA",
-    "Sistema de Gestion de Calidad": "GENERAL",
-    "Mantenimiento de Redes": "TECNICA",
-    "Alcantarillado y Saneamiento": "TECNICA",
-    "Plantas Potabilizadoras": "TECNICA",
-    "Control de Calidad": "TECNICA",
-    "Sectorizacion hidrometrica e innovacion": "TECNICA",
-    "Suburbano Tecnico": "TECNICA",
-    "Supervision y control de obras": "TECNICA",
-    "Tramites Tecnicos": "TECNICA",
-    "Proyectos e Infraestructura": "TECNICA",
-    "Padron de Usuarios": "COMERCIAL",
-    "Control y Servicios": "COMERCIAL",
-    "Contratos y Servicios": "COMERCIAL",
-    "Atencion Ciudadana": "COMERCIAL",
-    "Verificacion y Lectura": "COMERCIAL",
-    "Agencia Esperanza": "COMERCIAL",
-    "Agencia Marte R. Gomez": "COMERCIAL",
-    "Agencia Providencia": "COMERCIAL",
-    "Agencia Pueblo Yaqui": "COMERCIAL",
-    "Recursos Humanos": "ADMINISTRATIVA",
-    "Recursos Materiales": "ADMINISTRATIVA",
-    "Contabilidad": "ADMINISTRATIVA",
-    "Comunicacion e Imagen Institucional": "ADMINISTRATIVA",
-    "Informatica": "ADMINISTRATIVA",
-    "Licitaciones": "ADMINISTRATIVA",
-    "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
-    "Juridico": "JURIDICA",
-    "Organo de Control Interno": "ORGANO DE CONTROL INTERNO",
-    "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-    "Programa Social": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-    "Linea OOMAPASC": "GENERAL",
-    "Seguridad Industrial": "TECNICA",
-    "Sistema de Gestion de Calidad": "GENERAL",
-    "Mantenimiento de Redes": "TECNICA",
-    "Alcantarillado y Saneamiento": "TECNICA",
-    "Plantas Potabilizadoras": "TECNICA",
-    "Control de Calidad": "TECNICA",
-    "Sectorizacion hidrometrica e innovacion": "TECNICA",
-    "Suburbano Tecnico": "TECNICA",
-    "Supervision y control de obras": "TECNICA",
-    "Tramites Tecnicos": "TECNICA",
-    "Proyectos e Infraestructura": "TECNICA",
-    "Padron de Usuarios": "COMERCIAL",
-    "Control y Servicios": "COMERCIAL",
-    "Contratos y Servicios": "COMERCIAL",
-    "Atencion Ciudadana": "COMERCIAL",
-    "Verificacion y Lectura": "COMERCIAL",
-    "Agencia Esperanza": "COMERCIAL",
-    "Agencia Marte R. Gomez": "COMERCIAL",
-    "Agencia Providencia": "COMERCIAL",
-    "Agencia Pueblo Yaqui": "COMERCIAL",
-    "Recursos Humanos": "ADMINISTRATIVA",
-    "Recursos Materiales": "ADMINISTRATIVA",
-    "Contabilidad": "ADMINISTRATIVA",
-    "Comunicacion e Imagen Institucional": "ADMINISTRATIVA",
-    "Informatica": "ADMINISTRATIVA",
-    "Licitaciones": "ADMINISTRATIVA",
-    "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
-    "Juridico": "JURIDICA",
-    "Organo de Control Interno": "ORGANO DE CONTROL INTERNO",
-    "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-    "Programa Social": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-    "Linea OOMAPASC": "GENERAL",
-    "Seguridad Industrial": "TECNICA",
     "Sistema de Gestion de Calidad": "GENERAL",
 }
 
@@ -121,23 +60,14 @@ AREAS_DIRECCION = {
 def _normalizar(texto: Optional[str]) -> str:
     if not texto:
         return ""
-    replacements = {
-        "Ã¡": "a",
-        "Ã©": "e",
-        "Ã­": "i",
-        "Ã³": "o",
-        "Ãº": "u",
-        "Ã": "A",
-        "Ã‰": "E",
-        "Ã": "I",
-        "Ã“": "O",
-        "Ãš": "U",
-        "Ã±": "n",
-        "Ã‘": "N",
-    }
-    for source, target in replacements.items():
-        texto = texto.replace(source, target)
-    return texto
+    # Normaliza acentos/diacriticos de forma robusta (independiente del encoding):
+    # primero repara mojibake legacy (UTF-8 leido como Latin-1) y luego aplica NFD.
+    try:
+        texto = texto.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+    nfd = unicodedata.normalize("NFD", texto)
+    return "".join(ch for ch in nfd if not unicodedata.combining(ch))
 
 
 def _asignar_direccion(area: str) -> str:
@@ -393,9 +323,11 @@ def _exportar_sgc_word(
         raise HTTPException(status_code=404, detail=f"{entidad_tipo} no encontrado.")
 
     if entidad_tipo == "AC":
+        from backend.services.doc_service import generar_accion_correctiva_docx
         docx_bytes = generar_accion_correctiva_docx(entidad)
         filename = f"AC_{entidad.folio or f'BORRADOR-{entidad.id}'}_{entidad.id}.docx"
     elif entidad_tipo == "PM":
+        from backend.services.doc_service import generar_plan_mejora_docx
         docx_bytes = generar_plan_mejora_docx(entidad)
         filename = f"PM_{entidad.folio or f'BORRADOR-{entidad.id}'}_{entidad.id}.docx"
     else:

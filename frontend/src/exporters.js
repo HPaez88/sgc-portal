@@ -1,30 +1,20 @@
+import { descargarBlob } from './services/apiClient';
+
 export function exportToJSON(data, filename) {
   const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${filename}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  descargarBlob(new Blob([json], { type: 'application/json' }), `${filename}.json`);
 }
 
 export function exportToCSV(data, filename) {
   if (!data || data.length === 0) return;
-  
+
   const headers = Object.keys(data[0]);
   const csv = [
     headers.join(','),
     ...data.map(row => headers.map(h => JSON.stringify(row[h] || '')).join(','))
   ].join('\n');
-  
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${filename}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+
+  descargarBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${filename}.csv`);
 }
 
 export function exportACToFormat(ac) {
@@ -52,14 +42,9 @@ Evidencia: ${ac.evidencia_contencion}
 
 ESTADO: ${ac.estado}
   `.trim();
-  
+
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${ac.codigo}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+  descargarBlob(blob, `${ac.codigo}.txt`);
 }
 
 export function exportPMToFormat(pm) {
@@ -87,12 +72,7 @@ EQUIPO: ${pm.equipo_trabajo}
 
 ESTADO: ${pm.estado}
   `.trim();
-  
+
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${pm.codigo}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+  descargarBlob(blob, `${pm.codigo}.txt`);
 }

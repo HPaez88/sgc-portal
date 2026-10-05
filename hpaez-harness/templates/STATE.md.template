@@ -1,0 +1,37 @@
+# Estado actual del proyecto
+
+> **Regla:** Este archivo refleja el ESTADO PRESENTE. Cualquier agente lo lee antes de decidir qué hacer, y lo actualiza inmediatamente después de completar una tarea. Marca `[x]` cuando termines; agrega una entrada nueva en `CHANGELOG.md` con el mismo ID.
+
+Última revisión: {{DATE}}
+
+---
+
+## Backlog
+
+- [ ] Ejemplo tarea T1.1 — <descripción>
+- [ ] Ejemplo tarea T1.2 — <descripción>
+
+## En curso
+
+_(mover aquí las tareas que estás trabajando)_
+
+## Bloqueadas
+
+_(tareas con dependencia sin cumplir — anota bloqueo)_
+
+## Fuera de la auditoría
+
+_(bugs o tareas descubiertas fuera del scope planeado)_
+
+---
+
+## Convenciones
+
+**Cuando terminas una tarea:**
+1. Marca `[x]` aquí
+2. Agrega entrada al inicio de `CHANGELOG.md`
+3. Ver `skills/_core/protocol-sync/SKILL.md`
+
+**Cuando descubres algo fuera de alcance:**
+- Anótalo bajo "Fuera de la auditoría"
+- NO lo arregles inline

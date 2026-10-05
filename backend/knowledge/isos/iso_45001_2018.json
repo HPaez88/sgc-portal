@@ -1,0 +1,32 @@
+{
+  "norma_id": "ISO-45001-2018",
+  "nombre": "ISO 45001:2018 — Sistemas de Gestión de la Seguridad y Salud en el Trabajo (SST)",
+  "organismo": "ISO / OOMAPASC de Cajeme",
+  "descripcion": "Norma internacional para proporcionar lugares de trabajo seguros y saludables, previniendo lesiones y deterioro de la salud relacionados con el trabajo.",
+  "clausulas": [
+    {
+      "numero": "5.4",
+      "titulo": "Consulta y participación de los trabajadores",
+      "requisito": "Establecer, implementar y mantener procesos para la consulta y la participación de los trabajadores a todos los niveles y funciones aplicables.",
+      "interpretacion": "Comisión de Seguridad e Higiene activa (NOM-019-STPS), canales formales para reporte de condiciones inseguras por personal de cuadrillas, fontaneros y operadores.",
+      "evidencia_objetiva": "Actas mensuales de la Comisión Mixta de Seguridad e Higiene, recorridos de verificación, buzón de reportes de actos/condiciones inseguras.",
+      "criterio_auditoria": "Entrevistar trabajadores de campo para comprobar que participan activamente en la identificación de peligros."
+    },
+    {
+      "numero": "6.1.2",
+      "titulo": "Identificación de peligros y evaluación de los riesgos para la SST",
+      "requisito": "Establecer un proceso continuo y proactivo de identificación de peligros (físicos, químicos, biológicos, ergonómicos, psicosociales).",
+      "interpretacion": "Peligros en OOMAPASC: trabajos en espacios confinados (pozos de visita, cajas de válvulas), riesgo biológico por aguas negras, manejo de cloro gas, zanjas y excavaciones, riesgos eléctricos en rebombeos.",
+      "evidencia_objetiva": "Matriz IPERC (Identificación de Peligros, Evaluación de Riesgos y Controles), permisos de trabajo de alto riesgo (PTAR/espacios confinados).",
+      "criterio_auditoria": "Verificar que antes de entrar a un espacio confinado se mide atmósfera (O2, H2S, LEL, CO) y se llena permiso con firmas autorizadas."
+    },
+    {
+      "numero": "8.1.2",
+      "titulo": "Eliminar peligros y reducir los riesgos para la SST (Jerarquía de Controles)",
+      "requisito": "Aplicar jerarquía de controles: 1. Eliminación, 2. Sustitución, 3. Controles de ingeniería, 4. Controles administrativos, 5. Equipo de Protección Personal (EPP).",
+      "interpretacion": "Garantizar EPP normado (arneses, trípodes de rescate, detectores de gases, mascarillas para cloro, botas dieléctricas, trajes tyvek) y capacitación obligatoria.",
+      "evidencia_objetiva": "Registros de entrega de EPP específico, procedimientos de bloqueo y etiquetado (LOTO), entibados en excavaciones.",
+      "criterio_auditoria": "Comprobar el uso estricto del EPP en campo y la existencia de barreras físicas en excavaciones profundas."
+    }
+  ]
+}

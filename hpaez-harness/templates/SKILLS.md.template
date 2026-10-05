@@ -1,0 +1,31 @@
+# Team Techniques Catalog
+
+> Técnicas agent-agnostic que el equipo aplica. **No confundir con `skills/*/SKILL.md`** (esos son runtime contracts). Este archivo documenta procesos que cualquier LLM puede replicar manualmente si no tiene la técnica nativa.
+
+## Auditoría
+
+- **security-review** — buscar OWASP Top 10, secrets, IDOR, injection
+- **database-review** — schema Prisma, índices, N+1, tipos de columna
+- **silent-failure-hunter** — try/catch vacíos, .catch() sin propagar
+- **refactor-cleaner** — dead code, deps sin usar
+- **typescript-review** — any, non-null assertions, race conditions
+
+## Diseño
+
+- **impeccable** — rediseño visual de interfaces (Anthropic skill)
+- **a11y-architect** — accesibilidad WCAG 2.2
+
+## Delivery
+
+- **chained-pr** — split PRs grandes en stack
+- **work-unit-commits** — commits como unidades reviewables
+
+## Cómo elegir tu propia técnica
+
+Si tu LLM tiene una skill nativa que hace algo similar mejor, úsala. Anota en CHANGELOG con tag `[TECHNIQUE-USED]: <nombre>` para que el equipo sepa qué patterns funcionaron.
+
+## Cómo agregar técnicas nuevas
+
+1. Describir el proceso en 5-15 líneas aquí
+2. Si el pattern es reusable, considerar convertirlo a un skill formal en `skills/`
+3. Actualizar este catálogo cuando se agreguen o retiren técnicas

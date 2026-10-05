@@ -18,6 +18,10 @@ import SettingsView from './components/settings';
 import RiesgosView from './components/riesgos';
 import DocumentosView from './components/documentos';
 import AuditoriasView from './components/auditorias';
+import BitacoraView from './components/bitacora';
+import AgenteISOView from './components/iso/AgenteISOView';
+import ModalInactividad from './components/common/ModalInactividad';
+import LoginView from './components/common/LoginView';
 
 
 function App() {
@@ -45,8 +49,16 @@ function App() {
     setEvidencias,
     usuarioLogueado,
     puedeTodasAreas,
-    areaUsuario
+    areaUsuario,
+    usuarioActivoId,
+    setUsuarioActivoId,
+    sesionActiva
   } = useSGC();
+
+  // Si la sesión no está activa (por logout o inactividad de 1 hora), mostrar pantalla de login
+  if (!sesionActiva) {
+    return <LoginView />;
+  }
 
   // === RENDER MÓDULO ACTIVO ===
   const renderModule = () => {
@@ -82,6 +94,7 @@ function App() {
             usuarios={usuarios}
             puedeTodasAreas={puedeTodasAreas}
             areaUsuario={areaUsuario}
+            usuarioLogueado={usuarioLogueado}
           />
         );
       case 'indicadores':
@@ -134,6 +147,17 @@ function App() {
             areaUsuario={areaUsuario}
           />
         );
+      case 'agente_iso':
+        return <AgenteISOView setActiveTab={setActiveTab} />;
+      case 'bitacora':
+        return (
+          <DocumentosView
+            documentos={documentos}
+            setDocumentos={setDocumentos}
+            puedeTodasAreas={puedeTodasAreas}
+            areaUsuario={areaUsuario}
+          />
+        );
       case 'settings':
         return (
           <SettingsView
@@ -153,14 +177,16 @@ function App() {
     { id: 'indicadores', label: 'Indicadores' },
     { id: 'riesgos', label: 'Matriz de Riesgos' },
     { id: 'gestor', label: 'Aprobaciones' },
-    { id: 'documents', label: 'Documentos' },
+    { id: 'documents', label: 'Control Documental' },
     { id: 'audits', label: 'Auditorías' },
+    { id: 'agente_iso', label: 'Asesor Normativo ISO' },
     { id: 'settings', label: 'Configuración' },
   ];
   const activeItem = navItems.find(item => item.id === activeTab);
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
+      <ModalInactividad />
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -184,23 +210,28 @@ function App() {
           setSidebarCollapsed={setSidebarCollapsed}
           setIsSidebarOpen={setIsSidebarOpen}
           setActiveTab={setActiveTab}
+          usuarios={usuarios}
+          usuarioLogueado={usuarioLogueado}
+          setUsuarioActivoId={setUsuarioActivoId}
         />
 
-        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-10 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
-
-
-          <div className="relative z-10">
-            <div className="max-w-7xl mx-auto space-y-8">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-extrabold text-[#002855] tracking-tight">
-                    {activeItem?.label}
-                  </h1>
-                  <p className="text-slate-500 mt-1.5 text-sm">
-                    Sistema de Gestión de Calidad - OOMAPAS de Cajeme
-                  </p>
+        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-5 lg:p-6 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
+          <div className="relative z-10 w-full">
+            <div className="w-full space-y-5">
+              {activeTab !== 'dashboard' && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
+                      <span>SGC Portal</span>
+                      <span>/</span>
+                      <span className="text-sky-700 font-bold">{activeItem?.label}</span>
+                    </div>
+                    <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                      {activeItem?.label}
+                    </h1>
+                  </div>
                 </div>
-              </div>
+              )}
               {renderModule()}
             </div>
           </div>

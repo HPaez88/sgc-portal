@@ -18,11 +18,11 @@ export default function PlanesLista({
   const [filtroVencimiento, setFiltroVencimiento] = useState('');
 
   // Obtener áreas únicas
-  const areas = [...new Set(planesMejora.map(pm => pm.gerencia_coordinacion).filter(Boolean))].sort();
+  const areas = [...new Set(planesMejora.map(pm => pm.area || pm.gerencia_coordinacion).filter(Boolean))].sort();
   
   // Filtrar planes (estado canónico + búsqueda + vencimiento)
   const planesFiltrados = planesMejora.filter(pm => {
-    if (filtroArea && pm.gerencia_coordinacion !== filtroArea) return false;
+    if (filtroArea && (pm.area || pm.gerencia_coordinacion) !== filtroArea) return false;
     if (!cumpleFiltroEstado(pm.estado, filtroEstado)) return false;
 
     if (filtroVencimiento && getVencimiento(pm).nivel !== filtroVencimiento) return false;
@@ -33,6 +33,7 @@ export default function PlanesLista({
         pm.folio,
         pm.folio_codigo,
         pm.titulo_mejora,
+        pm.area,
         pm.gerencia_coordinacion,
         pm.categoria_mejora,
         pm.periodo_mejora,
@@ -49,11 +50,19 @@ export default function PlanesLista({
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-[#002855]">🚀 Planes de Mejora</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
+        <div>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            Control de Planes de Mejora
+            <span className="text-xs font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/70">
+              Formato OOMRSC-21
+            </span>
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">Gestión y seguimiento de proyectos de mejora continua bajo ISO 9001:2015</p>
+        </div>
         <button onClick={() => { resetForm(); setVista('nuevo'); }}
-          className="px-4 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40] transition-colors">
-          + Nuevo Plan de Mejora
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]">
+          <span>+</span> Nuevo Plan de Mejora
         </button>
       </div>
       
@@ -136,7 +145,7 @@ export default function PlanesLista({
                     <td className="p-4 font-semibold text-slate-900 max-w-xs truncate" title={pm.titulo_mejora}>
                       {pm.titulo_mejora || '-'}
                     </td>
-                    <td className="p-4 text-slate-700">{pm.gerencia_coordinacion || '-'}</td>
+                    <td className="p-4 text-slate-700">{pm.area || pm.gerencia_coordinacion || '-'}</td>
                     <td className="p-4 text-slate-500">{pm.categoria_mejora || '-'}</td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getEstadoColor(pm.estado)}`}>

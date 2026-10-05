@@ -1,0 +1,48 @@
+{
+  "norma_id": "ISO-14001-2015",
+  "nombre": "ISO 14001:2015 — Sistemas de Gestión Ambiental (SGA)",
+  "organismo": "ISO / OOMAPASC de Cajeme",
+  "descripcion": "Norma internacional que establece los requisitos para que la organización proteja el medio ambiente y responda a las condiciones ambientales cambiantes.",
+  "clausulas": [
+    {
+      "numero": "4.1",
+      "titulo": "Comprensión de la organización y de su contexto ambiental",
+      "requisito": "Determinar cuestiones externas e internas relevantes para su propósito ambiental (sequía, acuíferos, descargas residuales, cambio climático, marco legal SEMARNAT/CONAGUA).",
+      "interpretacion": "Identificar el estrés hídrico en el Valle del Yaqui, vulnerabilidad ante ciclones y capacidad de tratamiento de aguas residuales.",
+      "evidencia_objetiva": "Diagnóstico ambiental inicial, matriz de contexto ambiental.",
+      "criterio_auditoria": "Verificar análisis de condiciones ambientales locales que puedan afectar o ser afectadas por el organismo."
+    },
+    {
+      "numero": "6.1.2",
+      "titulo": "Aspectos ambientales e impactos significativos",
+      "requisito": "Determinar los aspectos ambientales de sus actividades, productos y servicios que puede controlar e influir, considerando una perspectiva de ciclo de vida.",
+      "interpretacion": "Evaluar consumo de energía eléctrica en pozos y plantas, uso de cloro gas/hipoclorito, lodos de plantas de tratamiento, fugas de drenaje y descargas a cuerpos receptores (NOM-001-SEMARNAT).",
+      "evidencia_objetiva": "Matriz de identificación y evaluación de aspectos e impactos ambientales significativos.",
+      "criterio_auditoria": "Comprobar criterios objetivos de significancia (severidad, frecuencia, probabilidad y requisito legal)."
+    },
+    {
+      "numero": "6.1.3",
+      "titulo": "Requisitos legales y otros requisitos",
+      "requisito": "Determinar y tener acceso a los requisitos legales y otros requisitos relacionados con sus aspectos ambientales.",
+      "interpretacion": "Monitoreo continuo de Ley de Aguas Nacionales, NOM-001-SEMARNAT-2021 (descargas), NOM-004-SEMARNAT (lodos y biosólidos) y permisos de extracción.",
+      "evidencia_objetiva": "Matriz de cumplimiento legal ambiental con estatus de cumplimiento y vigencia de títulos de concesión y permisos de descarga.",
+      "criterio_auditoria": "Verificar que se evalúa el cumplimiento legal al menos una vez al año y se atienden observaciones de PROFEPA/CONAGUA."
+    },
+    {
+      "numero": "8.1",
+      "titulo": "Planificación y control operacional ambiental",
+      "requisito": "Establecer, implementar, controlar y mantener los procesos necesarios para satisfacer los requisitos del SGA y controlar aspectos significativos.",
+      "interpretacion": "Protocolos de dosificación química, manejo integral de residuos peligrosos (aceites, baterías, envases de químicos), confinamiento de lodos de PTAR.",
+      "evidencia_objetiva": "Procedimientos ambientales, bitácoras de almacén temporal de residuos peligrosos (ATRP), manifiestos de recolección autorizados.",
+      "criterio_auditoria": "Inspección de PTARs y talleres para verificar contención de derrames y gestión de lodos."
+    },
+    {
+      "numero": "8.2",
+      "titulo": "Preparación y respuesta ante emergencias",
+      "requisito": "Establecer y mantener procesos necesarios acerca de cómo responder a situaciones de emergencia y accidentes potenciales que puedan tener impacto ambiental.",
+      "interpretacion": "Plan de contingencia ante fugas de cloro gas, derrames de reactivos, inundaciones, fallas en colectores principales o cortes de energía en cárcamos.",
+      "evidencia_objetiva": "Plan de atención a emergencias ambientales, brigadas capacitadas, registros de simulacros anuales.",
+      "criterio_auditoria": "Verificar simulacros documentados con evaluación de tiempos de respuesta y acciones correctivas derivadas."
+    }
+  ]
+}

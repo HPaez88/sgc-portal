@@ -104,11 +104,19 @@ export default function AccionesLista({
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-[#002855]">📋 Acciones Correctivas</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
+        <div>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            Control de Acciones Correctivas
+            <span className="text-xs font-mono font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200/70">
+              Formato OOMRSC-20
+            </span>
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">Gestión y trazabilidad de no conformidades bajo ISO 9001:2015</p>
+        </div>
         <button onClick={() => { resetForm(); setVista('nuevo'); }}
-          className="px-4 py-2 bg-[#002855] text-white rounded-lg hover:bg-[#001d40] transition-colors">
-          + Nueva Acción Correctiva
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]">
+          <span>+</span> Nueva Acción Correctiva
         </button>
       </div>
       

@@ -29,8 +29,9 @@
 - **PM** - Planes de Mejora (OOMRSC-21)
 - **Indicadores** - 86 indicadores
 - **Riesgos** - Matriz de riesgos
-- **Documentos** - Gestión documental
+- **Documentos & Trazabilidad** - Gestión documental y Bitácora de Auditoría integrada
 - **Auditorías** - Auditorías e informes
+- **Asesor Normativo ISO (IA)** - Consultor y auditor RAG para normas ISO 9001, 14001, 45001, 19011
 
 ### Flujo de Validación
 > TODO cambio → Frontend → Database → Backend → QA → SEO → Producción

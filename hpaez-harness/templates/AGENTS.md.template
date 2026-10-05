@@ -1,0 +1,58 @@
+# Agent Skills Index
+
+Trabajas en este proyecto. **Antes de escribir código, carga los skills relevantes** leyendo su `SKILL.md`. Sigue TODAS sus reglas.
+
+Este archivo es para cualquier agente que edite el proyecto — Claude Code, Antigravity (Gemini), OpenCode, GPT via OpenRouter, Cursor, Aider, Continue, Cline, Devin, etc.
+
+Instalado con [hpaez-harness](https://github.com/Hpael/hpaez-harness) el {{DATE}}.
+
+## Skills
+
+<!-- SKILLS-TABLE-START -->
+| Skill | Trigger | Path |
+|-------|---------|------|
+| `protocol-sync` | Antes de cualquier edición al proyecto, marcar tarea hecha, terminé, listo, done | [`skills/_core/protocol-sync/SKILL.md`](skills/_core/protocol-sync/SKILL.md) |
+| `coordination` | Iniciar sesión, empezar tarea, primer contacto con el proyecto, qué toca hacer | [`skills/_core/coordination/SKILL.md`](skills/_core/coordination/SKILL.md) |
+| `scope-boundaries` | Qué puedo editar, qué no toco, docker, .env, deploy, dist, scripts, out of scope | [`skills/_core/scope-boundaries/SKILL.md`](skills/_core/scope-boundaries/SKILL.md) |
+| `session-summary` | Fin de sesión, cerrar, terminar, done for today, hasta mañana, rate limit | [`skills/_core/session-summary/SKILL.md`](skills/_core/session-summary/SKILL.md) |
+| `verify-loop` | Antes de marcar tarea done, marcar [x], commit, deploy, PR, verify | [`skills/_quality/verify-loop/SKILL.md`](skills/_quality/verify-loop/SKILL.md) |
+| `silent-failure-hunter` | Audit, silent failures, try catch vacío, catch sin propagar, fallo silencioso | [`skills/_quality/silent-failure-hunter/SKILL.md`](skills/_quality/silent-failure-hunter/SKILL.md) |
+| `judgment-day` | Judgment day, dual review, adversarial review, blind review, código crítico | [`skills/_quality/judgment-day/SKILL.md`](skills/_quality/judgment-day/SKILL.md) |
+| `skill-resolution-feedback` | Verificar tareas hechas, audit false marks, gap STATE vs disco, sync check pre-deploy | [`skills/_quality/skill-resolution-feedback/SKILL.md`](skills/_quality/skill-resolution-feedback/SKILL.md) |
+| `rdd` | RDD, receipt-driven, evidencia inmutable, incident report, defect workflow | [`skills/_quality/rdd/SKILL.md`](skills/_quality/rdd/SKILL.md) |
+| `sdd-init` | Nueva feature, empezar implementación grande, spec-driven, planear antes de codear | [`skills/_sdd/sdd-init/SKILL.md`](skills/_sdd/sdd-init/SKILL.md) |
+| `constitution` | Constitution, principios inmutables, decisiones arquitecturales, ADR | [`skills/_sdd/constitution/SKILL.md`](skills/_sdd/constitution/SKILL.md) |
+| `plan` | Escribir plan, plan.md, roadmap técnico, fases, DAG, dependencias | [`skills/_sdd/plan/SKILL.md`](skills/_sdd/plan/SKILL.md) |
+| `tasks` | Escribir tasks, tasks.md, atomic tasks, T1.1, task breakdown | [`skills/_sdd/tasks/SKILL.md`](skills/_sdd/tasks/SKILL.md) |
+| `delta-specs` | Spec change, delta spec, cambio a feature aprobada, scope creep | [`skills/_sdd/delta-specs/SKILL.md`](skills/_sdd/delta-specs/SKILL.md) |
+| `archive` | Feature terminada, mergeada, cerrar spec, mover a archived | [`skills/_sdd/archive/SKILL.md`](skills/_sdd/archive/SKILL.md) |
+| `work-unit-commits` | Commit, split work, dividir en commits, work units, atomic commits | [`skills/_delivery/work-unit-commits/SKILL.md`](skills/_delivery/work-unit-commits/SKILL.md) |
+| `chained-pr` | PR grande, más de 400 líneas, split PR, stacked PR, chained PR | [`skills/_delivery/chained-pr/SKILL.md`](skills/_delivery/chained-pr/SKILL.md) |
+| `branch-pr` | Crear PR, abrir PR, pull request, mandar review, gh pr create | [`skills/_delivery/branch-pr/SKILL.md`](skills/_delivery/branch-pr/SKILL.md) |
+| `release` | Release, publicar, npm publish, github release, version bump, tag release | [`skills/_delivery/release/SKILL.md`](skills/_delivery/release/SKILL.md) |
+| `agent-team` | Lanzar auditoría, subagente, especialista, quién revisa esto, pre-deploy check | [`skills/_agents/agent-team/SKILL.md`](skills/_agents/agent-team/SKILL.md) |
+| `delegation` | Delegar, subagente, exploration, más de 4 archivos, big task, parallel work | [`skills/_agents/delegation/SKILL.md`](skills/_agents/delegation/SKILL.md) |
+| `model-routing` | Qué modelo usar, model selection, multimodal, image, MiMo, Nemotron, Sonnet | [`skills/_agents/model-routing/SKILL.md`](skills/_agents/model-routing/SKILL.md) |
+| `subagent-isolation` | Subagent context, no leak, cross contamination, isolated task, fresh session | [`skills/_agents/subagent-isolation/SKILL.md`](skills/_agents/subagent-isolation/SKILL.md) |
+| `skill-creator` | Crear skill, nuevo skill, agregar skill, skill nueva, patrón reusable | [`skills/_meta/skill-creator/SKILL.md`](skills/_meta/skill-creator/SKILL.md) |
+| `skill-improver` | Mejorar skill, auditar skills, refactor skill, skill quality | [`skills/_meta/skill-improver/SKILL.md`](skills/_meta/skill-improver/SKILL.md) |
+| `skill-registry` | Refresh registry, actualizar skills, regenerar AGENTS.md, skill index | [`skills/_meta/skill-registry/SKILL.md`](skills/_meta/skill-registry/SKILL.md) |
+<!-- SKILLS-TABLE-END -->
+
+## Cómo usar este índice
+
+1. Lee el `Trigger` para saber qué skill aplica a lo que vas a hacer
+2. Abre el `SKILL.md` del path
+3. Sigue TODAS las reglas del skill
+4. Múltiples skills pueden aplicar a la vez
+
+## Documentos de coordinación
+
+- [`STATE.md`](STATE.md) — tareas pendientes con checkboxes
+- [`CHANGELOG.md`](CHANGELOG.md) — timeline append-only de cambios
+- [`SKILLS.md`](SKILLS.md) — técnicas del equipo (auditorías, patterns) — no confundir con `skills/*/SKILL.md`
+- [`CONSTITUTION.md`](CONSTITUTION.md) — principios inmutables del proyecto
+
+## Regla mínima si tienes prisa
+
+Si solo lees una cosa: **[`skills/_core/protocol-sync/SKILL.md`](skills/_core/protocol-sync/SKILL.md)**. Esa hace que tu trabajo cuente. Sin eso, para el equipo tu trabajo no existe.

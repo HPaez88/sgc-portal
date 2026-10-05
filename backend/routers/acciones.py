@@ -36,69 +36,6 @@ from backend.services.doc_service import generar_accion_correctiva_docx
 router = APIRouter(prefix="/api/v1/acciones-correctivas", tags=["Acciones Correctivas"])
 
 
-AREAS_DIRECCION = {
-    "Mantenimiento de Redes": "TECNICA",
-    "Alcantarillado y Saneamiento": "TECNICA",
-    "Plantas Potabilizadoras": "TECNICA",
-    "Control de Calidad": "TECNICA",
-    "Sectorizacion hidrometrica e innovacion": "TECNICA",
-    "Suburbano Tecnico": "TECNICA",
-    "Supervision y control de obras": "TECNICA",
-    "Tramites Tecnicos": "TECNICA",
-    "Proyectos e Infraestructura": "TECNICA",
-    "Padron de Usuarios": "COMERCIAL",
-    "Control y Servicios": "COMERCIAL",
-    "Contratos y Servicios": "COMERCIAL",
-    "Atencion Ciudadana": "COMERCIAL",
-    "Verificacion y Lectura": "COMERCIAL",
-    "Agencia Esperanza": "COMERCIAL",
-    "Agencia Marte R. Gomez": "COMERCIAL",
-    "Agencia Providencia": "COMERCIAL",
-    "Agencia Pueblo Yaqui": "COMERCIAL",
-    "Recursos Humanos": "ADMINISTRATIVA",
-    "Recursos Materiales": "ADMINISTRATIVA",
-    "Contabilidad": "ADMINISTRATIVA",
-    "Comunicacion e Imagen Institucional": "ADMINISTRATIVA",
-    "Informatica": "ADMINISTRATIVA",
-    "Licitaciones": "ADMINISTRATIVA",
-    "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
-    "Trabajo Social": "ADMINISTRATIVA",
-    "Programas Sociales": "ADMINISTRATIVA",
-    "Organo de Control Interno": "ORGANO DE CONTROL INTERNO",
-    "Juridico": "JURIDICA",
-    "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
-    "Linea OOMAPASC": "GENERAL",
-    "Seguridad Industrial": "TECNICA",
-    "Sistema de Gestion de Calidad": "GENERAL",
-}
-
-
-def _normalizar(texto: Optional[str]) -> str:
-    if not texto:
-        return ""
-    replacements = {
-        "Ã¡": "a",
-        "Ã©": "e",
-        "Ã­": "i",
-        "Ã³": "o",
-        "Ãº": "u",
-        "Ã": "A",
-        "Ã‰": "E",
-        "Ã": "I",
-        "Ã“": "O",
-        "Ãš": "U",
-        "Ã±": "n",
-        "Ã‘": "N",
-    }
-    for source, target in replacements.items():
-        texto = texto.replace(source, target)
-    return texto
-
-
-def _asignar_direccion(area: str) -> str:
-    return AREAS_DIRECCION.get(_normalizar(area), "GENERAL")
-
-
 def _get_ac(
     session: Session,
     ac_id: int,
@@ -118,6 +55,21 @@ def crear_ac(
     organismo_id: int = Depends(get_organismo_id),
 ):
     datos = ac.model_dump(exclude_unset=True)
+    datos.pop("folio", None)
+    return _crear_sgc("AC", datos, session, organismo_id)
+
+
+@router.get("", response_model=list[AccionCorrectiva])
+def listar_ac(
+    estado: Optional[str] = None,
+    area: Optional[str] = None,
+    direccion: Optional[str] = None,
+    session: Session = Depends(get_session),
+    organismo_id: int = Depends(get_organismo_id),
+):
+    return _listar_sgc(session, "AC", organismo_id, estado, area, direccion)
+
+
 @router.get("/{ac_id}", response_model=AccionCorrectiva)
 def obtener_ac(
     ac_id: int,

@@ -1,0 +1,59 @@
+# Constitution — Principios inmutables del proyecto
+
+> Este documento define las decisiones arquitecturales, técnicas y de producto que NO se cambian sin un cambio explícito y documentado en esta constitución. Los agentes las respetan como ley.
+>
+> Inspirado en GitHub Spec Kit + Anthropic Skills.
+
+## Identidad del proyecto
+
+- **Nombre:** <nombre del proyecto>
+- **Propósito:** <una oración clara de qué resuelve>
+- **Usuarios primarios:** <quiénes lo usan>
+- **Escala esperada:** <ej. 100 concurrentes, 1M requests/mes>
+
+## Stack (no cambia sin propuesta formal)
+
+- **Frontend:** <ej. React 19 + Vite + TypeScript>
+- **Backend:** <ej. Node 20 + Express + Prisma + PostgreSQL>
+- **Deploy:** <ej. Docker + Traefik en VPS>
+- **Storage:** <ej. Postgres + S3-compatible>
+
+## Principios técnicos
+
+1. <ej. Tipos estrictos en boundaries — Zod obligatorio para req.body>
+2. <ej. Nada de console.log — logger estructurado>
+3. <ej. Immutabilidad por default>
+4. <ej. Tests obligatorios para casos críticos>
+
+## Principios de producto
+
+1. <ej. Menos features > más features>
+2. <ej. Datos del usuario nunca salen de nuestro control>
+3. <ej. Accesibilidad WCAG AA como mínimo>
+
+## Restricciones estrictas (nunca)
+
+- <ej. Nunca commit de secrets al repo>
+- <ej. Nunca borrado destructivo sin backup>
+- <ej. Nunca ejecutar migrations en producción sin dry-run>
+
+## Lecciones aprendidas en sesión (auto-corrección)
+
+> Cada vez que un agente comete un error o el @human corrige algo, la lección se
+> escribe aquí como regla general para no repetirla. A diferencia del stack o los
+> principios, esta sección es **aditiva** (se agrega sin propuesta formal). Ver
+> `skills/_quality/self-correction/SKILL.md`.
+
+<!-- formato: - YYYY-MM-DD — <regla general>. (incidente: <qué pasó una vez>) -->
+
+## Cómo se cambia esta constitución
+
+1. Abrir un archivo `proposals/YYYY-MM-DD-<slug>.md` describiendo el cambio y la razón
+2. Aprobación explícita del @human en el CHANGELOG con tag `[CONSTITUTION-CHANGE]`
+3. Actualizar este archivo
+4. Notificar a todos los agentes que operen en el proyecto
+
+## Revisión
+
+Última revisión: {{DATE}}
+Próxima revisión programada: cada 3 meses o cuando cambio material lo requiera.

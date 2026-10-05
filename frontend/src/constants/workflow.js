@@ -12,6 +12,7 @@ export const ESTADOS_ABIERTOS = [
   'EN_REVISION',
   'APROBADO',
   'EN_SEGUIMIENTO',
+  'SOLICITUD_CIERRE',
   'REVISION_AUDITOR',
   'RECHAZADO',
 ];
@@ -37,6 +38,11 @@ export const ESTADO_META = {
     label: 'En Seguimiento', grupo: 'abierto',
     color: 'bg-blue-100 text-blue-700 border-blue-200',
     desc: 'Actividades en proceso con evidencias cargadas',
+  },
+  SOLICITUD_CIERRE: {
+    label: 'Solicitud de Cierre', grupo: 'abierto',
+    color: 'bg-purple-100 text-purple-700 border-purple-200',
+    desc: 'El área concluyó actividades y solicita auditoría de cierre',
   },
   REVISION_AUDITOR: {
     label: 'Revisión Auditor', grupo: 'abierto',
@@ -89,13 +95,14 @@ export const normalizarEstado = (estado) => {
 // Transiciones permitidas — mismas reglas para AC y PM
 export const TRANSICIONES = {
   BORRADOR: ['EN_REVISION'],
-  EN_REVISION: ['APROBADO', 'RECHAZADO'],
-  APROBADO: ['EN_SEGUIMIENTO'],
-  EN_SEGUIMIENTO: ['REVISION_AUDITOR', 'RECHAZADO'],
-  REVISION_AUDITOR: ['CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO'],
+  EN_REVISION: ['APROBADO', 'EN_SEGUIMIENTO', 'RECHAZADO'],
+  APROBADO: ['EN_SEGUIMIENTO', 'SOLICITUD_CIERRE'],
+  EN_SEGUIMIENTO: ['SOLICITUD_CIERRE', 'REVISION_AUDITOR', 'RECHAZADO'],
+  SOLICITUD_CIERRE: ['REVISION_AUDITOR', 'EN_SEGUIMIENTO'],
+  REVISION_AUDITOR: ['CERRADO_EFECTIVO', 'EN_SEGUIMIENTO', 'CERRADO_NO_EFECTIVO'],
   RECHAZADO: ['BORRADOR'],
   CERRADO_EFECTIVO: [],
-  CERRADO_NO_EFECTIVO: [],
+  CERRADO_NO_EFECTIVO: ['EN_SEGUIMIENTO'],
   CERRADO: [],
 };
 

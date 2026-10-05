@@ -1,0 +1,40 @@
+{
+  "norma_id": "ISO-19011-2018",
+  "nombre": "ISO 19011:2018 — Directrices para la Auditoría de los Sistemas de Gestión",
+  "organismo": "ISO / OOMAPASC de Cajeme",
+  "descripcion": "Guía sobre los principios de auditoría, gestión de programas de auditoría, realización de auditorías de sistemas de gestión y evaluación de la competencia de auditores.",
+  "clausulas": [
+    {
+      "numero": "4.0",
+      "titulo": "Principios de Auditoría",
+      "requisito": "Integridad, Presentación ecuánime, Debido cuidado profesional, Confidencialidad, Independencia, Enfoque basado en la evidencia y Enfoque basado en riesgos.",
+      "interpretacion": "Los auditores internos del SGC deben actuar con imparcialidad, nunca auditar su propio trabajo ni su propia área de adscripción, y basar todo hallazgo en evidencia objetiva verificable.",
+      "evidencia_objetiva": "Declaraciones de imparcialidad y confidencialidad firmadas, asignación cruzada de auditores en el programa anual.",
+      "criterio_auditoria": "Verificar que ningún auditor evaluó un proceso del cual sea dueño o colaborador directo."
+    },
+    {
+      "numero": "5.4",
+      "titulo": "Elaboración e implementación del programa de auditoría",
+      "requisito": "Establecer objetivos, alcance, criterios, métodos, selección del equipo auditor y recursos para el programa de auditoría anual.",
+      "interpretacion": "El programa debe priorizar procesos de mayor riesgo o con historial de no conformidades (cloración, mantenimiento de redes, quejas de usuarios).",
+      "evidencia_objetiva": "Programa anual de auditorías aprobado por Dirección General en el módulo de Auditorías del portal.",
+      "criterio_auditoria": "Comprobar el cumplimiento del calendario de auditorías y la cobertura del 100% de los procesos del alcance."
+    },
+    {
+      "numero": "6.4",
+      "titulo": "Realización de las actividades de auditoría (Hallazgos y Dictamen)",
+      "requisito": "Recopilación y verificación de información mediante muestreo apropiado, generación de hallazgos (conformidades, no conformidades, observaciones, oportunidades de mejora) y conclusiones.",
+      "interpretacion": "Toda No Conformidad debe redactarse con 3 elementos indispensables: 1. Declaración clara del incumplimiento, 2. Criterio/Requisito infringido (cláusula o procedimiento), 3. Evidencia objetiva exacta (folio, fecha, muestra).",
+      "evidencia_objetiva": "Listas de verificación completadas, informe de auditoría firmado y registro en el módulo de Auditorías.",
+      "criterio_auditoria": "Evaluar la solidez de la redacción de hallazgos y su apego al criterio de auditoría."
+    },
+    {
+      "numero": "6.7",
+      "titulo": "Seguimiento y cierre de la auditoría",
+      "requisito": "Verificar la implementación y eficacia de las acciones correctivas resultantes de la auditoría.",
+      "interpretacion": "El auditor asignado debe revisar el plan de acción (OOMRSC-20), verificar las evidencias en sitio o documentales, y emitir el Dictamen de Auditoría (Cierre Efectivo o No Efectivo).",
+      "evidencia_objetiva": "Dictamen de Auditoría en el portal SGC con conclusión mínima de 15 caracteres y evidencia verificada.",
+      "criterio_auditoria": "Comprobar que ninguna acción correctiva se cierra sin dictamen favorable del auditor independiente."
+    }
+  ]
+}

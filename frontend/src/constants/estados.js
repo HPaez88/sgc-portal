@@ -4,6 +4,7 @@ export const ESTADOS_SGC = [
   'EN_REVISION',
   'APROBADO',
   'EN_SEGUIMIENTO',
+  'SOLICITUD_CIERRE',
   'REVISION_AUDITOR',
   'RECHAZADO',
   'CERRADO_EFECTIVO',
@@ -20,6 +21,7 @@ export const getEstadoColor = (estado) => {
     case 'EN_REVISION': return 'bg-amber-100 text-amber-700 border-amber-200';
     case 'APROBADO': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     case 'EN_SEGUIMIENTO': return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'SOLICITUD_CIERRE': return 'bg-purple-100 text-purple-700 border-purple-200';
     case 'REVISION_AUDITOR': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
     case 'RECHAZADO': return 'bg-red-100 text-red-700 border-red-200';
     case 'CERRADO':
@@ -33,9 +35,10 @@ export const getEstadoLabel = (estado) => {
   const labels = {
     BORRADOR: 'Borrador',
     GENERADO_IA: 'Borrador',
-    EN_REVISION: 'Pendiente',
+    EN_REVISION: 'Pendiente Revisión',
     APROBADO: 'Aprobado',
     EN_SEGUIMIENTO: 'En Seguimiento',
+    SOLICITUD_CIERRE: 'Solicitud de Cierre',
     REVISION_AUDITOR: 'Revisión Auditor',
     RECHAZADO: 'Rechazado',
     CERRADO: 'Cerrado',
