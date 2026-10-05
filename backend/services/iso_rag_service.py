@@ -26,6 +26,12 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
     filename = os.path.basename(file_path)
     if filename == "iso_9001_2026.md":
         norma_id = "ISO-9001-2026"
+    elif filename == "iso_42001_2023.md":
+        norma_id = "ISO-42001-2023"
+    elif filename == "iso_27001_2022.md":
+        norma_id = "ISO-27001-2022"
+    elif filename == "iso_9000_2015.md":
+        norma_id = "ISO-9000-2015"
     elif filename == "iso_14001_2015.md":
         norma_id = "ISO-14001-2015"
     elif filename == "iso_45001_2018.md":
@@ -43,17 +49,21 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
     desc_match = re.search(r"\*\*Objetivo:\*\*\s*(.+)$", content, re.MULTILINE)
     descripcion = desc_match.group(1).strip() if desc_match else f"Norma oficial {nombre}"
 
-    # Extraer cláusulas marcadas con ### o ##
+    # Extraer cláusulas marcadas con ###
     clausulas = []
-    sections = re.split(r"\n###\s+|\n##\s+", content)
+    sections = re.split(r"\n###\s+", content)
 
     for sec in sections[1:]:
         lines = sec.strip().split("\n")
         header_line = lines[0].strip()
 
         # Extraer número y título
+        match_principio = re.match(r"^Principio\s+(\d+)\s*[-—:]?\s*(.+)$", header_line, re.IGNORECASE)
         match_num = re.match(r"^(\d+(?:\.\d+)*)\s*(?:y\s*\d+(?:\.\d+)*)?\s*[-—:]?\s*(.+)$", header_line)
-        if match_num:
+        if match_principio:
+            numero = f"Principio {match_principio.group(1)}"
+            titulo = match_principio.group(2).strip()
+        elif match_num:
             numero = match_num.group(1).strip()
             titulo = match_num.group(2).strip()
         else:
@@ -63,13 +73,13 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
         body = "\n".join(lines[1:])
 
         # Extraer campos estructurados si existen
-        req_m = re.search(r"- \*\*Requisito Oficial:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
+        req_m = re.search(r"- \*\*(?:Requisito Oficial|Declaración|Definición Oficial):\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         requisito = req_m.group(1).strip() if req_m else ""
 
-        int_m = re.search(r"- \*\*Interpretación Técnica.+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
+        int_m = re.search(r"- \*\*(?:Interpretación Técnica|Aplicación en OOMAPASC|Criterio OOMAPASC|Nota Clave).+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         interpretacion = int_m.group(1).strip() if int_m else ""
 
-        evi_m = re.search(r"- \*\*Evidencia Objetiva Requerida:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
+        evi_m = re.search(r"- \*\*Evidencia Objetiva(?: Requerida)?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         evidencia = evi_m.group(1).strip() if evi_m else ""
 
         cri_m = re.search(r"- \*\*Criterio de Auditoría.+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
@@ -110,7 +120,15 @@ def _cargar_archivos_conocimiento() -> Dict[str, Any]:
             try:
                 filename = os.path.basename(file_path)
                 data = _parse_markdown_norma(file_path)
-                if filename in ["iso_9001_2026.md", "iso_14001_2015.md", "iso_45001_2018.md", "iso_19011_2018.md"]:
+                if filename in [
+                    "iso_9001_2026.md",
+                    "iso_42001_2023.md",
+                    "iso_27001_2022.md",
+                    "iso_9000_2015.md",
+                    "iso_14001_2015.md",
+                    "iso_45001_2018.md",
+                    "iso_19011_2018.md"
+                ]:
                     normas[data["id"]] = data
                 else:
                     # Guías de transición, manuales internos, matrices de procedimientos y registros SGC
@@ -149,8 +167,16 @@ def listar_normas_disponibles() -> List[Dict[str, Any]]:
     kb = _cargar_archivos_conocimiento()
     resultado = []
     
-    # Prioridad: ISO 9001:2026 primero
-    orden_preferido = ["ISO-9001-2026", "ISO-14001-2015", "ISO-45001-2018", "ISO-19011-2018"]
+    # Prioridad: Calidad, IA, TI/Ciberseguridad, Glosario, Ambiental, SST, Auditorías
+    orden_preferido = [
+        "ISO-9001-2026",
+        "ISO-42001-2023",
+        "ISO-27001-2022",
+        "ISO-9000-2015",
+        "ISO-14001-2015",
+        "ISO-45001-2018",
+        "ISO-19011-2018"
+    ]
     
     normas_ordenadas = sorted(
         kb["normas"].values(),
@@ -200,6 +226,15 @@ def listar_documentos_conocimiento() -> List[Dict[str, Any]]:
     return docs
 
 
+def _normalizar_texto(txt: str) -> str:
+    """Normaliza un texto quitando acentos y pasando a minúsculas."""
+    if not txt:
+        return ""
+    txt = txt.lower()
+    tabla = str.maketrans("áéíóúÁÉÍÓÚñÑüÜ", "aeiouaeiounnuu")
+    return txt.translate(tabla)
+
+
 def buscar_contexto_relevante(
     query: str,
     norma_id: Optional[str] = None,
@@ -211,20 +246,38 @@ def buscar_contexto_relevante(
     relevantes basados en términos clave, claves de documentos y contexto temático.
     """
     kb = _cargar_archivos_conocimiento()
+    query_norm = _normalizar_texto(query)
     query_lower = query.lower()
     
     # Detección de intenciones temáticas
-    es_pregunta_transicion = any(k in query_lower for k in [
+    es_pregunta_transicion = any(k in query_norm for k in [
         "cambio", "cambios", "diferencia", "diferencias", "2015", "2026",
-        "transicion", "transición", "enmienda", "enmiendas", "novedad", "novedades",
-        "versus", "vs", "evolucion", "evolución", "actualizacion", "actualización"
+        "transicion", "enmienda", "enmiendas", "novedad", "novedades",
+        "versus", "vs", "evolucion", "actualizacion"
     ])
 
-    es_pregunta_documental = any(k in query_lower for k in [
-        "procedimiento", "procedimientos", "formato", "formatos", "registro", "registros",
+    es_pregunta_documental = any(k in query_norm for k in [
+        "procedimiento", "formato", "formatos", "registro", "registros",
         "oomrsc", "oomrsc-20", "oomrsc-21", "mc-01", "pr-cal", "pr-mej", "pr-pot", "pr-aud",
         "reg-cloro", "trazabilidad", "impacto", "eliminar", "referencia", "referencias",
-        "catalogo", "catálogo", "manual", "proceso", "procesos", "mapa", "interaccion", "interacción"
+        "catalogo", "manual", "proceso", "procesos", "mapa", "interaccion"
+    ])
+
+    es_pregunta_ia = any(k in query_norm for k in [
+        "ia", "inteligencia artificial", "algoritmo", "alucinaciones", "human-in-the-loop",
+        "42001", "sgia", "modelo", "agente", "grounding", "explicabilidad", "sesgo"
+    ])
+
+    es_pregunta_ti = any(k in query_norm for k in [
+        "seguridad de la informacion", "ciberseguridad", "27001", "ti", "rbac", "cifrado",
+        "scada", "telemetria", "servidor", "vulnerabilidad", "privacidad",
+        "pol-ti-01", "brecha", "drp", "bcp"
+    ])
+
+    es_pregunta_vocabulario = any(k in query_norm for k in [
+        "vocabulario", "glosario", "9000", "definicion", "concepto", "principio",
+        "principios", "correccion", "accion correctiva", "plan de mejora", "evidencia objetiva",
+        "eficacia", "eficiencia", "parte interesada"
     ])
 
     # Extraer posibles números de cláusula del query (ej. 4.1, 7.5, 8.5.1, 10.2)
@@ -239,30 +292,35 @@ def buscar_contexto_relevante(
     for norma in normas_a_buscar:
         for cl in norma.get("clausulas", []):
             score = 0
-            num = cl.get("numero", "")
-            titulo = cl.get("titulo", "").lower()
-            requisito = cl.get("requisito", "").lower()
-            interpretacion = cl.get("interpretacion", "").lower()
+            num = str(cl.get("numero", ""))
+            num_norm = _normalizar_texto(num)
+            titulo_norm = _normalizar_texto(cl.get("titulo", ""))
+            requisito_norm = _normalizar_texto(cl.get("requisito", ""))
+            interpretacion_norm = _normalizar_texto(cl.get("interpretacion", ""))
 
             # Coincidencia exacta de número de cláusula
-            if num in clausula_matches or num in query_lower:
+            if num in clausula_matches or num_norm in query_norm:
                 score += 60
             
             # Palabras clave en título o contenido
-            palabras = [w for w in re.split(r"\W+", query_lower) if len(w) > 3]
+            palabras = [w for w in re.split(r"\W+", query_norm) if len(w) > 3]
             for palabra in palabras:
-                if palabra in titulo:
-                    score += 15
-                if palabra in requisito:
-                    score += 8
-                if palabra in interpretacion:
-                    score += 8
+                if palabra in titulo_norm:
+                    score += 20
+                if palabra in requisito_norm:
+                    score += 10
+                if palabra in interpretacion_norm:
+                    score += 10
 
-            # Si es pregunta de transición, priorizar cláusulas clave afectadas por enmiendas
+            # Boosting según intención temática
+            if es_pregunta_ia and norma["id"] == "ISO-42001-2023":
+                score += 50
+            if es_pregunta_ti and norma["id"] == "ISO-27001-2022":
+                score += 50
+            if es_pregunta_vocabulario and norma["id"] == "ISO-9000-2015":
+                score += 50
             if es_pregunta_transicion and num in ["4.1", "4.2", "6.1", "7.1.3", "7.5", "8.4", "9.2", "10.2"]:
                 score += 30
-
-            # Si es pregunta sobre control documental o registros, priorizar 7.5, 8.5.1 y 10.2
             if es_pregunta_documental and num in ["7.5", "7.5.1", "7.5.2", "7.5.3", "8.5.1", "9.2", "10.2", "10.3"]:
                 score += 35
 
@@ -361,7 +419,7 @@ def buscar_contexto_relevante(
         docs_activos_relevantes.sort(key=lambda x: x["score"], reverse=True)
 
     return {
-        "clausulas": clausulas_relevantes[:3],
+        "clausulas": clausulas_relevantes[:5],
         "custom_snippets": custom_snippets[:2],
         "documentos_activos": docs_activos_relevantes[:3]
     }
@@ -476,11 +534,19 @@ def consultar_agente_iso(
         })
 
     system_prompt = (
-        "Eres el 'Agente Auditor y Asesor Normativo y Documental ISO Senior' para el Sistema de Gestión de Calidad (SGC) "
+        "Eres el 'Agente Auditor y Asesor Normativo y Documental ISO Senior' para el Sistema de Gestión Integrado (Multi-SGC: Calidad, IA, TI, Ambiental, SST y Auditoría) "
         "del Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme (OOMAPASC).\n\n"
         "DOMINIO TOTAL Y EXCLUSIVO DE LA DOCUMENTACIÓN:\n"
-        "1. Normas ISO Oficiales: ISO 9001:2015, ISO 9001:2026 (Enmiendas Climáticas 4.1/4.2 y Resiliencia 6.1/7.1.3), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n"
+        "1. Normas ISO Oficiales Integradas:\n"
+        "   - ISO 9001:2015 / ISO 9001:2026: Calidad, Enmiendas Climáticas 4.1/4.2 y Resiliencia Operativa 6.1/7.1.3.\n"
+        "   - ISO/IEC 42001:2023: Sistema de Gestión de Inteligencia Artificial (SGIA), Gobernanza Human-in-the-Loop (§ 5.3), Mitigación de Alucinaciones con RAG y Transparencia Algorítmica.\n"
+        "   - ISO/IEC 27001:2022: Seguridad de la Información, Ciberseguridad y Privacidad (SGSI / TI), Control de Accesos RBAC, Cifrado TLS/AES-256 y Protección SCADA/Telemetría.\n"
+        "   - ISO 9000:2015: Fundamentos y Vocabulario Oficial de Calidad (7 Principios, No Conformidad vs Corrección vs Acción Correctiva, Evidencia Objetiva, Eficacia y Eficiencia).\n"
+        "   - ISO 14001:2015: Gestión Ambiental en redes, descarga de aguas residuales y saneamiento.\n"
+        "   - ISO 45001:2018: Seguridad y Salud en el Trabajo para cuadrillas de campo y plantas potabilizadoras.\n"
+        "   - ISO 19011:2018: Directrices para la Auditoría de Sistemas de Gestión.\n"
         "2. Documentación Interna Oficial de OOMAPASC:\n"
+        "   - Política de Gobernanza de IA y Seguridad de TI: POL-TI-01 (Rev. 01).\n"
         "   - Manual del SGC: MC-01 (Rev. 04) — define la política, alcance territorial (Cajeme) y mapa de procesos.\n"
         "   - Procedimiento de Acciones Correctivas: PR-CAL-01 (Rev. 06) — 5 Porqués, Diagrama Ishikawa 6M, 8D.\n"
         "   - Formato Institucional de Acción Correctiva: OOMRSC-20 (Rev. 18) — registro oficial de causa raíz, plan de acción y dictamen de cierre (ISO 9001 § 10.2).\n"

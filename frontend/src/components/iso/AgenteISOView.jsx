@@ -39,7 +39,12 @@ import {
   TrendingUp,
   FileWarning,
   Activity,
-  Zap
+  Zap,
+  Upload,
+  Cpu,
+  Server,
+  Lock,
+  BookOpenCheck
 } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
@@ -85,6 +90,82 @@ const PREGUNTAS_CATEGORIZADAS = [
         norma: 'SGC OOMAPASC',
         titulo: 'Planes de Mejora próximos a vencer (OOMRSC-21)',
         texto: '¿Qué planes de mejora de mi área están próximos a vencer su fecha compromiso y qué presupuesto y porcentaje de avance tienen asignado?'
+      }
+    ]
+  },
+  {
+    categoria: 'Inteligencia Artificial y Human-in-the-Loop (ISO/IEC 42001:2023)',
+    icon: Cpu,
+    color: 'from-violet-600 to-purple-800',
+    preguntas: [
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Gobernanza Human-in-the-Loop (§ 5.3 & POL-TI-01)',
+        texto: '¿Cómo aplica el principio Human-in-the-Loop (§ 5.3) en el portal SGC para asegurar que la IA actúe como asesora pero nunca apruebe o cierre Acciones Correctivas o Planes de Mejora sin ratificación humana obligatoria?'
+      },
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Mitigación de Alucinaciones con RAG Grounding (§ 6.1)',
+        texto: '¿Qué controles de gestión de riesgos de IA y arquitectura RAG (§ 6.1) garantizan que las respuestas del asistente provengan exclusivamente de las normas ISO oficiales y del acervo documental interno del OOMAPASC?'
+      },
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Transparencia y Explicabilidad Algorítmica (§ 8.2)',
+        texto: '¿Cómo se garantiza la explicabilidad cuando el sistema clasifica un indicador incumplido entre Acción Correctiva (Alto Impacto) o Reporte de Corrección RC (Bajo Impacto)?'
+      },
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Evaluación y Desempeño del SGIA (§ 9.2 y 9.3)',
+        texto: '¿Cómo se deben auditar y reportar las métricas de uso y precisión del Asesor IA en las actas de Revisión por la Dirección (OOMRSC-04)?'
+      }
+    ]
+  },
+  {
+    categoria: 'Seguridad de la Información, Ciberseguridad y TI (ISO/IEC 27001:2022)',
+    icon: Server,
+    color: 'from-slate-700 to-cyan-900',
+    preguntas: [
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Control de Acceso RBAC y Política POL-TI-01 (A.5.15)',
+        texto: '¿Cuáles son las directrices de control de acceso por roles (RBAC) y confidencialidad exigidas por ISO 27001 y POL-TI-01 para proteger los datos operativos y la parametrización del SGC?'
+      },
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Seguridad en Telemetría SCADA y Redes de Pozos (§ 6.1 / A.8.24)',
+        texto: '¿Qué controles de ciberseguridad e integridad en tránsito/reposo aplican para la telemetría SCADA y la bitácora de cloro en red (REG-CLORO-01)?'
+      },
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Bitácoras Inmutables y Trazabilidad de Auditoría (A.8.15)',
+        texto: '¿Qué requerimientos establece ISO 27001 para las bitácoras de auditoría (audit_logs) que previenen la alteración o borrado de evidencias en AC, PM e indicadores?'
+      },
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Gestión de Incidentes de TI y Continuidad Operativa (§ 10.1)',
+        texto: '¿Cuál es el procedimiento de respuesta inmediata y levantamiento de Acción Correctiva (OOMRSC-20) ante caídas de servidor o brechas de seguridad de TI?'
+      }
+    ]
+  },
+  {
+    categoria: 'Fundamentos de Calidad y Glosario Oficial (ISO 9000:2015)',
+    icon: BookOpenCheck,
+    color: 'from-blue-600 to-sky-800',
+    preguntas: [
+      {
+        norma: 'ISO-9000-2015',
+        titulo: 'Los 7 Principios de Gestión de la Calidad en OOMAPASC',
+        texto: '¿Cuáles son los 7 principios de gestión de la calidad según ISO 9000:2015 (Enfoque al cliente, Liderazgo, Compromiso, Procesos, Mejora, Evidencia, Relaciones) y cómo se aterrizan en OOMAPASC?'
+      },
+      {
+        norma: 'ISO-9000-2015',
+        titulo: 'Corrección vs Acción Correctiva vs Plan de Mejora',
+        texto: '¿Cuál es la diferencia conceptual y operativa entre una Corrección (ej. Reporte de Corrección RC), una Acción Correctiva (OOMRSC-20 con análisis de causa raíz) y un Plan de Mejora (OOMRSC-21)?'
+      },
+      {
+        norma: 'ISO-9000-2015',
+        titulo: 'Evidencia Objetiva y Criterio de Eficacia (§ 3.8.3 y 3.7.11)',
+        texto: '¿Qué se define como Evidencia Objetiva válida y cómo se evalúa la Eficacia de una acción correctiva antes de su dictamen final de cierre?'
       }
     ]
   },
@@ -267,7 +348,7 @@ export default function AgenteISOView({ setActiveTab }) {
     {
       id: 'bienvenida',
       emisor: 'agente',
-      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO.**\n\nEstoy conectado en tiempo real a tu perfil operativo:\n- **Colaborador:** ${usuarioLogueado?.nombre || 'Colaborador SGC'} | **Área:** ${usuarioLogueado?.area || 'Control y Servicios'} (${usuarioLogueado?.direccion || 'Dir. Comercial'})\n- **Normas ISO Oficiales:** ISO 9001:2015 / ISO 9001:2026 (Enmiendas Climáticas), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Cuadro de Control (\`OOMRSC-05\`) y Matriz de Trazabilidad Documental.\n\nPuedes preguntarme **"¿Qué tengo pendiente hoy?"** o pedirme directamente **"Actualiza el indicador #70 con 92%"**, **"Subir evidencia a AC#1/26"** o **"Ratificar procedimiento PR-CS-01"** para ejecutar y guardar los datos en su módulo correspondiente.`,
+      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO (Multi-SGC Integrado).**\n\nEstoy conectado en tiempo real a tu perfil operativo:\n- **Colaborador:** ${usuarioLogueado?.nombre || 'Colaborador SGC'} | **Área:** ${usuarioLogueado?.area || 'Control y Servicios'} (${usuarioLogueado?.direccion || 'Dir. Comercial'})\n- **Normas ISO Oficiales Integradas:**\n  1. **ISO 9001:2015 / 2026** (Gestión de Calidad, Enmiendas Climáticas y Resiliencia)\n  2. **ISO/IEC 42001:2023** (Gobernanza de Inteligencia Artificial & Human-in-the-Loop)\n  3. **ISO/IEC 27001:2022** (Seguridad de la Información, Ciberseguridad & TI)\n  4. **ISO 9000:2015** (Fundamentos de Calidad y Vocabulario Oficial)\n  5. **ISO 14001:2015** (Gestión Ambiental y Saneamiento)\n  6. **ISO 45001:2018** (Seguridad y Salud en el Trabajo)\n  7. **ISO 19011:2018** (Directrices de Auditoría Interna)\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Política de TI \`POL-TI-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Cuadro de Control (\`OOMRSC-05\`) y Matriz de Trazabilidad Documental.\n\nPuedes preguntarme **"¿Qué tengo pendiente hoy?"** o pedirme directamente **"Actualiza el indicador #70 con 92%"**, **"Subir evidencia"** o **"Ratificar procedimiento PR-CS-01"** para ejecutar y guardar los datos en su módulo correspondiente.`,
       clausulas: [],
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
