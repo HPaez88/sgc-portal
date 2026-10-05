@@ -251,6 +251,13 @@ export default function AgenteISOView({ setActiveTab }) {
     });
   }, [usuarioLogueado, accionesCorrectivas, planesMejora, indicadoresData, documentos]);
 
+  // Control de Permisos: Solo el Super Administrador puede agregar documentos al modelo RAG
+  const esSuperAdmin = useMemo(() => {
+    const rol = (usuarioLogueado?.rol || '').toLowerCase();
+    const nombre = (usuarioLogueado?.nombre || '').toLowerCase();
+    return rol.includes('super') || rol === 'super_admin' || rol === 'super admin' || nombre.includes('héctor') || nombre.includes('hector') || usuarioLogueado?.id === 1;
+  }, [usuarioLogueado]);
+
   // Pestañas principales
   const [tabActiva, setTabActiva] = useState('chat'); // 'chat' | 'consultas' | 'base' | 'clausulas'
 
@@ -584,7 +591,7 @@ export default function AgenteISOView({ setActiveTab }) {
     }
   };
 
-  // Formateador robusto de Markdown con soporte para tablas
+  // Formateador robusto y compacto de Markdown con soporte para tablas y código
   const renderMarkdown = (content) => {
     if (!content) return null;
     const lines = content.split('\n');
@@ -608,12 +615,12 @@ export default function AgenteISOView({ setActiveTab }) {
             .map(row => row.split('|').slice(1, -1).map(c => c.trim()));
 
           elements.push(
-            <div key={`tbl-${i}`} className="my-3.5 overflow-x-auto rounded-xl border border-slate-200 shadow-xs bg-white">
-              <table className="min-w-full text-xs text-left divide-y divide-slate-200">
+            <div key={`tbl-${i}`} className="my-2.5 overflow-x-auto rounded-xl border border-slate-200 shadow-2xs bg-white">
+              <table className="min-w-full text-[11.5px] text-left divide-y divide-slate-200">
                 <thead className="bg-[#0B192C] text-white">
                   <tr>
                     {headerRow.map((h, hIdx) => (
-                      <th key={hIdx} className="px-3.5 py-2.5 font-extrabold uppercase tracking-wider text-[11px]">
+                      <th key={hIdx} className="px-3 py-2 font-extrabold uppercase tracking-wider text-[10.5px]">
                         {formatBold(h)}
                       </th>
                     ))}
@@ -621,9 +628,9 @@ export default function AgenteISOView({ setActiveTab }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {bodyRows.map((r, rIdx) => (
-                    <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white hover:bg-sky-50/50' : 'bg-slate-50/70 hover:bg-sky-50/50'}>
+                    <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white hover:bg-sky-50/50' : 'bg-slate-50/60 hover:bg-sky-50/50'}>
                       {r.map((cell, cIdx) => (
-                        <td key={cIdx} className="px-3.5 py-2.5 text-slate-800 leading-relaxed font-normal">
+                        <td key={cIdx} className="px-3 py-1.5 text-slate-800 leading-normal font-normal">
                           {formatBold(cell)}
                         </td>
                       ))}
@@ -640,35 +647,35 @@ export default function AgenteISOView({ setActiveTab }) {
       // Títulos
       if (line.startsWith('### ')) {
         elements.push(
-          <h4 key={i} className="font-black text-sm text-[#002855] mt-4 mb-1.5 flex items-center gap-1.5">
+          <h4 key={i} className="font-black text-xs text-[#002855] mt-3 mb-1 flex items-center gap-1.5">
             {formatBold(line.replace('### ', ''))}
           </h4>
         );
       } else if (line.startsWith('## ')) {
         elements.push(
-          <h3 key={i} className="font-black text-base text-[#002855] mt-5 mb-2.5 border-b border-slate-200 pb-1.5 flex items-center gap-2">
+          <h3 key={i} className="font-black text-sm text-[#002855] mt-3.5 mb-1.5 border-b border-slate-200 pb-1 flex items-center gap-1.5">
             {formatBold(line.replace('## ', ''))}
           </h3>
         );
       } else if (line.startsWith('# ')) {
         elements.push(
-          <h2 key={i} className="font-black text-lg text-[#002855] mt-5 mb-3">
+          <h2 key={i} className="font-black text-base text-[#002855] mt-4 mb-2">
             {formatBold(line.replace('# ', ''))}
           </h2>
         );
       } else if (line.trim().startsWith('• ') || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         elements.push(
-          <li key={i} className="ml-4 list-disc text-xs text-slate-700 my-0.5 leading-relaxed">
+          <li key={i} className="ml-3.5 list-disc text-[12px] text-slate-700 my-0.5 leading-snug">
             {formatBold(line.trim().substring(2))}
           </li>
         );
       } else if (line.trim() === '') {
-        elements.push(<div key={i} className="h-1.5" />);
+        elements.push(<div key={i} className="h-1" />);
       } else if (line.trim() === '---') {
-        elements.push(<hr key={i} className="my-3 border-slate-200" />);
+        elements.push(<hr key={i} className="my-2 border-slate-200" />);
       } else {
         elements.push(
-          <p key={i} className="text-xs text-slate-700 leading-relaxed my-1">
+          <p key={i} className="text-[12.5px] text-slate-700 leading-relaxed my-0.5">
             {formatBold(line)}
           </p>
         );
@@ -681,10 +688,17 @@ export default function AgenteISOView({ setActiveTab }) {
 
   const formatBold = (text) => {
     if (!text) return text;
-    const parts = text.split(/(\*\*.*?\*\*)/g);
+    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+        return <strong key={i} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <code key={i} className="font-mono text-[10.5px] bg-sky-50 text-sky-900 border border-sky-200 px-1 py-0.2 rounded font-bold">
+            {part.slice(1, -1)}
+          </code>
+        );
       }
       return part;
     });
@@ -700,162 +714,141 @@ export default function AgenteISOView({ setActiveTab }) {
   });
 
   return (
-    <div className="space-y-5 animate-fade-in-up pb-10">
-      {/* HEADER DEL AGENTE */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] p-6 rounded-2xl shadow-xl text-white border border-slate-700/60 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 shrink-0">
-              <Sparkles size={28} />
+    <div className="space-y-3.5 animate-fade-in-up pb-6">
+      {/* HEADER COMPACTO Y ELEGANTE DEL AGENTE */}
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl shadow-md text-white border border-slate-700/60 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-2.5">
+          {/* Título e Identidad */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
+              <Sparkles size={17} />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-2xl font-black tracking-tight text-white">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-sm sm:text-base font-black tracking-tight text-white">
                   Asesor & Auditor Normativo ISO (IA)
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-sky-400/20 text-sky-300 border border-sky-400/30">
-                  RAG Estricto Grounded
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-sky-400/20 text-sky-300 border border-sky-400/30">
+                  RAG Grounded
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                  OOMAPASC Calidad
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                  OOMAPASC
                 </span>
               </div>
-              <p className="text-xs text-slate-300 font-medium mt-1 max-w-3xl leading-relaxed">
-                Consultas fundamentadas exclusivamente en la documentación oficial de normas ISO (9001, 14001, 45001, 19011) y lineamientos de auditoría para una correcta ejecución y resolución satisfactoria.
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-            <button
-              onClick={() => setModalDocCustomAbierto(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold rounded-xl text-xs transition-all shadow-md cursor-pointer"
-            >
-              <Plus size={15} strokeWidth={3} /> Agregar Documento a Base
-            </button>
-          </div>
-        </div>
-
-        {/* NAVEGACIÓN DE PESTAÑAS PRINCIPALES */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setTabActiva('chat')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'chat'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <MessageSquare size={15} /> Asesor Normativo (Pantalla Completa)
-            </button>
-
-            <button
-              onClick={() => setTabActiva('consultas')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'consultas'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <HelpCircle size={15} /> Consultas Frecuentes
-              <span className="px-1.5 py-0.2 bg-black/20 text-[10px] rounded-full font-mono">
-                {PREGUNTAS_CATEGORIZADAS.reduce((acc, c) => acc + c.preguntas.length, 0)}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setTabActiva('base')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'base'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <BookMarked size={15} /> Base Indexada & Normas
-              <span className="px-1.5 py-0.2 bg-black/20 text-[10px] rounded-full font-mono">
-                {documentosConocimiento.length || normas.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                setTabActiva('clausulas');
-                if (normas.length > 0 && !clausulasNorma.length) {
-                  cargarClausulas(normas[0].id);
-                }
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'clausulas'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <BookOpen size={15} /> Explorador de Cláusulas
-            </button>
-          </div>
-
-          {/* Filtro por norma activo en chat */}
-          {tabActiva === 'chat' && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
-                <ShieldCheck size={13} className="text-sky-400" /> Norma:
-              </span>
+          {/* Navegación de Pestañas y Acciones */}
+          <div className="flex items-center gap-1.5 flex-wrap w-full lg:w-auto justify-start lg:justify-end">
+            <div className="flex items-center gap-1 p-1 bg-black/30 backdrop-blur-xs rounded-xl border border-white/10 flex-wrap text-xs">
               <button
-                onClick={() => setNormaSeleccionada('')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                  normaSeleccionada === ''
-                    ? 'bg-white text-slate-950 shadow-xs'
-                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                onClick={() => setTabActiva('chat')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'chat'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }`}
               >
-                Todas
+                <MessageSquare size={13} />
+                <span>Asesor Chat</span>
               </button>
-              {normas.map(n => (
-                <button
-                  key={n.id}
-                  onClick={() => setNormaSeleccionada(n.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                    normaSeleccionada === n.id
-                      ? 'bg-white text-slate-950 shadow-xs'
-                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                  }`}
-                >
-                  {n.id.replace(/-/g, ' ')}
-                </button>
-              ))}
+
+              <button
+                onClick={() => setTabActiva('consultas')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'consultas'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <HelpCircle size={13} />
+                <span>Consultas ({PREGUNTAS_CATEGORIZADAS.reduce((acc, c) => acc + c.preguntas.length, 0)})</span>
+              </button>
+
+              <button
+                onClick={() => setTabActiva('base')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'base'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <BookMarked size={13} />
+                <span>Base Normas ({documentosConocimiento.length || normas.length})</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setTabActiva('clausulas');
+                  if (normas.length > 0 && !clausulasNorma.length) {
+                    cargarClausulas(normas[0].id);
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'clausulas'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <BookOpen size={13} />
+                <span>Explorador Cláusulas</span>
+              </button>
             </div>
-          )}
+
+            {esSuperAdmin && (
+              <button
+                onClick={() => setModalDocCustomAbierto(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black rounded-xl text-xs transition-all shadow-xs cursor-pointer ml-1"
+                title="Solo el Super Administrador puede agregar documentos a la base del modelo"
+              >
+                <Plus size={13} strokeWidth={3} />
+                <span>+ Agregar Documento</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* PESTAÑA 1: CHAT A PANTALLA COMPLETA (AMPLIADO 100%) */}
+      {/* PESTAÑA 1: CHAT EXPANDIDO A PANTALLA COMPLETA */}
       {/* ============================================================ */}
       {tabActiva === 'chat' && (
-        <div className="w-full bg-white rounded-2xl shadow-card-subtle border border-slate-200 flex flex-col h-[740px] overflow-hidden">
-          {/* Header de conversación y chips rápidos */}
-          <div className="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2.5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-slate-800">
-                  Sesión Activa con Asesor Normativo ISO
+        <div className="w-full bg-white rounded-2xl shadow-card-subtle border border-slate-200 flex flex-col h-[calc(100vh-190px)] min-h-[580px] overflow-hidden">
+          {/* Header Compacto del Chat y Briefing */}
+          <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2">
+            {/* Fila 1: Filtros de Norma + Estado + Acciones de exportación */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[11px] font-extrabold text-slate-800 mr-1">
+                  Norma:
                 </span>
-                {normaSeleccionada ? (
-                  <span className="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded border border-sky-200">
-                    Filtro: {normaSeleccionada}
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-mono font-bold bg-slate-200/70 text-slate-700 px-2 py-0.5 rounded">
-                    Búsqueda Global (4 Normas + Guías de Transición)
-                  </span>
-                )}
+                <button
+                  onClick={() => setNormaSeleccionada('')}
+                  className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
+                    normaSeleccionada === ''
+                      ? 'bg-[#0B192C] text-white shadow-2xs'
+                      : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
+                  }`}
+                >
+                  Todas (Multi-Norma)
+                </button>
+                {normas.map(n => (
+                  <button
+                    key={n.id}
+                    onClick={() => setNormaSeleccionada(n.id)}
+                    className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
+                      normaSeleccionada === n.id
+                        ? 'bg-[#0B192C] text-white shadow-2xs'
+                        : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
+                    }`}
+                  >
+                    {n.id.replace(/-/g, ' ')}
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                 {mensajes.filter(m => m.id !== 'bienvenida').length > 0 && (
                   <>
                     <button
@@ -863,10 +856,10 @@ export default function AgenteISOView({ setActiveTab }) {
                         exportarSesionCompletaISOPDF({ mensajes, usuario: usuarioLogueado });
                         toast.success('Sesión consolidada descargada en PDF');
                       }}
-                      className="text-[11px] font-bold text-sky-950 bg-sky-100 hover:bg-sky-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-sky-200 shadow-2xs"
-                      title="Descargar todas las consultas de la sesión en un informe PDF"
+                      className="text-[10.5px] font-bold text-sky-900 bg-sky-100/80 hover:bg-sky-200 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-sky-200 shadow-2xs"
+                      title="Descargar informe consolidado en PDF"
                     >
-                      <Download size={12} className="text-sky-700" /> Descargar Sesión (PDF)
+                      <Download size={11} className="text-sky-700" /> PDF Sesión
                     </button>
 
                     <button
@@ -874,70 +867,60 @@ export default function AgenteISOView({ setActiveTab }) {
                         exportarSesionCompletaISOMarkdown({ mensajes, usuario: usuarioLogueado });
                         toast.success('Historial descargado en Markdown (.md)');
                       }}
-                      className="text-[11px] font-bold text-slate-700 bg-white hover:bg-slate-100 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-slate-200 shadow-2xs"
-                      title="Descargar historial de consultas en archivo Markdown"
+                      className="text-[10.5px] font-bold text-slate-700 bg-white hover:bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-slate-200 shadow-2xs"
+                      title="Descargar Markdown"
                     >
-                      <FileDown size={12} className="text-slate-600" /> Exportar .MD
+                      <FileDown size={11} className="text-slate-600" /> .MD
                     </button>
                   </>
                 )}
 
                 <button
                   onClick={() => setMensajes([mensajes[0]])}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors cursor-pointer ml-1"
+                  className="text-[10.5px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors cursor-pointer px-1.5 py-1 rounded hover:bg-slate-200/50"
+                  title="Reiniciar chat"
                 >
-                  <RefreshCw size={13} /> Limpiar Chat
+                  <RefreshCw size={11} /> Limpiar
                 </button>
               </div>
             </div>
 
-            {/* LIVE AREA BRIEFING BANNER */}
-            <div className="bg-gradient-to-r from-slate-900 via-[#0B192C] to-[#1E3E62] p-3 rounded-xl text-white shadow-xs border border-slate-700/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <div className="px-2.5 py-1 rounded-lg bg-sky-500/20 border border-sky-400/30 text-sky-300 font-extrabold text-[11px] flex items-center gap-1.5">
-                  <Activity size={13} className="text-sky-400 animate-pulse" />
+            {/* Fila 2: Briefing Operativo y Botones de Acción Directa */}
+            <div className="bg-gradient-to-r from-slate-900 via-[#0B192C] to-[#1E3E62] px-3 py-2 rounded-xl text-white shadow-2xs border border-slate-700/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="px-2 py-0.5 rounded-md bg-sky-500/20 border border-sky-400/30 text-sky-300 font-extrabold text-[10.5px] flex items-center gap-1">
+                  <Activity size={11} className="text-sky-400 animate-pulse" />
                   <span>Área: {contextoOperativoActual.area}</span>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-                  {/* Badge ACs */}
-                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
+                <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
+                  <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
                     contextoOperativoActual.resumen_conteos.total_ac_pendientes > 0
                       ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
                       : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
                   }`}>
-                    <AlertTriangle size={11} /> {contextoOperativoActual.resumen_conteos.total_ac_pendientes} ACs
+                    <AlertTriangle size={10} /> {contextoOperativoActual.resumen_conteos.total_ac_pendientes} ACs
                   </span>
 
-                  {/* Badge PMs */}
-                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
+                  <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
                     contextoOperativoActual.resumen_conteos.total_pm_proximos_vencer > 0
                       ? 'bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse'
                       : 'bg-sky-500/20 text-sky-300 border-sky-400/30'
                   }`}>
-                    <TrendingUp size={11} /> {contextoOperativoActual.resumen_conteos.total_pm_activos} PMs {contextoOperativoActual.resumen_conteos.total_pm_proximos_vencer > 0 ? '(⚠️ por vencer)' : ''}
+                    <TrendingUp size={10} /> {contextoOperativoActual.resumen_conteos.total_pm_activos} PMs
                   </span>
 
-                  {/* Badge Indicadores */}
-                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
+                  <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
                     contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0
                       ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
                       : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
                   }`}>
-                    <Target size={11} /> {contextoOperativoActual.resumen_conteos.total_indicadores} Inds. {contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0 ? `(🔴 ${contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos} Incump.)` : `(🟢 Cumple)`}
+                    <Target size={10} /> {contextoOperativoActual.resumen_conteos.total_indicadores} Inds. {contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0 ? `(🔴 ${contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos})` : `(🟢 100%)`}
                   </span>
 
-                  {/* Badge Docs >1 año */}
                   {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
-                    <span className="px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border bg-amber-500/20 text-amber-300 border-amber-400/30">
-                      <FileWarning size={11} /> {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision} Docs &gt;1 año
-                    </span>
-                  )}
-
-                  {/* Badge Docs Borrador */}
-                  {contextoOperativoActual.resumen_conteos.total_docs_pendientes_aprobacion > 0 && (
-                    <span className="px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border bg-purple-500/20 text-purple-300 border-purple-400/30">
-                      <FileText size={11} /> {contextoOperativoActual.resumen_conteos.total_docs_pendientes_aprobacion} Borrador/SGC
+                    <span className="px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border bg-amber-500/20 text-amber-300 border-amber-400/30">
+                      <FileWarning size={10} /> {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision} Docs &gt;1a
                     </span>
                   )}
                 </div>
@@ -947,47 +930,47 @@ export default function AgenteISOView({ setActiveTab }) {
                 <button
                   onClick={() => handleEnviarConsulta('¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.')}
                   disabled={enviando}
-                  className="px-3 py-1.5 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black rounded-lg text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
-                  title="Obtener el diagnóstico completo de pendientes de mi área"
+                  className="px-2.5 py-1 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black rounded-lg text-[11px] transition-all shadow-sm flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
+                  title="Obtener el balance completo de pendientes de mi área"
                 >
-                  <Zap size={14} className="text-amber-300 fill-amber-300" />
+                  <Zap size={12} className="text-amber-300 fill-amber-300" />
                   <span>¿Qué tengo pendiente?</span>
                 </button>
 
                 <button
                   onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
-                  className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                  title="Capturar o actualizar valor de un indicador del área"
+                  className="px-2 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg text-[10.5px] transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Capturar valor de un indicador"
                 >
-                  <Target size={13} />
+                  <Target size={11} />
                   <span>Actualizar Indicador</span>
                 </button>
 
                 <button
                   onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null })}
-                  className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                  title="Subir evidencia o marcar actividad de una Acción Correctiva"
+                  className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg text-[10.5px] transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Subir evidencia a una Acción Correctiva"
                 >
-                  <AlertTriangle size={13} />
+                  <AlertTriangle size={11} />
                   <span>Subir Evidencia AC</span>
                 </button>
 
                 {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
                   <button
                     onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
-                    className="px-2.5 py-1.5 bg-purple-500 hover:bg-purple-400 text-white font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                    className="px-2 py-1 bg-purple-500 hover:bg-purple-400 text-white font-extrabold rounded-lg text-[10.5px] transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
                     title="Ratificar vigencia de procedimientos con >1 año sin revisar"
                   >
-                    <ShieldCheck size={13} />
-                    <span>Ratificar Doc &gt;1 año</span>
+                    <ShieldCheck size={11} />
+                    <span>Ratificar Doc</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Chips Rápidos de Consulta */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+            {/* Fila 3: Chips Rápidos de Consulta */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-thin">
+              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider shrink-0 mr-0.5">
                 Sugerencias:
               </span>
               {CHIPS_RAPIDOS.map((chip, idx) => (
@@ -995,7 +978,7 @@ export default function AgenteISOView({ setActiveTab }) {
                   key={idx}
                   onClick={() => handleEnviarConsulta(chip.query, chip.norma)}
                   disabled={enviando}
-                  className="px-2.5 py-1 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg text-[11px] font-medium text-slate-700 hover:text-sky-900 transition-all shrink-0 cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-2 py-0.5 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-md text-[10.5px] font-medium text-slate-700 hover:text-sky-900 transition-all shrink-0 cursor-pointer shadow-2xs disabled:opacity-50"
                 >
                   {chip.label}
                 </button>
@@ -1003,8 +986,8 @@ export default function AgenteISOView({ setActiveTab }) {
             </div>
           </div>
 
-          {/* Mensajes a ancho completo */}
-          <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6 bg-gradient-to-b from-slate-50/40 to-white">
+          {/* Mensajes a ancho completo con protagonismo visual */}
+          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-gradient-to-b from-slate-50/50 via-white to-white">
             {mensajes.map((m) => {
               const esUsuario = m.emisor === 'usuario';
               return (
@@ -1324,14 +1307,17 @@ export default function AgenteISOView({ setActiveTab }) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setModalDocCustomAbierto(true)}
-                  className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
-                >
-                  <Plus size={15} strokeWidth={3} /> Agregar Documento Personalizado
-                </button>
-              </div>
+              {esSuperAdmin && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setModalDocCustomAbierto(true)}
+                    className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    title="Solo el Super Administrador puede registrar nuevos documentos en la base de la IA"
+                  >
+                    <Plus size={15} strokeWidth={3} /> Agregar Documento Personalizado
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Listado de Documentos */}

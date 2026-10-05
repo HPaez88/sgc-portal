@@ -231,7 +231,7 @@ function App() {
               {/* Banner de Obligaciones de Captura SGC (Primeros 10 días del mes) */}
               <BannerObligacionesCaptura setActiveTab={setActiveTab} />
 
-              {activeTab !== 'dashboard' && (
+              {activeTab !== 'dashboard' && activeTab !== 'agente_iso' && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
                   <div>
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
