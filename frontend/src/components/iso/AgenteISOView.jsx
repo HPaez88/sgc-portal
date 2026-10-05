@@ -760,10 +760,13 @@ export default function AgenteISOView({ setActiveTab }) {
 
   const formatBold = (text) => {
     if (!text) return text;
-    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return <strong key={i} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={i} className="font-bold text-slate-900 not-italic">{part.slice(1, -1)}</em>;
       }
       if (part.startsWith('`') && part.endsWith('`')) {
         return (
@@ -774,6 +777,32 @@ export default function AgenteISOView({ setActiveTab }) {
       }
       return part;
     });
+  };
+
+  const renderContenidoDetallado = (texto) => {
+    if (!texto) return null;
+    const lineas = texto.split('\n');
+    return (
+      <div className="space-y-1">
+        {lineas.map((line, lIdx) => {
+          const trimmed = line.trim();
+          if (!trimmed) return null;
+          if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+            return (
+              <div key={lIdx} className="flex items-start gap-1.5 pl-1 text-[11.5px] leading-relaxed">
+                <span className="text-sky-600 font-bold mt-0.5">•</span>
+                <span className="flex-1">{formatBold(trimmed.substring(2))}</span>
+              </div>
+            );
+          }
+          return (
+            <p key={lIdx} className="text-[11.5px] leading-relaxed">
+              {formatBold(trimmed)}
+            </p>
+          );
+        })}
+      </div>
+    );
   };
 
   const clausulasFiltradas = clausulasNorma.filter(c => {
@@ -1529,30 +1558,54 @@ export default function AgenteISOView({ setActiveTab }) {
                     </button>
                   </div>
 
-                  <div className="text-xs space-y-2 text-slate-700 leading-relaxed">
-                    <div className="p-3 bg-white rounded-xl border border-slate-200/70">
-                      <span className="text-[11px] font-extrabold text-slate-900 block mb-0.5">📌 Requisito Oficial:</span>
-                      <p className="text-slate-700">{cl.requisito}</p>
+                  <div className="text-xs space-y-2.5 text-slate-700 leading-relaxed">
+                    <div className="p-3 bg-white rounded-xl border border-slate-200/70 shadow-2xs">
+                      <span className="text-[11px] font-extrabold text-slate-900 block mb-1 flex items-center gap-1.5">
+                        <span>📌</span>
+                        <span>Requisito Oficial:</span>
+                      </span>
+                      <div className="text-slate-700">
+                        {renderContenidoDetallado(cl.requisito)}
+                      </div>
                     </div>
 
                     {cl.interpretacion && (
-                      <div className="p-3 bg-sky-50/50 rounded-xl border border-sky-100">
-                        <span className="text-[11px] font-extrabold text-[#002855] block mb-0.5">🛠️ Interpretación Técnica OOMAPASC:</span>
-                        <p className="text-slate-800">{cl.interpretacion}</p>
+                      <div className="p-3.5 bg-sky-50/60 rounded-xl border border-sky-100 shadow-2xs">
+                        <span className="text-[11px] font-extrabold text-[#002855] block mb-1.5 flex items-center gap-1.5">
+                          <span>🛠️</span>
+                          <span>Interpretación OOMAPASC (Áreas Técnicas y Administrativas):</span>
+                        </span>
+                        <div className="text-slate-800">
+                          {renderContenidoDetallado(cl.interpretacion)}
+                        </div>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
                       {cl.evidencia_objetiva && (
-                        <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                          <span className="text-[11px] font-extrabold text-emerald-900 block mb-0.5">📑 Evidencia Objetiva Requerida:</span>
-                          <p className="text-emerald-950">{cl.evidencia_objetiva}</p>
+                        <div className="p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-100 shadow-2xs flex flex-col justify-between">
+                          <div>
+                            <span className="text-[11px] font-extrabold text-emerald-950 block mb-1.5 flex items-center gap-1.5">
+                              <span>📑</span>
+                              <span>Evidencias Objetivas Requeridas (Técnicas y Administrativas):</span>
+                            </span>
+                            <div className="text-emerald-950">
+                              {renderContenidoDetallado(cl.evidencia_objetiva)}
+                            </div>
+                          </div>
                         </div>
                       )}
                       {cl.criterio_auditoria && (
-                        <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100">
-                          <span className="text-[11px] font-extrabold text-purple-900 block mb-0.5">💡 Criterio de Auditoría / Cierre:</span>
-                          <p className="text-purple-950">{cl.criterio_auditoria}</p>
+                        <div className="p-3.5 bg-purple-50/60 rounded-xl border border-purple-100 shadow-2xs flex flex-col justify-between">
+                          <div>
+                            <span className="text-[11px] font-extrabold text-purple-950 block mb-1.5 flex items-center gap-1.5">
+                              <span>💡</span>
+                              <span>Criterio Universal de Auditoría / Cierre:</span>
+                            </span>
+                            <div className="text-purple-950">
+                              {renderContenidoDetallado(cl.criterio_auditoria)}
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

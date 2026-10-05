@@ -76,13 +76,13 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
         req_m = re.search(r"- \*\*(?:Requisito Oficial|Declaración|Definición Oficial):\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         requisito = req_m.group(1).strip() if req_m else ""
 
-        int_m = re.search(r"- \*\*(?:Interpretación Técnica|Aplicación en OOMAPASC|Criterio OOMAPASC|Nota Clave).+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
+        int_m = re.search(r"- \*\*(?:Interpretación.+?|Aplicación.+?|Criterio OOMAPASC|Nota Clave):\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         interpretacion = int_m.group(1).strip() if int_m else ""
 
-        evi_m = re.search(r"- \*\*Evidencia Objetiva(?: Requerida)?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
+        evi_m = re.search(r"- \*\*Evidencia(?:s)? Objetiva(?:s)?(?: Requerida(?:s)?)?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         evidencia = evi_m.group(1).strip() if evi_m else ""
 
-        cri_m = re.search(r"- \*\*Criterio de Auditoría.+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
+        cri_m = re.search(r"- \*\*Criterio (?:Universal )?de Auditoría.+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         criterio = cri_m.group(1).strip() if cri_m else ""
 
         if not requisito and not interpretacion:
