@@ -212,13 +212,6 @@ const PREGUNTAS_CATEGORIZADAS = [
   }
 ];
 
-const CHIPS_RAPIDOS = [
-  { label: '⚡ ¿Qué tengo pendiente hoy?', query: '¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.', norma: '' },
-  { label: '⚠️ Docs. >1 año sin revisar (§ 7.5.3)', query: '¿Qué procedimientos o registros de mi área tienen más de 1 año sin actualizar y requieren revisión periódica activa según ISO 9001 § 7.5.3?', norma: 'ISO-9001-2026' },
-  { label: '🎯 Estado de Indicadores (OOMRSC-05)', query: '¿Cómo van los indicadores oficiales de mi área en el Cuadro de Control OOMRSC-05? ¿Cuáles están cumplidos y cuáles en semáforo crítico?', norma: '' },
-  { label: '⏳ Planes próximos a vencer (OOMRSC-21)', query: '¿Qué planes de mejora de mi área están próximos a vencer su fecha compromiso y qué presupuesto tienen asignado?', norma: '' },
-  { label: '🛡️ Cierre OOMRSC-20 (§ 10.2)', query: '¿Cómo documentar el análisis de causa raíz y el cierre efectivo de una Acción Correctiva en el formato OOMRSC-20 conforme al 10.2?', norma: 'ISO-9001-2026' }
-];
 
 export default function AgenteISOView({ setActiveTab }) {
   const {
@@ -963,23 +956,6 @@ export default function AgenteISOView({ setActiveTab }) {
                   </button>
                 )}
               </div>
-            </div>
-
-            {/* Fila 3: Chips Rápidos de Sugerencias (Más visibles, legibles y elegantes) */}
-            <div className="flex items-center gap-2 flex-wrap py-0.5">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
-                Sugerencias:
-              </span>
-              {CHIPS_RAPIDOS.map((chip, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleEnviarConsulta(chip.query, chip.norma)}
-                  disabled={enviando}
-                  className="px-3 py-1 bg-white hover:bg-sky-50 border border-slate-300 hover:border-sky-400 rounded-lg text-xs font-semibold text-slate-800 hover:text-sky-950 transition-all shrink-0 cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1"
-                >
-                  {chip.label}
-                </button>
-              ))}
             </div>
           </div>
 
