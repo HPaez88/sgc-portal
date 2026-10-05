@@ -644,35 +644,35 @@ export default function AgenteISOView({ setActiveTab }) {
       // Títulos
       if (line.startsWith('### ')) {
         elements.push(
-          <h4 key={i} className="font-black text-xs text-[#002855] mt-3 mb-1 flex items-center gap-1.5">
+          <h4 key={i} className="font-bold text-xs text-[#002855] mt-2 mb-0.5 flex items-center gap-1.5">
             {formatBold(line.replace('### ', ''))}
           </h4>
         );
       } else if (line.startsWith('## ')) {
         elements.push(
-          <h3 key={i} className="font-black text-sm text-[#002855] mt-3.5 mb-1.5 border-b border-slate-200 pb-1 flex items-center gap-1.5">
+          <h3 key={i} className="font-bold text-[12.5px] text-[#002855] mt-2 mb-0.5 border-b border-slate-200 pb-0.5 flex items-center gap-1.5">
             {formatBold(line.replace('## ', ''))}
           </h3>
         );
       } else if (line.startsWith('# ')) {
         elements.push(
-          <h2 key={i} className="font-black text-base text-[#002855] mt-4 mb-2">
+          <h2 key={i} className="font-extrabold text-[13px] text-[#002855] mt-2.5 mb-1">
             {formatBold(line.replace('# ', ''))}
           </h2>
         );
       } else if (line.trim().startsWith('• ') || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         elements.push(
-          <li key={i} className="ml-3.5 list-disc text-[12px] text-slate-700 my-0.5 leading-snug">
+          <li key={i} className="ml-3.5 list-disc text-xs text-slate-700 my-0.5 leading-snug">
             {formatBold(line.trim().substring(2))}
           </li>
         );
       } else if (line.trim() === '') {
-        elements.push(<div key={i} className="h-1" />);
+        elements.push(<div key={i} className="h-0.5" />);
       } else if (line.trim() === '---') {
-        elements.push(<hr key={i} className="my-2 border-slate-200" />);
+        elements.push(<hr key={i} className="my-1.5 border-slate-200" />);
       } else {
         elements.push(
-          <p key={i} className="text-[12.5px] text-slate-700 leading-relaxed my-0.5">
+          <p key={i} className="text-xs text-slate-700 leading-normal my-0.5">
             {formatBold(line)}
           </p>
         );
@@ -965,9 +965,9 @@ export default function AgenteISOView({ setActiveTab }) {
               </div>
             </div>
 
-            {/* Fila 3: Chips Rápidos de Sugerencias (sin barra horizontal, con ajuste limpio) */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider shrink-0 mr-0.5">
+            {/* Fila 3: Chips Rápidos de Sugerencias (Más visibles, legibles y elegantes) */}
+            <div className="flex items-center gap-2 flex-wrap py-0.5">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
                 Sugerencias:
               </span>
               {CHIPS_RAPIDOS.map((chip, idx) => (
@@ -975,7 +975,7 @@ export default function AgenteISOView({ setActiveTab }) {
                   key={idx}
                   onClick={() => handleEnviarConsulta(chip.query, chip.norma)}
                   disabled={enviando}
-                  className="px-2 py-0.5 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-md text-[10.5px] font-medium text-slate-700 hover:text-sky-900 transition-all shrink-0 cursor-pointer shadow-2xs disabled:opacity-50"
+                  className="px-3 py-1 bg-white hover:bg-sky-50 border border-slate-300 hover:border-sky-400 rounded-lg text-xs font-semibold text-slate-800 hover:text-sky-950 transition-all shrink-0 cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1"
                 >
                   {chip.label}
                 </button>
@@ -984,41 +984,41 @@ export default function AgenteISOView({ setActiveTab }) {
           </div>
 
           {/* Mensajes a ancho completo con protagonismo visual */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-gradient-to-b from-slate-50/50 via-white to-white">
+          <div className="flex-1 p-3.5 sm:p-5 overflow-y-auto space-y-3 bg-gradient-to-b from-slate-50/50 via-white to-white">
             {mensajes.map((m) => {
               const esUsuario = m.emisor === 'usuario';
               return (
                 <div
                   key={m.id}
-                  className={`flex gap-4 ${esUsuario ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-3 ${esUsuario ? 'justify-end' : 'justify-start'}`}
                 >
                   {!esUsuario && (
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0 mt-0.5">
-                      <Bot size={22} />
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0 mt-0.5">
+                      <Bot size={18} />
                     </div>
                   )}
 
                   <div
-                    className={`max-w-[95%] lg:max-w-[90%] rounded-2xl p-5 shadow-sm text-xs ${
+                    className={`max-w-[95%] lg:max-w-[90%] rounded-xl p-3.5 sm:p-4 shadow-xs text-xs ${
                       esUsuario
                         ? 'bg-[#002855] text-white rounded-tr-none'
-                        : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none ring-1 ring-slate-100'
+                        : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none ring-1 ring-slate-100'
                     }`}
                   >
                     {/* Badge y Timestamp */}
-                    <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-100">
+                    <div className="flex items-center justify-between gap-3 mb-2 pb-1.5 border-b border-slate-100">
                       <span className={`font-bold text-xs ${esUsuario ? 'text-sky-300' : 'text-[#002855]'}`}>
                         {esUsuario ? (usuarioLogueado?.nombre || 'Auditor / Usuario') : 'Agente Asesor Normativo ISO'}
                       </span>
-                      <span className={`text-[10px] font-mono ${esUsuario ? 'text-slate-300' : 'text-slate-400'}`}>
+                      <span className={`text-[10.5px] font-mono ${esUsuario ? 'text-slate-300' : 'text-slate-400'}`}>
                         {m.timestamp}
                       </span>
                     </div>
 
                     {/* Contenido formateado */}
-                    <div className="space-y-1.5 leading-relaxed">
+                    <div className="space-y-1 leading-normal text-xs">
                       {esUsuario ? (
-                        <p className="leading-relaxed font-semibold text-sm">{m.texto}</p>
+                        <p className="leading-normal font-medium text-xs">{m.texto}</p>
                       ) : (
                         renderMarkdown(m.texto)
                       )}
