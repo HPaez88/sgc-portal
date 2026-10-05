@@ -62,7 +62,15 @@
 ### Indicadores
 - **Agente:** sgc-indicadores-agent
 - **Componente:** `IndicadoresView.jsx`
-- **CANTIDAD:** 86 indicadores
+- **Formulario:** OOMRSC-05 Rev. 37 (Cuadro de Control de Desempeño)
+- **CANTIDAD:** 100 indicadores oficiales (#0 a #99)
+- **Metodología:** Semáforo institucional (🟢 ≥90% | 🟡 80-89% | 🔴 ≤79%), metas trimestrales T1-T4 y bitácora de Reportes de Corrección (RC).
+
+### Revisión por la Dirección
+- **Agente:** sgc-revision-agent
+- **Componente:** `RevisionDireccionView.jsx`
+- **Formulario:** OOMRSC-04 Rev. 09
+- **Cláusulas ISO:** 9.3.2 (Entradas A-F) y 9.3.3 (Salidas y Acuerdos) con formularios complementarios y regla de captura de los primeros 10 días.
 
 ### Riesgos
 - **Agente:** sgc-riesgos-agent
@@ -71,7 +79,7 @@
 ### Documentos & Trazabilidad
 - **Agente:** sgc-documentos-agent
 - **Componente:** `DocumentosView.jsx`
-- **Pestañas:** Catálogo de Documentos, Matriz de Trazabilidad, Bitácora de Auditoría
+- **Pestañas:** Catálogo de Documentos, Matriz de Trazabilidad, Bitácora de Auditoría, Gobernanza de IA & TI (POL-TI-01)
 
 ### Auditorías
 - **Agente:** sgc-auditorias-agent
