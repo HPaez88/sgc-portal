@@ -519,66 +519,59 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
           </div>
         </div>
 
-        {/* Switch de Vistas y Botones de Acción */}
-        <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto justify-end">
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold">
-            <button
-              onClick={() => setVistaActiva('catalogo')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${vistaActiva === 'catalogo'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              <Layers size={14} /> Catálogo ({safeDocs.length})
-            </button>
-            <button
-              onClick={() => setVistaActiva('matriz')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${vistaActiva === 'matriz'
-                ? 'bg-white text-[#0B192C] shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              <Network size={14} className="text-sky-600" /> Matriz de Trazabilidad
-            </button>
-            <button
-              onClick={() => setVistaActiva('bitacora')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${vistaActiva === 'bitacora'
-                ? 'bg-white text-amber-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              <History size={14} className="text-amber-600" /> Bitácora
-            </button>
-            <button
-              onClick={() => setVistaActiva('gobernanza_ia')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${vistaActiva === 'gobernanza_ia'
-                ? 'bg-white text-purple-900 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-                }`}
-            >
-              <Sparkles size={14} className="text-purple-600" /> Gobernanza IA & TI
-              <span className="px-1.5 py-0.2 text-[9px] bg-purple-100 text-purple-800 rounded font-mono font-bold">POL-TI-01</span>
-            </button>
-          </div>
+        {/* Switch de Vistas y Pestañas Táctiles Elevadas */}
+        <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200 shadow-inner flex-wrap w-full lg:w-auto justify-start lg:justify-end">
+          <button
+            onClick={() => setVistaActiva('catalogo')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${vistaActiva === 'catalogo'
+              ? 'bg-gradient-to-r from-[#0B192C] to-[#1E3E62] text-white shadow-md scale-[1.02]'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+              }`}
+          >
+            <Layers size={14} className={vistaActiva === 'catalogo' ? 'text-sky-300' : 'text-slate-500'} />
+            <span>Catálogo</span>
+            <span className={`px-1.5 py-0.5 text-[10px] font-mono rounded-md ${vistaActiva === 'catalogo' ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200 text-slate-700'
+              }`}>
+              {safeDocs.length}
+            </span>
+          </button>
 
-          {vistaActiva !== 'bitacora' && vistaActiva !== 'gobernanza_ia' && (
-            <>
-              <button
-                onClick={exportarMatrizCSV}
-                title="Exportar matriz completa con citas y referencias a CSV"
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
-              >
-                <FileSpreadsheet size={15} /> Exportar Matriz
-              </button>
+          <button
+            onClick={() => setVistaActiva('matriz')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${vistaActiva === 'matriz'
+              ? 'bg-gradient-to-r from-[#0B192C] to-[#1E3E62] text-white shadow-md scale-[1.02]'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+              }`}
+          >
+            <Network size={14} className={vistaActiva === 'matriz' ? 'text-sky-300' : 'text-sky-600'} />
+            <span>Matriz de Trazabilidad</span>
+          </button>
 
-              <button
-                onClick={abrirNuevoModal}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
-              >
-                <Plus size={16} strokeWidth={2.5} /> Nuevo Documento
-              </button>
-            </>
-          )}
+          <button
+            onClick={() => setVistaActiva('bitacora')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${vistaActiva === 'bitacora'
+              ? 'bg-gradient-to-r from-[#0B192C] to-[#1E3E62] text-white shadow-md scale-[1.02]'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+              }`}
+          >
+            <History size={14} className={vistaActiva === 'bitacora' ? 'text-amber-300' : 'text-amber-600'} />
+            <span>Bitácora</span>
+          </button>
+
+          <button
+            onClick={() => setVistaActiva('gobernanza_ia')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${vistaActiva === 'gobernanza_ia'
+              ? 'bg-gradient-to-r from-purple-900 to-indigo-950 text-white shadow-md scale-[1.02] border border-purple-500/30'
+              : 'text-slate-600 hover:text-purple-900 hover:bg-white/80'
+              }`}
+          >
+            <Sparkles size={14} className={vistaActiva === 'gobernanza_ia' ? 'text-purple-300' : 'text-purple-600'} />
+            <span>Gobernanza IA & TI</span>
+            <span className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-md ${vistaActiva === 'gobernanza_ia' ? 'bg-purple-500/30 text-purple-200' : 'bg-purple-100 text-purple-800'
+              }`}>
+              POL-TI-01
+            </span>
+          </button>
         </div>
       </div>
 
@@ -633,6 +626,25 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
                   title="Limpiar filtros"
                 >
                   <RefreshCw size={13} />
+                </button>
+              )}
+
+              <div className="h-6 w-px bg-slate-200 hidden sm:block mx-1" />
+
+              <button
+                onClick={exportarMatrizCSV}
+                title="Exportar catálogo oficial y matriz a CSV"
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <FileSpreadsheet size={14} /> Exportar CSV
+              </button>
+
+              {puedeAdministrar && (
+                <button
+                  onClick={abrirNuevoModal}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                >
+                  <Plus size={15} strokeWidth={2.5} /> Nuevo Documento
                 </button>
               )}
             </div>
@@ -794,6 +806,29 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
               })}
             </div>
           )}
+
+          {/* BARRA INFERIOR DE ACCIÓN DEL CATÁLOGO */}
+          <div className="bg-white p-4 rounded-xl shadow-card-subtle border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div className="text-xs text-slate-500 font-medium">
+              Mostrando <strong className="text-slate-900 font-bold">{docsFiltrados.length}</strong> de <strong className="text-slate-900 font-bold">{safeDocs.length}</strong> documentos del catálogo oficial
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={exportarMatrizCSV}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                <FileSpreadsheet size={15} className="text-emerald-600" /> Exportar Catálogo CSV
+              </button>
+              {puedeAdministrar && (
+                <button
+                  onClick={abrirNuevoModal}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  <Plus size={16} strokeWidth={2.5} /> Nuevo Documento
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -882,12 +917,22 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
               {(busquedaMatriz || filtroTipoMatriz || filtroAreaMatriz) && (
                 <button
                   onClick={() => { setBusquedaMatriz(''); setFiltroTipoMatriz(''); setFiltroAreaMatriz(''); }}
-                  className="px-2.5 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-lg transition-colors"
+                  className="px-2.5 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-lg transition-colors cursor-pointer"
                   title="Limpiar filtros de matriz"
                 >
                   <RefreshCw size={13} />
                 </button>
               )}
+
+              <div className="h-6 w-px bg-slate-200 hidden sm:block mx-1" />
+
+              <button
+                onClick={exportarMatrizCSV}
+                title="Exportar matriz completa de trazabilidad a CSV"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <FileSpreadsheet size={14} /> Exportar Matriz
+              </button>
             </div>
           </div>
 
@@ -899,8 +944,8 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
                   <th className="py-3 px-4">Clave Oficial</th>
                   <th className="py-3 px-4">Documento / Procedimiento</th>
                   <th className="py-3 px-4">Tipo / Área</th>
-                  <th className="py-3 px-4">Documentos que lo Citan (Aguas Arriba)</th>
-                  <th className="py-3 px-4">Registros que Utiliza (Aguas Abajo)</th>
+                  <th className="py-3 px-4">Documentos que lo Citan</th>
+                  <th className="py-3 px-4">Formatos y Registros que Utiliza</th>
                   <th className="py-3 px-4 text-center">Ficha Técnica</th>
                 </tr>
               </thead>
@@ -999,18 +1044,28 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
             </table>
           </div>
 
-          {/* Paginación de la matriz */}
-          {totalPaginasMatriz > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-xs">
-              <span className="text-slate-500 font-mono">
-                Página {paginaMatriz} de {totalPaginasMatriz}
+          {/* Barra inferior y Paginación de la matriz */}
+          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 px-5 py-3.5 text-xs gap-3 bg-slate-50">
+            <div className="flex items-center gap-3">
+              <span className="text-slate-600 font-medium">
+                Página <strong className="font-mono text-slate-900">{paginaMatriz}</strong> de <strong className="font-mono text-slate-900">{totalPaginasMatriz || 1}</strong> ({docsMatrizFiltrados.length} documentos)
               </span>
+              <span className="text-slate-300">|</span>
+              <button
+                onClick={exportarMatrizCSV}
+                className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
+              >
+                <FileSpreadsheet size={14} /> Descargar matriz completa en formato CSV
+              </button>
+            </div>
+
+            {totalPaginasMatriz > 1 && (
               <div className="flex gap-2">
                 <button
                   type="button"
                   disabled={paginaMatriz === 1}
                   onClick={() => setPaginaMatriz(p => Math.max(1, p - 1))}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 shadow-2xs cursor-pointer"
                 >
                   Anterior
                 </button>
@@ -1018,13 +1073,13 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
                   type="button"
                   disabled={paginaMatriz === totalPaginasMatriz}
                   onClick={() => setPaginaMatriz(p => Math.min(totalPaginasMatriz, p + 1))}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 shadow-2xs cursor-pointer"
                 >
                   Siguiente
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -1217,10 +1272,10 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
                       </span>
                     </div>
 
-                    {/* GRID DE RELACIONES: AGUAS ARRIBA Y AGUAS ABAJO LADO A LADO */}
+                    {/* GRID DE RELACIONES DE TRAZABILIDAD */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                       {/* ========================================================= */}
-                      {/* SECCIÓN A: DOCUMENTOS QUE CITAN ESTE DOCUMENTO (AGUAS ARRIBA) */}
+                      {/* SECCIÓN A: DOCUMENTOS QUE CITAN ESTE DOCUMENTO */}
                       {/* ========================================================= */}
                       <div className="border border-amber-200/80 rounded-xl overflow-hidden bg-amber-50/20 flex flex-col justify-between">
                         <div className="p-3.5 bg-amber-50/80 border-b border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1302,7 +1357,7 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
                       </div>
 
                       {/* ========================================================= */}
-                      {/* SECCIÓN B: FORMATOS Y REGISTROS QUE UTILIZA (AGUAS ABAJO) */}
+                      {/* SECCIÓN B: FORMATOS Y REGISTROS QUE UTILIZA */}
                       {/* ========================================================= */}
                       <div className="border border-sky-200/80 rounded-xl overflow-hidden bg-sky-50/20 flex flex-col justify-between">
                         <div className="p-3.5 bg-sky-50/80 border-b border-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">

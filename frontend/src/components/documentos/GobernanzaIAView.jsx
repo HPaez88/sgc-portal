@@ -80,7 +80,7 @@ export default function GobernanzaIAView({ usuarioLogueado }) {
         },
         {
           titulo: '2. ARQUITECTURA RAG (GENERACIÓN AUMENTADA POR RECUPERACIÓN) Y FUENTES NORMATIVAS',
-          contenido: 'El Asesor Normativo SGC opera mediante una arquitectura RAG estricta y determinista. La base de conocimiento se alimenta exclusivamente de normas internacionales oficiales indexadas:\n• ISO 9001:2015 / ISO 9001:2026 (Gestión de Calidad, Enmiendas de Cambio Climático y Transformación Digital).\n• ISO 14001:2015 (Gestión Ambiental y Conservación del Recurso Hídrico).\n• ISO 45001:2018 (Seguridad y Salud Ocupacional del Personal Operativo).\n• ISO 19011:2018 (Directrices para Auditorías de Sistemas de Gestión).\n• ISO/IEC 42001:2023 (Sistemas de Gestión de Inteligencia Artificial).\n• Manual de Calidad, Procedimientos y Formatos Internos de OOMAPASC (OOMRSC-20, OOMRSC-21, OOMRSC-04).\nSe prohíben respuestas especulativas o no fundamentadas en cláusulas oficiales.'
+          contenido: 'El Asesor Normativo SGC opera mediante una arquitectura RAG estricta y determinista. La base de conocimiento se fundamenta exclusivamente en normas internacionales oficiales indexadas:\n• ISO 9001:2015 / ISO 9001:2026 — Sistemas de Gestión de la Calidad (Requisitos).\n• ISO 14001:2015 — Sistemas de Gestión Ambiental (Requisitos con orientación para su uso).\n• ISO 45001:2018 — Sistemas de Gestión de la Seguridad y Salud en el Trabajo (Requisitos).\n• ISO 19011:2018 — Directrices para la Auditoría de los Sistemas de Gestión.\n• ISO/IEC 42001:2023 — Sistemas de Gestión de Inteligencia Artificial (SGIA / AIMS).\n• ISO/IEC 27001:2022 — Sistemas de Gestión de Seguridad de la Información (SGSI).\n• ISO/IEC 20000-1:2018 — Gestión de Servicios de Tecnologías de la Información (GSTI).\n• Manual de Calidad, Procedimientos y Formatos Internos de OOMAPASC (OOMRSC-20, OOMRSC-21, OOMRSC-04).\nSe prohíben respuestas especulativas o no fundamentadas en cláusulas oficiales.'
         },
         {
           titulo: '3. PRINCIPIO FUNDAMENTAL: SUPERVISIÓN HUMANA (HUMAN-IN-THE-LOOP)',
@@ -262,54 +262,170 @@ export default function GobernanzaIAView({ usuarioLogueado }) {
         </div>
 
         {/* Sección 2: Base de Conocimiento y Normas Oficiales */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider font-mono flex items-center gap-2">
-            <Layers size={16} className="text-sky-600" />
-            2. Repositorio de Conocimiento Normativo Oficial (ISO & Interna)
-          </h4>
-          <p className="text-xs text-slate-700 leading-relaxed text-justify">
-            Para garantizar que el Asesor Normativo y los generadores de borradores de Acciones Correctivas (OOMRSC-20) y Planes de Mejora (OOMRSC-21) no presenten inconsistencias normativas, el sistema consulta un repositorio de conocimiento estructurado indexado en el backend con las siguientes fuentes oficiales:
-          </p>
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider font-mono flex items-center gap-2">
+              <Layers size={16} className="text-sky-600" />
+              2. Repositorio de Conocimiento Normativo Oficial (ISO & Ecosistema Multi-Gestión)
+            </h4>
+            <p className="text-xs text-slate-700 leading-relaxed text-justify mt-1">
+              Para garantizar que el Asesor Normativo y los generadores de borradores de Acciones Correctivas (OOMRSC-20) y Planes de Mejora (OOMRSC-21) no presenten inconsistencias normativas, el sistema consulta un repositorio estructurado de conocimiento indexado en el backend con las siguientes normas internacionales oficiales:
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-              <strong className="text-slate-900 font-bold flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-sky-600" />
-                ISO 9001:2015 / ISO 9001:2026
-              </strong>
-              <p className="text-slate-600 text-[11px]">
-                Gestión de la Calidad, Enmiendas de Acción Climática (Cláusulas 4.1 y 4.2), Enfoque a Procesos y Gestión de Riesgos.
-              </p>
+          {/* Sub-bloque A: Normas Core del SGC */}
+          <div className="space-y-2">
+            <span className="text-xs font-extrabold text-[#002855] uppercase tracking-wider block">
+              A) Normas Oficiales de Gestión y Auditoría (SGC Base):
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <strong className="text-slate-900 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={14} className="text-sky-600 shrink-0" />
+                  ISO 9001:2015 / ISO 9001:2026
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Sistemas de Gestión de la Calidad — Requisitos.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <strong className="text-slate-900 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                  ISO 14001:2015
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Sistemas de Gestión Ambiental — Requisitos con orientación para su uso.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <strong className="text-slate-900 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={14} className="text-amber-600 shrink-0" />
+                  ISO 45001:2018
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Sistemas de Gestión de la Seguridad y Salud en el Trabajo — Requisitos con orientación para su uso.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <strong className="text-slate-900 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={14} className="text-purple-600 shrink-0" />
+                  ISO 19011:2018
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Directrices para la Auditoría de los Sistemas de Gestión.
+                </p>
+              </div>
             </div>
+          </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-              <strong className="text-slate-900 font-bold flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-emerald-600" />
-                ISO 14001:2015
-              </strong>
-              <p className="text-slate-600 text-[11px]">
-                Sistemas de Gestión Ambiental, preservación del agua, uso sustentable de energía y tratamiento de aguas residuales.
-              </p>
+          {/* Sub-bloque B: Normas de Tecnologías de la Información (TI) y Gobernanza de Inteligencia Artificial (IA) */}
+          <div className="space-y-2 pt-1">
+            <span className="text-xs font-extrabold text-purple-900 uppercase tracking-wider block flex items-center gap-1.5">
+              <Cpu size={14} className="text-purple-700" />
+              B) Normas de Tecnologías de Información (TI) y Gobernanza de Inteligencia Artificial:
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3.5 bg-purple-50/50 rounded-xl border border-purple-200 text-xs space-y-1">
+                <strong className="text-purple-950 font-bold flex items-center gap-1.5 text-xs">
+                  <Award size={13} className="text-purple-700 shrink-0" />
+                  ISO/IEC 42001:2023
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Sistemas de Gestión de Inteligencia Artificial (SGIA / AIMS) — Requisitos para gobernanza ética, trazabilidad y gestión de riesgos en modelos de IA.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-purple-50/50 rounded-xl border border-purple-200 text-xs space-y-1">
+                <strong className="text-purple-950 font-bold flex items-center gap-1.5 text-xs">
+                  <Lock size={13} className="text-purple-700 shrink-0" />
+                  ISO/IEC 27001:2022
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Sistemas de Gestión de Seguridad de la Información (SGSI) — Confidencialidad, integridad, no repudio y ciberseguridad en bases de datos.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-purple-50/50 rounded-xl border border-purple-200 text-xs space-y-1">
+                <strong className="text-purple-950 font-bold flex items-center gap-1.5 text-xs">
+                  <Server size={13} className="text-purple-700 shrink-0" />
+                  ISO/IEC 20000-1:2018
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Gestión de Servicios de Tecnologías de la Información (GSTI) — Entrega, operación, mesa de ayuda y continuidad del servicio digital.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-purple-50/50 rounded-xl border border-purple-200 text-xs space-y-1">
+                <strong className="text-purple-950 font-bold flex items-center gap-1.5 text-xs">
+                  <Scale size={13} className="text-purple-700 shrink-0" />
+                  ISO/IEC 38500:2024
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Gobernanza de las Tecnologías de la Información para las Organizaciones — Principios rectores para la supervisión y dirección estratégica de TI.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-purple-50/50 rounded-xl border border-purple-200 text-xs space-y-1 md:col-span-2">
+                <strong className="text-purple-950 font-bold flex items-center gap-1.5 text-xs">
+                  <BookOpen size={13} className="text-purple-700 shrink-0" />
+                  ISO/IEC 22989:2022
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Tecnologías de la Información — Inteligencia Artificial — Conceptos Fundamentales, Ciclo de Vida y Terminología Normalizada.
+                </p>
+              </div>
             </div>
+          </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-              <strong className="text-slate-900 font-bold flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-amber-600" />
-                ISO 45001:2018
-              </strong>
-              <p className="text-slate-600 text-[11px]">
-                Seguridad y Salud en el Trabajo para cuadrillas de alcantarillado, plantas potabilizadoras y manejo de cloro gas.
-              </p>
-            </div>
+          {/* Sub-bloque C: Normas Recomendadas para Integración Multi-Sistema de Gestión (Multi-SGC / Anexo SL) */}
+          <div className="space-y-2 pt-1">
+            <span className="text-xs font-extrabold text-teal-900 uppercase tracking-wider block flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-teal-700" />
+              C) Normas Recomendadas para Ampliación a un Multi-Sistema de Gestión Integrado (HLS / Anexo SL):
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-3.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs space-y-1">
+                <strong className="text-teal-950 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={13} className="text-teal-700 shrink-0" />
+                  ISO 37001:2016 — Sistemas de Gestión Antisoborno (SGAS)
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Prevención, detección y tratamiento de actos de soborno y corrupción en licitaciones, compras y gestión pública del agua.
+                </p>
+              </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-              <strong className="text-slate-900 font-bold flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-purple-600" />
-                ISO 19011:2018 & ISO/IEC 42001:2023
-              </strong>
-              <p className="text-slate-600 text-[11px]">
-                Directrices para auditorías de sistemas de gestión y gobernanza ética de Inteligencia Artificial en el sector público.
-              </p>
+              <div className="p-3.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs space-y-1">
+                <strong className="text-teal-950 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={13} className="text-teal-700 shrink-0" />
+                  ISO 37301:2021 — Sistemas de Gestión de Cumplimiento (Compliance)
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Aseguramiento del cumplimiento legal, normativo, ambiental (CONAGUA/SEMARNAT) y sanitario (NOM-127-SSA1-2021).
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs space-y-1">
+                <strong className="text-teal-950 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={13} className="text-teal-700 shrink-0" />
+                  ISO 50001:2018 — Sistemas de Gestión de la Energía (SGEn)
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Eficiencia y reducción de consumo energético en estaciones de rebombeo, pozos profundos y plantas potabilizadoras.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-teal-50/40 rounded-xl border border-teal-200 text-xs space-y-1">
+                <strong className="text-teal-950 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 size={13} className="text-teal-700 shrink-0" />
+                  ISO 22301:2019 — Sistemas de Gestión de la Continuidad del Negocio (SGCN)
+                </strong>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Resiliencia operativa para garantizar el suministro ininterrumpido de agua potable ante contingencias climáticas o fallas de infraestructura.
+                </p>
+              </div>
             </div>
           </div>
         </div>
