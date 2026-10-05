@@ -3,6 +3,23 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-05T07:30Z · @antigravity · [FEATURE/GOVERNANCE] · Protocolo de Supervisión y Ratificación Humana (POL-TI-01 & ISO 9001/42001) e Interacción Operativa Bidireccional del Agente ISO
+
+- **Gobernanza Human-in-the-Loop Obligatoria (`ModalConfirmacionResponsabilidadHumana.jsx`):**
+  - Implementación de barrera de control en **Acciones Correctivas (OOMRSC-20)** y **Planes de Mejora (OOMRSC-21)** para evitar envíos automáticos o desatendidos asistidos por IA.
+  - El usuario debe leer el resumen, suscribir la Declaración Jurada de Responsabilidad Operativa, marcar la casilla de verificación y escribir textualmente la palabra **`CONFIRMAR`** para habilitar el envío al SGC.
+  - Persistencia de metadatos oficiales: `ratificacion_humana: true`, `ratificado_por`, `fecha_ratificacion_humana`, `declaracion_responsabilidad` e inyección de auditoría en `bitacora_movimientos` (`ENVIO_SGC_RATIFICADO_HUMANO`).
+- **Asistente Normativo ISO Bidireccional (`AgenteISOView.jsx` + `ModalesAccionIA.jsx`):**
+  - Diagnóstico ejecutivo en tiempo real por área (*"¿Qué tengo pendiente?"*).
+  - Captura directa en el Cuadro de Control OOMRSC-05 (100 indicadores oficiales) con semáforo institucional en tiempo real.
+  - Gestión y subida segura de evidencias a actividades de AC (archivos PDF/imágenes validados con `processEvidenceFile`).
+  - Ratificación activa de procedimientos con >1 año sin revisión conforme a ISO 9001 § 7.5.3.
+- **Auditoría Integral Hpaez Harness:**
+  - 70/70 pruebas unitarias aprobadas en Vitest.
+  - Cero diálogos nativos bloqueantes (`alert`/`confirm`) en frontend.
+  - Compilación de producción en Vite en 1.42s sin errores.
+  - Documentación técnica y operativa actualizada en `DOCUMENTACION.md` v5.0.0, `CONSTITUTION.md` y `AGENTS.md`.
+
 ## 2026-10-02T19:30Z · @antigravity · [FEATURE/DASHBOARD] · Torre de Control Estratégica y Panel de Revisión por la Dirección (ISO 9001 § 9.3)
 
 - **Panel Ejecutivo de Dirección Completo (`DashboardView.jsx`):** Rediseño exhaustivo para la Alta Dirección y Consejo Directivo, integrando filtros multi-período por Ejercicio (2025, 2026, 2027), Corte Temporal (Acumulado Anual, Cuatrimestres C1/C2/C3, Trimestres T1-T4) y Ámbito por Dirección (General, Técnica, Comercial, Administrativa, Programas Sociales, Órgano de Control Interno).

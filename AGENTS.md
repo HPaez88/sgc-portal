@@ -52,12 +52,15 @@
 - **Agente:** sgc-ac-agent
 - **Componente:** `AccionCorrectivaView.jsx`
 - **Formulario:** OOMRSC-20
-- **Estados:** BORRADOR → RECHAZADO → APROBADO → EN_SEGUIMIENTO → CERRADO (con transiciones para: actualizar, reabrir, aprobar, cerrar, asignar auditor, solicitar replanteo)
+- **Gobernanza Human-in-the-Loop:** `ModalConfirmacionResponsabilidadHumana.jsx` exige lectura obligatoria, declaración jurada de responsabilidad operativa y confirmación escrita con la palabra `CONFIRMAR` antes de enviar al SGC.
+- **Estados:** BORRADOR → EN_REVISION (con ratificación humana) → EN_SEGUIMIENTO (con folio oficial) → REVISION_AUDITOR → CERRADO_EFECTIVO / CERRADO_NO_EFECTIVO.
 
 ### PM (Planes de Mejora)
 - **Agente:** sgc-pm-agent
 - **Componente:** `PlanMejoraView.jsx`
 - **Formulario:** OOMRSC-21
+- **Gobernanza Human-in-the-Loop:** Ratificación obligatoria con `ModalConfirmacionResponsabilidadHumana.jsx` y palabra clave `CONFIRMAR`.
+- **Estados:** BORRADOR → EN_REVISION → EN_SEGUIMIENTO → SOLICITUD_CIERRE → REVISION_AUDITOR → CERRADO_EFECTIVO.
 
 ### Indicadores
 - **Agente:** sgc-indicadores-agent
@@ -90,6 +93,7 @@
 - **Componente:** `AgenteISOView.jsx`
 - **Backend Service:** `iso_rag_service.py`
 - **Base de Conocimiento:** `backend/knowledge/isos/` (ISO 9001:2015, ISO 14001:2015, ISO 45001:2018, ISO 19011:2018) y `backend/knowledge/custom/`
+- **Interacciones Bidireccionales:** Diagnóstico en tiempo real (*"¿Qué tengo pendiente?"*), captura de indicadores OOMRSC-05 (`ModalActualizarIndicadorIA`), gestión de evidencias de AC (`ModalGestionarActividadEvidenciaIA`), y ratificación activa de procedimientos con >1 año sin revisión (§ 7.5.3).
 
 ---
 
