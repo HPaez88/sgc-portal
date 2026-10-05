@@ -84,6 +84,7 @@ export function ToastProvider({ children }) {
     notificar,
     cerrar,
     success: (mensaje, opciones) => notificar(mensaje, { ...(opciones || {}), tipo: 'success' }),
+    exito: (mensaje, opciones) => notificar(mensaje, { ...(opciones || {}), tipo: 'success' }),
     error: (mensaje, opciones) => notificar(mensaje, { ...(opciones || {}), tipo: 'error' }),
     warning: (mensaje, opciones) => notificar(mensaje, { ...(opciones || {}), tipo: 'warning' }),
     info: (mensaje, opciones) => notificar(mensaje, { ...(opciones || {}), tipo: 'info' }),

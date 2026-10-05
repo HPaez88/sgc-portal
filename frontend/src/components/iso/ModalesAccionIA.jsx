@@ -19,7 +19,8 @@ import {
   Activity,
   CheckSquare,
   Square,
-  FileText
+  FileText,
+  TrendingUp
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
@@ -49,14 +50,16 @@ export function ModalActualizarIndicadorIA({
   isOpen,
   onClose,
   indicadorPreseleccionado = null,
+  indicadorInicial = null,
   indicadoresData = {},
   setIndicadoresData,
   usuarioLogueado,
   registrarMovimiento,
   onAccionConfirmada
 }) {
+  const indPre = indicadorPreseleccionado || indicadorInicial;
   const mesActualIndex = Math.min(new Date().getMonth(), 11);
-  const [indicadorId, setIndicadorId] = useState(indicadorPreseleccionado?.id ?? 0);
+  const [indicadorId, setIndicadorId] = useState(indPre?.id ?? 0);
   const [mes, setMes] = useState(MESES[mesActualIndex].clave);
   const [ejercicio, setEjercicio] = useState(2026);
   const [valor, setValor] = useState('');
@@ -65,16 +68,16 @@ export function ModalActualizarIndicadorIA({
 
   // Actualizar cuando cambie el indicador preseleccionado o se abra
   useEffect(() => {
-    if (indicadorPreseleccionado) {
-      setIndicadorId(indicadorPreseleccionado.id);
-      const key = `${indicadorPreseleccionado.id}-${mes}-${ejercicio}`;
+    if (indPre) {
+      setIndicadorId(indPre.id);
+      const key = `${indPre.id}-${mes}-${ejercicio}`;
       const dataG = indicadoresData?.resultados?.[key];
-      const valDef = dataG?.valor !== undefined ? dataG.valor : (indicadorPreseleccionado.valor_default ?? '');
+      const valDef = dataG?.valor !== undefined ? dataG.valor : (indPre.valor_default ?? '');
       setValor(valDef !== null ? String(valDef) : '');
-      setObservacion(dataG?.observacion || indicadorPreseleccionado.observacion_default || '');
-      setAccion(dataG?.accion || indicadorPreseleccionado.accion_default || 'NA');
+      setObservacion(dataG?.observacion || indPre.observacion_default || '');
+      setAccion(dataG?.accion || indPre.accion_default || 'NA');
     }
-  }, [indicadorPreseleccionado, isOpen]);
+  }, [indPre, isOpen]);
 
   const indicadorActivo = useMemo(() => {
     return INDICADORES.find(i => String(i.id) === String(indicadorId)) || INDICADORES[0];
@@ -517,7 +520,7 @@ export function ModalGestionarActividadEvidenciaIA({
         });
       }
 
-      toast.exito(`Evidencia y actividad guardadas correctamente.`);
+      toast.success(`Evidencia y actividad guardadas correctamente.`);
       onClose();
     } catch (err) {
       toast.error(`Error al guardar evidencia: ${err.message}`);
@@ -804,28 +807,32 @@ export function ModalRatificarDocumentoIA({
   isOpen,
   onClose,
   documentoPreseleccionado = null,
+  documentoInicial = null,
   documentos = [],
+  documentosLista = [],
   setDocumentos,
   usuarioLogueado,
   registrarMovimiento,
   onAccionConfirmada
 }) {
-  const [docId, setDocId] = useState(documentoPreseleccionado?.id || documentos[0]?.id || 1);
+  const docPre = documentoPreseleccionado || documentoInicial;
+  const listaDocs = (documentos && documentos.length > 0) ? documentos : (documentosLista || []);
+  const [docId, setDocId] = useState(docPre?.id || listaDocs[0]?.id || 1);
   const [observacion, setObservacion] = useState(
     'Se realizó la revisión técnica periódica del documento con el personal del área y se ratifica su plena vigencia operativa y apego a la práctica en campo conforme a ISO 9001 § 7.5.3.'
   );
 
   useEffect(() => {
-    if (documentoPreseleccionado) {
-      setDocId(documentoPreseleccionado.id);
-    } else if (documentos.length > 0) {
-      setDocId(documentos[0].id);
+    if (docPre) {
+      setDocId(docPre.id);
+    } else if (listaDocs.length > 0) {
+      setDocId(listaDocs[0].id);
     }
-  }, [documentoPreseleccionado, documentos, isOpen]);
+  }, [docPre, listaDocs, isOpen]);
 
   const docActivo = useMemo(() => {
-    return documentos.find(d => String(d.id) === String(docId)) || documentos[0];
-  }, [docId, documentos]);
+    return listaDocs.find(d => String(d.id) === String(docId)) || listaDocs[0];
+  }, [docId, listaDocs]);
 
   const handleRatificar = (e) => {
     e.preventDefault();

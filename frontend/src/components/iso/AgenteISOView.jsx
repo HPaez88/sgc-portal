@@ -676,9 +676,10 @@ export default function AgenteISOView({ setActiveTab }) {
       // Detección de tablas Markdown
       if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
         const tableLines = [];
-        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
-          tableLines.push(lines[i].trim());
-          i++;
+        let j = i;
+        while (j < lines.length && lines[j].trim().startsWith('|') && lines[j].trim().endsWith('|')) {
+          tableLines.push(lines[j].trim());
+          j++;
         }
         if (tableLines.length >= 2) {
           const headerRow = tableLines[0].split('|').slice(1, -1).map(c => c.trim());
@@ -712,6 +713,7 @@ export default function AgenteISOView({ setActiveTab }) {
               </table>
             </div>
           );
+          i = j;
           continue;
         }
       }
@@ -805,13 +807,16 @@ export default function AgenteISOView({ setActiveTab }) {
     );
   };
 
-  const clausulasFiltradas = clausulasNorma.filter(c => {
+  const clausulasFiltradas = (clausulasNorma || []).filter(c => {
+    if (!c) return false;
     if (!busquedaClausula) return true;
     const b = busquedaClausula.toLowerCase();
-    return c.numero.toLowerCase().includes(b) ||
-      c.titulo.toLowerCase().includes(b) ||
-      c.requisito.toLowerCase().includes(b) ||
-      c.interpretacion.toLowerCase().includes(b);
+    return (c.numero || '').toLowerCase().includes(b) ||
+      (c.titulo || '').toLowerCase().includes(b) ||
+      (c.requisito || '').toLowerCase().includes(b) ||
+      (c.interpretacion || '').toLowerCase().includes(b) ||
+      (c.criterio_auditoria || '').toLowerCase().includes(b) ||
+      (c.evidencia_objetiva || '').toLowerCase().includes(b);
   });
 
   return (
@@ -991,37 +996,37 @@ export default function AgenteISOView({ setActiveTab }) {
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="px-2 py-0.5 rounded-md bg-sky-500/20 border border-sky-400/30 text-sky-300 font-extrabold text-[10.5px] flex items-center gap-1">
                   <Activity size={11} className="text-sky-400 animate-pulse" />
-                  <span>Área: {contextoOperativoActual.area}</span>
+                  <span>Área: {contextoOperativoActual?.area || 'General'}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
                   <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
-                    contextoOperativoActual.resumen_conteos.total_ac_pendientes > 0
+                    (contextoOperativoActual?.resumen_conteos?.total_ac_pendientes || 0) > 0
                       ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
                       : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
                   }`}>
-                    <AlertTriangle size={10} /> {contextoOperativoActual.resumen_conteos.total_ac_pendientes} ACs
+                    <AlertTriangle size={10} /> {contextoOperativoActual?.resumen_conteos?.total_ac_pendientes ?? 0} ACs
                   </span>
 
                   <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
-                    contextoOperativoActual.resumen_conteos.total_pm_proximos_vencer > 0
+                    (contextoOperativoActual?.resumen_conteos?.total_pm_proximos_vencer || 0) > 0
                       ? 'bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse'
                       : 'bg-sky-500/20 text-sky-300 border-sky-400/30'
                   }`}>
-                    <TrendingUp size={10} /> {contextoOperativoActual.resumen_conteos.total_pm_activos} PMs
+                    <TrendingUp size={10} /> {contextoOperativoActual?.resumen_conteos?.total_pm_activos ?? 0} PMs
                   </span>
 
                   <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
-                    contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0
+                    (contextoOperativoActual?.resumen_conteos?.total_indicadores_incumplidos || 0) > 0
                       ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
                       : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
                   }`}>
-                    <Target size={10} /> {contextoOperativoActual.resumen_conteos.total_indicadores} Inds. {contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0 ? `(🔴 ${contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos})` : `(🟢 100%)`}
+                    <Target size={10} /> {contextoOperativoActual?.resumen_conteos?.total_indicadores ?? 0} Inds. {(contextoOperativoActual?.resumen_conteos?.total_indicadores_incumplidos || 0) > 0 ? `(🔴 ${contextoOperativoActual?.resumen_conteos?.total_indicadores_incumplidos})` : `(🟢 100%)`}
                   </span>
 
-                  {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
+                  {(contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision || 0) > 0 && (
                     <span className="px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border bg-amber-500/20 text-amber-300 border-amber-400/30">
-                      <FileWarning size={10} /> {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision} Docs &gt;1a
+                      <FileWarning size={10} /> {contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision} Docs &gt;1a
                     </span>
                   )}
                 </div>
@@ -1041,7 +1046,7 @@ export default function AgenteISOView({ setActiveTab }) {
 
                 {/* 2. Actualizar Indicador */}
                 <button
-                  onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
+                  onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual?.indicadores_area?.[0] || null })}
                   className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                   title="Capturar valor en el Cuadro de Control OOMRSC-05"
                 >
@@ -1051,7 +1056,7 @@ export default function AgenteISOView({ setActiveTab }) {
 
                 {/* 3. Subir Evidencia (AC / PM) */}
                 <button
-                  onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null, plan: contextoOperativoActual.planes_proximos_vencer[0] || null })}
+                  onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual?.acciones_pendientes?.[0] || null, plan: contextoOperativoActual?.planes_mejora_activos?.[0] || null })}
                   className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                   title="Subir evidencia o registrar avance a una Acción Correctiva o Plan de Mejora"
                 >
@@ -1060,9 +1065,9 @@ export default function AgenteISOView({ setActiveTab }) {
                 </button>
 
                 {/* 4. Ratificar Doc */}
-                {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
+                {(contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision || 0) > 0 && (
                   <button
-                    onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
+                    onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual?.documentos_antiguos_sin_revision?.[0] || null })}
                     className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                     title="Ratificar vigencia de procedimientos con >1 año sin revisar"
                   >
@@ -1148,7 +1153,7 @@ export default function AgenteISOView({ setActiveTab }) {
                             Acciones Directas:
                           </span>
                           <button
-                            onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
+                            onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual?.indicadores_area?.[0] || null })}
                             className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
                             title="Capturar o actualizar valor de un indicador del área"
                           >
@@ -1156,16 +1161,16 @@ export default function AgenteISOView({ setActiveTab }) {
                             <span>Actualizar Indicador</span>
                           </button>
                           <button
-                            onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null })}
+                            onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual?.acciones_pendientes?.[0] || null, plan: contextoOperativoActual?.planes_mejora_activos?.[0] || null })}
                             className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
                             title="Subir evidencia o marcar actividad de una Acción Correctiva"
                           >
                             <AlertTriangle size={12} className="text-amber-600" />
-                            <span>Subir Evidencia / AC</span>
+                            <span>Subir Evidencia</span>
                           </button>
-                          {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
+                          {(contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision || 0) > 0 && (
                             <button
-                              onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
+                              onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual?.documentos_antiguos_sin_revision?.[0] || null })}
                               className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
                               title="Ratificar revisión activa de documento > 1 año"
                             >
@@ -1695,8 +1700,9 @@ export default function AgenteISOView({ setActiveTab }) {
       <ModalActualizarIndicadorIA
         isOpen={modalIndicadorIA.open}
         onClose={() => setModalIndicadorIA({ open: false, indicador: null })}
+        indicadorPreseleccionado={modalIndicadorIA.indicador}
         indicadorInicial={modalIndicadorIA.indicador}
-        indicadoresLista={contextoOperativoActual.indicadores_area || []}
+        indicadoresLista={contextoOperativoActual?.indicadores_area || []}
         indicadoresData={indicadoresData}
         setIndicadoresData={setIndicadoresData}
         usuarioLogueado={usuarioLogueado}
@@ -1724,7 +1730,9 @@ export default function AgenteISOView({ setActiveTab }) {
       <ModalRatificarDocumentoIA
         isOpen={modalRatificarDocIA.open}
         onClose={() => setModalRatificarDocIA({ open: false, documento: null })}
+        documentoPreseleccionado={modalRatificarDocIA.documento}
         documentoInicial={modalRatificarDocIA.documento}
+        documentos={documentos || []}
         documentosLista={documentos || []}
         setDocumentos={setDocumentos}
         usuarioLogueado={usuarioLogueado}

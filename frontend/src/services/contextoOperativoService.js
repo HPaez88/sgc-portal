@@ -177,6 +177,8 @@ export function generarContextoOperativo({
     periodoActivo: periodoCapturaActivo
   }));
 
+  const pmsProximos = pmsArea.filter(p => p.es_proximo_vencer);
+
   return {
     nombre,
     area,
@@ -185,6 +187,7 @@ export function generarContextoOperativo({
     fecha_consulta: new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
     acciones_pendientes: acsArea,
     planes_mejora_activos: pmsArea,
+    planes_proximos_vencer: pmsProximos,
     indicadores_area: indicadoresDelArea,
     indicadores_incumplidos: indsIncumplidos,
     indicadores_preventivos: indsPreventivos,
@@ -195,7 +198,7 @@ export function generarContextoOperativo({
     resumen_conteos: {
       total_ac_pendientes: acsArea.length,
       total_pm_activos: pmsArea.length,
-      total_pm_proximos_vencer: pmsArea.filter(p => p.es_proximo_vencer).length,
+      total_pm_proximos_vencer: pmsProximos.length,
       total_indicadores: indicadoresDelArea.length,
       total_indicadores_cumplidos: indsAceptables.length,
       total_indicadores_preventivos: indsPreventivos.length,

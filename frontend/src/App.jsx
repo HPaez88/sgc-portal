@@ -24,6 +24,7 @@ import RevisionDireccionView from './components/revision/RevisionDireccionView';
 import ModalInactividad from './components/common/ModalInactividad';
 import LoginView from './components/common/LoginView';
 import BannerObligacionesCaptura from './components/common/BannerObligacionesCaptura';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 
 function App() {
@@ -245,7 +246,9 @@ function App() {
                   </div>
                 </div>
               )}
-              {renderModule()}
+              <ErrorBoundary key={activeTab}>
+                {renderModule()}
+              </ErrorBoundary>
             </div>
           </div>
         </main>
