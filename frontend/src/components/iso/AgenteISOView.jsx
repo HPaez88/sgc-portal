@@ -54,6 +54,11 @@ import {
   generarContextoOperativo,
   generarBriefingMarkdownLocal
 } from '../../services/contextoOperativoService';
+import {
+  ModalActualizarIndicadorIA,
+  ModalGestionarActividadEvidenciaIA,
+  ModalRatificarDocumentoIA
+} from './ModalesAccionIA';
 
 const PREGUNTAS_CATEGORIZADAS = [
   {
@@ -223,10 +228,14 @@ export default function AgenteISOView({ setActiveTab }) {
     usuarioLogueado,
     registrarMovimiento,
     documentos,
+    setDocumentos,
     procesosDetalle,
     accionesCorrectivas,
+    setAccionesCorrectivas,
     planesMejora,
+    setPlanesMejora,
     indicadoresData,
+    setIndicadoresData,
     areasDetalle
   } = useSGC();
   const toast = useToast();
@@ -250,12 +259,17 @@ export default function AgenteISOView({ setActiveTab }) {
   const [documentosConocimiento, setDocumentosConocimiento] = useState([]);
   const [cargandoNormas, setCargandoNormas] = useState(true);
 
+  // Modales de Acción Rápida desde la IA
+  const [modalIndicadorIA, setModalIndicadorIA] = useState({ open: false, indicador: null });
+  const [modalActividadEvidenciaIA, setModalActividadEvidenciaIA] = useState({ open: false, accion: null });
+  const [modalRatificarDocIA, setModalRatificarDocIA] = useState({ open: false, documento: null });
+
   // Chat State
   const [mensajes, setMensajes] = useState([
     {
       id: 'bienvenida',
       emisor: 'agente',
-      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO.**\n\nEstoy conectado en tiempo real a tu perfil operativo:\n- **Colaborador:** ${usuarioLogueado?.nombre || 'Colaborador SGC'} | **Área:** ${usuarioLogueado?.area || 'Control y Servicios'} (${usuarioLogueado?.direccion || 'Dir. Comercial'})\n- **Normas ISO Oficiales:** ISO 9001:2015 / ISO 9001:2026 (Enmiendas Climáticas), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Cuadro de Control (\`OOMRSC-05\`) y Matriz de Trazabilidad Documental.\n\nPuedes preguntarme en cualquier momento **"¿Qué tengo pendiente hoy?"** o consultar el estado de tus indicadores, planes de mejora, acciones correctivas y documentos con más de 1 año sin actualizar.`,
+      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO.**\n\nEstoy conectado en tiempo real a tu perfil operativo:\n- **Colaborador:** ${usuarioLogueado?.nombre || 'Colaborador SGC'} | **Área:** ${usuarioLogueado?.area || 'Control y Servicios'} (${usuarioLogueado?.direccion || 'Dir. Comercial'})\n- **Normas ISO Oficiales:** ISO 9001:2015 / ISO 9001:2026 (Enmiendas Climáticas), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Cuadro de Control (\`OOMRSC-05\`) y Matriz de Trazabilidad Documental.\n\nPuedes preguntarme **"¿Qué tengo pendiente hoy?"** o pedirme directamente **"Actualiza el indicador #70 con 92%"**, **"Subir evidencia a AC#1/26"** o **"Ratificar procedimiento PR-CS-01"** para ejecutar y guardar los datos en su módulo correspondiente.`,
       clausulas: [],
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
@@ -335,6 +349,28 @@ export default function AgenteISOView({ setActiveTab }) {
     }
   };
 
+  // Callback cuando una acción directa es completada en los modales
+  const handleAccionConfirmada = (data) => {
+    if (data?.mensajeChat) {
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          emisor: 'agente',
+          texto: data.mensajeChat,
+          clausulas: [
+            { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '7.5.3', titulo: 'Control de la información documentada' },
+            { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '9.1.3', titulo: 'Análisis y evaluación de indicadores (OOMRSC-05)' },
+            { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '10.2', titulo: 'No conformidad y acción correctiva (OOMRSC-20)' }
+          ],
+          normaConsultada: 'SGC OOMAPASC (Operativo)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    }
+    toast.success('Operación ejecutada y registrada en el SGC exitosamente');
+  };
+
   const handleEnviarConsulta = async (preguntaTexto = null, normaOverride = null) => {
     const texto = (preguntaTexto !== null ? preguntaTexto : inputPregunta).trim();
     if (!texto || enviando) return;
@@ -355,6 +391,77 @@ export default function AgenteISOView({ setActiveTab }) {
     setMensajes(prev => [...prev, userMsg]);
     setInputPregunta('');
     setEnviando(true);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DETECCIÓN Y DISPARO INTELIGENTE DE ACCIONES INTERACTIVAS EN LENGUAJE NATURAL
+    // ═══════════════════════════════════════════════════════════════════════════
+    const textoLower = texto.toLowerCase();
+
+    // 1. Intención de actualizar indicador
+    const esActualizarInd = (textoLower.includes('actualizar indicador') || textoLower.includes('capturar indicador') || textoLower.includes('poner dato') || /actualiz\w*\s+(?:el\s+)?indicador/i.test(textoLower)) && !textoLower.includes('¿qué') && !textoLower.includes('como van');
+    if (esActualizarInd) {
+      const matchNum = textoLower.match(/#?\s*(\d+)/);
+      const indNum = matchNum ? Number(matchNum[1]) : (contextoOperativoActual.indicadores_area[0]?.id ?? 0);
+      const indEncontrado = contextoOperativoActual.indicadores_area.find(i => String(i.numero ?? i.id) === String(indNum)) ||
+                            contextoOperativoActual.indicadores_area[0] || null;
+
+      setModalIndicadorIA({ open: true, indicador: indEncontrado });
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: `🎯 **He abierto la ventana de captura interactiva para el Indicador #${indEncontrado?.numero ?? indNum} ("${indEncontrado?.nombre || 'Indicador SGC'}").**\n\nIngresa el valor del mes, las observaciones y confirma para guardarlo directamente en el Cuadro de Control (OOMRSC-05) y recalcular el semáforo institucional en tiempo real.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 2. Intención de subir evidencia o gestionar actividad de AC
+    const esEvidenciaAC = (textoLower.includes('subir evidencia') || textoLower.includes('evidencia') || textoLower.includes('revisar actividad') || /actividad\s+de\s+ac/i.test(textoLower)) && !textoLower.includes('¿qué');
+    if (esEvidenciaAC) {
+      const matchAC = textoLower.match(/ac\s*#?\s*(\d+)/i) || textoLower.match(/(\d+)/);
+      const acNum = matchAC ? Number(matchAC[1]) : (contextoOperativoActual.acciones_pendientes[0]?.id || 1);
+      const acEncontrada = accionesCorrectivas.find(a => String(a.id) === String(acNum) || String(a.folio || '').includes(String(acNum))) ||
+                           accionesCorrectivas[0] || null;
+
+      setModalActividadEvidenciaIA({ open: true, accion: acEncontrada });
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: `⚠️ **He abierto el panel de gestión de actividades y evidencias para [${acEncontrada?.folio || `AC#${acNum}`}].**\n\nPuedes marcar el estatus de la actividad (Completada / En proceso), adjuntar fotos o documentos PDF y registrar las observaciones operativas conforme al requisito ISO 9001 § 10.2.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 3. Intención de ratificar documento >1 año
+    const esRatificarDoc = (textoLower.includes('ratificar') || textoLower.includes('revision activa') || textoLower.includes('actualizar procedimiento')) && !textoLower.includes('¿qué');
+    if (esRatificarDoc) {
+      const matchDoc = textoLower.match(/([A-Za-z]{2,6}-[A-Za-z0-9]+(?:-\d+)?)/i);
+      const docClave = matchDoc ? matchDoc[1].toUpperCase() : (contextoOperativoActual.documentos_antiguos_sin_revision[0]?.clave || '');
+      const docEncontrado = documentos.find(d => String(d.clave || '').toUpperCase() === docClave || String(d.id) === docClave) ||
+                            contextoOperativoActual.documentos_antiguos_sin_revision[0] || documentos[0];
+
+      setModalRatificarDocIA({ open: true, documento: docEncontrado });
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: `📑 **He abierto la ventana de ratificación activa para el documento [${docEncontrado?.clave || docClave}] ("${docEncontrado?.titulo || 'Documento SGC'}").**\n\nAl confirmar la revisión, se actualizará su fecha al día de hoy en el portal oficial y se eliminará la alerta de obsolescencia conforme a la norma ISO 9001 § 7.5.3.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
 
     try {
       const historial = mensajes
@@ -836,14 +943,46 @@ export default function AgenteISOView({ setActiveTab }) {
                 </div>
               </div>
 
-              <button
-                onClick={() => handleEnviarConsulta('¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.')}
-                disabled={enviando}
-                className="px-3 py-1.5 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black rounded-lg text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
-              >
-                <Zap size={14} className="text-amber-300 fill-amber-300" />
-                <span>¿Qué tengo pendiente hoy?</span>
-              </button>
+              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                <button
+                  onClick={() => handleEnviarConsulta('¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.')}
+                  disabled={enviando}
+                  className="px-3 py-1.5 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black rounded-lg text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
+                  title="Obtener el diagnóstico completo de pendientes de mi área"
+                >
+                  <Zap size={14} className="text-amber-300 fill-amber-300" />
+                  <span>¿Qué tengo pendiente?</span>
+                </button>
+
+                <button
+                  onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
+                  className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                  title="Capturar o actualizar valor de un indicador del área"
+                >
+                  <Target size={13} />
+                  <span>Actualizar Indicador</span>
+                </button>
+
+                <button
+                  onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null })}
+                  className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                  title="Subir evidencia o marcar actividad de una Acción Correctiva"
+                >
+                  <AlertTriangle size={13} />
+                  <span>Subir Evidencia AC</span>
+                </button>
+
+                {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
+                  <button
+                    onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
+                    className="px-2.5 py-1.5 bg-purple-500 hover:bg-purple-400 text-white font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                    title="Ratificar vigencia de procedimientos con >1 año sin revisar"
+                  >
+                    <ShieldCheck size={13} />
+                    <span>Ratificar Doc &gt;1 año</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Chips Rápidos de Consulta */}
@@ -931,17 +1070,51 @@ export default function AgenteISOView({ setActiveTab }) {
 
                     {/* Acciones de respuesta */}
                     {!esUsuario && m.id !== 'bienvenida' && (
-                      <div className="mt-4 pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-                        <div className="flex items-center gap-3">
-                          {setActiveTab && (
+                      <div className="mt-4 pt-3 border-t border-slate-100 space-y-2.5 text-xs">
+                        {/* Botones de acción directa disparables desde la respuesta del Agente */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mr-1">
+                            Acciones Directas:
+                          </span>
+                          <button
+                            onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
+                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                            title="Capturar o actualizar valor de un indicador del área"
+                          >
+                            <Target size={12} className="text-emerald-600" />
+                            <span>Actualizar Indicador</span>
+                          </button>
+                          <button
+                            onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null })}
+                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                            title="Subir evidencia o marcar actividad de una Acción Correctiva"
+                          >
+                            <AlertTriangle size={12} className="text-amber-600" />
+                            <span>Subir Evidencia / AC</span>
+                          </button>
+                          {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
                             <button
-                              onClick={() => setActiveTab('ac')}
-                              className="text-[#002855] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                              onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
+                              className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                              title="Ratificar revisión activa de documento > 1 año"
                             >
-                              Ir a Acciones Correctivas (OOMRSC-20) <ArrowRight size={12} />
+                              <ShieldCheck size={12} className="text-purple-600" />
+                              <span>Ratificar Doc &gt;1 año</span>
                             </button>
                           )}
                         </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+                          <div className="flex items-center gap-3">
+                            {setActiveTab && (
+                              <button
+                                onClick={() => setActiveTab('ac')}
+                                className="text-[#002855] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                Ir a Acciones Correctivas (OOMRSC-20) <ArrowRight size={12} />
+                              </button>
+                            )}
+                          </div>
 
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <button
@@ -1005,7 +1178,8 @@ export default function AgenteISOView({ setActiveTab }) {
                           </button>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
                   </div>
                 </div>
               );
@@ -1415,6 +1589,46 @@ export default function AgenteISOView({ setActiveTab }) {
           </div>
         </ContenedorModal>
       )}
+
+      {/* ============================================================ */}
+      {/* MODALES DE ACCIONES DIRECTAS DESDE EL AGENTE IA              */}
+      {/* ============================================================ */}
+      {/* 1. Modal Actualizar Indicador */}
+      <ModalActualizarIndicadorIA
+        isOpen={modalIndicadorIA.open}
+        onClose={() => setModalIndicadorIA({ open: false, indicador: null })}
+        indicadorInicial={modalIndicadorIA.indicador}
+        indicadoresLista={contextoOperativoActual.indicadores_area || []}
+        indicadoresData={indicadoresData}
+        setIndicadoresData={setIndicadoresData}
+        usuarioLogueado={usuarioLogueado}
+        registrarMovimiento={registrarMovimiento}
+        onAccionConfirmada={handleAccionConfirmada}
+      />
+
+      {/* 2. Modal Gestionar Actividad y Subir Evidencia AC */}
+      <ModalGestionarActividadEvidenciaIA
+        isOpen={modalActividadEvidenciaIA.open}
+        onClose={() => setModalActividadEvidenciaIA({ open: false, accion: null })}
+        accionInicial={modalActividadEvidenciaIA.accion}
+        accionesLista={accionesCorrectivas || []}
+        setAccionesCorrectivas={setAccionesCorrectivas}
+        usuarioLogueado={usuarioLogueado}
+        registrarMovimiento={registrarMovimiento}
+        onAccionConfirmada={handleAccionConfirmada}
+      />
+
+      {/* 3. Modal Ratificar Revisión de Documento > 1 Año */}
+      <ModalRatificarDocumentoIA
+        isOpen={modalRatificarDocIA.open}
+        onClose={() => setModalRatificarDocIA({ open: false, documento: null })}
+        documentoInicial={modalRatificarDocIA.documento}
+        documentosLista={documentos || []}
+        setDocumentos={setDocumentos}
+        usuarioLogueado={usuarioLogueado}
+        registrarMovimiento={registrarMovimiento}
+        onAccionConfirmada={handleAccionConfirmada}
+      />
     </div>
   );
 }
