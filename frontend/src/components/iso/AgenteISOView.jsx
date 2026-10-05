@@ -217,9 +217,6 @@ const CHIPS_RAPIDOS = [
   { label: '⚠️ Docs. >1 año sin revisar (§ 7.5.3)', query: '¿Qué procedimientos o registros de mi área tienen más de 1 año sin actualizar y requieren revisión periódica activa según ISO 9001 § 7.5.3?', norma: 'ISO-9001-2026' },
   { label: '🎯 Estado de Indicadores (OOMRSC-05)', query: '¿Cómo van los indicadores oficiales de mi área en el Cuadro de Control OOMRSC-05? ¿Cuáles están cumplidos y cuáles en semáforo crítico?', norma: '' },
   { label: '⏳ Planes próximos a vencer (OOMRSC-21)', query: '¿Qué planes de mejora de mi área están próximos a vencer su fecha compromiso y qué presupuesto tienen asignado?', norma: '' },
-  { label: '📑 Procedimientos y Formatos SGC', query: '¿Cuáles son los procedimientos operativos y formatos oficiales (OOMRSC-20, OOMRSC-21, REG-CLORO-01) del portal SGC y cómo interactúan entre sí?', norma: '' },
-  { label: '🔗 Matriz de Trazabilidad § 7.5', query: '¿Cómo funciona la matriz de trazabilidad e impacto documental del portal y qué reglas rigen el bloqueo de eliminación de registros?', norma: 'ISO-9001-2026' },
-  { label: '🌟 Transición ISO 9001:2015 vs 2026', query: '¿Cuáles son los cambios más relevantes entre la norma ISO 9001:2015 y la actualización ISO 9001:2026 para OOMAPASC?', norma: 'ISO-9001-2026' },
   { label: '🛡️ Cierre OOMRSC-20 (§ 10.2)', query: '¿Cómo documentar el análisis de causa raíz y el cierre efectivo de una Acción Correctiva en el formato OOMRSC-20 conforme al 10.2?', norma: 'ISO-9001-2026' }
 ];
 
@@ -968,8 +965,8 @@ export default function AgenteISOView({ setActiveTab }) {
               </div>
             </div>
 
-            {/* Fila 3: Chips Rápidos de Consulta */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-thin">
+            {/* Fila 3: Chips Rápidos de Sugerencias (sin barra horizontal, con ajuste limpio) */}
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider shrink-0 mr-0.5">
                 Sugerencias:
               </span>
