@@ -22,6 +22,7 @@ import {
   FileText
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
+import { useToast } from '../common/Toast';
 import { INDICADORES, evalSemaforoOOMRSC05 } from '../../constants/indicadores';
 import { processEvidenceFile } from '../../utils/fileSecurity';
 
@@ -321,6 +322,7 @@ export function ModalGestionarActividadEvidenciaIA({
   registrarMovimiento,
   onAccionConfirmada
 }) {
+  const toast = useToast();
   const [accionId, setAccionId] = useState(accionPreseleccionada?.id || accionesCorrectivas[0]?.id || 1);
   const [actividadIndex, setActividadIndex] = useState(0);
   const [estadoActividad, setEstadoActividad] = useState('COMPLETADA');
@@ -430,7 +432,7 @@ export function ModalGestionarActividadEvidenciaIA({
 
       onClose();
     } catch (err) {
-      alert(`Error al guardar evidencia: ${err.message}`);
+      toast.error(`Error al guardar evidencia: ${err.message}`);
     } finally {
       setSubiendo(false);
     }
