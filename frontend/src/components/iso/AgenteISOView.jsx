@@ -226,7 +226,8 @@ export default function AgenteISOView({ setActiveTab }) {
     setPlanesMejora,
     indicadoresData,
     setIndicadoresData,
-    areasDetalle
+    areasDetalle,
+    puedeTodasAreas
   } = useSGC();
   const toast = useToast();
 
@@ -916,42 +917,46 @@ export default function AgenteISOView({ setActiveTab }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+              <div className="flex items-center gap-2 flex-wrap shrink-0">
+                {/* 1. ¿Qué tengo pendiente? */}
                 <button
                   onClick={() => handleEnviarConsulta('¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.')}
                   disabled={enviando}
-                  className="px-2.5 py-1 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black rounded-lg text-[11px] transition-all shadow-sm flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
+                  className="px-3 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   title="Obtener el balance completo de pendientes de mi área"
                 >
-                  <Zap size={12} className="text-amber-300 fill-amber-300" />
+                  <Zap size={13} className="text-amber-300 fill-amber-300" />
                   <span>¿Qué tengo pendiente?</span>
                 </button>
 
+                {/* 2. Actualizar Indicador */}
                 <button
                   onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
-                  className="px-2 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg text-[10.5px] transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                  title="Capturar valor de un indicador"
+                  className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                  title="Capturar valor en el Cuadro de Control OOMRSC-05"
                 >
-                  <Target size={11} />
+                  <Target size={13} className="text-emerald-400" />
                   <span>Actualizar Indicador</span>
                 </button>
 
+                {/* 3. Subir Evidencia (AC / PM) */}
                 <button
-                  onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null })}
-                  className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg text-[10.5px] transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                  title="Subir evidencia a una Acción Correctiva"
+                  onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null, plan: contextoOperativoActual.planes_proximos_vencer[0] || null })}
+                  className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                  title="Subir evidencia o registrar avance a una Acción Correctiva o Plan de Mejora"
                 >
-                  <AlertTriangle size={11} />
-                  <span>Subir Evidencia AC</span>
+                  <Upload size={13} className="text-amber-400" />
+                  <span>Subir Evidencia</span>
                 </button>
 
+                {/* 4. Ratificar Doc */}
                 {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
                   <button
                     onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
-                    className="px-2 py-1 bg-purple-500 hover:bg-purple-400 text-white font-extrabold rounded-lg text-[10.5px] transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                    className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                     title="Ratificar vigencia de procedimientos con >1 año sin revisar"
                   >
-                    <ShieldCheck size={11} />
+                    <ShieldCheck size={13} className="text-purple-400" />
                     <span>Ratificar Doc</span>
                   </button>
                 )}
@@ -1565,13 +1570,17 @@ export default function AgenteISOView({ setActiveTab }) {
         onAccionConfirmada={handleAccionConfirmada}
       />
 
-      {/* 2. Modal Gestionar Actividad y Subir Evidencia AC */}
+      {/* 2. Modal Gestionar Actividad y Subir Evidencia (AC / PM) */}
       <ModalGestionarActividadEvidenciaIA
         isOpen={modalActividadEvidenciaIA.open}
-        onClose={() => setModalActividadEvidenciaIA({ open: false, accion: null })}
-        accionInicial={modalActividadEvidenciaIA.accion}
-        accionesLista={accionesCorrectivas || []}
+        onClose={() => setModalActividadEvidenciaIA({ open: false, accion: null, plan: null })}
+        accionPreseleccionada={modalActividadEvidenciaIA.accion}
+        planPreseleccionado={modalActividadEvidenciaIA.plan}
+        accionesCorrectivas={accionesCorrectivas || []}
         setAccionesCorrectivas={setAccionesCorrectivas}
+        planesMejora={planesMejora || []}
+        setPlanesMejora={setPlanesMejora}
+        puedeTodasAreas={puedeTodasAreas}
         usuarioLogueado={usuarioLogueado}
         registrarMovimiento={registrarMovimiento}
         onAccionConfirmada={handleAccionConfirmada}
