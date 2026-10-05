@@ -8,6 +8,7 @@ import ModalConfirmacionEliminar from './common/ModalConfirmacionEliminar';
 import { useToast } from './common/Toast';
 import { useDialogos, Dialogos } from './common/Dialogos';
 import ContenedorModal from './common/ContenedorModal';
+import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { ESTADOS_SGC, getEstadoColor, getEstadoLabel, can, generarFolio, getDireccionDeArea, puedeVerArea } from '../constants';
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
@@ -20,6 +21,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [modalEliminar, setModalEliminar] = useState({ isOpen: false, item: null });
+  const [modalConfirmarEnvio, setModalConfirmarEnvio] = useState(false);
 
   const [form, setForm] = useState({
     id: null,
@@ -256,10 +258,34 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
         return;
       }
     }
-    const cambios = { estado: 'EN_REVISION', fecha_envio_sgc: new Date().toISOString() };
+    // Abrir modal de verificación y responsabilidad humana obligatoria (ISO 9001 § 10.2 & POL-TI-01)
+    setModalConfirmarEnvio(true);
+  };
+
+  const handleConfirmarEnvioSGC = (ratificacionData) => {
+    const cambios = {
+      estado: 'EN_REVISION',
+      fecha_envio_sgc: new Date().toISOString(),
+      ratificacion_humana: true,
+      ratificado_por: ratificacionData.ratificado_por,
+      ratificado_email: ratificacionData.ratificado_email,
+      fecha_ratificacion_humana: ratificacionData.fecha_ratificacion,
+      declaracion_responsabilidad: ratificacionData.declaracion
+    };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
-    setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión'); }, 600);
+    setModalConfirmarEnvio(false);
+
+    registrarMovimiento?.({
+      modulo: 'ACCIONES_CORRECTIVAS',
+      accion: 'ENVIO_SGC_RATIFICADO_HUMANO',
+      descripcion: `Envío formal de Acción Correctiva ${form.folio_codigo || `AC#${form.id || 'Borrador'}`} a revisión SGC con supervisión humana validada (ISO § 10.2 & POL-TI-01)`,
+      detalles: `Ratificado por: ${ratificacionData.ratificado_por} | Área: ${form.area} | Proceso: ${form.proceso} | Confirmación: CONFIRMAR`,
+      folio: form.folio_codigo || `AC-${form.id || 'Borrador'}`
+    });
+
+    toast.success('Expediente ratificado y enviado a revisión del SGC exitosamente');
+    setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión con supervisión humana validada'); }, 600);
   };
 
   const aprobarSGC = () => {
@@ -591,9 +617,25 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   };
 
   // Renderizar la vista actual
+  const modalConfirmarEnvioJSX = (
+    <ModalConfirmacionResponsabilidadHumana
+      isOpen={modalConfirmarEnvio}
+      onClose={() => setModalConfirmarEnvio(false)}
+      onConfirmar={handleConfirmarEnvioSGC}
+      tipo="ACCION_CORRECTIVA"
+      registro={form}
+      equipo={equipo}
+      actividades={actividades}
+      causas={causas}
+      usuarioLogueado={usuarioLogueado}
+      loading={loading}
+    />
+  );
+
   if (vista === 'lista') {
     return (
       <>
+        {modalConfirmarEnvioJSX}
         <ModalConfirmacionEliminar
           isOpen={modalEliminar.isOpen}
           onClose={() => setModalEliminar({ isOpen: false, item: null })}
@@ -624,28 +666,31 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
 
   if (vista === 'nuevo') {
     return (
-      <AccionesWizard 
-        step={step}
-        setStep={setStep}
-        form={form}
-        setForm={setForm}
-        error={error}
-        setError={setError}
-        mensaje={mensaje}
-        setMensaje={setMensaje}
-        equipo={equipo}
-        setEquipo={setEquipo}
-        causas={causas}
-        setCausas={setCausas}
-        actividades={actividades}
-        setActividades={setActividades}
-        loading={loading}
-        guardarBorrador={guardarBorrador}
-        setVista={setVista}
-        getBotonesWorkflow={getBotonesWorkflow}
-        getEstadoColor={getEstadoColor}
-        getEstadoLabel={getEstadoLabel}
-      />
+      <>
+        {modalConfirmarEnvioJSX}
+        <AccionesWizard 
+          step={step}
+          setStep={setStep}
+          form={form}
+          setForm={setForm}
+          error={error}
+          setError={setError}
+          mensaje={mensaje}
+          setMensaje={setMensaje}
+          equipo={equipo}
+          setEquipo={setEquipo}
+          causas={causas}
+          setCausas={setCausas}
+          actividades={actividades}
+          setActividades={setActividades}
+          loading={loading}
+          guardarBorrador={guardarBorrador}
+          setVista={setVista}
+          getBotonesWorkflow={getBotonesWorkflow}
+          getEstadoColor={getEstadoColor}
+          getEstadoLabel={getEstadoLabel}
+        />
+      </>
     );
   }
 
@@ -803,6 +848,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     return (
       <>
         <Dialogos {...propsDialogos} />
+        {modalConfirmarEnvioJSX}
         {modalAuditor}
         {modalDictamenJSX}
         <AccionesDetalle 

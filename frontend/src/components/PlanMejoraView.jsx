@@ -8,6 +8,7 @@ import ModalConfirmacionEliminar from './common/ModalConfirmacionEliminar';
 import { useToast } from './common/Toast';
 import { useDialogos, Dialogos } from './common/Dialogos';
 import ContenedorModal from './common/ContenedorModal';
+import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
@@ -20,6 +21,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [modalEliminar, setModalEliminar] = useState({ isOpen: false, item: null });
+  const [modalConfirmarEnvio, setModalConfirmarEnvio] = useState(false);
 
   const [form, setForm] = useState({
     id: null,
@@ -250,13 +252,34 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         return;
       }
     }
+    // Abrir modal de verificación y responsabilidad humana obligatoria (ISO 9001 § 10.3 & POL-TI-01)
+    setModalConfirmarEnvio(true);
+  };
+
+  const handleConfirmarEnvioSGC = (ratificacionData) => {
     const cambios = {
       estado: 'EN_REVISION',
-      fecha_envio_sgc: new Date().toISOString()
+      fecha_envio_sgc: new Date().toISOString(),
+      ratificacion_humana: true,
+      ratificado_por: ratificacionData.ratificado_por,
+      ratificado_email: ratificacionData.ratificado_email,
+      fecha_ratificacion_humana: ratificacionData.fecha_ratificacion,
+      declaracion_responsabilidad: ratificacionData.declaracion
     };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
-    setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión'); }, 600);
+    setModalConfirmarEnvio(false);
+
+    registrarMovimiento?.({
+      modulo: 'PLANES_MEJORA',
+      accion: 'ENVIO_SGC_RATIFICADO_HUMANO',
+      descripcion: `Envío formal de Plan de Mejora ${form.folio_codigo || form.folio || `PM#${form.id || 'Borrador'}`} a revisión SGC con supervisión humana validada (ISO § 10.3 & POL-TI-01)`,
+      detalles: `Ratificado por: ${ratificacionData.ratificado_por} | Área: ${form.area || form.gerencia_coordinacion} | Título: ${form.titulo_mejora} | Confirmación: CONFIRMAR`,
+      folio: form.folio_codigo || form.folio || `PM-${form.id || 'Borrador'}`
+    });
+
+    toast.success('Plan de mejora ratificado y enviado a revisión del SGC exitosamente');
+    setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión con supervisión humana validada'); }, 600);
   };
 
   const aprobarSGC = () => {
@@ -606,10 +629,25 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   // Render
+  const modalConfirmarEnvioJSX = (
+    <ModalConfirmacionResponsabilidadHumana
+      isOpen={modalConfirmarEnvio}
+      onClose={() => setModalConfirmarEnvio(false)}
+      onConfirmar={handleConfirmarEnvioSGC}
+      tipo="PLAN_MEJORA"
+      registro={form}
+      equipo={equipo}
+      actividades={actividades}
+      usuarioLogueado={usuarioLogueado}
+      loading={loading}
+    />
+  );
+
   if (vista === 'lista') {
     return (
       <>
         <Dialogos {...propsDialogos} />
+        {modalConfirmarEnvioJSX}
         <ModalConfirmacionEliminar
           isOpen={modalEliminar.isOpen}
           onClose={() => setModalEliminar({ isOpen: false, item: null })}
@@ -637,24 +675,27 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
 
   if (vista === 'nuevo') {
     return (
-      <PlanesForm 
-        step={step}
-        setStep={setStep}
-        form={form}
-        setForm={setForm}
-        error={error}
-        setError={setError}
-        mensaje={mensaje}
-        setMensaje={setMensaje}
-        equipo={equipo}
-        setEquipo={setEquipo}
-        actividades={actividades}
-        setActividades={setActividades}
-        loading={loading}
-        guardarBorrador={guardarBorrador}
-        setVista={setVista}
-        getBotonesWorkflow={getBotonesWorkflow}
-      />
+      <>
+        {modalConfirmarEnvioJSX}
+        <PlanesForm 
+          step={step}
+          setStep={setStep}
+          form={form}
+          setForm={setForm}
+          error={error}
+          setError={setError}
+          mensaje={mensaje}
+          setMensaje={setMensaje}
+          equipo={equipo}
+          setEquipo={setEquipo}
+          actividades={actividades}
+          setActividades={setActividades}
+          loading={loading}
+          guardarBorrador={guardarBorrador}
+          setVista={setVista}
+          getBotonesWorkflow={getBotonesWorkflow}
+        />
+      </>
     );
   }
 
@@ -811,6 +852,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   if (vista === 'ver') {
     return (
       <>
+        {modalConfirmarEnvioJSX}
         {modalAuditor}
         {modalDictamenJSX}
         <PlanesDetalle 
