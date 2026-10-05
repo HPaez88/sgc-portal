@@ -26,7 +26,9 @@ import {
   Flame,
   ShieldCheck,
   History,
-  Activity
+  Activity,
+  PlusCircle,
+  Settings
 } from 'lucide-react';
 import { 
   INDICADORES, 
@@ -39,7 +41,10 @@ import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import ContenedorModal from '../common/ContenedorModal';
 import StatCard from '../ui/StatCard';
-import { acDesdeIndicador, movimientoVinculo } from '../../services/flujoService';
+import { acDesdeIndicador } from '../../services/flujoService';
+import DesempenoProcesosTab from './DesempenoProcesosTab';
+import ModalGestionarIndicador from './ModalGestionarIndicador';
+import ModalGenerarRC from './ModalGenerarRC';
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MESES_COMPLETOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -69,10 +74,19 @@ export default function IndicadoresView({
   } = useSGC();
   const toast = useToast();
 
+  // Permisos: Admin o personal del SGC
+  const esAdminOSGC = Boolean(
+    usuarioLogueado?.rol?.toLowerCase().includes('admin') ||
+    usuarioLogueado?.rol?.toLowerCase().includes('sgc') ||
+    usuarioLogueado?.rol?.toLowerCase().includes('calidad') ||
+    puedeTodasAreas
+  );
+
   // Estados de navegación
-  const [tabActiva, setTabActiva] = useState('cuadro'); // 'cuadro' | 'trimestral' | 'correcciones'
+  // 'cuadro' | 'procesos' | 'trimestral' | 'correcciones'
+  const [tabActiva, setTabActiva] = useState('cuadro');
   const [ejercicio, setEjercicio] = useState(2026);
-  const [mesActivoIndex, setMesActivoIndex] = useState(() => Math.min(new Date().getMonth(), 7)); // Agosto default
+  const [mesActivoIndex, setMesActivoIndex] = useState(() => Math.min(new Date().getMonth(), 9)); // Octubre default
   const mesActivo = MESES[mesActivoIndex];
   const mesActivoNombre = MESES_COMPLETOS[mesActivoIndex];
 
@@ -85,11 +99,19 @@ export default function IndicadoresView({
   const [filtroSemaforo, setFiltroSemaforo] = useState('');
   const [pagina, setPagina] = useState(1);
 
-  // Estados de Edición Rápida / Modal
+  // Estados de Edición Rápida / Captura
   const [indicadorEnEdicion, setIndicadorEnEdicion] = useState(null);
   const [valorInput, setValorInput] = useState('');
   const [observacionInput, setObservacionInput] = useState('');
   const [accionInput, setAccionInput] = useState('NA');
+
+  // Modal para Gestión de Indicador (Crear / Editar Ficha Oficial)
+  const [modalGestionIndicadorOpen, setModalGestionIndicadorOpen] = useState(false);
+  const [indicadorParaGestionar, setIndicadorParaGestionar] = useState(null);
+
+  // Modal para Generación de Reporte de Corrección (RC)
+  const [modalRCOpen, setModalRCOpen] = useState(false);
+  const [datosParaRC, setDatosParaRC] = useState(null);
 
   // Reportes de corrección históricos (con persistencia local)
   const [reportesCorreccion, setReportesCorreccion] = useState(() => {
@@ -100,14 +122,30 @@ export default function IndicadoresView({
     return REPORTES_CORRECCION_INICIALES;
   });
 
-  // Guardar en contexto global
+  // Catálogo dinámico unificado (Base Oficial + Personalizaciones / Creados por Admin)
+  const catalogoCustom = indicadoresData?.catalogoPersonalizado || {};
+  const listaIndicadores = useMemo(() => {
+    const mapa = new Map();
+    INDICADORES.forEach(ind => {
+      const custom = catalogoCustom[ind.id];
+      mapa.set(ind.id, custom ? { ...ind, ...custom } : ind);
+    });
+    Object.values(catalogoCustom).forEach(ind => {
+      if (!mapa.has(ind.id)) {
+        mapa.set(ind.id, ind);
+      }
+    });
+    return Array.from(mapa.values()).sort((a, b) => (a.numero ?? a.id) - (b.numero ?? b.id));
+  }, [catalogoCustom]);
+
+  // Resultados guardados en contexto global
   const resultados = indicadoresData.resultados || {};
 
   const guardarResultado = (indicadorId, mes, anio, valor, observacion = '', accion = 'NA') => {
     const key = `${indicadorId}-${mes}-${anio}`;
     const nuevoObj = {
       ...(resultados[key] || {}),
-      valor: valor === '' ? null : Number(valor),
+      valor: valor === '' || valor === null ? null : Number(valor),
       observacion: observacion,
       accion: accion,
       capturadoPor: usuarioLogueado?.nombre || 'Usuario SGC',
@@ -119,7 +157,7 @@ export default function IndicadoresView({
       [key]: nuevoObj
     };
 
-    setIndicadoresData(prev => ({
+    setIndicadoresData?.(prev => ({
       ...prev,
       resultados: nuevosResultados,
       updatedAt: new Date().toISOString()
@@ -134,7 +172,30 @@ export default function IndicadoresView({
     });
   };
 
-  // Abrir Modal para Capturar / Editar
+  // Guardar creación o edición de ficha de indicador
+  const handleGuardarIndicadorFicha = (indicadorPayload, esEdicion) => {
+    const id = indicadorPayload.id;
+    const nuevoCatalogo = {
+      ...(indicadoresData.catalogoPersonalizado || {}),
+      [id]: indicadorPayload
+    };
+
+    setIndicadoresData?.(prev => ({
+      ...prev,
+      catalogoPersonalizado: nuevoCatalogo,
+      updatedAt: new Date().toISOString()
+    }));
+
+    registrarMovimiento?.({
+      modulo: 'INDICADORES',
+      accion: esEdicion ? 'MODIFICAR_FICHA_INDICADOR' : 'CREAR_NUEVO_INDICADOR',
+      descripcion: `${esEdicion ? 'Actualización' : 'Alta'} de Ficha Oficial de Indicador #${indicadorPayload.numero} (${indicadorPayload.nombre})`,
+      detalles: `Proceso: ${indicadorPayload.proceso} · Impacto: ${indicadorPayload.impacto} · Meta: ${indicadorPayload.meta_anual}`,
+      folio: `IND#${indicadorPayload.numero}`
+    });
+  };
+
+  // Abrir Modal para Capturar / Editar Valor
   const abrirModalCaptura = (ind) => {
     const key = `${ind.id}-${mesActivo}-${ejercicio}`;
     const dataGuardada = resultados[key];
@@ -143,13 +204,20 @@ export default function IndicadoresView({
     const accPrevia = dataGuardada?.accion || ind.accion_default || 'NA';
 
     setIndicadorEnEdicion(ind);
-    setValorInput(valorPrevio !== null ? String(valorPrevio) : '');
+    setValorInput(valorPrevio !== null && valorPrevio !== undefined ? String(valorPrevio) : '');
     setObservacionInput(obsPrevia);
     setAccionInput(accPrevia);
   };
 
+  // Semáforo dinámico en tiempo real para el modal de captura
+  const semaforoModalEnVivo = useMemo(() => {
+    if (!indicadorEnEdicion) return null;
+    return evalSemaforoOOMRSC05(valorInput, indicadorEnEdicion.meta_anual || indicadorEnEdicion.meta, indicadorEnEdicion.es_menor);
+  }, [indicadorEnEdicion, valorInput]);
+
+  // Guardar en modal de captura
   const handleGuardarModal = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!indicadorEnEdicion) return;
 
     guardarResultado(
@@ -161,57 +229,94 @@ export default function IndicadoresView({
       accionInput
     );
 
-    toast.exito(`Indicador #${indicadorEnEdicion.id} guardado correctamente para ${mesActivoNombre} ${ejercicio}.`);
+    toast.exito(`Indicador #${indicadorEnEdicion.numero ?? indicadorEnEdicion.id} guardado correctamente para ${mesActivoNombre} ${ejercicio}.`);
     setIndicadorEnEdicion(null);
   };
 
-  // Crear Acción Correctiva desde Indicador Crítico
+  // Crear Acción Correctiva desde Indicador Crítico (Alto Impacto)
   const handleCrearAccionCorrectiva = (ind, valReal, sem) => {
     if (!setAccionesCorrectivas) return;
 
-    const nuevaAC = {
-      id: Date.now(),
-      folio: `AC-IND#${ind.id}/${Date.now().toString().slice(-4)}`,
-      proceso: ind.proceso || 'Medición, Análisis y Mejora',
-      area: ind.area || 'Control de Calidad',
-      direccion: ind.direccion || 'Dirección General',
-      origen: 'Indicador fuera de meta',
-      descripcion: `Desviación en Indicador #${ind.id} - ${ind.nombre}. Meta: ${ind.meta} ${ind.unidad}, Obtenido: ${valReal} ${ind.unidad} (${sem.porcentaje}% de cumplimiento - ${sem.label}).`,
-      causaRaiz: 'En investigación por el área responsable.',
-      estado: 'BORRADOR',
-      fechaApertura: new Date().toISOString().split('T')[0],
-      fechaCompromiso: new Date(Date.now() + 30 * 24 * 3600000).toISOString().split('T')[0],
-      responsable: usuarioLogueado?.nombre || 'Coordinador SGC',
-      auditorAsignado: null,
-      actividades: [],
-      costoEstimado: 0
-    };
+    const valCalculado = valReal !== null && valReal !== undefined ? valReal : (valorInput || ind.valor_default || 0);
+    const semCalculado = sem || evalSemaforoOOMRSC05(valCalculado, ind.meta_anual || ind.meta, ind.es_menor);
+
+    const nuevaAC = acDesdeIndicador(ind, {
+      cumplimiento: semCalculado?.porcentaje ?? 0,
+      anio: ejercicio,
+      meses: [mesActivo]
+    });
+
+    const folioAC = nuevaAC.folio_codigo || `AC-IND#${ind.numero || ind.id}/${Date.now().toString().slice(-4)}`;
+    nuevaAC.folio = folioAC;
 
     setAccionesCorrectivas(prev => [nuevaAC, ...(prev || [])]);
-    toast.exito(`Acción Correctiva ${nuevaAC.folio} generada automáticamente desde el indicador.`);
+    toast.exito(`Acción Correctiva Oficial (${folioAC}) generada para ${ind.nombre}.`);
 
-    // Registrar en reportes de corrección del cuadro de control
-    const nuevoReporte = {
-      id: Date.now(),
-      ejercicio: String(ejercicio),
-      folio: `RC ${ind.id}/${ejercicio}`,
-      responsable: ind.area || usuarioLogueado?.nombre || 'SGC',
-      estado: 'ABIERTA',
-      indicadorId: ind.id
-    };
+    // Actualizar campo acción del indicador
+    guardarResultado(ind.id, mesActivo, ejercicio, valCalculado, observacionInput || `Apertura de Acción Correctiva ${folioAC}`, folioAC);
+
+    registrarMovimiento?.({
+      modulo: 'ACCIONES_CORRECTIVAS',
+      accion: 'EMISION_AC_INDICADOR',
+      descripcion: `Emisión de Acción Correctiva ${folioAC} por desviación crítica en Indicador #${ind.numero}`,
+      detalles: `Cumplimiento: ${semCalculado?.porcentaje ?? 0}% vs Meta: ${ind.meta_anual || ind.meta} ${ind.unidad}`,
+      folio: folioAC
+    });
+
+    if (indicadorEnEdicion) {
+      setIndicadorEnEdicion(null);
+    }
+  };
+
+  // Abrir modal de Reporte de Corrección (Bajo Impacto)
+  const handleAbrirCrearRC = (ind, valReal, sem) => {
+    const valCalculado = valReal !== null && valReal !== undefined ? valReal : (valorInput || ind.valor_default || 0);
+    const semCalculado = sem || evalSemaforoOOMRSC05(valCalculado, ind.meta_anual || ind.meta, ind.es_menor);
+
+    setDatosParaRC({
+      indicador: ind,
+      valorReal: valCalculado,
+      semaforo: semCalculado
+    });
+    setModalRCOpen(true);
+  };
+
+  // Confirmar y registrar Reporte de Corrección (RC)
+  const handleConfirmarRC = (reportePayload) => {
     setReportesCorreccion(prev => {
-      const actualizados = [nuevoReporte, ...prev];
-      localStorage.setItem('sgc-reportes-correccion', JSON.stringify(actualizados));
+      const actualizados = [reportePayload, ...prev];
+      try {
+        localStorage.setItem('sgc-reportes-correccion', JSON.stringify(actualizados));
+      } catch (e) { /* ignore */ }
       return actualizados;
     });
 
-    // Actualizar campo acción del indicador
-    guardarResultado(ind.id, mesActivo, ejercicio, valReal, observacionInput, nuevoReporte.folio);
+    // Actualizar campo acción del indicador en el cuadro de control
+    guardarResultado(
+      reportePayload.indicadorId,
+      mesActivo,
+      ejercicio,
+      datosParaRC?.valorReal ?? 0,
+      reportePayload.descripcion,
+      reportePayload.folio
+    );
+
+    registrarMovimiento?.({
+      modulo: 'INDICADORES',
+      accion: 'EMISION_REPORTE_CORRECCION',
+      descripcion: `Emisión de Reporte de Corrección ${reportePayload.folio} para Indicador #${reportePayload.numeroIndicador}`,
+      detalles: `Causa: ${reportePayload.causa} · Acción: ${reportePayload.accion}`,
+      folio: reportePayload.folio
+    });
+
+    if (indicadorEnEdicion) {
+      setIndicadorEnEdicion(null);
+    }
   };
 
-  // Filtrado de Indicadores
+  // Filtrado de Indicadores para el Cuadro de Control
   const indicadoresFiltrados = useMemo(() => {
-    return INDICADORES.filter(ind => {
+    return listaIndicadores.filter(ind => {
       if (!puedeTodasAreas && areaUsuario && ind.area !== areaUsuario) return false;
       if (filtroDireccion && ind.direccion !== filtroDireccion) return false;
       if (filtroProceso && ind.proceso !== filtroProceso) return false;
@@ -222,7 +327,7 @@ export default function IndicadoresView({
       if (filtroSemaforo) {
         const key = `${ind.id}-${mesActivo}-${ejercicio}`;
         const val = resultados[key]?.valor !== undefined ? resultados[key].valor : ind.valor_default;
-        const sem = evalSemaforoOOMRSC05(val, ind.meta, ind.es_menor);
+        const sem = evalSemaforoOOMRSC05(val, ind.meta_anual || ind.meta, ind.es_menor);
         if (filtroSemaforo === 'ACEPTABLE' && sem.rango !== 'ACEPTABLE') return false;
         if (filtroSemaforo === 'PREVENTIVO' && sem.rango !== 'PREVENTIVO') return false;
         if (filtroSemaforo === 'CRITICO' && sem.rango !== 'CRITICO') return false;
@@ -231,12 +336,12 @@ export default function IndicadoresView({
 
       if (busqueda) {
         const query = busqueda.toLowerCase();
-        const texto = `${ind.id} ${ind.nombre} ${ind.area} ${ind.proceso} ${ind.direccion}`.toLowerCase();
+        const texto = `${ind.numero} ${ind.id} ${ind.nombre} ${ind.area} ${ind.proceso} ${ind.direccion}`.toLowerCase();
         if (!texto.includes(query)) return false;
       }
       return true;
     });
-  }, [busqueda, filtroDireccion, filtroProceso, filtroArea, filtroImpacto, filtroSemaforo, mesActivo, ejercicio, resultados, puedeTodasAreas, areaUsuario]);
+  }, [listaIndicadores, busqueda, filtroDireccion, filtroProceso, filtroArea, filtroImpacto, filtroSemaforo, mesActivo, ejercicio, resultados, puedeTodasAreas, areaUsuario]);
 
   // Paginación
   const totalPaginas = Math.max(1, Math.ceil(indicadoresFiltrados.length / PAGE_SIZE));
@@ -254,10 +359,10 @@ export default function IndicadoresView({
     let sumaPorcentaje = 0;
     let evaluadosCount = 0;
 
-    INDICADORES.forEach(ind => {
+    listaIndicadores.forEach(ind => {
       const key = `${ind.id}-${mesActivo}-${ejercicio}`;
       const val = resultados[key]?.valor !== undefined ? resultados[key].valor : ind.valor_default;
-      const sem = evalSemaforoOOMRSC05(val, ind.meta, ind.es_menor);
+      const sem = evalSemaforoOOMRSC05(val, ind.meta_anual || ind.meta, ind.es_menor);
 
       if (sem.rango === 'ACEPTABLE') {
         aceptables++;
@@ -279,14 +384,14 @@ export default function IndicadoresView({
     const promedioGlobal = evaluadosCount > 0 ? Math.round(sumaPorcentaje / evaluadosCount) : 92;
 
     return {
-      total: INDICADORES.length,
+      total: listaIndicadores.length,
       aceptables,
       preventivos,
       criticos,
       pendientes,
       promedioGlobal
     };
-  }, [mesActivo, ejercicio, resultados]);
+  }, [listaIndicadores, mesActivo, ejercicio, resultados]);
 
   // Exportar Cuadro de Control a CSV
   const handleExportarCSV = () => {
@@ -298,29 +403,29 @@ export default function IndicadoresView({
         'Cumple (SI/NO)', `Valor Real (${mesActivo} ${ejercicio})`, '% Cumplimiento', 'Observación', 'Acción / RC'
       ];
 
-      const rows = INDICADORES.map(ind => {
+      const rows = listaIndicadores.map(ind => {
         const key = `${ind.id}-${mesActivo}-${ejercicio}`;
         const dataGuardada = resultados[key];
         const val = dataGuardada?.valor !== undefined ? dataGuardada.valor : (ind.valor_default ?? '');
         const obs = dataGuardada?.observacion || ind.observacion_default || '';
         const acc = dataGuardada?.accion || ind.accion_default || 'NA';
-        const sem = evalSemaforoOOMRSC05(val, ind.meta, ind.es_menor);
+        const sem = evalSemaforoOOMRSC05(val, ind.meta_anual || ind.meta, ind.es_menor);
 
         return [
           ind.id,
-          `"${ind.proceso}"`,
-          `"${ind.direccion}"`,
-          `"${ind.area}"`,
-          ind.numero,
-          `"${ind.nombre.replace(/"/g, '""')}"`,
-          ind.periodicidad,
-          ind.unidad,
-          ind.meta_anual,
+          `"${ind.proceso || ''}"`,
+          `"${ind.direccion || ''}"`,
+          `"${ind.area || ''}"`,
+          ind.numero ?? ind.id,
+          `"${(ind.nombre || '').replace(/"/g, '""')}"`,
+          ind.periodicidad || 'Trimestral',
+          ind.unidad || 'Porcentaje',
+          ind.meta_anual || ind.meta || 85,
           ind.metas_trimestrales?.T1 ?? '',
           ind.metas_trimestrales?.T2 ?? '',
           ind.metas_trimestrales?.T3 ?? '',
           ind.metas_trimestrales?.T4 ?? '',
-          ind.impacto,
+          ind.impacto || 'Bajo',
           sem.cumple,
           val,
           sem.porcentaje !== null ? `${sem.porcentaje}%` : '',
@@ -347,9 +452,20 @@ export default function IndicadoresView({
   };
 
   // Opciones únicas de filtros
-  const direccionesUnicas = useMemo(() => [...new Set(INDICADORES.map(i => i.direccion).filter(Boolean))].sort(), []);
-  const procesosUnicos = useMemo(() => [...new Set(INDICADORES.map(i => i.proceso).filter(Boolean))].sort(), []);
-  const areasUnicas = useMemo(() => [...new Set(INDICADORES.map(i => i.area).filter(Boolean))].sort(), []);
+  const direccionesUnicas = useMemo(() => {
+    const list = [...new Set(listaIndicadores.map(i => i.direccion).filter(Boolean)), ...direcciones];
+    return [...new Set(list)].sort();
+  }, [listaIndicadores, direcciones]);
+
+  const procesosUnicos = useMemo(() => {
+    const list = [...new Set(listaIndicadores.map(i => i.proceso).filter(Boolean)), ...procesos];
+    return [...new Set(list)].sort();
+  }, [listaIndicadores, procesos]);
+
+  const areasUnicas = useMemo(() => {
+    const list = [...new Set(listaIndicadores.map(i => i.area).filter(Boolean)), ...areas];
+    return [...new Set(list)].sort();
+  }, [listaIndicadores, areas]);
 
   return (
     <div className="space-y-6">
@@ -363,24 +479,44 @@ export default function IndicadoresView({
               </span>
               <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold px-2.5 py-1 rounded-md flex items-center gap-1.5">
                 <Target size={14} />
-                {FORMATO_CUADRO_CONTROL.totalIndicadores} Indicadores Oficiales
+                {listaIndicadores.length} Indicadores Oficiales
               </span>
               <span className="text-slate-300 text-xs">
                 Última Rev.: <strong className="text-white font-mono">{FORMATO_CUADRO_CONTROL.ultimaRevision}</strong>
               </span>
+              {esAdminOSGC && (
+                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <ShieldCheck size={12} /> Rol SGC / Admin
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Cuadro de Control de Desempeño
             </h1>
             <p className="text-xs text-sky-100/80 leading-relaxed">
-              Monitoreo y evaluación mensual/trimestral de metas institucionales de OOMAPASC conforme a la metodología oficial del SGC.
+              Monitoreo y evaluación mensual, trimestral y por enfoque de procesos de metas institucionales de OOMAPASC conforme al SGC ISO 9001:2015.
             </p>
           </div>
 
-          {/* Selector de Mes & Acciones */}
+          {/* Selector de Mes, Nuevo Indicador & Acciones */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            {/* Selector de Mes con Slider / Dropdown */}
+            {/* Botón de Crear Nuevo Indicador (Exclusivo Admin / Personal SGC) */}
+            {esAdminOSGC && (
+              <button
+                onClick={() => {
+                  setIndicadorParaGestionar(null);
+                  setModalGestionIndicadorOpen(true);
+                }}
+                className="px-3.5 py-2 text-xs font-extrabold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                title="Crear un nuevo indicador en el catálogo oficial (Admin SGC)"
+              >
+                <PlusCircle size={15} />
+                <span>+ Nuevo Indicador</span>
+              </button>
+            )}
+
+            {/* Selector de Mes & Ejercicio */}
             <div className="flex items-center bg-slate-800/80 border border-slate-600/80 rounded-xl p-1">
               <select
                 value={mesActivoIndex}
@@ -415,20 +551,21 @@ export default function IndicadoresView({
             {/* Exportar Excel */}
             <button
               onClick={handleExportarCSV}
-              className="px-4 py-2 text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+              className="px-4 py-2 text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <FileSpreadsheet size={15} />
-              <span>Exportar Cuadro OOMRSC-05</span>
+              <span>Exportar OOMRSC-05</span>
             </button>
           </div>
         </div>
 
-        {/* PESTAÑAS */}
+        {/* PESTAÑAS (INCLUYENDO DESEMPEÑO POR PROCESOS) */}
         <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-700/60 overflow-x-auto">
           {[
             { id: 'cuadro', label: '1. Cuadro de Control Mensual (OOMRSC-05)', icon: Target },
-            { id: 'trimestral', label: '2. Evaluación Trimestral & MIR (T1-T4)', icon: BarChart3 },
-            { id: 'correcciones', label: `3. Reportes de Corrección (${reportesCorreccion.length})`, icon: FileWarning }
+            { id: 'procesos', label: '2. Desempeño por Procesos (Filtros Mes / Trimestre / Anual)', icon: Layers },
+            { id: 'trimestral', label: '3. Evaluación Trimestral & MIR (T1-T4)', icon: BarChart3 },
+            { id: 'correcciones', label: `4. Reportes de Corrección (${reportesCorreccion.length})`, icon: FileWarning }
           ].map(tab => {
             const Icon = tab.icon;
             const esActiva = tabActiva === tab.id;
@@ -436,7 +573,7 @@ export default function IndicadoresView({
               <button
                 key={tab.id}
                 onClick={() => setTabActiva(tab.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
                   esActiva
                     ? 'bg-white text-slate-900 shadow-md font-extrabold'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
@@ -535,7 +672,7 @@ export default function IndicadoresView({
                     setPagina(1);
                   }}
                   placeholder="Buscar por #, nombre de indicador, proceso, área o dirección..."
-                  className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-900"
+                  className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:bg-white text-slate-900 font-medium"
                 />
               </div>
 
@@ -551,7 +688,7 @@ export default function IndicadoresView({
                     setFiltroSemaforo('');
                     setPagina(1);
                   }}
-                  className="px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors shrink-0 flex items-center gap-1"
+                  className="px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
                 >
                   <X size={14} /> Limpiar Filtros
                 </button>
@@ -563,7 +700,7 @@ export default function IndicadoresView({
               <select
                 value={filtroDireccion}
                 onChange={(e) => { setFiltroDireccion(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500"
+                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 <option value="">Todas las Direcciones</option>
                 {direccionesUnicas.map(d => <option key={d} value={d}>{d}</option>)}
@@ -572,7 +709,7 @@ export default function IndicadoresView({
               <select
                 value={filtroProceso}
                 onChange={(e) => { setFiltroProceso(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500"
+                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 <option value="">Todos los Procesos</option>
                 {procesosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
@@ -581,7 +718,7 @@ export default function IndicadoresView({
               <select
                 value={filtroArea}
                 onChange={(e) => { setFiltroArea(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500"
+                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 <option value="">Todas las Áreas</option>
                 {areasUnicas.map(a => <option key={a} value={a}>{a}</option>)}
@@ -590,17 +727,17 @@ export default function IndicadoresView({
               <select
                 value={filtroImpacto}
                 onChange={(e) => { setFiltroImpacto(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500"
+                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 <option value="">Todos los Impactos</option>
-                <option value="Alto">Impacto Alto</option>
-                <option value="Bajo">Impacto Bajo</option>
+                <option value="Alto">Impacto Alto (Detona AC)</option>
+                <option value="Bajo">Impacto Bajo (Detona RC)</option>
               </select>
 
               <select
                 value={filtroSemaforo}
                 onChange={(e) => { setFiltroSemaforo(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-bold focus:ring-2 focus:ring-sky-500"
+                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-bold focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 <option value="">Todos los Semáforos</option>
                 <option value="ACEPTABLE">🟢 Aceptables (≥90%)</option>
@@ -635,14 +772,15 @@ export default function IndicadoresView({
                       Real ({mesActivo})
                     </th>
                     <th className="py-3 px-2 text-center w-28">Cumplimiento</th>
-                    <th className="py-3 px-3 min-w-[200px]">Observación Técnica</th>
-                    <th className="py-3 px-3 w-28 text-center">Acción / RC</th>
+                    <th className="py-3 px-3 min-w-[180px]">Observación Técnica</th>
+                    <th className="py-3 px-3 w-36 text-center">Acción / RC</th>
+                    {esAdminOSGC && <th className="py-3 px-2 text-center w-14">Ficha</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {indicadoresPaginados.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                      <td colSpan={esAdminOSGC ? 10 : 9} className="py-12 text-center text-slate-400">
                         No se encontraron indicadores con los filtros seleccionados.
                       </td>
                     </tr>
@@ -653,13 +791,15 @@ export default function IndicadoresView({
                       const valReal = dataGuardada?.valor !== undefined ? dataGuardada.valor : (ind.valor_default ?? null);
                       const obs = dataGuardada?.observacion || ind.observacion_default || '';
                       const acc = dataGuardada?.accion || ind.accion_default || 'NA';
-                      const sem = evalSemaforoOOMRSC05(valReal, ind.meta, ind.es_menor);
+                      const sem = evalSemaforoOOMRSC05(valReal, ind.meta_anual || ind.meta, ind.es_menor);
+                      const esFalla = sem.rango === 'CRITICO';
+                      const esAltoImpacto = ind.impacto === 'Alto';
 
                       return (
                         <tr key={ind.id} className="hover:bg-slate-50/80 transition-colors group">
                           {/* # */}
                           <td className="py-3 px-3 text-center font-mono font-bold text-slate-600">
-                            #{ind.numero}
+                            #{ind.numero !== undefined ? ind.numero : ind.id}
                           </td>
 
                           {/* Indicador / Proceso / Área */}
@@ -684,7 +824,7 @@ export default function IndicadoresView({
 
                           {/* Meta Anual */}
                           <td className="py-3 px-2 text-center font-bold text-slate-900">
-                            {ind.meta_anual}
+                            {ind.meta_anual || ind.meta}
                             <span className="text-[10px] text-slate-400 font-normal block">
                               {ind.unidad === 'Porcentaje' ? '%' : ''}
                             </span>
@@ -693,7 +833,7 @@ export default function IndicadoresView({
                           {/* Impacto */}
                           <td className="py-3 px-2 text-center">
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              ind.impacto === 'Alto' 
+                              esAltoImpacto
                                 ? 'bg-purple-100 text-purple-800 border border-purple-200' 
                                 : 'bg-slate-100 text-slate-600'
                             }`}>
@@ -705,7 +845,7 @@ export default function IndicadoresView({
                           <td className="py-3 px-3 text-center bg-sky-50/30">
                             <button
                               onClick={() => abrirModalCaptura(ind)}
-                              className="w-full px-2.5 py-1.5 bg-white border border-slate-300 hover:border-sky-500 rounded-lg text-xs font-bold text-slate-900 flex items-center justify-between shadow-sm group-hover:border-sky-400 transition-all"
+                              className="w-full px-2.5 py-1.5 bg-white border border-slate-300 hover:border-sky-500 rounded-lg text-xs font-bold text-slate-900 flex items-center justify-between shadow-2xs group-hover:border-sky-400 transition-all cursor-pointer"
                               title="Hacer clic para capturar o modificar"
                             >
                               <span>{valReal !== null && valReal !== undefined ? valReal : <span className="text-slate-400 font-normal">Capturar</span>}</span>
@@ -726,17 +866,28 @@ export default function IndicadoresView({
                             {obs ? obs : <span className="text-slate-400 italic">Sin observación</span>}
                           </td>
 
-                          {/* Acción / RC */}
+                          {/* Acción / RC (Regla de Alto / Bajo Impacto) */}
                           <td className="py-3 px-3 text-center">
-                            {sem.rango === 'CRITICO' && acc === 'NA' ? (
-                              <button
-                                onClick={() => handleCrearAccionCorrectiva(ind, valReal, sem)}
-                                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1 justify-center w-full transition-all"
-                                title="Generar Acción Correctiva OOMRSC-20 y Reporte de Corrección"
-                              >
-                                <AlertTriangle size={11} />
-                                <span>+ Crear AC</span>
-                              </button>
+                            {esFalla && acc === 'NA' ? (
+                              esAltoImpacto ? (
+                                <button
+                                  onClick={() => handleCrearAccionCorrectiva(ind, valReal, sem)}
+                                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1 justify-center w-full transition-all cursor-pointer"
+                                  title="Indicador de Alto Impacto fuera de meta: Requiere Acción Correctiva OOMRSC-20"
+                                >
+                                  <AlertTriangle size={11} />
+                                  <span>+ Crear AC</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleAbrirCrearRC(ind, valReal, sem)}
+                                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1 justify-center w-full transition-all cursor-pointer"
+                                  title="Indicador de Bajo Impacto fuera de meta: Requiere Reporte de Corrección (RC)"
+                                >
+                                  <AlertOctagon size={11} />
+                                  <span>+ Crear RC</span>
+                                </button>
+                              )
                             ) : (
                               <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
                                 acc !== 'NA' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'text-slate-400'
@@ -745,6 +896,22 @@ export default function IndicadoresView({
                               </span>
                             )}
                           </td>
+
+                          {/* Ficha Admin */}
+                          {esAdminOSGC && (
+                            <td className="py-3 px-2 text-center">
+                              <button
+                                onClick={() => {
+                                  setIndicadorParaGestionar(ind);
+                                  setModalGestionIndicadorOpen(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors cursor-pointer"
+                                title="Editar parámetros y ficha oficial del indicador"
+                              >
+                                <Settings size={14} />
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       );
                     })
@@ -763,14 +930,14 @@ export default function IndicadoresView({
                   <button
                     disabled={pagina === 1}
                     onClick={() => setPagina(p => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                    className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
                   >
                     Anterior
                   </button>
                   <button
                     disabled={pagina === totalPaginas}
                     onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-                    className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                    className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
                   >
                     Siguiente
                   </button>
@@ -782,7 +949,29 @@ export default function IndicadoresView({
       )}
 
       {/* ==================================================================== */}
-      {/* TAB 2: EVALUACIÓN TRIMESTRAL & MIR (T1, T2, T3, T4)                 */}
+      {/* TAB 2: DESEMPEÑO POR ENFOQUE DE PROCESOS (MES / TRIMESTRE / ANUAL)  */}
+      {/* ==================================================================== */}
+      {tabActiva === 'procesos' && (
+        <DesempenoProcesosTab
+          indicadores={listaIndicadores}
+          resultados={resultados}
+          ejercicio={ejercicio}
+          setEjercicio={setEjercicio}
+          mesActivoIndex={mesActivoIndex}
+          setMesActivoIndex={setMesActivoIndex}
+          onAbrirCaptura={abrirModalCaptura}
+          onCrearAccionCorrectiva={handleCrearAccionCorrectiva}
+          onCrearReporteCorreccion={handleAbrirCrearRC}
+          esAdminOSGC={esAdminOSGC}
+          onEditarIndicador={(ind) => {
+            setIndicadorParaGestionar(ind);
+            setModalGestionIndicadorOpen(true);
+          }}
+        />
+      )}
+
+      {/* ==================================================================== */}
+      {/* TAB 3: EVALUACIÓN TRIMESTRAL & MIR (T1, T2, T3, T4)                 */}
       {/* ==================================================================== */}
       {tabActiva === 'trimestral' && (
         <div className="space-y-6">
@@ -815,7 +1004,7 @@ export default function IndicadoresView({
                   <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
                     <div className="flex items-center justify-between text-slate-600">
                       <span>Metas Evaluadas:</span>
-                      <strong className="text-slate-900 font-mono">100 Indicadores</strong>
+                      <strong className="text-slate-900 font-mono">{listaIndicadores.length} Indicadores</strong>
                     </div>
                     <div className="flex items-center justify-between text-slate-600">
                       <span>Eficacia Ponderada:</span>
@@ -838,7 +1027,7 @@ export default function IndicadoresView({
       )}
 
       {/* ==================================================================== */}
-      {/* TAB 3: BITÁCORA DE REPORTES DE CORRECCIÓN (RC)                     */}
+      {/* TAB 4: BITÁCORA DE REPORTES DE CORRECCIÓN (RC)                     */}
       {/* ==================================================================== */}
       {tabActiva === 'correcciones' && (
         <div className="space-y-4">
@@ -864,10 +1053,10 @@ export default function IndicadoresView({
                     </span>
                     <div>
                       <span className="font-bold text-slate-800 block">
-                        Responsable: {rc.responsable}
+                        Responsable: {rc.responsable} · {rc.area || 'Área Operativa'}
                       </span>
-                      <span className="text-[11px] text-slate-400">
-                        Ejercicio: {rc.ejercicio}
+                      <span className="text-[11px] text-slate-500">
+                        {rc.descripcion || `Ejercicio: ${rc.ejercicio}`}
                       </span>
                     </div>
                   </div>
@@ -888,7 +1077,9 @@ export default function IndicadoresView({
         </div>
       )}
 
-      {/* MODAL DE CAPTURA RÁPIDA / OBSERVACIÓN TÉCNICA */}
+      {/* ==================================================================== */}
+      {/* MODAL DE CAPTURA RÁPIDA CON ALERTA AUTOMÁTICA DE AC / RC            */}
+      {/* ==================================================================== */}
       {indicadorEnEdicion && (
         <ContenedorModal
           abierto={!!indicadorEnEdicion}
@@ -901,7 +1092,7 @@ export default function IndicadoresView({
               </div>
               <div>
                 <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                  INDICADOR #{indicadorEnEdicion.id} · {mesActivoNombre} {ejercicio}
+                  INDICADOR #{indicadorEnEdicion.numero ?? indicadorEnEdicion.id} · {mesActivoNombre} {ejercicio}
                 </span>
                 <h3 className="text-base font-bold text-slate-900 leading-tight mt-0.5">
                   {indicadorEnEdicion.nombre}
@@ -918,14 +1109,14 @@ export default function IndicadoresView({
                 <button
                   type="button"
                   onClick={() => setIndicadorEnEdicion(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleGuardarModal}
-                  className="px-4 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-sm transition-all flex items-center gap-2"
+                  className="px-4 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-sm transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Save size={14} />
                   <span>Guardar Resultado</span>
@@ -942,12 +1133,14 @@ export default function IndicadoresView({
                 <strong className="text-slate-800">{indicadorEnEdicion.direccion} · {indicadorEnEdicion.area}</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Meta Anual:</span>
-                <strong className="text-sky-700">{indicadorEnEdicion.meta_anual} {indicadorEnEdicion.unidad}</strong>
+                <span className="text-slate-400 block text-[10px]">Meta Anual / Criterio:</span>
+                <strong className="text-sky-700">
+                  {indicadorEnEdicion.meta_anual || indicadorEnEdicion.meta} {indicadorEnEdicion.unidad}
+                </strong>
               </div>
             </div>
 
-            {/* Valor Real */}
+            {/* Valor Real Capturado */}
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700">
                 Valor Real Obtenido en {mesActivoNombre} {ejercicio}: <span className="text-rose-500">*</span>
@@ -964,6 +1157,68 @@ export default function IndicadoresView({
                 />
               </div>
             </div>
+
+            {/* BANNER DE DETECCIÓN INTELIGENTE DE NO CONFORMIDAD (ALTO / BAJO IMPACTO) */}
+            {semaforoModalEnVivo && semaforoModalEnVivo.rango === 'CRITICO' && valorInput !== '' && (
+              <div className={`p-3.5 rounded-xl border text-xs space-y-2 animate-fade-in ${
+                indicadorEnEdicion.impacto === 'Alto'
+                  ? 'bg-rose-50 border-rose-300 text-rose-950'
+                  : 'bg-amber-50 border-amber-300 text-amber-950'
+              }`}>
+                <div className="flex items-center justify-between font-bold">
+                  <span className="flex items-center gap-1.5">
+                    {indicadorEnEdicion.impacto === 'Alto' ? (
+                      <>
+                        <AlertTriangle size={16} className="text-rose-600 shrink-0" />
+                        <span>Desviación Crítica en Indicador de Alto Impacto</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertOctagon size={16} className="text-amber-600 shrink-0" />
+                        <span>Desviación en Indicador de Bajo Impacto</span>
+                      </>
+                    )}
+                  </span>
+                  <span className="px-2 py-0.5 rounded font-mono text-[10.5px] font-extrabold bg-white border">
+                    {semaforoModalEnVivo.porcentaje}% Cumplimiento
+                  </span>
+                </div>
+
+                <p className="text-[11px] leading-relaxed opacity-90">
+                  {indicadorEnEdicion.impacto === 'Alto' ? (
+                    <span>
+                      Conforme a ISO 9001 § 10.2 y la política institucional, al ser un indicador de <strong>Alto Impacto</strong> fuera de meta, el sistema requiere formalizar una <strong>Acción Correctiva (OOMRSC-20)</strong>.
+                    </span>
+                  ) : (
+                    <span>
+                      Este indicador está clasificado como de <strong>Bajo Impacto</strong>. Para mantener la trazabilidad operativa conforme al SGC, se requiere emitir un <strong>Reporte de Corrección (RC)</strong>.
+                    </span>
+                  )}
+                </p>
+
+                <div className="pt-1">
+                  {indicadorEnEdicion.impacto === 'Alto' ? (
+                    <button
+                      type="button"
+                      onClick={() => handleCrearAccionCorrectiva(indicadorEnEdicion, valorInput, semaforoModalEnVivo)}
+                      className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg shadow-sm text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
+                    >
+                      <AlertTriangle size={13} />
+                      <span>Emitir Acción Correctiva Oficial (OOMRSC-20) Ahora</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleAbrirCrearRC(indicadorEnEdicion, valorInput, semaforoModalEnVivo)}
+                      className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-sm text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
+                    >
+                      <AlertOctagon size={13} />
+                      <span>Emitir Reporte de Corrección (RC) Ahora</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Observación Técnica */}
             <div className="space-y-1.5">
@@ -994,6 +1249,41 @@ export default function IndicadoresView({
             </div>
           </form>
         </ContenedorModal>
+      )}
+
+      {/* MODAL PARA CREAR O EDITAR FICHA OFICIAL DE INDICADOR (ADMIN SGC) */}
+      {modalGestionIndicadorOpen && (
+        <ModalGestionarIndicador
+          isOpen={modalGestionIndicadorOpen}
+          onClose={() => {
+            setModalGestionIndicadorOpen(false);
+            setIndicadorParaGestionar(null);
+          }}
+          indicadorAEditar={indicadorParaGestionar}
+          onGuardarIndicador={handleGuardarIndicadorFicha}
+          direccionesDisponibles={direccionesUnicas}
+          procesosDisponibles={procesosUnicos}
+          areasDisponibles={areasUnicas}
+          totalIndicadores={listaIndicadores.length}
+        />
+      )}
+
+      {/* MODAL PARA GENERAR REPORTE DE CORRECCIÓN (RC) */}
+      {modalRCOpen && datosParaRC && (
+        <ModalGenerarRC
+          isOpen={modalRCOpen}
+          onClose={() => {
+            setModalRCOpen(false);
+            setDatosParaRC(null);
+          }}
+          indicador={datosParaRC.indicador}
+          valorReal={datosParaRC.valorReal}
+          semaforo={datosParaRC.semaforo}
+          mes={mesActivo}
+          ejercicio={ejercicio}
+          usuarioLogueado={usuarioLogueado}
+          onConfirmarRC={handleConfirmarRC}
+        />
       )}
     </div>
   );
