@@ -292,23 +292,27 @@ export function generarBriefingMarkdownLocal(ctx) {
   md += `### 4. 📑 Mantenimiento Documental Activo y Trazabilidad (ISO 9001 § 7.5.3)\n`;
   
   if (ctx.documentos_antiguos_sin_revision.length > 0) {
-    md += `⚠️ **ALERTA DE REVISIÓN PERIÓDICA:** Se detectaron **${ctx.documentos_antiguos_sin_revision.length} documento(s) con más de 1 año sin actualizar/revisar** en tu área. La norma exige mantener una revisión activa para evitar no conformidades de obsolescencia operativa en auditoría:\n\n`;
-    ctx.documentos_antiguos_sin_revision.forEach(doc => {
-      md += `- ⚠️ **[${doc.clave}] ${doc.titulo}** (${doc.tipo})\n`;
-      md += `  - **Última Versión:** \`${doc.version}\` | **Fecha:** ${doc.fecha} (**${doc.dias_sin_revision} días sin revisar**)\n`;
-      md += `  - **Acción requerida:** Validar si el procedimiento/registro sigue reflejando la práctica real en campo y ratificar o emitir nueva versión.\n`;
-    });
-    md += `\n`;
+    const totalAntiguos = ctx.documentos_antiguos_sin_revision.length;
+    const procs = ctx.documentos_antiguos_sin_revision.filter(d => (d.tipo || '').toLowerCase().includes('procedimiento')).length;
+    const regs = ctx.documentos_antiguos_sin_revision.filter(d => (d.tipo || '').toLowerCase().includes('registro') || (d.tipo || '').toLowerCase().includes('formato')).length;
+    const otros = totalAntiguos - procs - regs;
+
+    const desglose = [];
+    if (procs > 0) desglose.push(`**${procs} procedimiento(s)**`);
+    if (regs > 0) desglose.push(`**${regs} registro(s)/formato(s)**`);
+    if (otros > 0) desglose.push(`**${otros} otro(s)**`);
+
+    md += `⚠️ **ALERTA DE REVISIÓN PERIÓDICA:** Se detectaron **${totalAntiguos} documento(s) con más de 1 año sin actualizar/revisar** en tu área (${desglose.join(', ')}).\n\n`;
+    md += `⚡ **¿Qué puedes hacer?** Conforme a la norma ISO 9001 § 7.5.3, no es necesario reescribirlos si el método de trabajo sigue vigente; basta con **ratificar su vigencia** para avalar que continúan operando.\n`;
+    md += `- Para ratificarlos de forma rápida y directa sin saturar la pantalla, utiliza el botón de acción rápida **[Ratificar Doc >1 año]** disponible aquí en el asistente.\n`;
+    md += `- Si algún procedimiento o registro sufrió modificaciones operativas en campo, ingresa al módulo de **Documentos** para emitir formalmente una nueva versión.\n\n`;
   } else {
     md += `🟢 *Todos los procedimientos y registros de tu área se encuentran actualizados con vigencia menor a 1 año.*\n\n`;
   }
 
   if (ctx.documentos_pendientes_aprobacion.length > 0) {
-    md += `⏳ **DOCUMENTOS PENDIENTES DE APROBACIÓN POR EL SGC:**\n`;
-    ctx.documentos_pendientes_aprobacion.forEach(doc => {
-      md += `- 📝 **[${doc.clave}] ${doc.titulo}** — Estado actual: \`${doc.estado}\` (En espera de dictamen técnico y firma de Coordinación SGC).\n`;
-    });
-    md += `\n`;
+    const totalPend = ctx.documentos_pendientes_aprobacion.length;
+    md += `⏳ **Documentos pendientes de aprobación SGC:** Se tienen **${totalPend} documento(s)** en proceso de revisión técnica y dictamen por la Coordinación del SGC.\n\n`;
   }
 
   // 5. Revisión por la Dirección
@@ -331,7 +335,7 @@ export function generarBriefingMarkdownLocal(ctx) {
     md += `2. 🚀 **Revisar Plan de Mejora Próximo a Vencer:** Contactar al equipo responsable para verificar entrega de evidencias y validar presupuesto ejercido.\n`;
   }
   if (c.total_docs_antiguos_sin_revision > 0) {
-    md += `3. 📑 **Actualización Documental Activa:** Convocar a revisión del procedimiento \`${ctx.documentos_antiguos_sin_revision[0]?.clave}\` para confirmar vigencia conforme al 7.5.3.\n`;
+    md += `3. 📑 **Actualización Documental Activa:** Ratificar la vigencia de los ${c.total_docs_antiguos_sin_revision} procedimientos/registros de tu área con el botón de acción rápida **[Ratificar Doc >1 año]** para asegurar cumplimiento normativo sin sobrecarga administrativa.\n`;
   }
   if (c.total_ac_pendientes > 0) {
     md += `4. ⚠️ **Seguimiento a Acciones Correctivas:** Verificar que las actividades del plan de acción se encuentren capturadas con evidencia fotográfica o documental en el portal.\n`;

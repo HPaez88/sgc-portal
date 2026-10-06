@@ -18,7 +18,8 @@ import {
   Sparkles,
   Building2,
   Target,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Settings
 } from 'lucide-react';
 import { evalSemaforoOOMRSC05 } from '../../constants/indicadores';
 
@@ -90,7 +91,7 @@ export default function DesempenoProcesosTab({
     if (modoTemporal === 'mes') {
       const key = `${ind.id}-${mesActivo}-${ejercicio}`;
       const dataGuardada = resultados[key];
-      const val = dataGuardada?.valor !== undefined ? dataGuardada.valor : (ind.valor_default ?? null);
+      const val = dataGuardada?.valor !== undefined ? dataGuardada.valor : null;
       const obs = dataGuardada?.observacion || ind.observacion_default || '';
       const acc = dataGuardada?.accion || ind.accion_default || 'NA';
       const sem = evalSemaforoOOMRSC05(val, ind.meta, ind.es_menor);
@@ -108,14 +109,12 @@ export default function DesempenoProcesosTab({
       let valPromedio = null;
       if (valoresEnTrimestre.length > 0) {
         valPromedio = Math.round((valoresEnTrimestre.reduce((a, b) => a + Number(b), 0) / valoresEnTrimestre.length) * 10) / 10;
-      } else if (ind.valor_default !== null && ind.valor_default !== undefined) {
-        valPromedio = ind.valor_default;
       }
 
       const sem = evalSemaforoOOMRSC05(valPromedio, metaTrim, ind.es_menor);
       return {
         val: valPromedio,
-        obs: `Promedio de ${valoresEnTrimestre.length || 'datos base'} meses en ${configTrim.label}`,
+        obs: `Promedio de ${valoresEnTrimestre.length} meses capturados en ${configTrim.label}`,
         acc: ind.accion_default || 'NA',
         sem,
         metaEvaluada: metaTrim,
@@ -133,8 +132,6 @@ export default function DesempenoProcesosTab({
     let valPromedioAnual = null;
     if (valoresAnuales.length > 0) {
       valPromedioAnual = Math.round((valoresAnuales.reduce((a, b) => a + Number(b), 0) / valoresAnuales.length) * 10) / 10;
-    } else if (ind.valor_default !== null && ind.valor_default !== undefined) {
-      valPromedioAnual = ind.valor_default;
     }
 
     const sem = evalSemaforoOOMRSC05(valPromedioAnual, metaAnual, ind.es_menor);
@@ -596,8 +593,7 @@ export default function DesempenoProcesosTab({
                             </th>
                             <th className="py-2.5 px-2 text-center w-28">Cumplimiento</th>
                             <th className="py-2.5 px-3 text-center w-36">Acción Correctiva / RC</th>
-                            <th className="py-2.5 px-2 text-center w-24">Ficha PMD</th>
-                            {esAdminOSGC && <th className="py-2.5 px-2 text-center w-14">Admin</th>}
+                            <th className="py-2.5 px-2 text-center w-16" title="Configuración Integral & Ficha PMD">Config.</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -698,30 +694,16 @@ export default function DesempenoProcesosTab({
                                   )}
                                 </td>
 
-                                {/* Ficha PMD */}
+                                {/* Configuración Integral & Ficha PMD */}
                                 <td className="py-2.5 px-2 text-center">
                                   <button
-                                    onClick={() => onAbrirFichaAyuntamiento?.(ind)}
-                                    className="px-2 py-1 text-[10.5px] font-bold bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-900 border border-sky-200 rounded-md shadow-2xs flex items-center gap-1 mx-auto transition-all cursor-pointer"
-                                    title="Ver Ficha Técnica Oficial del Ayuntamiento de Cajeme"
+                                    onClick={() => onEditarIndicador ? onEditarIndicador(ind) : onAbrirFichaAyuntamiento?.(ind)}
+                                    className="p-1.5 text-slate-500 hover:text-sky-700 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer border border-transparent hover:border-sky-200"
+                                    title="Configuración Integral & Ficha PMD (SGC + PMD)"
                                   >
-                                    <FileSpreadsheet size={11} className="text-sky-600" />
-                                    <span>Ficha PMD</span>
+                                    <Settings size={15} />
                                   </button>
                                 </td>
-
-                                {/* Ficha Admin */}
-                                {esAdminOSGC && (
-                                  <td className="py-2.5 px-2 text-center">
-                                    <button
-                                      onClick={() => onEditarIndicador?.(ind)}
-                                      className="p-1 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"
-                                      title="Editar parámetros del indicador (Admin SGC)"
-                                    >
-                                      <Target size={14} />
-                                    </button>
-                                  </td>
-                                )}
                               </tr>
                             );
                           })}

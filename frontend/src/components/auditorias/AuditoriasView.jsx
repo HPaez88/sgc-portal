@@ -438,7 +438,7 @@ export default function AuditoriasView({ auditorias, setAuditorias, puedeTodasAr
       {/* ============================================================ */}
       {mostrarModal && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col max-h-[92vh]">
+          <div className="bg-white rounded-2xl w-full max-w-[90vw] xl:max-w-4xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col max-h-[92vh]">
             <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] to-[#1E3E62] flex justify-between items-center text-white shrink-0">
               <h3 className="font-extrabold text-white text-sm flex items-center gap-2">
                 <Plus size={18} className="text-sky-400" /> Programar Auditoría del SGC
@@ -660,7 +660,7 @@ export default function AuditoriasView({ auditorias, setAuditorias, puedeTodasAr
       {/* ============================================================ */}
       {auditoriaDetalleModal && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+          <div className="bg-white rounded-2xl w-full max-w-[85vw] xl:max-w-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
             <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] to-[#1E3E62] flex justify-between items-center text-white">
               <h3 className="font-extrabold text-white text-sm flex items-center gap-2">
                 <ClipboardCheck size={18} className="text-sky-400" />

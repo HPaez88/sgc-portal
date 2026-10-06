@@ -572,7 +572,8 @@ export default function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasA
         titulo="Registrar Riesgo / Oportunidad"
         subtitulo={areaSeleccionada ? `Área: ${areaSeleccionada}` : 'Sin área seleccionada'}
         icono={<ShieldAlert size={18} />}
-        size="lg"
+        size="2xl"
+        anchoMaximo="max-w-[90vw] xl:max-w-[1350px]"
         footer={(
           <>
             <button

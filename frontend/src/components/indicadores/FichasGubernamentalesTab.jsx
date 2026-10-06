@@ -16,7 +16,8 @@ import {
   Activity,
   ArrowUpRight,
   TrendingUp,
-  Bookmark
+  Bookmark,
+  Settings
 } from 'lucide-react';
 import {
   INDICADORES
@@ -33,10 +34,15 @@ import { useToast } from '../common/Toast';
 import ModalFichaTecnicaAyuntamiento from './ModalFichaTecnicaAyuntamiento';
 
 export default function FichasGubernamentalesTab({
+  indicadores = [],
   indicadoresData = {},
+  resultados = {},
+  ejercicio = 2026,
   fichasPersonalizadas = {},
   setFichasPersonalizadas,
-  esAdminOSGC = false
+  esAdminOSGC = false,
+  onAbrirFicha,
+  onAbrirCaptura
 }) {
   const toast = useToast();
   const [busqueda, setBusqueda] = useState('');
@@ -48,25 +54,27 @@ export default function FichasGubernamentalesTab({
   // Modal Ficha
   const [fichaModal, setFichaModal] = useState({ open: false, ficha: null, indOriginal: null });
 
+  const listaBase = (indicadores && indicadores.length > 0) ? indicadores : INDICADORES;
+
   // Procesos únicos
   const procesosUnicos = useMemo(() => {
-    return Array.from(new Set(INDICADORES.map(i => i.proceso))).filter(Boolean);
-  }, []);
+    return Array.from(new Set(listaBase.map(i => i.proceso))).filter(Boolean);
+  }, [listaBase]);
 
   const direccionesUnicas = useMemo(() => {
-    return Array.from(new Set(INDICADORES.map(i => i.direccion))).filter(Boolean);
-  }, []);
+    return Array.from(new Set(listaBase.map(i => i.direccion))).filter(Boolean);
+  }, [listaBase]);
 
   // Catálogo completo de fichas técnicas
   const fichasList = useMemo(() => {
-    return INDICADORES.map(ind => {
+    return listaBase.map(ind => {
       const ficha = obtenerFichaTecnicaIndicador(ind, fichasPersonalizadas);
       return {
         indicador: ind,
         ficha
       };
     });
-  }, [fichasPersonalizadas]);
+  }, [listaBase, fichasPersonalizadas]);
 
   // Filtrado
   const fichasFiltradas = useMemo(() => {
@@ -94,7 +102,7 @@ export default function FichasGubernamentalesTab({
     e.stopPropagation();
     try {
       const indNum = ficha.indicador_numero ?? ficha.indicador_id ?? 0;
-      exportarFichaTecnicaPDF(ficha, {});
+      exportarFichaTecnicaPDF(ficha, resultados);
       toast.success(`Ficha Técnica #${indNum} descargada en PDF oficial`);
     } catch (err) {
       toast.error(`Error al generar PDF: ${err.message}`);
@@ -105,7 +113,7 @@ export default function FichasGubernamentalesTab({
     e.stopPropagation();
     try {
       const indNum = ficha.indicador_numero ?? ficha.indicador_id ?? 0;
-      await descargarFichaTecnicaDocx(ficha);
+      await descargarFichaTecnicaDocx(ficha, resultados);
       toast.success(`Ficha Técnica #${indNum} descargada en Word (.docx)`);
     } catch (err) {
       toast.error(`Error al generar Word: ${err.message}`);
@@ -229,7 +237,7 @@ export default function FichasGubernamentalesTab({
           return (
             <div
               key={indicador.id}
-              onClick={() => setFichaModal({ open: true, ficha, indOriginal: indicador })}
+              onClick={() => onAbrirFicha ? onAbrirFicha(ficha, indicador) : setFichaModal({ open: true, ficha, indOriginal: indicador })}
               className="bg-white hover:bg-slate-50/70 p-5 rounded-2xl border border-slate-200/90 hover:border-sky-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
             >
               <div className="space-y-3">
@@ -288,7 +296,11 @@ export default function FichasGubernamentalesTab({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setFichaModal({ open: true, ficha, indOriginal: indicador });
+                    if (onAbrirFicha) {
+                      onAbrirFicha(ficha, indicador);
+                    } else {
+                      setFichaModal({ open: true, ficha, indOriginal: indicador });
+                    }
                   }}
                   className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
@@ -297,6 +309,20 @@ export default function FichasGubernamentalesTab({
                 </button>
 
                 <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onAbrirFicha) {
+                        onAbrirFicha(ficha, indicador);
+                      } else {
+                        setFichaModal({ open: true, ficha, indOriginal: indicador });
+                      }
+                    }}
+                    className="p-1.5 bg-slate-100 hover:bg-sky-50 text-slate-600 hover:text-sky-700 border border-slate-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                    title="Configuración Integral & Ficha PMD"
+                  >
+                    <Settings size={13} />
+                  </button>
                   <button
                     onClick={(e) => handleDescargarPDF(ficha, e)}
                     className="p-1.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"

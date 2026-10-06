@@ -78,8 +78,8 @@ export default function ModalGenerarRC({
   };
 
   return (
-    <ContenedorModal isOpen={isOpen} onClose={onClose} size="lg">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <ContenedorModal isOpen={isOpen} onClose={onClose} size="3xl" anchoMaximo="max-w-[85vw] xl:max-w-[1150px]">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] w-full">
         {/* Header */}
         <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#B45309] text-white flex items-center justify-between">
           <div className="flex items-center gap-3">

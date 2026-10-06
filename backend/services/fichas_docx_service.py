@@ -68,12 +68,12 @@ def generar_docx_ficha_tecnica(data: dict) -> io.BytesIO:
     r_h1 = p_header.add_run("H. AYUNTAMIENTO DE CAJEME · OOMAPAS DE CAJEME\n")
     r_h1.bold = True
     r_h1.font.size = Pt(11)
-    r_h1.font.color.rgb = RGBColor(0x00, 0x28, 0x55)
+    r_h1.font.color.rgb = RGBColor(0x2A, 0x78, 0xB0)
     
     r_h2 = p_header.add_run("FICHA TÉCNICA DE INDICADOR · PRESUPUESTO DE EGRESOS 2026\n")
     r_h2.bold = True
     r_h2.font.size = Pt(10)
-    r_h2.font.color.rgb = RGBColor(0x1E, 0x3E, 0x62)
+    r_h2.font.color.rgb = RGBColor(0x2A, 0x78, 0xB0)
 
     # Tabla Maestra Contenedora
     tbl = doc.add_table(rows=0, cols=2)
@@ -84,7 +84,7 @@ def generar_docx_ficha_tecnica(data: dict) -> io.BytesIO:
         row = tbl.add_row()
         cell = row.cells[0]
         cell.merge(row.cells[1])
-        set_cell_background(cell, "0B192C")
+        set_cell_background(cell, "2A78B0")
         p = cell.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         r = p.add_run(f"  {title}")
@@ -134,11 +134,80 @@ def generar_docx_ficha_tecnica(data: dict) -> io.BytesIO:
     add_key_val("Línea base", identificacion.get('linea_base', ''))
     add_key_val("Sentido del indicador", identificacion.get('sentido_indicador', 'Ascendente'))
     
-    # Tabla de Cumplimiento Mensual dentro de la Ficha
+    # TABLA DE CUMPLIMIENTO MENSUAL DENTRO DE LA FICHA (OFICIAL 12 MESES CON SEMÁFORO)
     meses_claves = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
-    val_mensuales = [str(mensual.get(m.lower(), mensual.get(m, 'NA'))) for m in meses_claves]
-    cumplimiento_txt = " | ".join([f"{m}: {v}" for m, v in zip(meses_claves, val_mensuales)])
-    add_key_val("Cumplimiento Mensual (Metas)", cumplimiento_txt)
+    
+    row_cump = tbl.add_row()
+    c_label, c_content = row_cump.cells[0], row_cump.cells[1]
+    c_label.width = Inches(2.2)
+    c_content.width = Inches(4.8)
+    set_cell_background(c_label, "F0F4F8")
+    p_label = c_label.paragraphs[0]
+    r_lbl = p_label.add_run("Cumplimiento")
+    r_lbl.bold = True
+    r_lbl.font.size = Pt(8.5)
+    set_cell_margins(c_label, 50, 50, 80, 80)
+    
+    # Subtabla de 12 columnas armonizadas
+    sub_tbl = c_content.add_table(rows=2, cols=12)
+    sub_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+    sub_tbl.autofit = False
+    
+    col_width = Inches(4.8 / 12)
+    hdr_cells = sub_tbl.rows[0].cells
+    for idx, m in enumerate(meses_claves):
+        cell = hdr_cells[idx]
+        cell.width = col_width
+        set_cell_background(cell, "2A78B0")
+        set_cell_margins(cell, 35, 35, 20, 20)
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(m)
+        run.bold = True
+        run.font.size = Pt(6.8)
+        run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+        
+    val_cells = sub_tbl.rows[1].cells
+    for idx, m in enumerate(meses_claves):
+        cell = val_cells[idx]
+        cell.width = col_width
+        set_cell_margins(cell, 35, 35, 20, 20)
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        item = mensual.get(m, mensual.get(m.lower(), {}))
+        valor_str = ""
+        bg_hex = "FFFFFF"
+        text_color = RGBColor(0x33, 0x41, 0x55)
+        
+        if isinstance(item, dict):
+            valor_raw = item.get('texto') or item.get('valor')
+            color_hex = item.get('colorHex')
+            if valor_raw is not None and str(valor_raw) != '':
+                valor_str = str(valor_raw) if str(valor_raw).endswith('%') else f"{valor_raw}%"
+                bg_hex = str(color_hex or "22C55E").replace('#', '')
+                text_color = RGBColor(0xFF, 0xFF, 0xFF)
+        elif item is not None and str(item) not in ('NA', '', 'None'):
+            valor_str = str(item) if str(item).endswith('%') else f"{item}%"
+            try:
+                num = float(str(item).replace('%', ''))
+                if num >= 90:
+                    bg_hex = "22C55E"
+                elif num >= 80:
+                    bg_hex = "EAB308"
+                else:
+                    bg_hex = "EF4444"
+                text_color = RGBColor(0xFF, 0xFF, 0xFF)
+            except:
+                bg_hex = "FFFFFF"
+                
+        set_cell_background(cell, bg_hex)
+        if valor_str:
+            run = p.add_run(valor_str)
+            run.bold = True
+            run.font.size = Pt(6.8)
+            run.font.color.rgb = text_color
+            
     add_key_val("Supuestos", identificacion.get('supuestos', ''))
 
     # III. ATRIBUTOS DEL INDICADOR (CREMAA)

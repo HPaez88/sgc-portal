@@ -93,3 +93,65 @@ export const AREAS_DETALLE_INICIALES = [
   { id: 32, nombre: "Agencia Providencia", encargado: "C. Elena Quintana", correo: "ag.providencia@oomapasc.gob.mx", direccion: "Dir. Comercial", telefono: "6444123456" },
   { id: 33, nombre: "Agencia Marte R. Gómez", encargado: "C. Víctor Lugo", correo: "ag.martergomez@oomapasc.gob.mx", direccion: "Dir. Comercial", telefono: "6444234567" }
 ];
+
+/**
+ * Normaliza cualquier variante de texto a una de las 7 direcciones oficiales del catálogo OOMAPASC.
+ */
+export function normalizarDireccion(nombre) {
+  if (!nombre) return 'Dir. General';
+  const n = String(nombre).trim();
+  if (DIRECCIONES.includes(n)) return n;
+  const lower = n.toLowerCase();
+  if (lower.includes('admin')) return 'Dir. Administrativa';
+  if (lower.includes('comerc')) return 'Dir. Comercial';
+  if (lower.includes('técn') || lower.includes('tecn')) return 'Dir. Técnica';
+  if (lower.includes('juríd') || lower.includes('jurid')) return 'Dir. Jurídica';
+  if (lower.includes('social') || lower.includes('cultura')) return 'Dir. Programas Sociales y Cultura del Agua';
+  if (lower.includes('control') || lower.includes('órgano') || lower.includes('organo')) return 'Dir. Órgano de Control Interno';
+  if (lower.includes('general')) return 'Dir. General';
+  return 'Dir. General';
+}
+
+/**
+ * Normaliza cualquier variante o nombre histórico al catálogo de las 33 áreas oficiales de OOMAPASC.
+ */
+export function normalizarArea(areaNombre) {
+  if (!areaNombre) return 'Sistema de Gestión de Calidad';
+  const a = String(areaNombre).trim();
+  if (AREAS.includes(a)) return a;
+  const lower = a.toLowerCase();
+  if (lower.includes('mtto') && lower.includes('servicios')) return 'Mantenimiento y Servicios Generales';
+  if (lower.includes('supervisión') || lower.includes('supervision')) return 'Supervisión y control de obras';
+  if (lower.includes('sectorización') || lower.includes('sectorizacion')) return 'Sectorización hidrométrica e innovación';
+  if (lower.includes('cultura del agua') || lower.includes('cultura')) return 'Cultura del agua';
+  if (lower.includes('juríd') || lower.includes('jurid')) return 'Jurídico';
+  if (lower.includes('transparencia') || lower.includes('control interno')) return 'Órgano de Control Interno';
+  if (lower.includes('operación y mantenimiento') || lower.includes('operacion y mantenimiento')) return 'Mantenimiento de Redes';
+  if (lower.includes('proyectos e infraestructura')) return 'Proyectos e Infraestructura';
+  if (lower.includes('dirección general') || lower.includes('direccion general')) return 'Sistema de Gestión de Calidad';
+  if (lower.includes('dirección comercial') || lower.includes('direccion comercial')) return 'Control y Servicios';
+  if (lower.includes('dirección administrativa') || lower.includes('direccion administrativa')) return 'Contabilidad';
+  if (lower.includes('atención') || lower.includes('atencion')) return 'Atención Ciudadana';
+  if (lower.includes('calidad')) return 'Control de Calidad';
+  if (lower.includes('plantas')) return 'Plantas Potabilizadoras';
+  if (lower.includes('redes')) return 'Mantenimiento de Redes';
+  if (lower.includes('alcantarillado')) return 'Alcantarillado y Saneamiento';
+  if (lower.includes('padrón') || lower.includes('padron')) return 'Padrón de Usuarios';
+  if (lower.includes('contratos')) return 'Contratos y Servicios';
+  if (lower.includes('lectura')) return 'Verificación y Lectura';
+  if (lower.includes('recursos humanos')) return 'Recursos Humanos';
+  if (lower.includes('materiales')) return 'Recursos Materiales';
+  if (lower.includes('informática') || lower.includes('informatica')) return 'Informática';
+  if (lower.includes('licitaciones')) return 'Licitaciones';
+  if (lower.includes('social')) return 'Programas Sociales';
+  return 'Sistema de Gestión de Calidad';
+}
+
+/**
+ * Obtiene la dirección oficial asignada a un área según la estructura orgánica institucional.
+ */
+export function obtenerDireccionDeArea(areaNombre) {
+  const normArea = normalizarArea(areaNombre);
+  const found = AREAS_DETALLE_INICIALES.find(ad => ad.nombre === normArea);
+  return found ? found.direccion : 'Dir. General';
+}

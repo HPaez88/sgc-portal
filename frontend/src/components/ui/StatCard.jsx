@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 export function StatCard({ 
   title, 
   value, 
+  subtitle,
   icon: Icon, 
   trend, 
   trendUp, 
@@ -41,6 +42,9 @@ export function StatCard({
 
   const selectedAccent = accentColors[accent] || accentColors.blue;
 
+  const trendLabel = typeof trend === 'object' && trend !== null ? trend.label : trend;
+  const isTrendUp = typeof trend === 'object' && trend !== null ? (trend.positive ?? trendUp ?? true) : (trendUp ?? true);
+
   return (
     <div 
       onClick={onClick}
@@ -61,21 +65,26 @@ export function StatCard({
           )}
         </div>
 
-        <div className="flex items-baseline gap-2">
+        <div className="flex flex-col gap-1">
           <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight font-mono font-tabular">
             {value}
           </h3>
+          {subtitle && (
+            <p className="text-xs text-slate-500 font-medium">
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
 
-      {trend && (
+      {trendLabel && (
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5">
             <span className={`inline-flex items-center gap-0.5 font-bold px-1.5 py-0.5 rounded border text-[11px] ${
-              trendUp ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60'
+              isTrendUp ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60'
             }`}>
-              {trendUp ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-              {trend}
+              {isTrendUp ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+              {trendLabel}
             </span>
             <span className="text-slate-400 font-medium text-[11px]">{benchmark}</span>
           </div>

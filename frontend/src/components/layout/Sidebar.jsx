@@ -31,6 +31,7 @@ const Sidebar = ({
       title: 'OPERACIÓN Y MEJORA',
       items: [
         { id: 'dashboard', icon: LayoutDashboard, label: 'Panel Principal' },
+        { id: 'riesgos', icon: AlertOctagon, label: 'Matriz de Riesgos y Oportunidades', badge: 'ISO 6.1' },
         { id: 'ac', icon: AlertTriangle, label: 'Acciones Correctivas', badge: 'OOMRSC-20' },
         { id: 'pm', icon: CheckCircle2, label: 'Planes de Mejora', badge: 'OOMRSC-21' },
         { id: 'gestor', icon: FileEdit, label: 'Aprobaciones' },
@@ -41,7 +42,6 @@ const Sidebar = ({
       items: [
         { id: 'revision_direccion', icon: Award, label: 'Revisión Dirección', badge: 'OOMRSC-04' },
         { id: 'indicadores', icon: Target, label: 'Indicadores SGC', count: 100 },
-        { id: 'riesgos', icon: AlertOctagon, label: 'Matriz de Riesgos' },
         { id: 'audits', icon: ClipboardCheck, label: 'Auditorías' },
       ]
     },

@@ -700,18 +700,18 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   }
 
   const modalAuditor = mostrarModalAuditor && (
-    <ContenedorModal isOpen onClose={() => setMostrarModalAuditor(false)} size="md" backdropClassName="bg-black/60 backdrop-blur-sm">
-      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 w-full border border-slate-200">
-        <h3 className="text-lg font-bold text-[#002855] mb-2 flex items-center gap-2">
-          <span className="text-xl">👤</span> Asignar Auditor de Cierre
+    <ContenedorModal isOpen onClose={() => setMostrarModalAuditor(false)} size="2xl" anchoMaximo="max-w-[85vw] xl:max-w-[1000px]" backdropClassName="bg-black/60 backdrop-blur-sm">
+      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full border border-slate-200">
+        <h3 className="text-xl font-bold text-[#002855] mb-2 flex items-center gap-2">
+          <span className="text-2xl">👤</span> Asignar Auditor de Cierre
         </h3>
-        <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+        <p className="text-sm text-slate-600 mb-5 leading-relaxed">
           Seleccione un auditor de los usuarios registrados. Se registrará la asignación y se notificará por correo electrónico institucional con el expediente para auditoría:
         </p>
         <select
           value={auditorSeleccionado}
           onChange={(e) => setAuditorSeleccionado(e.target.value)}
-          className="w-full p-3 border-2 border-slate-200 rounded-xl focus:border-[#002855] outline-none text-sm font-medium transition-colors"
+          className="w-full p-3.5 border-2 border-slate-200 rounded-xl focus:border-[#002855] outline-none text-sm font-medium transition-colors bg-slate-50/50"
         >
           <option value="">-- Seleccionar Auditor Registrado --</option>
           {auditoresDisponibles.map(u => (
@@ -720,11 +720,11 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
             </option>
           ))}
         </select>
-        <div className="flex gap-3 mt-6 justify-end">
-          <button onClick={() => { setMostrarModalAuditor(false); setAuditorSeleccionado(''); }} className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
+        <div className="flex gap-3 mt-8 justify-end">
+          <button onClick={() => { setMostrarModalAuditor(false); setAuditorSeleccionado(''); }} className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors">
             Cancelar
           </button>
-          <button onClick={confirmarAuditor} disabled={!auditorSeleccionado} className="px-5 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+          <button onClick={confirmarAuditor} disabled={!auditorSeleccionado} className="px-6 py-2.5 bg-[#002855] text-white font-medium rounded-xl hover:bg-[#001f42] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
             ✓ Asignar y Notificar
           </button>
         </div>
@@ -733,8 +733,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   );
 
   const modalDictamenJSX = modalDictamen.show && (
-    <ContenedorModal isOpen onClose={() => setModalDictamen({ ...modalDictamen, show: false })} size="xl" backdropClassName="bg-black/60 backdrop-blur-sm">
-      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 w-full border border-slate-200">
+    <ContenedorModal isOpen onClose={() => setModalDictamen({ ...modalDictamen, show: false })} size="3xl" anchoMaximo="max-w-[90vw] xl:max-w-[1250px]" backdropClassName="bg-black/60 backdrop-blur-sm">
+      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full border border-slate-200">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl">⚖️</span>

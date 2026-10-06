@@ -49,7 +49,8 @@ export default function AsignacionResponsablesModal({
     <ContenedorModal
       abierto={abierto}
       onCerrar={onCerrar}
-      tamano="lg"
+      tamano="2xl"
+      anchoMaximo="max-w-[88vw] xl:max-w-[1300px]"
       titulo={
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 shrink-0">

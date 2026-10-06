@@ -14,9 +14,9 @@ export const FORMATO_CUADRO_CONTROL = {
 };
 
 export const RANGOS_SEMAFORO_OOMRSC05 = {
-  ACEPTABLE: { min: 90, max: Infinity, label: 'Aceptable (90% a 100%)', cumple: 'SI', color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-300', dot: 'bg-emerald-500' },
-  PREVENTIVO: { min: 80, max: 89.99, label: 'Preventivo (80% a 89%)', cumple: 'SI', color: 'amber', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-300', dot: 'bg-amber-500' },
-  CRITICO: { min: -Infinity, max: 79.99, label: 'Crítico (<= 79%)', cumple: 'NO', color: 'rose', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-300', dot: 'bg-rose-500' }
+  ACEPTABLE: { rango: 'ACEPTABLE', min: 90, max: Infinity, label: 'Aceptable (90% a 100%)', cumple: 'SI', color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-300', dot: 'bg-emerald-500' },
+  PREVENTIVO: { rango: 'PREVENTIVO', min: 80, max: 89.99, label: 'Preventivo (80% a 89%)', cumple: 'SI', color: 'amber', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-300', dot: 'bg-amber-500' },
+  CRITICO: { rango: 'CRITICO', min: -Infinity, max: 79.99, label: 'Crítico (<= 79%)', cumple: 'NO', color: 'rose', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-300', dot: 'bg-rose-500' }
 };
 
 export function evalSemaforoOOMRSC05(valorReal, meta, esMenor = false) {
@@ -51,15 +51,17 @@ export function evalSemaforoOOMRSC05(valorReal, meta, esMenor = false) {
   }
 
   if (pct >= 90) {
-    return { ...RANGOS_SEMAFORO_OOMRSC05.ACEPTABLE, porcentaje: pct, valor: numVal, cumple: 'SI' };
+    return { ...RANGOS_SEMAFORO_OOMRSC05.ACEPTABLE, rango: 'ACEPTABLE', porcentaje: pct, valor: numVal, cumple: 'SI' };
   } else if (pct >= 80) {
-    return { ...RANGOS_SEMAFORO_OOMRSC05.PREVENTIVO, porcentaje: pct, valor: numVal, cumple: 'SI' };
+    return { ...RANGOS_SEMAFORO_OOMRSC05.PREVENTIVO, rango: 'PREVENTIVO', porcentaje: pct, valor: numVal, cumple: 'SI' };
   } else {
-    return { ...RANGOS_SEMAFORO_OOMRSC05.CRITICO, porcentaje: pct, valor: numVal, cumple: 'NO' };
+    return { ...RANGOS_SEMAFORO_OOMRSC05.CRITICO, rango: 'CRITICO', porcentaje: pct, valor: numVal, cumple: 'NO' };
   }
 }
 
-export const INDICADORES = [
+import { normalizarArea, normalizarDireccion, obtenerDireccionDeArea } from './areas';
+
+const RAW_INDICADORES = [
   {
     "id": 0,
     "numero": 0,
@@ -2361,6 +2363,17 @@ export const INDICADORES = [
     "accion_default": "NA"
   }
 ];
+
+// Indicadores oficiales normalizados conforme a la estructura orgánica OOMAPASC
+export const INDICADORES = RAW_INDICADORES.map(ind => {
+  const normArea = normalizarArea(ind.area);
+  const normDir = normalizarDireccion(ind.direccion || obtenerDireccionDeArea(normArea));
+  return {
+    ...ind,
+    area: normArea,
+    direccion: normDir
+  };
+});
 
 export const REPORTES_CORRECCION_INICIALES = [
   {

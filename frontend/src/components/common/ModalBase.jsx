@@ -9,15 +9,15 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const TAMANOS = {
-  sm: 'max-w-md',
-  md: 'max-w-lg',
-  lg: 'max-w-xl',
-  xl: 'max-w-2xl',
-  '2xl': 'max-w-3xl',
-  '3xl': 'max-w-4xl',
-  '4xl': 'max-w-5xl',
-  '5xl': 'max-w-6xl',
-  '6xl': 'max-w-7xl',
+  sm: 'max-w-xl',
+  md: 'max-w-3xl',
+  lg: 'max-w-5xl',
+  xl: 'max-w-6xl',
+  '2xl': 'max-w-7xl',
+  '3xl': 'max-w-[90vw] xl:max-w-[1450px]',
+  '4xl': 'max-w-[92vw] xl:max-w-[1600px]',
+  '5xl': 'max-w-[95vw] xl:max-w-[1750px]',
+  '6xl': 'max-w-[97vw] xl:max-w-[1850px]',
 };
 
 /**
@@ -46,6 +46,7 @@ export default function ModalBase({
   headerClassName = 'bg-gradient-to-r from-[#0B192C] to-[#1E3E62]',
   footer,
   size = 'lg',
+  anchoMaximo,
   bodyClassName = 'p-6',
   children,
   closeOnBackdrop = true,
@@ -53,6 +54,10 @@ export default function ModalBase({
   lockScroll = true,
   ariaLabel,
 }) {
+  const claseAncho = anchoMaximo || (typeof size === 'string' && size.startsWith('max-w-') 
+    ? size 
+    : (TAMANOS[size] || TAMANOS.lg));
+
   // Bloqueo de scroll del documento mientras el modal está abierto.
   useEffect(() => {
     if (!isOpen || !lockScroll) return undefined;
@@ -118,7 +123,7 @@ export default function ModalBase({
       <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
         <div
           onMouseDown={(event) => event.stopPropagation()}
-          className={`flex max-h-full w-full ${TAMANOS[size] || TAMANOS.lg} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-slide-up`}
+          className={`flex max-h-full w-full ${claseAncho} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-slide-up`}
         >
           {/* Cabecera: siempre visible, nunca se desplaza fuera de vista */}
           <div className={`flex shrink-0 items-center justify-between gap-3 px-5 py-3.5 text-white sm:px-6 sm:py-4 ${headerClassName}`}>

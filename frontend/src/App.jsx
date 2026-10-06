@@ -186,7 +186,7 @@ function App() {
     { id: 'pm', label: 'Planes de Mejora' },
     { id: 'revision_direccion', label: 'Revisión por la Dirección (OOMRSC-04)' },
     { id: 'indicadores', label: 'Indicadores' },
-    { id: 'riesgos', label: 'Matriz de Riesgos' },
+    { id: 'riesgos', label: 'Matriz de Riesgos y Oportunidades' },
     { id: 'gestor', label: 'Aprobaciones' },
     { id: 'documents', label: 'Control Documental' },
     { id: 'audits', label: 'Auditorías' },

@@ -118,9 +118,7 @@ describe('Servicio de Contexto Operativo y Briefing Ejecutivo SGC', () => {
     expect(markdown).toContain('Lic. Carmen Leyva');
     expect(markdown).toContain('Control y Servicios');
     expect(markdown).toContain('AC#1/26');
-    expect(markdown).toContain('PM#1/26');
-    expect(markdown).toContain('PR-CS-01');
-    expect(markdown).toContain('PR-CS-03');
     expect(markdown).toContain('ALERTA DE REVISIÓN PERIÓDICA');
+    expect(markdown).toContain('Ratificar Doc >1 año');
   });
 });

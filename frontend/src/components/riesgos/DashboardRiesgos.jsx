@@ -387,7 +387,8 @@ export default function DashboardRiesgos({
           titulo={modalAprobacion.decision === 'APROBADA' ? 'Aprobar matriz del área' : 'Regresar con observaciones'}
           subtitulo={`${modalAprobacion.area} · Ejercicio ${anio}`}
           icono={<ClipboardCheck size={18} />}
-          size="md"
+          size="xl"
+          anchoMaximo="max-w-[80vw] xl:max-w-[1100px]"
           footer={(
             <>
               <button

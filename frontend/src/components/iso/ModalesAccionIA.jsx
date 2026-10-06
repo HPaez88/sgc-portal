@@ -137,7 +137,7 @@ export function ModalActualizarIndicadorIA({
   };
 
   return (
-    <ContenedorModal isOpen={isOpen} onClose={onClose} size="xl">
+    <ContenedorModal isOpen={isOpen} onClose={onClose} size="4xl" anchoMaximo="max-w-[92vw] xl:max-w-[1350px]">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] to-[#002855] text-white flex items-center justify-between">
@@ -530,7 +530,7 @@ export function ModalGestionarActividadEvidenciaIA({
   };
 
   return (
-    <ContenedorModal isOpen={isOpen} onClose={onClose} size="xl">
+    <ContenedorModal isOpen={isOpen} onClose={onClose} size="4xl" anchoMaximo="max-w-[92vw] xl:max-w-[1350px]">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] text-white flex items-center justify-between">
@@ -871,7 +871,7 @@ export function ModalRatificarDocumentoIA({
   };
 
   return (
-    <ContenedorModal isOpen={isOpen} onClose={onClose} size="lg">
+    <ContenedorModal isOpen={isOpen} onClose={onClose} size="2xl" anchoMaximo="max-w-[85vw] xl:max-w-[1100px]">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] to-[#1E3E62] text-white flex items-center justify-between">

@@ -49,28 +49,42 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
     desc_match = re.search(r"\*\*Objetivo:\*\*\s*(.+)$", content, re.MULTILINE)
     descripcion = desc_match.group(1).strip() if desc_match else f"Norma oficial {nombre}"
 
-    # Extraer cláusulas marcadas con ###
+    # Parsear encabezados nivel 2 (##) y nivel 3 (###)
     clausulas = []
-    sections = re.split(r"\n###\s+", content)
+    
+    # Dividir preservando delimitadores ## y ###
+    pattern = r"(?=\n#{2,3}\s+)"
+    raw_sections = re.split(pattern, content)
 
-    for sec in sections[1:]:
-        lines = sec.strip().split("\n")
+    for sec in raw_sections:
+        sec = sec.strip()
+        if not sec.startswith("##"):
+            continue
+
+        lines = sec.split("\n")
         header_line = lines[0].strip()
+        is_capitulo = header_line.startswith("## ") and not header_line.startswith("### ")
+        clean_header = header_line.lstrip("#").strip()
 
         # Extraer número y título
-        match_principio = re.match(r"^Principio\s+(\d+)\s*[-—:]?\s*(.+)$", header_line, re.IGNORECASE)
-        match_num = re.match(r"^(\d+(?:\.\d+)*)\s*(?:y\s*\d+(?:\.\d+)*)?\s*[-—:]?\s*(.+)$", header_line)
+        match_principio = re.match(r"^Principio\s+(\d+)\s*[-—:\.]?\s*(.+)$", clean_header, re.IGNORECASE)
+        match_anexo = re.match(r"^(Anexo\s+[A-Z0-9\.]+)\s*[-—:\.]?\s*(.+)$", clean_header, re.IGNORECASE)
+        match_num = re.match(r"^(\d+(?:\.\d+)*)\s*[-—:\.]?\s*(.+)$", clean_header)
+
         if match_principio:
             numero = f"Principio {match_principio.group(1)}"
             titulo = match_principio.group(2).strip()
+        elif match_anexo:
+            numero = match_anexo.group(1).strip()
+            titulo = match_anexo.group(2).strip()
         elif match_num:
             numero = match_num.group(1).strip()
             titulo = match_num.group(2).strip()
         else:
-            numero = header_line.split()[0] if header_line else "Sección"
-            titulo = header_line
+            numero = clean_header.split()[0] if clean_header else "Sección"
+            titulo = clean_header
 
-        body = "\n".join(lines[1:])
+        body = "\n".join(lines[1:]).strip()
 
         # Extraer campos estructurados si existen
         req_m = re.search(r"- \*\*(?:Requisito Oficial|Declaración|Definición Oficial):\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
@@ -85,18 +99,33 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
         cri_m = re.search(r"- \*\*Criterio (?:Universal )?de Auditoría.+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         criterio = cri_m.group(1).strip() if cri_m else ""
 
-        if not requisito and not interpretacion:
-            requisito = body[:800]
+        if is_capitulo:
+            # Es un Capítulo Principal (ej. 4. CONTEXTO, 5. LIDERAZGO, etc.)
+            desc_cap = body.strip() if body else f"Capítulo oficial que establece los lineamientos normativos y requisitos institucionales de {titulo}."
+            clausulas.append({
+                "numero": numero,
+                "titulo": titulo,
+                "es_capitulo": True,
+                "requisito": desc_cap,
+                "interpretacion": "",
+                "evidencia_objetiva": "",
+                "criterio_auditoria": "",
+                "texto_completo": body
+            })
+        else:
+            if not requisito and not interpretacion:
+                requisito = body[:800]
 
-        clausulas.append({
-            "numero": numero,
-            "titulo": titulo,
-            "requisito": requisito,
-            "interpretacion": interpretacion,
-            "evidencia_objetiva": evidencia,
-            "criterio_auditoria": criterio,
-            "texto_completo": body
-        })
+            clausulas.append({
+                "numero": numero,
+                "titulo": titulo,
+                "es_capitulo": False,
+                "requisito": requisito,
+                "interpretacion": interpretacion,
+                "evidencia_objetiva": evidencia,
+                "criterio_auditoria": criterio,
+                "texto_completo": body
+            })
 
     return {
         "id": norma_id,
@@ -106,6 +135,7 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
         "clausulas": clausulas,
         "contenido_raw": content
     }
+
 
 
 def _cargar_archivos_conocimiento() -> Dict[str, Any]:
@@ -480,18 +510,19 @@ def consultar_agente_iso(
             sem_tag = "🔴 INCUMPLIDO / CRÍTICO (Requiere Reporte de Corrección RC o AC en OOMRSC-20)" if (ind.get("cumple") == "NO" or ind.get("semaforo") in ["Crítico", "CRITICO", "rose"]) else ("🟡 PREVENTIVO" if ind.get("semaforo") in ["Preventivo", "PREVENTIVO", "amber"] else "🟢 ACEPTABLE")
             kb_text += f"  - #{ind.get('numero', ind.get('id'))}: \"{ind.get('nombre')}\" | Meta: {ind.get('meta_anual') or ind.get('meta')} {ind.get('unidad')} | Real: {ind.get('valor_real', 'Sin captura')} | Semáforo: {sem_tag}\n"
 
-        # Documentos antiguos sin revisar > 1 año
+        # Documentos antiguos sin revisar > 1 año (§ 7.5.3)
         docs_antiguos = usuario_contexto.get("documentos_antiguos_sin_revision", [])
-        kb_text += f"• Procedimientos / Formatos del área con MÁS DE 1 AÑO SIN REVISAR/ACTUALIZAR (§ 7.5.3): {len(docs_antiguos)}\n"
-        for da in docs_antiguos[:10]:
-            dias_txt = f" ({da.get('dias_sin_revision')} días de antigüedad)" if da.get("dias_sin_revision") else ""
-            kb_text += f"  - [⚠️ REVISIÓN OBLIGATORIA] [{da.get('clave')}] \"{da.get('titulo')}\" | Tipo: {da.get('tipo')} | Última Rev.: {da.get('fecha')} ({da.get('version')}){dias_txt}\n"
+        total_docs_antiguos = len(docs_antiguos)
+        procs_ant = sum(1 for d in docs_antiguos if "procedimiento" in (d.get("tipo", "") or "").lower())
+        regs_ant = sum(1 for d in docs_antiguos if any(k in (d.get("tipo", "") or "").lower() for k in ["registro", "formato"]))
+        otros_ant = total_docs_antiguos - procs_ant - regs_ant
+
+        kb_text += f"• Resumen de Documentos del área con MÁS DE 1 AÑO SIN REVISAR/ACTUALIZAR (§ 7.5.3): {total_docs_antiguos} total ({procs_ant} procedimientos, {regs_ant} registros/formatos, {otros_ant} otros).\n"
+        kb_text += "  [REGLA INSTITUCIONAL OBLIGATORIA: NUNCA ENLISTES los procedimientos y registros uno por uno (un área puede tener cientos). Resume la cantidad total y di de forma rápida y corta qué deben hacer: si el proceso sigue igual en campo, solo deben ratificar la vigencia usando el botón de acción rápida [Ratificar Doc >1 año], o tramitar una nueva versión en Documentos si hubo cambios].\n"
 
         # Documentos pendientes de aprobación SGC
         docs_aprob = usuario_contexto.get("documentos_pendientes_aprobacion", [])
-        kb_text += f"• Documentos en borrador o revisión técnica pendientes por aprobar por el SGC: {len(docs_aprob)}\n"
-        for dp in docs_aprob[:6]:
-            kb_text += f"  - [⏳ PENDIENTE APROBACIÓN SGC] [{dp.get('clave')}] \"{dp.get('titulo')}\" | Estado: {dp.get('estado')} | Autor: {dp.get('autor', 'Área')}\n"
+        kb_text += f"• Documentos en borrador o revisión técnica pendientes por aprobar por el SGC: {len(docs_aprob)} documento(s).\n"
 
         # Formularios de Revisión por la Dirección pendientes
         rev_pend = usuario_contexto.get("formularios_revision_pendientes", [])
@@ -503,14 +534,15 @@ def consultar_agente_iso(
 
     # 1. Catálogo Activo de Documentos del Portal
     if documentos_activos:
-        kb_text += "=== CATÁLOGO DE DOCUMENTOS Y REGISTROS ACTIVOS EN EL PORTAL SGC ===\n"
-        for d in documentos_activos:
+        kb_text += f"=== CATÁLOGO DE DOCUMENTOS Y REGISTROS ACTIVOS EN EL PORTAL SGC ({len(documentos_activos)} TOTALES) ===\n"
+        for d in documentos_activos[:10]:
             kb_text += (
                 f"• Documento: [{d['clave']}] \"{d['titulo']}\"\n"
                 f"  - Tipo: {d.get('tipo', 'N/A')} | Revisión: {d.get('version', 'Vigente')} | Estado: {d.get('estado', 'APROBADO')}\n"
                 f"  - Área: {d.get('area', 'SGC')} | Citas Fuertes: {', '.join(d.get('referencias_usadas', [])) or 'Ninguna'}\n"
-                f"  - Descripción: {d.get('descripcion', 'Sin descripción')}\n\n"
             )
+        if len(documentos_activos) > 10:
+            kb_text += f"  ... y {len(documentos_activos) - 10} documentos más en el catálogo maestro.\n\n"
 
     # 2. Documentos Internos y Guías Estructuradas (.md)
     if custom_snippets:
@@ -564,7 +596,7 @@ def consultar_agente_iso(
         "  2. ⚠️ Acciones Correctivas (OOMRSC-20): Detallar folios abiertos, causas y fecha límite.\n"
         "  3. 🚀 Planes de Mejora (OOMRSC-21): Estado de avance y alertas de proyectos próximos a vencer.\n"
         "  4. 🎯 Indicadores SGC (OOMRSC-05): Resumen del mes, indicando cuántos cumplen y cuáles están en semáforo crítico o sin captura.\n"
-        "  5. 📑 Control Documental Activo (ISO § 7.5.3): Listar procedimientos o formatos de su área con MÁS DE 1 AÑO sin actualizar para evitar observaciones en auditoría.\n"
+        "  5. 📑 Control Documental Activo (ISO § 7.5.3): REGLA CRÍTICA: NUNCA enlists los procedimientos y registros uno por uno (porque un área puede tener más de 200). Da únicamente un resumen corto con la cantidad total (procedimientos vs registros) y explica directamente qué pueden hacer de forma rápida: ratificar la vigencia con el botón de acción rápida [Ratificar Doc >1 año] si la operación no cambió, o emitir nueva versión en el módulo de Documentos si hubo cambios.\n"
         "  6. 📝 Formularios de Revisión por la Dirección (OOMRSC-04): Recordar si tiene captura pendiente en los primeros 10 días.\n"
         "  7. 💡 Recomendaciones Normativas y Prioridad de Acción.\n\n"
         "REGLAS OBLIGATORIAS DE GROUNDEDNESS ESTRICTO:\n"
