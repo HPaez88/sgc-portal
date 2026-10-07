@@ -1179,19 +1179,29 @@ export default function AgenteISOView({ setActiveTab }) {
     return (
       <div className="space-y-1">
         {lineas.map((line, lIdx) => {
-          const trimmed = line.trim();
+          let trimmed = line.trim();
           if (!trimmed) return null;
+
+          // Limpiar prefijos de áreas técnicas y administrativas para no confundir al usuario
+          const limpiarEtiquetasArea = (t) => {
+            if (!t) return '';
+            return t
+              .replace(/^[\*\s-]*(?:Áreas\s+Técnicas|Área\s+Técnica|Técnica|Áreas\s+Administrativas|Área\s+Administrativa|Administrativa|General)[\*\s]*:[\*\s]*/i, '')
+              .replace(/^[\*\s-]*(?:Áreas\s+Técnicas|Área\s+Técnica|Técnica|Áreas\s+Administrativas|Área\s+Administrativa|Administrativa|General)[\*\s]*-[\*\s]*/i, '');
+          };
+
           if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+            const itemText = limpiarEtiquetasArea(trimmed.substring(2).trim());
             return (
               <div key={lIdx} className="flex items-start gap-1.5 pl-1 text-[11.5px] leading-relaxed">
                 <span className="text-sky-600 font-bold mt-0.5">•</span>
-                <span className="flex-1">{formatBold(trimmed.substring(2))}</span>
+                <span className="flex-1">{formatBold(itemText)}</span>
               </div>
             );
           }
           return (
             <p key={lIdx} className="text-[11.5px] leading-relaxed">
-              {formatBold(trimmed)}
+              {formatBold(limpiarEtiquetasArea(trimmed))}
             </p>
           );
         })}
@@ -1884,12 +1894,12 @@ export default function AgenteISOView({ setActiveTab }) {
                       </div>
                     )}
 
-                    {/* Interpretación Técnica y Administrativa */}
+                    {/* Interpretación General OOMAPASC */}
                     {cl.interpretacion && (
                       <div className="p-4 bg-sky-50/70 rounded-2xl border border-sky-100 shadow-2xs">
                         <span className="text-[11px] font-black text-[#002855] block mb-1.5 flex items-center gap-1.5">
                           <span>🛠️</span>
-                          <span>Interpretación OOMAPASC (Áreas Técnicas y Administrativas):</span>
+                          <span>Interpretación Institucional en OOMAPASC:</span>
                         </span>
                         <div className="text-xs text-slate-800 leading-relaxed font-medium">
                           {renderContenidoDetallado(cl.interpretacion)}
@@ -1904,7 +1914,7 @@ export default function AgenteISOView({ setActiveTab }) {
                           <div>
                             <span className="text-[11px] font-black text-emerald-950 block mb-1.5 flex items-center gap-1.5">
                               <span>📑</span>
-                              <span>Evidencias Objetivas Requeridas (Técnicas y Administrativas):</span>
+                              <span>Evidencias Objetivas Requeridas:</span>
                             </span>
                             <div className="text-xs text-emerald-950 leading-relaxed font-medium">
                               {renderContenidoDetallado(cl.evidencia_objetiva)}

@@ -103,6 +103,18 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
         cri_m = re.search(r"- \*\*Criterio (?:Universal )?de Auditoría.+?:\*\*\s*(.+?)(?=\n- \*\*|\Z)", body, re.DOTALL)
         criterio = cri_m.group(1).strip() if cri_m else ""
 
+        def _limpiar_etiquetas_area(t: str) -> str:
+            if not t:
+                return ""
+            # Remover divisiones artificiales de áreas técnicas y administrativas
+            t = re.sub(r"-\s*\*(?:Áreas\s+Técnicas|Área\s+Técnica|Técnica|Áreas\s+Administrativas|Área\s+Administrativa|Administrativa|General)\s*:\*\s*", "- ", t, flags=re.IGNORECASE)
+            t = re.sub(r"-\s*\*\*(?:Áreas\s+Técnicas|Área\s+Técnica|Técnica|Áreas\s+Administrativas|Área\s+Administrativa|Administrativa|General)\s*:\*\*\s*", "- ", t, flags=re.IGNORECASE)
+            return t.strip()
+
+        interpretacion = _limpiar_etiquetas_area(interpretacion)
+        evidencia = _limpiar_etiquetas_area(evidencia)
+        criterio = _limpiar_etiquetas_area(criterio)
+
         if is_capitulo:
             # Es un Capítulo Principal (ej. 4. CONTEXTO, 5. LIDERAZGO, etc.)
             desc_cap = body.strip() if body else f"Capítulo oficial que establece los lineamientos normativos y requisitos institucionales de {titulo}."
