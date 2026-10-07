@@ -127,4 +127,43 @@ describe('Servicio de Contexto Operativo y Briefing Ejecutivo SGC', () => {
     expect(markdown).toContain('ALERTA DE REVISIÓN PERIÓDICA');
     expect(markdown).toContain('Ratificar Doc >1 año');
   });
+
+  it('excluye rigurosamente borradores, folios con timestamp y cascarones de las acciones pendientes', () => {
+    const usuario = {
+      id: 7,
+      nombre: 'Lic. Carmen Leyva',
+      area: 'Control y Servicios',
+      direccion: 'Dir. Comercial'
+    };
+
+    const accionesConBorrador = [
+      {
+        id: 1791190880178, // ID generado por Date.now() en borrador
+        estado: 'BORRADOR',
+        area: 'Control y Servicios',
+        titulo: 'Acción Correctiva',
+        descripcion: ''
+      },
+      {
+        id: 1,
+        folio: 'AC#1/26',
+        titulo: 'Demoras en reconexiones',
+        descripcion: 'Retraso de más de 48 horas',
+        area: 'Control y Servicios',
+        estado: 'EN_SEGUIMIENTO',
+        fecha_limite: '2026-06-30'
+      }
+    ];
+
+    const ctx = generarContextoOperativo({
+      usuario,
+      accionesCorrectivas: accionesConBorrador
+    });
+
+    // Solo debe haber 1 acción pendiente (la oficial AC#1/26), NO el borrador huérfano
+    expect(ctx.resumen_conteos.total_ac_pendientes).toBe(1);
+    expect(ctx.acciones_pendientes.length).toBe(1);
+    expect(ctx.acciones_pendientes[0].folio).toBe('AC#1/26');
+    expect(ctx.acciones_pendientes.some(a => String(a.id) === '1791190880178')).toBe(false);
+  });
 });

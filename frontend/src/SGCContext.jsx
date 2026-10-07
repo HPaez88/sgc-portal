@@ -255,6 +255,25 @@ export const SGCProvider = ({ children }) => {
     return () => window.removeEventListener('beforeunload', alSalir);
   }, []);
 
+  // Sanear automáticamente borradores huérfanos/vacíos de AC con ID timestamp o sin descripción guardados en localStorage
+  useEffect(() => {
+    if (Array.isArray(accionesCorrectivas) && accionesCorrectivas.length > 0) {
+      const depuradas = accionesCorrectivas.filter(ac => {
+        if (!ac) return false;
+        const esBorrador = (ac.estado || '').toUpperCase() === 'BORRADOR';
+        const sinContenido = !ac.descripcion_no_conformidad_original && !ac.descripcion && !ac.hallazgo && (!ac.titulo || ac.titulo === 'Acción Correctiva');
+        const esTimestampLargo = (typeof ac.id === 'number' && ac.id > 1000000000) || /^\d{10,}$/.test(String(ac.id || ''));
+        if (esBorrador && (sinContenido || (esTimestampLargo && !ac.descripcion_no_conformidad_original))) {
+          return false;
+        }
+        return true;
+      });
+      if (depuradas.length !== accionesCorrectivas.length) {
+        setAccionesCorrectivas(depuradas);
+      }
+    }
+  }, [accionesCorrectivas, setAccionesCorrectivas]);
+
   // === SYNC SUPABASE (escrituras agrupadas por debounce, ver syncService) ===
   const saveToSupabase = useCallback((table, data) => {
     encolarGuardadoTabla(table, data);

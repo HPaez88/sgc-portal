@@ -68,12 +68,16 @@ def _parse_markdown_norma(file_path: str) -> Dict[str, Any]:
 
         # Extraer número y título
         match_principio = re.match(r"^Principio\s+(\d+)\s*[-—:\.]?\s*(.+)$", clean_header, re.IGNORECASE)
+        match_variacion = re.match(r"^Variaci[oó]n\s+(\d+)\s*[-—:\.]?\s*(.+)$", clean_header, re.IGNORECASE)
         match_anexo = re.match(r"^(Anexo\s+[A-Z0-9\.]+)\s*[-—:\.]?\s*(.+)$", clean_header, re.IGNORECASE)
         match_num = re.match(r"^(\d+(?:\.\d+)*)\s*[-—:\.]?\s*(.+)$", clean_header)
 
         if match_principio:
             numero = f"Principio {match_principio.group(1)}"
             titulo = match_principio.group(2).strip()
+        elif match_variacion:
+            numero = f"Variación {match_variacion.group(1)}"
+            titulo = match_variacion.group(2).strip()
         elif match_anexo:
             numero = match_anexo.group(1).strip()
             titulo = match_anexo.group(2).strip()
@@ -269,15 +273,26 @@ def buscar_contexto_relevante(
     query: str,
     norma_id: Optional[str] = None,
     catalogo_documentos: Optional[List[Dict[str, Any]]] = None,
-    catalogo_procesos: Optional[List[Dict[str, Any]]] = None
+    catalogo_procesos: Optional[List[Dict[str, Any]]] = None,
+    historial: Optional[List[Dict[str, str]]] = None
 ) -> Dict[str, Any]:
     """
-    Busca cláusulas, guías de transición, procedimientos, formatos OOMRSC-20/21 y extractos
-    relevantes basados en términos clave, claves de documentos y contexto temático.
+    Busca cláusulas, guías de transición, procedimientos, formatos OOMRSC y extractos
+    relevantes basados en términos clave, claves de documentos y contexto temático,
+    expandiendo la búsqueda con el hilo de la conversación previa si la pregunta es referencial.
     """
     kb = _cargar_archivos_conocimiento()
-    query_norm = _normalizar_texto(query)
-    query_lower = query.lower()
+
+    # Si la pregunta es corta o referencial ("ese registro", "no lo encuentro", etc.),
+    # concatenar el contexto de los últimos turnos para no perder el tema
+    busqueda_expandida = query
+    if historial:
+        ultimos = [m.get("content", "") for m in historial[-3:] if m.get("content")]
+        if ultimos:
+            busqueda_expandida = f"{' '.join(ultimos)} {query}"
+
+    query_norm = _normalizar_texto(busqueda_expandida)
+    query_lower = busqueda_expandida.lower()
     
     # Detección de intenciones temáticas
     es_pregunta_transicion = any(k in query_norm for k in [
@@ -466,14 +481,15 @@ def consultar_agente_iso(
     """
     Ejecuta la consulta con el Agente ISO con Groundedness estricto en la documentación oficial,
     procedimientos, formatos, registros y estado operativo en tiempo real del usuario en OOMAPASC.
+    Garantiza memoria conversacional multi-turno y previene alucinaciones documentales.
     """
-    contexto = buscar_contexto_relevante(pregunta, norma_id, catalogo_documentos, catalogo_procesos)
+    contexto = buscar_contexto_relevante(pregunta, norma_id, catalogo_documentos, catalogo_procesos, historial)
     clausulas = contexto["clausulas"]
     custom_snippets = contexto["custom_snippets"]
     documentos_activos = contexto.get("documentos_activos", [])
 
     # Construir bloque de conocimiento inyectado
-    kb_text = "=== BASE DE CONOCIMIENTO OFICIAL ISO (ARCHIVOS .MD) Y SGC OOMAPASC ===\n\n"
+    kb_text = "=== BASE DE CONOCIMIENTO OFICIAL ISO Y CONTROL DOCUMENTAL OOMAPASC ===\n\n"
     clausulas_citadas_meta = []
 
     # 0. Contexto Operativo en Tiempo Real del Usuario Logueado (si está presente)
@@ -488,11 +504,16 @@ def consultar_agente_iso(
         
         # ACs
         acs = usuario_contexto.get("acciones_pendientes", [])
-        kb_text += f"• Acciones Correctivas pendientes del área (OOMRSC-20): {len(acs)}\n"
+        borradores_ac = usuario_contexto.get("borradores_ac", [])
+        kb_text += f"• Acciones Correctivas en seguimiento oficial del área (OOMRSC-20): {len(acs)}\n"
         for ac in acs[:8]:
             plazo = ac.get("fecha_limite") or ac.get("fechaCompromiso") or "Sin fecha límite"
             auditor = ac.get("auditor_asignado") or ac.get("auditor") or "Por asignar"
             kb_text += f"  - [{ac.get('folio', 'AC')}] Estado: {ac.get('estado')} | Causa: {ac.get('descripcion', '')[:90]} | Límite: {plazo} | Auditor: {auditor}\n"
+        if borradores_ac:
+            kb_text += f"• Borradores de AC en preparación (pendientes de enviar al SGC): {len(borradores_ac)}\n"
+            for b in borradores_ac[:5]:
+                kb_text += f"  - [BORRADOR] \"{b.get('titulo')}\" | Creado: {b.get('fecha_creacion', 'Reciente')} | Detalle: {b.get('descripcion', '')[:80]}\n"
             
         # PMs
         pms = usuario_contexto.get("planes_mejora_activos", [])
@@ -518,7 +539,6 @@ def consultar_agente_iso(
         otros_ant = total_docs_antiguos - procs_ant - regs_ant
 
         kb_text += f"• Resumen de Documentos del área con MÁS DE 1 AÑO SIN REVISAR/ACTUALIZAR (§ 7.5.3): {total_docs_antiguos} total ({procs_ant} procedimientos, {regs_ant} registros/formatos, {otros_ant} otros).\n"
-        kb_text += "  [REGLA INSTITUCIONAL OBLIGATORIA: NUNCA ENLISTES los procedimientos y registros uno por uno (un área puede tener cientos). Resume la cantidad total y di de forma rápida y corta qué deben hacer: si el proceso sigue igual en campo, solo deben ratificar la vigencia usando el botón de acción rápida [Ratificar Doc >1 año], o tramitar una nueva versión en Documentos si hubo cambios].\n"
 
         # Documentos pendientes de aprobación SGC
         docs_aprob = usuario_contexto.get("documentos_pendientes_aprobacion", [])
@@ -532,21 +552,32 @@ def consultar_agente_iso(
                 kb_text += f"  - [📅 OBLIGACIÓN MENSUAL DÍAS 1-10] {rp.get('nombre')} ({rp.get('codigo')})\n"
         kb_text += "\n"
 
-    # 1. Catálogo Activo de Documentos del Portal
-    if documentos_activos:
-        kb_text += f"=== CATÁLOGO DE DOCUMENTOS Y REGISTROS ACTIVOS EN EL PORTAL SGC ({len(documentos_activos)} TOTALES) ===\n"
-        for d in documentos_activos[:10]:
-            kb_text += (
-                f"• Documento: [{d['clave']}] \"{d['titulo']}\"\n"
-                f"  - Tipo: {d.get('tipo', 'N/A')} | Revisión: {d.get('version', 'Vigente')} | Estado: {d.get('estado', 'APROBADO')}\n"
-                f"  - Área: {d.get('area', 'SGC')} | Citas Fuertes: {', '.join(d.get('referencias_usadas', [])) or 'Ninguna'}\n"
-            )
-        if len(documentos_activos) > 10:
-            kb_text += f"  ... y {len(documentos_activos) - 10} documentos más en el catálogo maestro.\n\n"
+    # 1. Catálogo Maestro de Documentos Registrados en OOMAPASC (Ground Truth Absoluto)
+    docs_base = catalogo_documentos if (catalogo_documentos and len(catalogo_documentos) > 0) else [
+        {"clave": "MC-01", "titulo": "Manual del Sistema de Gestión de Calidad", "tipo": "Manual", "version": "Rev. 04"},
+        {"clave": "PR-CAL-01", "titulo": "Procedimiento de Acciones Correctivas y No Conformidades", "tipo": "Procedimiento", "version": "Rev. 06"},
+        {"clave": "OOMRSC-20", "titulo": "Formato de Acción Correctiva", "tipo": "Registro", "version": "Rev. 18"},
+        {"clave": "PR-MEJ-01", "titulo": "Procedimiento de Mejora Continua", "tipo": "Procedimiento", "version": "Rev. 03"},
+        {"clave": "OOMRSC-21", "titulo": "Formato de Plan de Mejora Continua", "tipo": "Registro", "version": "Rev. 02"},
+        {"clave": "PR-POT-01", "titulo": "Procedimiento Operativo de Potabilización y Cloración", "tipo": "Procedimiento", "version": "Rev. 05"},
+        {"clave": "REG-CLORO-01", "titulo": "Bitácora Diaria de Cloro Residual en Red", "tipo": "Registro", "version": "Rev. 02"},
+        {"clave": "PR-AUD-01", "titulo": "Procedimiento de Auditorías Internas de Calidad", "tipo": "Procedimiento", "version": "Rev. 04"},
+        {"clave": "PR-CS-01", "titulo": "Procedimiento de Inspección y Suspensión de Servicios", "tipo": "Procedimiento", "version": "Rev. 02"},
+        {"clave": "REG-CS-02", "titulo": "Padrón de Órdenes de Servicio y Reconexiones en Campo", "tipo": "Registro", "version": "Rev. 01"},
+        {"clave": "PR-CS-03", "titulo": "Procedimiento de Verificación de Medidores y Facturación en Sitio", "tipo": "Procedimiento", "version": "Rev. 01"},
+        {"clave": "OOMRSC-04", "titulo": "Revisión por la Dirección (Cláusula 9.3)", "tipo": "Registro", "version": "Rev. 09"},
+        {"clave": "OOMRSC-05", "titulo": "Cuadro de Control de Desempeño (100 Indicadores)", "tipo": "Registro", "version": "Rev. 37"}
+    ]
+
+    kb_text += f"=== CATÁLOGO OFICIAL DE DOCUMENTOS VIGENTES EN EL PORTAL SGC DE OOMAPASC ({len(docs_base)} DOCUMENTOS) ===\n"
+    kb_text += "[AVISO AUDITABLE: Esta lista contiene TODOS los documentos que existen en el portal. Si un código o documento no está aquí, NO EXISTE en OOMAPASC].\n"
+    for d in docs_base:
+        kb_text += f"• [{d.get('clave', 'SGC')}] \"{d.get('titulo', 'Documento')}\" | Tipo: {d.get('tipo', 'N/A')} | Versión: {d.get('version', 'Vigente')}\n"
+    kb_text += "\n"
 
     # 2. Documentos Internos y Guías Estructuradas (.md)
     if custom_snippets:
-        kb_text += "=== GUÍAS DE TRANSICIÓN, PROCEDIMIENTOS Y REGISTROS INSTITUCIONALES (.MD) ===\n"
+        kb_text += "=== PROCEDIMIENTOS Y REGISTROS INSTITUCIONALES (.MD) ===\n"
         for cs in custom_snippets:
             kb_text += f"Documento Fuente: {cs['documento']}\nContenido:\n{cs['fragmento']}\n\n"
 
@@ -567,54 +598,66 @@ def consultar_agente_iso(
 
     system_prompt = (
         "Eres el Asesor Normativo y Consultor de Calidad en el Portal SGC de OOMAPASC (Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme).\n\n"
-        "PERSONALIDAD Y ESTILO DE CONVERSACIÓN:\n"
-        "- Eres un asesor experto, profesional, cercano y cordial. Hablas en lenguaje natural y fluido, permitiendo llevar una plática normal y amena con el usuario.\n"
-        "- Si el usuario te saluda o te pregunta de forma abierta cómo puedes ayudarlo (ej. '¿cómo puedes ayudarme?', '¿qué información me das?', '¿qué puedes hacer?'), NO uses tablas. Responde con calidez y naturalidad explicando cómo lo apoyas en el portal: consultando el estado y pendientes de su área (indicadores, acciones correctivas, planes de mejora), guiándolo en los procedimientos y formatos oficiales de OOMAPASC, o resolviendo dudas sobre las normas ISO (9001, 14001, 45001, 19011) y auditorías.\n\n"
-        "ALCANCE Y ENFOQUE EXCLUSIVO (GUARDRAIL SGC & ISO):\n"
-        "- Tu propósito y conversación se centran EXCLUSIVAMENTE en el Sistema de Gestión de Calidad (SGC) de OOMAPASC, la gestión del agua potable y saneamiento, y las normas ISO aplicables.\n"
-        "- Si el usuario te pregunta sobre temas ajenos al organismo o al SGC (cocina, deportes, entretenimiento, temas no relacionados), no profundices en ellos. Aclara con amabilidad y simpatía que tu especialidad y función en este portal es asesorar en los procesos, operación y normas ISO de OOMAPASC, e invítalo cordialmente a consultar cualquier tema del SGC.\n\n"
-        "DOCUMENTACIÓN INSTITUCIONAL DE OOMAPASC:\n"
-        "- Manual del SGC: MC-01 (Rev. 04) — alcance y mapa de procesos.\n"
-        "- Procedimiento y Formato de Acciones Correctivas: PR-CAL-01 (Rev. 06) y OOMRSC-20 (Rev. 18) — causa raíz 6M y cierre.\n"
-        "- Planes de Mejora Continua: PR-MEJ-01 (Rev. 03) y OOMRSC-21 (Rev. 02).\n"
-        "- Cuadro de Control de Desempeño: OOMRSC-05 (Rev. 37) — 100 indicadores oficiales con semáforo institucional.\n"
-        "- Revisión por la Dirección: OOMRSC-04 (Rev. 09) — Cláusula 9.3.\n"
-        "- Procedimiento de Potabilización y Cloración: PR-POT-01 (Rev. 05) y Bitácora REG-CLORO-01 (Rev. 02).\n"
-        "- Control Documental (§ 7.5.3): Matriz de trazabilidad y revisión de documentos con >1 año sin actualizar.\n\n"
-        "REGLAS DE FORMATO Y RESPUESTAS:\n"
-        "1. Si el usuario pide un diagnóstico o resumen de pendientes (Opción 1 o '¿qué tengo pendiente?'): Responde con la tabla ejecutiva de 3 columnas (Módulo SGC | Total Registros | Estado / Alerta Prioritaria) sin agregar párrafos extensos.\n"
-        "2. Si el usuario pregunta por un tema específico (ej. '¿cuáles son los indicadores incumplidos?', '¿qué temas se revisan en la revisión por la dirección?'): Responde de forma limpia, directa y puntual con viñetas o listas claras.\n"
-        "3. En pláticas cotidianas o preguntas abiertas: Responde de forma conversacional, humana y clara. NUNCA insertes tablas para explicar cómo puedes ayudar.\n"
-        "4. NO agregues al final de tus respuestas listas accesorias de cláusulas normativas ni enlaces si no te los han pedido."
+        "REGLA DE ORO DE VERACIDAD Y RIGOR AUDITABLE (CERO ALUCINACIONES):\n"
+        "- En auditorías de certificación ISO 9001:2015, inventar documentos o códigos es una No Conformidad Grave.\n"
+        "- Los ÚNICOS formatos institucionales codificados como OOMRSC- en OOMAPASC son:\n"
+        "  • OOMRSC-04: Revisión por la Dirección (ISO 9001 § 9.3)\n"
+        "  • OOMRSC-05: Cuadro de Control de Desempeño (100 indicadores oficiales)\n"
+        "  • OOMRSC-20: Control de Acciones Correctivas (ISO 9001 § 10.2)\n"
+        "  • OOMRSC-21: Plan de Mejora Continua (ISO 9001 § 10.3)\n"
+        "- ACCIONES CORRECTIVAS Y PLANES DE MEJORA (OOMRSC-20 y OOMRSC-21):\n"
+        "  • NUNCA inventes folios de acciones correctivas ficticios (como números largos de timestamp AC#1791...).\n"
+        "  • Un borrador no ratificado (BORRADOR) NO es una acción correctiva en seguimiento oficial. Si existen borradores, preséntalos como 'Borradores pendientes de ratificación / envío' aclarando que aún están en preparación y no tienen folio asignado.\n"
+        "  • Si el estado operativo del área indica 0 acciones pendientes y 0 borradores, indícalo de forma directa y natural: 'No tienes acciones correctivas abiertas ni borradores pendientes en tu área.' (Evita frases acartonadas o redundantes como 'todos los folios institucionales están concluidos o en regla').\n"
+        "  • Si el usuario te señala que no existe esa acción correctiva o que se está inventando información, RECONOCE EL ERROR DE INMEDIATO con humildad y honestidad: aclara que se trató de un borrador local no ratificado y confirma de inmediato que en el seguimiento institucional oficial no existe tal acción correctiva.\n"
+        "- CATÁLOGO MAESTRO Y VERIFICACIÓN DOCUMENTAL:\n"
+        "  • ANTES de afirmar que un documento o formato existe en OOMAPASC, VERIFICA OBLIGATORIAMENTE la sección 'CATÁLOGO OFICIAL DE DOCUMENTOS VIGENTES' incluida abajo.\n"
+        "  • Si el usuario te pregunta por un registro, formato o documento que NO está en dicha lista (ej. padrón de proveedores, formato de capacitación, OOMRSC-12):\n"
+        "    1. Di la verdad con total honestidad y claridad: 'En el catálogo oficial actual del SGC de OOMAPASC no existe un formato o registro codificado con ese nombre.'\n"
+        "    2. Explica brevemente cómo lo aborda la norma (ej. ISO 9001 § 8.4) sin inventar carpetas ni códigos ficticios.\n\n"
+        "MEMORIA Y SEGUIMIENTO DEL HILO DE LA CONVERSACIÓN:\n"
+        "- Pon atención estricta a los mensajes previos del diálogo.\n"
+        "- Si el usuario te replica 'no lo encuentro', 'busco ese registro y no existe', etc., se refiere INMEDIATAMENTE a lo que acaban de hablar en el mensaje anterior.\n"
+        "- Si en un mensaje previo se mencionó erróneamente un código o documento inexistente (ej. OOMRSC-12 o Padrón de Proveedores), RECONÓCELO DE INMEDIATO con amabilidad: 'Tienes toda la razón y te ofrezco una disculpa. Revisando el catálogo oficial del portal, efectivamente no existe dicho registro en el sistema...'\n"
+        "- NUNCA vuelvas a preguntar '¿cuál registro buscas?' ni des instrucciones genéricas de búsqueda cuando el tema ya está claro en la plática.\n"
+        "- Sé conciso, directo al grano y no agregues explicaciones excesivas que el usuario no solicitó.\n\n"
+        "PERSONALIDAD Y ESTILO:\n"
+        "- Eres profesional, empático, claro y honesto.\n"
+        "- Si el usuario te saluda o pregunta cómo lo ayudas, explica tus funciones con calidez sin usar tablas.\n"
+        "- No agregues al final listas de cláusulas si el usuario no las pidió."
     )
 
-    user_prompt = f"{kb_text}\n\n=== CONSULTA DEL AUDITOR / USUARIO ===\n{pregunta}"
-
-    # Llamar al modelo de chat (8B rápido con 14,400 solicitudes/día)
-    client = get_ai_client()
-    model = get_chat_model()
+    full_system = f"{system_prompt}\n\n{kb_text}"
 
     messages = [
-        {"role": "system", "content": system_prompt}
+        {"role": "system", "content": full_system}
     ]
 
-    # Incorporar historial
+    # Incorporar hasta 8 mensajes del historial previo para mantener el hilo perfecto
     if historial:
-        for msg in historial[-4:]:
+        for msg in historial[-8:]:
             if msg.get("role") in ["user", "assistant"] and msg.get("content"):
                 messages.append({"role": msg["role"], "content": msg["content"]})
 
-    messages.append({"role": "user", "content": user_prompt})
+    messages.append({"role": "user", "content": pregunta})
+
+    # Llamar al modelo de chat
+    client = get_ai_client()
+    model = get_chat_model()
 
     try:
         completion = client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=0.2,
-            max_tokens=1400,
+            max_tokens=1200,
         )
         raw_response = completion.choices[0].message.content or ""
         clean_response = re.sub(r"<think>.*?</think>", "", raw_response, flags=re.DOTALL).strip()
+        if not clean_response:
+            clean_response = re.sub(r"</?think>", "", raw_response).strip()
+        if not clean_response:
+            clean_response = "En el catálogo oficial del SGC de OOMAPASC no se encuentra registrado dicho formato o documento. Por favor verifica en el catálogo de Control Documental o consulta con la Coordinación del SGC."
 
         return {
             "respuesta": clean_response,

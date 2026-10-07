@@ -334,7 +334,7 @@ const NORMAS_BASE = [
   { id: 'ISO-9001-2026', nombre: 'ISO 9001:2026 — Sistemas de Gestión de la Calidad (Requisitos)', total_clausulas: 33 },
   { id: 'ISO-42001-2023', nombre: 'ISO/IEC 42001:2023 — Sistema de Gestión de Inteligencia Artificial (SGIA)', total_clausulas: 12 },
   { id: 'ISO-27001-2022', nombre: 'ISO/IEC 27001:2022 — Ciberseguridad, TI y Seguridad de la Información', total_clausulas: 12 },
-  { id: 'ISO-9000-2015', nombre: 'ISO 9000:2015 — Fundamentos y Vocabulario Oficial', total_clausulas: 15 },
+  { id: 'ISO-9000-2015', nombre: 'ISO 9000:2015 — Fundamentos, Vocabulario y Variaciones', total_clausulas: 26 },
   { id: 'ISO-14001-2015', nombre: 'ISO 14001:2015 — Sistemas de Gestión Ambiental y Saneamiento', total_clausulas: 12 },
   { id: 'ISO-45001-2018', nombre: 'ISO 45001:2018 — Seguridad y Salud en el Trabajo', total_clausulas: 11 },
   { id: 'ISO-19011-2018', nombre: 'ISO 19011:2018 — Directrices para Auditorías de Gestión', total_clausulas: 10 }
@@ -609,9 +609,25 @@ export default function AgenteISOView({ setActiveTab }) {
     const esEvidenciaAC = (textoLower.includes('subir evidencia') || textoLower.includes('evidencia') || textoLower.includes('revisar actividad') || /actividad\s+de\s+ac/i.test(textoLower)) && !textoLower.includes('¿qué');
     if (esEvidenciaAC) {
       const matchAC = textoLower.match(/ac\s*#?\s*(\d+)/i) || textoLower.match(/(\d+)/);
-      const acNum = matchAC ? Number(matchAC[1]) : (contextoOperativoActual.acciones_pendientes[0]?.id || 1);
-      const acEncontrada = accionesCorrectivas.find(a => String(a.id) === String(acNum) || String(a.folio || '').includes(String(acNum))) ||
-                           accionesCorrectivas[0] || null;
+      const acNum = matchAC ? Number(matchAC[1]) : (contextoOperativoActual.acciones_pendientes[0]?.id || null);
+      const acEncontrada = acNum
+        ? (contextoOperativoActual.acciones_pendientes.find(a => String(a.id) === String(acNum) || String(a.folio || '').includes(String(acNum))) ||
+           accionesCorrectivas.find(a => String(a.id) === String(acNum) || String(a.folio || '').includes(String(acNum))))
+        : contextoOperativoActual.acciones_pendientes[0] || null;
+
+      if (!acEncontrada) {
+        setMensajes(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            emisor: 'agente',
+            texto: `ℹ️ **No se encontró ninguna acción correctiva abierta en seguimiento oficial.**\n\nTu área no tiene folios pendientes ni actividades vencidas en este momento conforme a la norma ISO 9001 § 10.2.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+        setEnviando(false);
+        return;
+      }
 
       setModalActividadEvidenciaIA({ open: true, accion: acEncontrada });
       setMensajes(prev => [
@@ -712,26 +728,115 @@ export default function AgenteISOView({ setActiveTab }) {
       return;
     }
 
-    // 6. Pregunta concreta de seguimiento: ¿Cuáles son las acciones correctivas abiertas?
+    // 6. Pregunta de seguimiento combinada: Acciones Correctivas y Planes de Mejora (Opción 4 del menú)
+    const esPreguntaACyPM =
+      (/(?:acci[oó]n|acciones).*(?:plan|planes)/i.test(textoLower) ||
+       /(?:plan|planes).*(?:acci[oó]n|acciones)/i.test(textoLower)) &&
+      !textoLower.includes('¿qué tengo pendiente');
+
+    if (esPreguntaACyPM) {
+      const acs = (contextoOperativoActual?.acciones_pendientes || []);
+      const borradores = (contextoOperativoActual?.borradores_ac || []);
+      const pms = (contextoOperativoActual?.planes_mejora_activos || []);
+      let respuestaBloque = '';
+
+      // Bloque Acciones Correctivas (OOMRSC-20)
+      if (acs.length === 0 && borradores.length === 0) {
+        respuestaBloque += `✅ **Acciones Correctivas (OOMRSC-20):**\n\nNo tienes acciones correctivas abiertas ni borradores pendientes en tu área.\n\n`;
+      } else {
+        if (acs.length > 0) {
+          respuestaBloque += `⚠️ **Acciones Correctivas Abiertas en Seguimiento (${acs.length}):**\n\n` +
+            acs.map((ac, idx) => {
+              const diasTxt = ac.dias_restantes !== null ? ` (${ac.dias_restantes} días restantes)` : '';
+              return `${idx + 1}. **[${ac.folio}] ${ac.titulo}**\n` +
+                `   - **Estado:** \`${ac.estado}\` | **Auditor:** ${ac.auditor_asignado}\n` +
+                `   - **Fecha Límite:** ${ac.fecha_limite}${diasTxt}\n` +
+                `   - **Causa / Hallazgo:** ${ac.descripcion}`;
+            }).join('\n\n') +
+            `\n\n💡 *Para subir evidencias de actividades, escribe: "subir evidencia para ${acs[0]?.folio}".*\n\n`;
+        } else {
+          respuestaBloque += `✅ **Acciones Correctivas en Seguimiento:**\n\nNo tienes acciones correctivas abiertas en seguimiento oficial.\n\n`;
+        }
+
+        if (borradores.length > 0) {
+          respuestaBloque += `📝 **Borradores pendientes de envío / ratificación (${borradores.length}):**\n\n` +
+            borradores.map((b, idx) => {
+              return `${idx + 1}. **${b.titulo}**\n` +
+                `   - **Estado:** \`BORRADOR\` (En preparación)\n` +
+                `   - **Fecha de registro:** ${b.fecha_creacion}\n` +
+                `   - **Detalle:** ${b.descripcion}`;
+            }).join('\n\n') +
+            `\n\n*(Estos borradores aún no han sido enviados al SGC ni cuentan con folio oficial asignado).*\n\n`;
+        }
+      }
+
+      // Bloque Planes de Mejora (OOMRSC-21)
+      if (pms.length === 0) {
+        respuestaBloque += `🚀 **Planes de Mejora Continua (OOMRSC-21):**\n\nNo hay planes de mejora activos registrados actualmente para tu área.`;
+      } else {
+        respuestaBloque += `🚀 **Planes de Mejora Activos (${pms.length}):**\n\n` +
+          pms.map((pm, idx) => {
+            const diasTxt = pm.dias_restantes !== null ? ` (${pm.dias_restantes} días restantes)` : '';
+            return `${idx + 1}. **[${pm.folio}] ${pm.titulo}**\n` +
+              `   - **Estado:** \`${pm.estado}\` | **Avance:** ${pm.avance}%\n` +
+              `   - **Fecha Compromiso:** ${pm.fecha_termino}${diasTxt}\n` +
+              `   - **Presupuesto:** $${pm.presupuestoEstimado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}\n` +
+              `   - **Objetivo:** ${pm.descripcion}`;
+          }).join('\n\n');
+      }
+
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaBloque,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-20 y OOMRSC-21 (Seguimiento Operativo)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 6b. Pregunta concreta de seguimiento: ¿Cuáles son las acciones correctivas abiertas?
     const esPreguntaACAbiertas =
       /(?:cu[aá]les|qu[eé]).*(?:acci[oó]n|acciones).*(?:abiert|pendient|seguimiento)/i.test(textoLower) ||
       /(?:acciones?\s+(?:correctivas?\s+)?(?:abiertas?|pendientes?))/i.test(textoLower);
 
     if (esPreguntaACAbiertas) {
       const acs = (contextoOperativoActual?.acciones_pendientes || []);
+      const borradores = (contextoOperativoActual?.borradores_ac || []);
       let respuestaAC = '';
-      if (acs.length === 0) {
-        respuestaAC = `⚠️ **Acciones Correctivas (OOMRSC-20):**\n\nTu área no tiene acciones correctivas abiertas en seguimiento. Todos los folios están concluidos.`;
+
+      if (acs.length === 0 && borradores.length === 0) {
+        respuestaAC = `✅ **Acciones Correctivas (OOMRSC-20):**\n\nNo tienes acciones correctivas abiertas ni borradores pendientes en tu área.`;
       } else {
-        respuestaAC = `⚠️ **Acciones Correctivas Abiertas (${acs.length}):**\n\n` +
-          acs.map((ac, idx) => {
-            const diasTxt = ac.dias_restantes !== null ? ` (${ac.dias_restantes} días restantes)` : '';
-            return `${idx + 1}. **[${ac.folio}] ${ac.titulo}**\n` +
-              `   - **Estado:** \`${ac.estado}\` | **Auditor:** ${ac.auditor_asignado}\n` +
-              `   - **Fecha Límite:** ${ac.fecha_limite}${diasTxt}\n` +
-              `   - **Hallazgo / Causa:** ${ac.descripcion}`;
-          }).join('\n\n') +
-          `\n\n💡 *Para subir evidencias de actividades, escribe: "subir evidencia para ${acs[0]?.folio}".*`;
+        if (acs.length > 0) {
+          respuestaAC += `⚠️ **Acciones Correctivas Abiertas en Seguimiento (${acs.length}):**\n\n` +
+            acs.map((ac, idx) => {
+              const diasTxt = ac.dias_restantes !== null ? ` (${ac.dias_restantes} días restantes)` : '';
+              return `${idx + 1}. **[${ac.folio}] ${ac.titulo}**\n` +
+                `   - **Estado:** \`${ac.estado}\` | **Auditor:** ${ac.auditor_asignado}\n` +
+                `   - **Fecha Límite:** ${ac.fecha_limite}${diasTxt}\n` +
+                `   - **Causa / Hallazgo:** ${ac.descripcion}`;
+            }).join('\n\n') +
+            `\n\n💡 *Para subir evidencias de actividades, escribe: "subir evidencia para ${acs[0]?.folio}".*\n\n`;
+        } else {
+          respuestaAC += `✅ **Acciones Correctivas en Seguimiento:**\n\nNo tienes acciones correctivas abiertas en seguimiento oficial.\n\n`;
+        }
+
+        if (borradores.length > 0) {
+          respuestaAC += `📝 **Borradores pendientes de envío / ratificación (${borradores.length}):**\n\n` +
+            borradores.map((b, idx) => {
+              return `${idx + 1}. **${b.titulo}**\n` +
+                `   - **Estado:** \`BORRADOR\` (En preparación)\n` +
+                `   - **Fecha de registro:** ${b.fecha_creacion}\n` +
+                `   - **Detalle:** ${b.descripcion}`;
+            }).join('\n\n') +
+            `\n\n*(Estos borradores aún no han sido enviados al SGC ni cuentan con folio oficial asignado).*`;
+        }
       }
       setMensajes(prev => [
         ...prev,
@@ -821,7 +926,7 @@ export default function AgenteISOView({ setActiveTab }) {
 
     try {
       const historial = mensajes
-        .filter(m => m.id !== 'bienvenida')
+        .filter(m => m.id !== 'bienvenida' && m.texto && m.texto.trim())
         .map(m => ({
           role: m.emisor === 'usuario' ? 'user' : 'assistant',
           content: m.texto
@@ -846,11 +951,12 @@ export default function AgenteISOView({ setActiveTab }) {
       }
 
       const data = await res.json();
+      const agenteTexto = (data.respuesta && data.respuesta.trim()) || 'En el catálogo oficial del SGC de OOMAPASC no se encuentra registrado dicho formato o documento.';
 
       const agenteMsg = {
         id: (Date.now() + 1).toString(),
         emisor: 'agente',
-        texto: data.respuesta,
+        texto: agenteTexto,
         clausulas: [],
         normaConsultada: data.norma_consultada,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })

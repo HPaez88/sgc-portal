@@ -49,24 +49,85 @@ export function generarContextoOperativo({
   const areaNorm = normalizar(area);
 
   // 1. Acciones Correctivas (OOMRSC-20)
+  const ESTADOS_SEGUIMIENTO_ACTIVO = ['EN_SEGUIMIENTO', 'EN_REVISION', 'REVISION_AUDITOR', 'APROBADO', 'APROBADA'];
+
   const acsArea = (accionesCorrectivas || []).filter(ac => {
+    if (!ac) return false;
     const acAreaNorm = normalizar(ac.area);
     const coincideArea = !areaNorm || acAreaNorm === areaNorm || acAreaNorm.includes(areaNorm) || areaNorm.includes(acAreaNorm);
-    const estaAbierta = ac.estado !== 'CERRADA' && ac.estado !== 'CERRADO';
-    return coincideArea && estaAbierta;
+    if (!coincideArea) return false;
+
+    const estado = (ac.estado || '').toUpperCase();
+    // Excluir borradores no ratificados y registros cerrados o cancelados
+    if (estado === 'BORRADOR' || estado.includes('CERRAD') || estado.includes('CANCEL') || estado.includes('CONCLU')) {
+      return false;
+    }
+    // Solo incluir estados oficiales de seguimiento activo
+    if (!ESTADOS_SEGUIMIENTO_ACTIVO.includes(estado)) {
+      return false;
+    }
+    // Debe tener contenido real (no ser un borrador huérfano ni registro en blanco)
+    const tieneContenido = Boolean(
+      (ac.titulo && ac.titulo.trim() !== 'Acción Correctiva') ||
+      ac.descripcion ||
+      ac.descripcion_no_conformidad_original ||
+      ac.hallazgo ||
+      ac.causa_raiz
+    );
+    return tieneContenido;
   }).map(ac => {
     const diasRest = calcularDiasRestantes(ac.fecha_limite || ac.fechaCompromiso);
+
+    // Formatear folio institucional formal evitando números timestamp crudos
+    let folioOficial = 'AC-Folio en Trámite';
+    if (ac.folio && !/^\d{10,}$/.test(String(ac.folio).replace(/\D/g, ''))) {
+      folioOficial = ac.folio;
+    } else if (ac.folio_codigo && !/^\d{10,}$/.test(String(ac.folio_codigo).replace(/\D/g, ''))) {
+      folioOficial = ac.folio_codigo;
+    } else if (ac.folio_numero) {
+      folioOficial = `AC#${ac.folio_numero}/26`;
+    } else if (typeof ac.id === 'number' && ac.id < 10000) {
+      folioOficial = `AC#${ac.id}/26`;
+    }
+
+    const descFinal = ac.descripcion || ac.descripcion_no_conformidad_original || ac.hallazgo || ac.causa_raiz || 'Sin causa registrada';
+    const titFinal = (ac.titulo && ac.titulo.trim() !== 'Acción Correctiva')
+      ? ac.titulo
+      : (ac.descripcion_no_conformidad_original ? (ac.descripcion_no_conformidad_original.length > 70 ? ac.descripcion_no_conformidad_original.slice(0, 67) + '...' : ac.descripcion_no_conformidad_original) : 'Acción Correctiva');
+
     return {
       id: ac.id,
-      folio: ac.folio || `AC#${ac.id}`,
-      titulo: ac.titulo || ac.descripcion || 'Acción Correctiva',
-      descripcion: ac.descripcion || ac.hallazgo || '',
+      folio: folioOficial,
+      titulo: titFinal,
+      descripcion: descFinal,
       estado: ac.estado || 'EN_SEGUIMIENTO',
       origen: ac.origen || 'Auditoría / Control',
       fecha_limite: ac.fecha_limite || ac.fechaCompromiso || 'Sin fecha',
       dias_restantes: diasRest,
       es_urgente: diasRest !== null && diasRest <= 15,
       auditor_asignado: ac.auditor_asignado || ac.auditor || 'Coordinación SGC'
+    };
+  });
+
+  const borradoresArea = (accionesCorrectivas || []).filter(ac => {
+    if (!ac) return false;
+    const acAreaNorm = normalizar(ac.area);
+    const coincideArea = !areaNorm || acAreaNorm === areaNorm || acAreaNorm.includes(areaNorm) || areaNorm.includes(acAreaNorm);
+    const esBorrador = (ac.estado || '').toUpperCase() === 'BORRADOR';
+    const tieneAlgo = Boolean(ac.descripcion_no_conformidad_original || ac.descripcion || ac.hallazgo || (ac.titulo && ac.titulo !== 'Acción Correctiva'));
+    return coincideArea && esBorrador && tieneAlgo;
+  }).map((ac, idx) => {
+    const desc = ac.descripcion_no_conformidad_original || ac.descripcion || ac.hallazgo || '';
+    const tit = (ac.titulo && ac.titulo.trim() !== 'Acción Correctiva')
+      ? ac.titulo
+      : (desc ? (desc.length > 60 ? desc.slice(0, 57) + '...' : desc) : `Borrador #${idx + 1}`);
+    return {
+      id: ac.id,
+      titulo: tit,
+      descripcion: desc || 'En captura',
+      origen: ac.origen || 'Captura en proceso',
+      fecha_creacion: ac.fecha_creacion_borrador ? ac.fecha_creacion_borrador.split('T')[0] : 'Reciente',
+      estado: 'BORRADOR'
     };
   });
 
@@ -186,6 +247,7 @@ export function generarContextoOperativo({
     rol,
     fecha_consulta: new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
     acciones_pendientes: acsArea,
+    borradores_ac: borradoresArea,
     planes_mejora_activos: pmsArea,
     planes_proximos_vencer: pmsProximos,
     indicadores_area: indicadoresDelArea,
@@ -197,6 +259,7 @@ export function generarContextoOperativo({
     formularios_revision_pendientes: formulariosRevision,
     resumen_conteos: {
       total_ac_pendientes: acsArea.length,
+      total_ac_borradores: borradoresArea.length,
       total_pm_activos: pmsArea.length,
       total_pm_proximos_vencer: pmsProximos.length,
       total_indicadores: indicadoresDelArea.length,
@@ -225,10 +288,14 @@ export function generarBriefingMarkdownLocal(ctx, { soloCuadro = true } = {}) {
     ? `🔴 ${c.total_indicadores_incumplidos} Incumplido(s)<br>🟢 ${c.total_indicadores_cumplidos} Cumplido(s)`
     : `🟢 100% Cumplimiento (${c.total_indicadores_cumplidos} cumplidos)`;
 
+  const estadoAC = c.total_ac_pendientes > 0
+    ? `🟡 ${c.total_ac_pendientes} acción(es) abierta(s) en seguimiento`
+    : (c.total_ac_borradores > 0 ? `📝 ${c.total_ac_borradores} borrador(es) en captura` : '🟢 Sin acciones abiertas');
+
   // Tabla resumen de estado (exactamente 3 columnas consistentes en todas las filas)
   md += `| Módulo SGC | Total Registros | Estado / Alerta Prioritaria |\n`;
   md += `| :--- | :---: | :--- |\n`;
-  md += `| ⚠️ **Acciones Correctivas (OOMRSC-20)** | **${c.total_ac_pendientes}** | ${c.total_ac_pendientes > 0 ? `🟡 ${c.total_ac_pendientes} acción(es) abierta(s) en seguimiento` : '🟢 Sin acciones abiertas'} |\n`;
+  md += `| ⚠️ **Acciones Correctivas (OOMRSC-20)** | **${c.total_ac_pendientes}** | ${estadoAC} |\n`;
   md += `| 🚀 **Planes de Mejora (OOMRSC-21)** | **${c.total_pm_activos}** | ${c.total_pm_proximos_vencer > 0 ? `🔴 **${c.total_pm_proximos_vencer} plan(es) próximo(s) a vencer**` : '🟢 En cronograma normal'} |\n`;
   md += `| 🎯 **Indicadores SGC (OOMRSC-05)** | **${c.total_indicadores}** | ${alertaIndicadores} |\n`;
   md += `| 📑 **Docs. >1 Año sin Revisar (§ 7.5.3)** | **${c.total_docs_antiguos_sin_revision}** | ${c.total_docs_antiguos_sin_revision > 0 ? `⚠️ **${c.total_docs_antiguos_sin_revision} doc(s) requieren revisión activa**` : '🟢 Toda la base vigente (<1 año)'} |\n`;

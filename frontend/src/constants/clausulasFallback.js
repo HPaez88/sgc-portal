@@ -261,5 +261,87 @@ export const CLAUSULAS_FALLBACK = {
       evidencia_objetiva: 'Cédulas de hallazgos de auditoría e informes oficiales con firmas de auditores y auditados.',
       criterio_auditoria: 'Verificar la solidez de la evidencia documental o presencial de cada no conformidad levantada.'
     }
+  ],
+  'ISO-9000-2015': [
+    {
+      numero: 'Principio 1',
+      titulo: 'Enfoque al Cliente (Usuarios Ciudadanos)',
+      requisito: 'Cumplir los requisitos de los clientes y esforzarse por superar sus expectativas.',
+      interpretacion: 'Suministro continuo de agua potable conforme a la NOM-127-SSA1 y atención digna, ágil y transparente a usuarios en ventanillas y módulos de cobro de OOMAPASC.',
+      evidencia_objetiva: 'Encuestas de satisfacción ciudadana, bitácoras de cloración y tiempos de respuesta a reportes.',
+      criterio_auditoria: 'Demostrar que las actividades del área impactan positivamente en la satisfacción del usuario del servicio.'
+    },
+    {
+      numero: 'Principio 2',
+      titulo: 'Liderazgo',
+      requisito: 'Establecer unidad de propósito y crear condiciones donde las personas se implican en el logro de objetivos.',
+      interpretacion: 'Directores y jefes promueven activamente la cultura de calidad, asignan recursos y respaldan las revisiones por la dirección (OOMRSC-04).',
+      evidencia_objetiva: 'Actas de Revisión por la Dirección OOMRSC-04 y asignación presupuestal a planes de mejora.',
+      criterio_auditoria: 'Verificar el conocimiento activo de los líderes sobre el desempeño e indicadores de sus procesos.'
+    },
+    {
+      numero: 'Principio 4',
+      titulo: 'Enfoque a Procesos',
+      requisito: 'Gestionar las actividades como procesos interrelacionados para alcanzar resultados coherentes.',
+      interpretacion: 'Interacción continua entre procesos operativos (Extracción, Potabilización, Redes, PTARs) y procesos de apoyo (Comercial, Compras, RH, Calidad).',
+      evidencia_objetiva: 'Mapa General de Procesos MC-01 y Fichas de Caracterización de Procesos vigentes.',
+      criterio_auditoria: 'Cada proceso debe operar sin vacíos de responsabilidad entre áreas.'
+    },
+    {
+      numero: 'Principio 6',
+      titulo: 'Toma de Decisiones Basada en la Evidencia',
+      requisito: 'Decisiones basadas en el análisis y evaluación de datos e información verídica.',
+      interpretacion: 'Uso del Cuadro de Control OOMRSC-05 con 100 indicadores analizados mensualmente con semáforo institucional.',
+      evidencia_objetiva: 'Tablero de Control de Desempeño OOMRSC-05 capturado en los primeros 10 días de cada mes.',
+      criterio_auditoria: 'Todo plan correctivo o de mejora debe fundamentarse en datos objetivos y mediciones verificables.'
+    },
+    {
+      numero: '3.6.4',
+      titulo: 'No Conformidad (NC)',
+      requisito: 'Incumplimiento de un requisito especificado (normativo, legal, reglamentario o interno).',
+      interpretacion: 'Toda desviación no controlada en OOMAPASC requiere apertura del formato OOMRSC-20 si es recurrente o de Alto Impacto.',
+      evidencia_objetiva: 'Formato OOMRSC-20 en estado de seguimiento en el portal.',
+      criterio_auditoria: 'La NC debe estar soportada por Criterio Normativo, Declaración y Evidencia Objetiva.'
+    },
+    {
+      numero: '3.12.2',
+      titulo: 'Acción Correctiva (AC)',
+      requisito: 'Acción para eliminar la causa raíz de una no conformidad y prevenir su recurrencia.',
+      interpretacion: 'Formato institucional OOMRSC-20 con análisis Ishikawa 6M / 5 Porqués y validación obligatoria del auditor líder.',
+      evidencia_objetiva: 'Formato OOMRSC-20 en estado CERRADO con dictamen favorable del auditor.',
+      criterio_auditoria: 'Comprobar que no hubo reincidencia del problema tras el cierre de la acción.'
+    },
+    {
+      numero: '3.8.6',
+      titulo: 'Información Documentada',
+      requisito: 'Información que una organización debe controlar y mantener (procedimientos) y conservar (registros de evidencia).',
+      interpretacion: 'Catálogo documental oficial y Matriz de Trazabilidad (§ 7.5.3) en el Portal SGC con firmas y control de cambios.',
+      evidencia_objetiva: 'Registros OOMRSC-20/21, cuadro OOMRSC-05 y procedimientos vigentes aprobados en el portal.',
+      criterio_auditoria: 'Verificar control de versiones y ausencia de documentos no autorizados u obsoletos en uso.'
+    },
+    {
+      numero: 'Variación 1',
+      titulo: 'De Acción Preventiva a Pensamiento Basado en Riesgos y Resiliencia',
+      requisito: 'Transición del requisito 8.5.3 de ISO 9001:2008 hacia el enfoque de riesgos (§ 6.1 de 2015) y resiliencia operativa hacia 2026.',
+      interpretacion: 'En OOMAPASC los riesgos operativos (sequía, pozos, químicos, ciberseguridad) se previenen de forma proactiva en matrices y semáforos sin abrir "acciones preventivas" obsoletas.',
+      evidencia_objetiva: 'Matriz de Riesgos Operativos y semáforo preventivo (80-89%) en el Cuadro OOMRSC-05.',
+      criterio_auditoria: 'Comprobar que las áreas mitigan amenazas antes de que se conviertan en No Conformidades.'
+    },
+    {
+      numero: 'Variación 2',
+      titulo: 'De Manual Tradicional a Gobernanza Digital e Información Inmutable',
+      requisito: 'Evolución de manuales impresos hacia plataformas electrónicas con control de cambios y trazabilidad inmutable.',
+      interpretacion: 'Gestión íntegra en el Portal SGC de OOMAPASC con bitácoras de auditoría digital inmutables (audit_logs) y matriz de dependencias sin referencias rotas.',
+      evidencia_objetiva: 'Matriz de Trazabilidad Documental y bitácoras de cambios en base de datos.',
+      criterio_auditoria: 'La información digitalizada debe garantizar integridad, disponibilidad y protección contra alteraciones.'
+    },
+    {
+      numero: 'Variación 3',
+      titulo: 'Mandato Obligatorio de Acción Climática (Enmienda ISO 9001:2015 / Amd 1:2024)',
+      requisito: 'Evaluación mandatoria del cambio climático en el contexto (4.1) y partes interesadas (4.2).',
+      interpretacion: 'En OOMAPASC el cambio climático impacta directamente los mantos acuíferos, sequía y calidad del agua en Cajeme, siendo un eje central de planeación.',
+      evidencia_objetiva: 'Matriz de contexto 4.1 y partes interesadas 4.2 con variables climáticas e hídricas integradas.',
+      criterio_auditoria: 'Verificar cumplimiento obligatorio de la Enmienda 2024 para mantener la certificación internacional.'
+    }
   ]
 };
