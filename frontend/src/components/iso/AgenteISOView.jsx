@@ -66,6 +66,41 @@ import {
 } from './ModalesAccionIA';
 import { CLAUSULAS_FALLBACK } from '../../constants/clausulasFallback';
 
+export const OPCIONES_RAPIDAS_MENU = [
+  {
+    num: '1',
+    icono: '📋',
+    titulo: '¿Qué tengo pendiente hoy?',
+    subtitulo: 'Diagnóstico integral de mi área',
+    textoVisible: '1. ¿Qué tengo pendiente hoy?',
+    prompt: '¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05) y procedimientos sin revisar conforme a ISO 9001.'
+  },
+  {
+    num: '2',
+    icono: '🎯',
+    titulo: 'Estado de mis indicadores',
+    subtitulo: 'Metas anuales y semáforo OOMRSC-05',
+    textoVisible: '2. Estado de mis indicadores (OOMRSC-05)',
+    prompt: '¿Cómo van los indicadores oficiales de mi área en el Cuadro de Control OOMRSC-05? ¿Cuáles cumplen la meta anual y cuáles están en semáforo crítico o preventivo?'
+  },
+  {
+    num: '3',
+    icono: '📄',
+    titulo: 'Procedimientos vigentes',
+    subtitulo: 'Revisión periódica (§ 7.5.3)',
+    textoVisible: '3. Procedimientos clave vigentes (§ 7.5.3)',
+    prompt: '¿Qué procedimientos, manuales o formatos clave de mi área están vigentes o requieren atención para mantener la revisión periódica activa conforme a ISO 9001 § 7.5.3?'
+  },
+  {
+    num: '4',
+    icono: '⚠️',
+    titulo: 'Acciones Correctivas y PM',
+    subtitulo: 'Vencimientos y seguimiento',
+    textoVisible: '4. Acciones Correctivas y Planes de Mejora',
+    prompt: '¿Qué acciones correctivas (OOMRSC-20) y planes de mejora (OOMRSC-21) de mi área tienen compromisos próximos o requieren seguimiento?'
+  }
+];
+
 const PREGUNTAS_CATEGORIZADAS = [
   {
     categoria: '⚡ Diagnóstico Operativo y Pendientes por Área (Live Assistant)',
@@ -305,6 +340,18 @@ const NORMAS_BASE = [
   { id: 'ISO-19011-2018', nombre: 'ISO 19011:2018 — Directrices para Auditorías de Gestión', total_clausulas: 10 }
 ];
 
+const CHAT_STORAGE_KEY_PREFIX = 'sgc_chat_historial_v2_';
+const CHAT_RETENTION_MS = 2 * 24 * 60 * 60 * 1000; // 2 días de persistencia continua (48 horas)
+
+export const MENSAJE_BIENVENIDA_DEFAULT = {
+  id: 'bienvenida',
+  emisor: 'agente',
+  texto: `¡Hola! 👋 Soy tu **Asesor Normativo ISO y SGC** en OOMAPASC.\n\nEstoy conectado en tiempo real para resolver tus dudas operativas o consultar el estado de tu área. Toca una opción rápida o escribe el número (**1, 2, 3 o 4**):`,
+  esBienvenida: true,
+  clausulas: [],
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+};
+
 export default function AgenteISOView({ setActiveTab }) {
   const {
     usuarioLogueado,
@@ -354,16 +401,38 @@ export default function AgenteISOView({ setActiveTab }) {
   const [modalActividadEvidenciaIA, setModalActividadEvidenciaIA] = useState({ open: false, accion: null });
   const [modalRatificarDocIA, setModalRatificarDocIA] = useState({ open: false, documento: null });
 
-  // Chat State
-  const [mensajes, setMensajes] = useState([
-    {
-      id: 'bienvenida',
-      emisor: 'agente',
-      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO (Multi-SGC Integrado).**\n\nEstoy conectado en tiempo real a tu perfil operativo:\n- **Colaborador:** ${usuarioLogueado?.nombre || 'Colaborador SGC'} | **Área:** ${usuarioLogueado?.area || 'Control y Servicios'} (${usuarioLogueado?.direccion || 'Dir. Comercial'})\n- **Normas ISO Oficiales Integradas:**\n  1. **ISO 9001:2015 / 2026** (Gestión de Calidad, Enmiendas Climáticas y Resiliencia)\n  2. **ISO/IEC 42001:2023** (Gobernanza de Inteligencia Artificial & Human-in-the-Loop)\n  3. **ISO/IEC 27001:2022** (Seguridad de la Información, Ciberseguridad & TI)\n  4. **ISO 9000:2015** (Fundamentos de Calidad y Vocabulario Oficial)\n  5. **ISO 14001:2015** (Gestión Ambiental y Saneamiento)\n  6. **ISO 45001:2018** (Seguridad y Salud en el Trabajo)\n  7. **ISO 19011:2018** (Directrices de Auditoría Interna)\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Política de TI \`POL-TI-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Cuadro de Control (\`OOMRSC-05\`) y Matriz de Trazabilidad Documental.\n\nPuedes preguntarme **"¿Qué tengo pendiente hoy?"** o pedirme directamente **"Actualiza el indicador #70 con 92%"**, **"Subir evidencia"** o **"Ratificar procedimiento PR-CS-01"** para ejecutar y guardar los datos en su módulo correspondiente.`,
-      clausulas: [],
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const storageKey = `${CHAT_STORAGE_KEY_PREFIX}${usuarioLogueado?.id || 'default'}`;
+
+  // Chat State (Persistido durante 2 días en localStorage por colaborador)
+  const [mensajes, setMensajes] = useState(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const ahora = Date.now();
+        // Si el historial tiene menos de 2 días de antigüedad (48 horas), recuperarlo
+        if (parsed?.savedAt && (ahora - parsed.savedAt < CHAT_RETENTION_MS) && Array.isArray(parsed?.mensajes) && parsed.mensajes.length > 0) {
+          return parsed.mensajes;
+        }
+      }
+    } catch (e) {
+      console.warn('Error al recuperar historial de chat guardado:', e);
     }
-  ]);
+    return [MENSAJE_BIENVENIDA_DEFAULT];
+  });
+
+  // Guardar automáticamente en localStorage con TTL de 2 días cada vez que cambien los mensajes
+  useEffect(() => {
+    if (!mensajes || mensajes.length === 0) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        savedAt: Date.now(),
+        mensajes
+      }));
+    } catch (e) {
+      console.warn('Error al persistir historial del Asesor ISO:', e);
+    }
+  }, [mensajes, storageKey]);
   const [inputPregunta, setInputPregunta] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [copiadoId, setCopiadoId] = useState(null);
@@ -388,7 +457,7 @@ export default function AgenteISOView({ setActiveTab }) {
   };
 
   useEffect(() => {
-    if (tabActiva === 'chat') {
+    if (tabActiva === 'chat' && (mensajes.length > 1 || enviando)) {
       scrollToBottom();
     }
   }, [mensajes, enviando, tabActiva]);
@@ -474,9 +543,23 @@ export default function AgenteISOView({ setActiveTab }) {
     toast.success('Operación ejecutada y registrada en el SGC exitosamente');
   };
 
-  const handleEnviarConsulta = async (preguntaTexto = null, normaOverride = null) => {
-    const texto = (preguntaTexto !== null ? preguntaTexto : inputPregunta).trim();
-    if (!texto || enviando) return;
+  const handleEnviarConsulta = async (preguntaTexto = null, normaOverride = null, textoVisibleUsuario = null) => {
+    let rawTexto = (preguntaTexto !== null ? preguntaTexto : inputPregunta).trim();
+    if (!rawTexto || enviando) return;
+
+    let texto = rawTexto;
+    let labelUsuario = textoVisibleUsuario || rawTexto;
+
+    // Detectar si el usuario escribió solo un número (1, 2, 3 o 4) o "opcion 1", "#1", "1.", etc.
+    const matchNumero = rawTexto.match(/^(?:opci[oó]n\s*|#\s*)?([1-4])\.?$/i);
+    if (matchNumero) {
+      const numEncontrado = matchNumero[1];
+      const opcion = OPCIONES_RAPIDAS_MENU.find(o => o.num === numEncontrado);
+      if (opcion) {
+        texto = opcion.prompt;
+        labelUsuario = opcion.textoVisible;
+      }
+    }
 
     // Cambiar a la pestaña de chat automáticamente
     setTabActiva('chat');
@@ -486,7 +569,7 @@ export default function AgenteISOView({ setActiveTab }) {
     const userMsg = {
       id: Date.now().toString(),
       emisor: 'usuario',
-      texto,
+      texto: labelUsuario,
       normaId,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -566,6 +649,176 @@ export default function AgenteISOView({ setActiveTab }) {
       return;
     }
 
+    // 4. Intención de Diagnóstico Ejecutivo / "¿Qué tengo pendiente?" / Opción 1
+    const rawTrim = (rawTexto || '').trim();
+    const esConsultaDiagnostico =
+      rawTrim === '1' ||
+      /^(?:opci[oó]n\s*1|#1|1[.)\s]?)$/i.test(rawTrim) ||
+      /^(?:qu[eé]\s+tengo\s+pendiente|\?qu[eé]\s+tengo\s+pendiente\??|diagn[oó]stico|pendientes|mis\s+pendientes|resumen(?:\s+operativo)?)$/i.test(rawTrim) ||
+      texto.includes('Necesito el balance ejecutivo de Acciones Correctivas') ||
+      ((textoLower.includes('qué tengo pendiente') || textoLower.includes('que tengo pendiente') || textoLower.includes('diagnóstico') || textoLower.includes('diagnostico')) &&
+        !textoLower.includes('cuál') && !textoLower.includes('cual') && !textoLower.includes('cómo van') && !textoLower.includes('como van'));
+
+    if (esConsultaDiagnostico) {
+      const tablaResumen = generarBriefingMarkdownLocal(contextoOperativoActual, { soloCuadro: true });
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: tablaResumen,
+          clausulas: [], // Sin botones ni links a cláusulas
+          normaConsultada: 'SGC OOMAPASC (Diagnóstico)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 5. Pregunta concreta de seguimiento: ¿Cuáles son los indicadores incumplidos / críticos?
+    const esPreguntaIndicadoresIncumplidos =
+      /(?:cu[aá]les|qu[eé]).*(?:incumplid|cr[ií]tic|no\s+cumpl)/i.test(textoLower) ||
+      /(?:indicadores?\s+(?:incumplidos?|cr[ií]ticos?))/i.test(textoLower) ||
+      (/cu[aá]les\s+son\s+los\s+\d+/i.test(textoLower) && (textoLower.includes('incumplid') || textoLower.includes('indicador')));
+
+    if (esPreguntaIndicadoresIncumplidos) {
+      const indsInc = (contextoOperativoActual?.indicadores_area || []).filter(i => i.es_incumplido || i.semaforo === 'Crítico' || i.cumple === 'NO');
+      let respuestaInds = '';
+      if (indsInc.length === 0) {
+        respuestaInds = `🎯 **Indicadores SGC (OOMRSC-05):**\n\nTodos los indicadores de tu área se encuentran en **cumplimiento** conforme a sus metas vigentes. No hay indicadores en semáforo crítico o incumplidos.`;
+      } else {
+        respuestaInds = `🎯 **Indicadores Incumplidos de tu Área (${indsInc.length}):**\n\n` +
+          indsInc.map((ind, idx) => {
+            return `${idx + 1}. **#${ind.numero ?? ind.id} ${ind.nombre}**\n` +
+              `   - **Meta:** ${ind.meta} ${ind.unidad || ''} | **Valor Real:** ${ind.valor_real} ${ind.unidad || ''} (${ind.porcentaje}%)\n` +
+              `   - **Semáforo:** 🔴 Crítico / Incumplido\n` +
+              `   - **Proceso:** ${ind.proceso || 'Operativo'}`;
+          }).join('\n\n') +
+          `\n\n💡 *Para actualizar o capturar un valor, escribe: "actualizar indicador #${indsInc[0]?.numero ?? indsInc[0]?.id}".*`;
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaInds,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-05 (Indicadores)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 6. Pregunta concreta de seguimiento: ¿Cuáles son las acciones correctivas abiertas?
+    const esPreguntaACAbiertas =
+      /(?:cu[aá]les|qu[eé]).*(?:acci[oó]n|acciones).*(?:abiert|pendient|seguimiento)/i.test(textoLower) ||
+      /(?:acciones?\s+(?:correctivas?\s+)?(?:abiertas?|pendientes?))/i.test(textoLower);
+
+    if (esPreguntaACAbiertas) {
+      const acs = (contextoOperativoActual?.acciones_pendientes || []);
+      let respuestaAC = '';
+      if (acs.length === 0) {
+        respuestaAC = `⚠️ **Acciones Correctivas (OOMRSC-20):**\n\nTu área no tiene acciones correctivas abiertas en seguimiento. Todos los folios están concluidos.`;
+      } else {
+        respuestaAC = `⚠️ **Acciones Correctivas Abiertas (${acs.length}):**\n\n` +
+          acs.map((ac, idx) => {
+            const diasTxt = ac.dias_restantes !== null ? ` (${ac.dias_restantes} días restantes)` : '';
+            return `${idx + 1}. **[${ac.folio}] ${ac.titulo}**\n` +
+              `   - **Estado:** \`${ac.estado}\` | **Auditor:** ${ac.auditor_asignado}\n` +
+              `   - **Fecha Límite:** ${ac.fecha_limite}${diasTxt}\n` +
+              `   - **Hallazgo / Causa:** ${ac.descripcion}`;
+          }).join('\n\n') +
+          `\n\n💡 *Para subir evidencias de actividades, escribe: "subir evidencia para ${acs[0]?.folio}".*`;
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaAC,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-20 (Acciones Correctivas)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 7. Pregunta concreta de seguimiento: ¿Cuáles son los planes de mejora?
+    const esPreguntaPM =
+      /(?:cu[aá]les|qu[eé]).*(?:plan|planes).*(?:mejora|activ|vencer)/i.test(textoLower) ||
+      /(?:planes?\s+de\s+mejora\s+(?:activos?|pendientes?))/i.test(textoLower);
+
+    if (esPreguntaPM) {
+      const pms = (contextoOperativoActual?.planes_mejora_activos || []);
+      let respuestaPM = '';
+      if (pms.length === 0) {
+        respuestaPM = `🚀 **Planes de Mejora Continua (OOMRSC-21):**\n\nNo hay planes de mejora activos registrados actualmente para tu área.`;
+      } else {
+        respuestaPM = `🚀 **Planes de Mejora Activos (${pms.length}):**\n\n` +
+          pms.map((pm, idx) => {
+            const diasTxt = pm.dias_restantes !== null ? ` (${pm.dias_restantes} días restantes)` : '';
+            return `${idx + 1}. **[${pm.folio}] ${pm.titulo}**\n` +
+              `   - **Estado:** \`${pm.estado}\` | **Avance:** ${pm.avance}%\n` +
+              `   - **Fecha Compromiso:** ${pm.fecha_termino}${diasTxt}\n` +
+              `   - **Presupuesto Estimado:** $${pm.presupuestoEstimado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}\n` +
+              `   - **Objetivo:** ${pm.descripcion}`;
+          }).join('\n\n');
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaPM,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-21 (Planes de Mejora)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 8. Pregunta concreta de seguimiento: ¿Cuáles son los documentos sin revisar (>1 año)?
+    const esPreguntaDocsAntiguos =
+      /(?:cu[aá]les|qu[eé]).*doc.*(?:1 a[ñn]o|antiguo|sin revisar|vencido)/i.test(textoLower) ||
+      /documentos?\s+sin\s+revisar/i.test(textoLower);
+
+    if (esPreguntaDocsAntiguos) {
+      const docs = (contextoOperativoActual?.documentos_antiguos_sin_revision || []);
+      let respuestaDocs = '';
+      if (docs.length === 0) {
+        respuestaDocs = `📑 **Control Documental (§ 7.5.3):**\n\nTodos los documentos y procedimientos de tu área están vigentes (revisados en los últimos 365 días).`;
+      } else {
+        respuestaDocs = `📑 **Documentos con más de 1 año sin revisión (${docs.length}):**\n\n` +
+          docs.slice(0, 10).map((d, idx) => {
+            return `${idx + 1}. **[${d.clave}] ${d.titulo}**\n` +
+              `   - **Tipo:** ${d.tipo} | **Versión:** ${d.version}\n` +
+              `   - **Última Revisión:** ${d.fecha} (${d.dias_sin_revision} días sin actualizar)`;
+          }).join('\n\n') +
+          (docs.length > 10 ? `\n\n*...y ${docs.length - 10} documentos más.*` : '') +
+          `\n\n💡 *Para ratificar la vigencia de alguno, escribe: "ratificar ${docs[0]?.clave}".*`;
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaDocs,
+          clausulas: [],
+          normaConsultada: 'ISO 9001 § 7.5.3',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
     try {
       const historial = mensajes
         .filter(m => m.id !== 'bienvenida')
@@ -598,7 +851,7 @@ export default function AgenteISOView({ setActiveTab }) {
         id: (Date.now() + 1).toString(),
         emisor: 'agente',
         texto: data.respuesta,
-        clausulas: data.clausulas_citadas || [],
+        clausulas: [],
         normaConsultada: data.norma_consultada,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -615,26 +868,24 @@ export default function AgenteISOView({ setActiveTab }) {
     } catch (e) {
       console.warn('Backend ISO offline or fallback needed:', e);
       
-      // Detección inteligente de consulta de pendientes o estado operativo
-      const esConsultaOperativa = /pendiente|pendientes|área|area|indicador|indicadores|plan|planes|documento|documentos|año|ano|vencer|revisar|revision|resumen/i.test(texto);
+      const textoTrim = texto.toLowerCase().trim();
+      const esSaludo = /^(hola|buen[oa]s?\s*(d[ií]as|tardes|noches)?|saludos|hey|qu[eé]\s+tal)[\s!.]*$/i.test(textoTrim);
+      const esConsultaOperativa = /pendiente|pendientes|área|area|indicador|indicadores|plan|planes|documento|documentos|año|ano|vencer|revisar|revision|resumen/i.test(textoTrim);
       
       let respuestaFinal = '';
-      if (esConsultaOperativa) {
-        respuestaFinal = generarBriefingMarkdownLocal(contextoOperativoActual);
+      if (esSaludo) {
+        respuestaFinal = '👋 ¡Hola! Soy tu Asesor Normativo ISO y SGC en OOMAPASC. ¿En qué puedo orientarte hoy? Puedes consultarme sobre procedimientos, requisitos ISO o consultar el estado de tu área marcando el número **1**.';
+      } else if (esConsultaOperativa) {
+        respuestaFinal = generarBriefingMarkdownLocal(contextoOperativoActual, { soloCuadro: true });
       } else {
-        respuestaFinal = `⚠️ **Nota:** El motor de IA en la nube respondió con un retraso, pero aquí tienes el diagnóstico operativo en tiempo real de tu área:\n\n` + generarBriefingMarkdownLocal(contextoOperativoActual);
+        respuestaFinal = '⚠️ No pude conectar con el motor de IA en la nube para procesar esta pregunta en específico. Por favor intenta reformularla, consultar sobre un procedimiento oficial, o marca **1** para ver tus pendientes.';
       }
 
       const agenteMsg = {
         id: (Date.now() + 1).toString(),
         emisor: 'agente',
         texto: respuestaFinal,
-        clausulas: [
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '7.5.3', titulo: 'Control de la información documentada y mantenimiento activo' },
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '9.1.3', titulo: 'Análisis y evaluación de indicadores (OOMRSC-05)' },
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '10.2', titulo: 'No conformidad y acción correctiva (OOMRSC-20)' },
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '10.3', titulo: 'Mejora continua (OOMRSC-21)' }
-        ],
+        clausulas: [],
         normaConsultada: normaId || 'SGC OOMAPASC (Operativo)',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -786,6 +1037,17 @@ export default function AgenteISOView({ setActiveTab }) {
 
   const formatBold = (text) => {
     if (!text) return text;
+    if (typeof text !== 'string') return text;
+    // Soporte para saltos de línea con <br> o <br/> (ej. tablas ordenadas verticalmente)
+    if (/<br\s*\/?>/i.test(text)) {
+      const lineas = text.split(/<br\s*\/?>/i);
+      return lineas.map((sub, idx) => (
+        <React.Fragment key={idx}>
+          {idx > 0 && <br />}
+          {formatBold(sub)}
+        </React.Fragment>
+      ));
+    }
     const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
@@ -844,9 +1106,9 @@ export default function AgenteISOView({ setActiveTab }) {
   });
 
   return (
-    <div className="space-y-3.5 animate-fade-in-up pb-6">
-      {/* HEADER COMPACTO Y ELEGANTE DEL AGENTE */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl shadow-md text-white border border-slate-700/60 relative overflow-hidden">
+    <div className="space-y-3 animate-fade-in-up pb-4">
+      {/* HEADER ESCRITORIO (Visible en pantallas medianas y grandes) */}
+      <div className="hidden md:block bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] px-4 py-2.5 rounded-2xl shadow-md text-white border border-slate-700/60 relative overflow-hidden">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-2.5">
           {/* Título e Identidad */}
           <div className="flex items-center gap-2.5">
@@ -868,7 +1130,7 @@ export default function AgenteISOView({ setActiveTab }) {
             </div>
           </div>
 
-          {/* Navegación de Pestañas y Acciones */}
+          {/* Navegación de Pestañas */}
           <div className="flex items-center gap-1.5 flex-wrap w-full lg:w-auto justify-start lg:justify-end">
             <div className="flex items-center gap-1 p-1 bg-black/30 backdrop-blur-xs rounded-xl border border-white/10 flex-wrap text-xs">
               <button
@@ -940,361 +1202,245 @@ export default function AgenteISOView({ setActiveTab }) {
       </div>
 
       {/* ============================================================ */}
-      {/* PESTAÑA 1: CHAT EXPANDIDO A PANTALLA COMPLETA */}
+      {/* PESTAÑA 1: CHAT ESTILO WHATSAPP (MÓVIL & ESCRITORIO) */}
       {/* ============================================================ */}
       {tabActiva === 'chat' && (
-        <div className="w-full bg-white rounded-2xl shadow-card-subtle border border-slate-200 flex flex-col h-[calc(100vh-190px)] min-h-[580px] overflow-hidden">
-          {/* Header Compacto del Chat y Briefing */}
-          <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2">
-            {/* Fila 1: Filtros de Norma + Estado + Acciones de exportación */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[11px] font-extrabold text-slate-800 mr-1">
-                  Norma:
+        <div className="w-full bg-[#f0f2f5] rounded-2xl shadow-card-subtle border border-slate-300/80 flex flex-col h-[calc(100vh-175px)] md:h-[calc(100vh-205px)] min-h-[460px] md:min-h-[550px] overflow-hidden">
+          {/* Header Móvil estilo WhatsApp */}
+          <div className="md:hidden px-3 py-2 bg-[#001f42] text-white flex items-center justify-between shadow-xs shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#00a884] flex items-center justify-center text-white shadow-xs">
+                <Bot size={18} />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold leading-tight flex items-center gap-1.5">
+                  Asesor ISO OOMAPASC
+                </h3>
+                <span className="text-[10px] text-emerald-300 flex items-center gap-1 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  En línea · RAG Grounded
                 </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <select
+                value={normaSeleccionada}
+                onChange={(e) => setNormaSeleccionada(e.target.value)}
+                className="bg-slate-800 text-slate-200 border border-slate-700 text-[10px] font-bold rounded-lg px-2 py-1 outline-none max-w-[125px] truncate"
+                title="Norma a consultar"
+              >
+                <option value="">Todas las normas</option>
+                {normas.map(n => <option key={n.id} value={n.id}>{n.id}</option>)}
+              </select>
+              {mensajes.length > 1 && (
                 <button
-                  onClick={() => setNormaSeleccionada('')}
+                  onClick={() => {
+                    setMensajes([MENSAJE_BIENVENIDA_DEFAULT]);
+                    try { localStorage.removeItem(storageKey); } catch (e) {}
+                    toast.info('Chat reiniciado');
+                  }}
+                  className="p-1 rounded-lg text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors"
+                  title="Reiniciar chat"
+                >
+                  <RefreshCw size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Header Escritorio (Filtros de norma y exportación) */}
+          <div className="hidden md:flex px-4 py-2 bg-slate-50 border-b border-slate-200 items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-extrabold text-slate-800 mr-1">
+                Norma:
+              </span>
+              <button
+                onClick={() => setNormaSeleccionada('')}
+                className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
+                  normaSeleccionada === ''
+                    ? 'bg-[#0B192C] text-white shadow-2xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
+                }`}
+              >
+                Todas
+              </button>
+              {normas.map(n => (
+                <button
+                  key={n.id}
+                  onClick={() => setNormaSeleccionada(n.id)}
                   className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
-                    normaSeleccionada === ''
+                    normaSeleccionada === n.id
                       ? 'bg-[#0B192C] text-white shadow-2xs'
                       : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
                   }`}
                 >
-                  Todas (Multi-Norma)
+                  {n.id.replace(/-/g, ' ')}
                 </button>
-                {normas.map(n => (
-                  <button
-                    key={n.id}
-                    onClick={() => setNormaSeleccionada(n.id)}
-                    className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
-                      normaSeleccionada === n.id
-                        ? 'bg-[#0B192C] text-white shadow-2xs'
-                        : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
-                    }`}
-                  >
-                    {n.id.replace(/-/g, ' ')}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-                {mensajes.filter(m => m.id !== 'bienvenida').length > 0 && (
-                  <>
-                    <button
-                      onClick={() => {
-                        exportarSesionCompletaISOPDF({ mensajes, usuario: usuarioLogueado });
-                        toast.success('Sesión consolidada descargada en PDF');
-                      }}
-                      className="text-[10.5px] font-bold text-sky-900 bg-sky-100/80 hover:bg-sky-200 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-sky-200 shadow-2xs"
-                      title="Descargar informe consolidado en PDF"
-                    >
-                      <Download size={11} className="text-sky-700" /> PDF Sesión
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        exportarSesionCompletaISOMarkdown({ mensajes, usuario: usuarioLogueado });
-                        toast.success('Historial descargado en Markdown (.md)');
-                      }}
-                      className="text-[10.5px] font-bold text-slate-700 bg-white hover:bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-slate-200 shadow-2xs"
-                      title="Descargar Markdown"
-                    >
-                      <FileDown size={11} className="text-slate-600" /> .MD
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={() => setMensajes([mensajes[0]])}
-                  className="text-[10.5px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors cursor-pointer px-1.5 py-1 rounded hover:bg-slate-200/50"
-                  title="Reiniciar chat"
-                >
-                  <RefreshCw size={11} /> Limpiar
-                </button>
-              </div>
+              ))}
             </div>
 
-            {/* Fila 2: Briefing Operativo y Botones de Acción Directa */}
-            <div className="bg-gradient-to-r from-slate-900 via-[#0B192C] to-[#1E3E62] px-3 py-2 rounded-xl text-white shadow-2xs border border-slate-700/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="px-2 py-0.5 rounded-md bg-sky-500/20 border border-sky-400/30 text-sky-300 font-extrabold text-[10.5px] flex items-center gap-1">
-                  <Activity size={11} className="text-sky-400 animate-pulse" />
-                  <span>Área: {contextoOperativoActual?.area || 'General'}</span>
-                </div>
-
-                <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
-                  <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
-                    (contextoOperativoActual?.resumen_conteos?.total_ac_pendientes || 0) > 0
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
-                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                  }`}>
-                    <AlertTriangle size={10} /> {contextoOperativoActual?.resumen_conteos?.total_ac_pendientes ?? 0} ACs
-                  </span>
-
-                  <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
-                    (contextoOperativoActual?.resumen_conteos?.total_pm_proximos_vencer || 0) > 0
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse'
-                      : 'bg-sky-500/20 text-sky-300 border-sky-400/30'
-                  }`}>
-                    <TrendingUp size={10} /> {contextoOperativoActual?.resumen_conteos?.total_pm_activos ?? 0} PMs
-                  </span>
-
-                  <span className={`px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border ${
-                    (contextoOperativoActual?.resumen_conteos?.total_indicadores_incumplidos || 0) > 0
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
-                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                  }`}>
-                    <Target size={10} /> {contextoOperativoActual?.resumen_conteos?.total_indicadores ?? 0} Inds. {(contextoOperativoActual?.resumen_conteos?.total_indicadores_incumplidos || 0) > 0 ? `(🔴 ${contextoOperativoActual?.resumen_conteos?.total_indicadores_incumplidos})` : `(🟢 100%)`}
-                  </span>
-
-                  {(contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision || 0) > 0 && (
-                    <span className="px-1.5 py-0.5 rounded font-bold flex items-center gap-1 border bg-amber-500/20 text-amber-300 border-amber-400/30">
-                      <FileWarning size={10} /> {contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision} Docs &gt;1a
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap shrink-0">
-                {/* 1. ¿Qué tengo pendiente? */}
-                <button
-                  onClick={() => handleEnviarConsulta('¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.')}
-                  disabled={enviando}
-                  className="px-3 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  title="Obtener el balance completo de pendientes de mi área"
-                >
-                  <Zap size={13} className="text-amber-300 fill-amber-300" />
-                  <span>¿Qué tengo pendiente?</span>
-                </button>
-
-                {/* 2. Actualizar Indicador */}
-                <button
-                  onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual?.indicadores_area?.[0] || null })}
-                  className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                  title="Capturar valor en el Cuadro de Control OOMRSC-05"
-                >
-                  <Target size={13} className="text-emerald-400" />
-                  <span>Actualizar Indicador</span>
-                </button>
-
-                {/* 3. Subir Evidencia (AC / PM) */}
-                <button
-                  onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual?.acciones_pendientes?.[0] || null, plan: contextoOperativoActual?.planes_mejora_activos?.[0] || null })}
-                  className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                  title="Subir evidencia o registrar avance a una Acción Correctiva o Plan de Mejora"
-                >
-                  <Upload size={13} className="text-amber-400" />
-                  <span>Subir Evidencia</span>
-                </button>
-
-                {/* 4. Ratificar Doc */}
-                {(contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision || 0) > 0 && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {mensajes.filter(m => m.id !== 'bienvenida').length > 0 && (
+                <>
                   <button
-                    onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual?.documentos_antiguos_sin_revision?.[0] || null })}
-                    className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                    title="Ratificar vigencia de procedimientos con >1 año sin revisar"
+                    onClick={() => {
+                      exportarSesionCompletaISOPDF({ mensajes, usuario: usuarioLogueado });
+                      toast.success('Sesión consolidada descargada en PDF');
+                    }}
+                    className="text-[10.5px] font-bold text-sky-900 bg-sky-100/80 hover:bg-sky-200 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-sky-200 shadow-2xs"
                   >
-                    <ShieldCheck size={13} className="text-purple-400" />
-                    <span>Ratificar Doc</span>
+                    <Download size={11} className="text-sky-700" /> PDF Sesión
                   </button>
-                )}
-              </div>
+                  <button
+                    onClick={() => {
+                      exportarSesionCompletaISOMarkdown({ mensajes, usuario: usuarioLogueado });
+                      toast.success('Historial descargado en Markdown (.md)');
+                    }}
+                    className="text-[10.5px] font-bold text-slate-700 bg-white hover:bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-slate-200 shadow-2xs"
+                  >
+                    <FileDown size={11} className="text-slate-600" /> .MD
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={() => {
+                  setMensajes([MENSAJE_BIENVENIDA_DEFAULT]);
+                  try { localStorage.removeItem(storageKey); } catch (e) {}
+                  toast.info('Chat reiniciado');
+                }}
+                className="text-[10.5px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors cursor-pointer px-1.5 py-1 rounded hover:bg-slate-200/50"
+                title="Reiniciar chat"
+              >
+                <RefreshCw size={11} /> Limpiar
+              </button>
             </div>
           </div>
 
-          {/* Mensajes a ancho completo con protagonismo visual */}
-          <div className="flex-1 p-3.5 sm:p-5 overflow-y-auto space-y-3 bg-gradient-to-b from-slate-50/50 via-white to-white">
+          {/* Fila Operativa Escritorio */}
+          <div className="hidden md:flex bg-slate-900 px-3 py-1.5 text-white items-center justify-between text-[11px] shrink-0 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sky-300">Área: {contextoOperativoActual?.area || 'General'}</span>
+              <span className="text-slate-400">·</span>
+              <span className="text-slate-300">{contextoOperativoActual?.resumen_conteos?.total_ac_pendientes ?? 0} ACs pendientes</span>
+              <span className="text-slate-400">·</span>
+              <span className="text-slate-300">{contextoOperativoActual?.resumen_conteos?.total_indicadores ?? 0} Indicadores</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">ISO 9001 · 42001 · 27001 · 14001 · 45001 · 19011</span>
+          </div>
+
+          {/* Área de Mensajes estilo Chat de WhatsApp */}
+          <div className="flex-1 p-2.5 sm:p-4 overflow-y-auto space-y-2.5 bg-[#efeae2]/30">
             {mensajes.map((m) => {
               const esUsuario = m.emisor === 'usuario';
               return (
                 <div
                   key={m.id}
-                  className={`flex gap-3 ${esUsuario ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${esUsuario ? 'justify-end' : 'justify-start'} animate-fade-in`}
                 >
-                  {!esUsuario && (
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0 mt-0.5">
-                      <Bot size={18} />
-                    </div>
-                  )}
-
                   <div
-                    className={`max-w-[95%] lg:max-w-[90%] rounded-xl p-3.5 sm:p-4 shadow-xs text-xs ${
+                    className={`relative text-xs sm:text-[13px] leading-relaxed shadow-2xs ${
                       esUsuario
-                        ? 'bg-[#002855] text-white rounded-tr-none'
-                        : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none ring-1 ring-slate-100'
+                        ? 'bg-[#d9fdd3] text-[#111b21] rounded-2xl rounded-tr-xs border border-[#bbf7ad]/60 max-w-[85%] sm:max-w-[75%] p-2.5 sm:p-3 ml-auto'
+                        : 'bg-white text-slate-850 rounded-2xl rounded-tl-xs border border-slate-200/80 max-w-[92%] sm:max-w-[82%] p-2.5 sm:p-3 mr-auto'
                     }`}
                   >
-                    {/* Badge y Timestamp */}
-                    <div className="flex items-center justify-between gap-3 mb-2 pb-1.5 border-b border-slate-100">
-                      <span className={`font-bold text-xs ${esUsuario ? 'text-sky-300' : 'text-[#002855]'}`}>
-                        {esUsuario ? (usuarioLogueado?.nombre || 'Auditor / Usuario') : 'Agente Asesor Normativo ISO'}
-                      </span>
-                      <span className={`text-[10.5px] font-mono ${esUsuario ? 'text-slate-300' : 'text-slate-400'}`}>
-                        {m.timestamp}
-                      </span>
-                    </div>
+                    {!esUsuario && (
+                      <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-slate-100 text-[10px]">
+                        <span className="font-bold text-emerald-800 flex items-center gap-1">
+                          <Bot size={13} className="text-emerald-600" /> Asesor ISO · OOMAPASC
+                        </span>
+                        <span className="text-slate-400 font-mono text-[9.5px]">{m.timestamp}</span>
+                      </div>
+                    )}
 
-                    {/* Contenido formateado */}
-                    <div className="space-y-1 leading-normal text-xs">
+                    {/* Contenido del mensaje */}
+                    <div className="space-y-1">
                       {esUsuario ? (
-                        <p className="leading-normal font-medium text-xs">{m.texto}</p>
+                        <p className="font-medium">{m.texto}</p>
                       ) : (
                         renderMarkdown(m.texto)
                       )}
                     </div>
 
-                    {/* Cláusulas citadas */}
-                    {!esUsuario && m.clausulas && m.clausulas.length > 0 && (
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
-                          <Scale size={13} className="text-sky-600" /> Cláusulas Oficiales Citadas:
+                    {/* Opciones Rápidas integradas en el Mensaje de Bienvenida */}
+                    {m.esBienvenida && (
+                      <div className="mt-2.5 pt-2 border-t border-slate-200/80 space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                          Opciones Rápidas (Toca una opción o escribe el número):
                         </span>
-                        {m.clausulas.map((c, i) => (
-                          <button
-                            key={i}
-                            onClick={() => {
-                              setNormaExplorando(c.norma_id || 'ISO-9001-2026');
-                              cargarClausulas(c.norma_id || 'ISO-9001-2026');
-                              setTabActiva('clausulas');
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[11px] font-mono font-bold text-sky-900 transition-colors cursor-pointer"
-                            title={`${c.norma} § ${c.numero} - ${c.titulo}`}
-                          >
-                            <span>§ {c.numero}</span>
-                            <span className="text-slate-600 font-sans truncate max-w-[200px]">{c.titulo}</span>
-                          </button>
-                        ))}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {OPCIONES_RAPIDAS_MENU.map((opt) => (
+                            <button
+                              key={opt.num}
+                              onClick={() => handleEnviarConsulta(opt.prompt, null, opt.textoVisible)}
+                              disabled={enviando}
+                              className="w-full text-left p-2 rounded-xl bg-slate-50 hover:bg-emerald-50 active:bg-emerald-100 border border-slate-200 hover:border-emerald-300 transition-all cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-slate-800 group-hover:bg-[#00a884] text-white text-[10px] font-black flex items-center justify-center shrink-0 transition-colors">
+                                {opt.num}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-950 block truncate">
+                                  {opt.icono} {opt.titulo}
+                                </span>
+                                <span className="text-[10px] text-slate-500 block truncate">
+                                  {opt.subtitulo}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
 
-                    {/* Acciones de respuesta */}
-                    {!esUsuario && m.id !== 'bienvenida' && (
-                      <div className="mt-4 pt-3 border-t border-slate-100 space-y-2.5 text-xs">
-                        {/* Botones de acción directa disparables desde la respuesta del Agente */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mr-1">
-                            Acciones Directas:
-                          </span>
-                          <button
-                            onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual?.indicadores_area?.[0] || null })}
-                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                            title="Capturar o actualizar valor de un indicador del área"
-                          >
-                            <Target size={12} className="text-emerald-600" />
-                            <span>Actualizar Indicador</span>
-                          </button>
-                          <button
-                            onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual?.acciones_pendientes?.[0] || null, plan: contextoOperativoActual?.planes_mejora_activos?.[0] || null })}
-                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                            title="Subir evidencia o marcar actividad de una Acción Correctiva"
-                          >
-                            <AlertTriangle size={12} className="text-amber-600" />
-                            <span>Subir Evidencia</span>
-                          </button>
-                          {(contextoOperativoActual?.resumen_conteos?.total_docs_antiguos_sin_revision || 0) > 0 && (
-                            <button
-                              onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual?.documentos_antiguos_sin_revision?.[0] || null })}
-                              className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                              title="Ratificar revisión activa de documento > 1 año"
-                            >
-                              <ShieldCheck size={12} className="text-purple-600" />
-                              <span>Ratificar Doc &gt;1 año</span>
-                            </button>
-                          )}
-                        </div>
 
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-                          <div className="flex items-center gap-3">
-                            {setActiveTab && (
-                              <button
-                                onClick={() => setActiveTab('ac')}
-                                className="text-[#002855] hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                              >
-                                Ir a Acciones Correctivas (OOMRSC-20) <ArrowRight size={12} />
-                              </button>
-                            )}
-                          </div>
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            onClick={() => {
-                              const idx = mensajes.findIndex((item) => item.id === m.id);
-                              const pregunta = obtenerPreguntaPrevia(idx);
-                              exportarConsultaISOPDF({
-                                pregunta,
-                                respuesta: m.texto,
-                                clausulas: m.clausulas || [],
-                                normaConsultada: m.normaConsultada || normaSeleccionada || 'Todas las Normas ISO y SGC',
-                                usuario: usuarioLogueado,
-                                timestamp: m.timestamp
-                              });
-                              toast.success('Dictamen PDF generado y descargado');
-                            }}
-                            className="flex items-center gap-1 text-sky-950 font-bold px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-all cursor-pointer shadow-2xs text-[11px]"
-                            title="Descargar esta respuesta como Dictamen Técnico en PDF"
-                          >
-                            <Download size={13} className="text-sky-700" />
-                            <span>Descargar PDF</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              const idx = mensajes.findIndex((item) => item.id === m.id);
-                              const pregunta = obtenerPreguntaPrevia(idx);
-                              exportarConsultaISOMarkdown({
-                                pregunta,
-                                respuesta: m.texto,
-                                clausulas: m.clausulas || [],
-                                normaConsultada: m.normaConsultada || normaSeleccionada || 'Todas las Normas ISO y SGC',
-                                usuario: usuarioLogueado,
-                                timestamp: m.timestamp
-                              });
-                              toast.success('Archivo Markdown (.md) descargado');
-                            }}
-                            className="flex items-center gap-1 text-slate-700 font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer shadow-2xs text-[11px]"
-                            title="Descargar esta respuesta en formato Markdown (.md)"
-                          >
-                            <FileDown size={13} className="text-slate-600" />
-                            <span>Descargar .MD</span>
-                          </button>
-
+                    {/* Acciones de exportar o copiar */}
+                    {!esUsuario && !m.esBienvenida && (
+                      <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => copiarAlPortapapeles(m.texto, m.id)}
-                            className="flex items-center gap-1 text-slate-500 hover:text-slate-800 font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer text-[11px]"
-                            title="Copiar texto al portapapeles"
+                            className="hover:text-slate-700 font-medium flex items-center gap-1 transition-colors"
                           >
                             {copiadoId === m.id ? (
                               <>
-                                <Check size={13} className="text-emerald-600" />
-                                <span className="text-emerald-700">Copiado</span>
+                                <Check size={11} className="text-emerald-600" />
+                                <span className="text-emerald-700 font-bold">Copiado</span>
                               </>
                             ) : (
                               <>
-                                <Copy size={13} />
+                                <Copy size={11} />
                                 <span>Copiar</span>
                               </>
                             )}
                           </button>
                         </div>
+                        <span>{m.timestamp}</span>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Hora del mensaje para el usuario estilo WhatsApp */}
+                    {esUsuario && (
+                      <div className="flex items-center justify-end gap-1 mt-0.5 text-[9.5px] text-slate-500">
+                        <span>{m.timestamp}</span>
+                        <span className="text-sky-600 font-bold">✓✓</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
 
+            {/* Indicador de escribiendo */}
             {enviando && (
-              <div className="flex gap-4 justify-start animate-fade-in">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0">
-                  <Bot size={22} className="animate-spin" />
-                </div>
-                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-4.5 shadow-sm text-xs text-slate-700 flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-ping" />
-                  <span className="font-bold text-slate-800">
-                    Analizando base de conocimiento ISO y requisitos técnicos de OOMAPASC...
-                  </span>
+              <div className="flex justify-start animate-fade-in">
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-3.5 py-2 shadow-2xs flex items-center gap-2 text-xs text-slate-600">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-medium text-slate-700">El Asesor está escribiendo...</span>
                 </div>
               </div>
             )}
@@ -1302,39 +1448,33 @@ export default function AgenteISOView({ setActiveTab }) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Barra de entrada a ancho completo */}
-          <div className="p-4 bg-white border-t border-slate-200">
+          {/* Barra de Entrada estilo WhatsApp */}
+          <div className="p-2 sm:p-2.5 bg-[#f0f2f5] border-t border-slate-200 shrink-0">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleEnviarConsulta();
               }}
-              className="flex items-center gap-3"
+              className="flex items-center gap-2"
             >
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={inputPregunta}
-                  onChange={(e) => setInputPregunta(e.target.value)}
-                  placeholder="Escribe tu duda sobre cualquier cláusula ISO (ej. ¿Cómo cumplir con el 8.5.1 en redes y plantas?)..."
-                  disabled={enviando}
-                  className="w-full pl-5 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:bg-white outline-none transition-all disabled:opacity-60"
-                />
-              </div>
+              <input
+                type="text"
+                value={inputPregunta}
+                onChange={(e) => setInputPregunta(e.target.value)}
+                placeholder="Escribe tu consulta o marca 1, 2, 3 o 4..."
+                disabled={enviando}
+                className="flex-1 bg-white border border-slate-300 rounded-full px-4 py-2 text-xs sm:text-[13px] outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder:text-slate-400 shadow-2xs disabled:opacity-60"
+              />
 
               <button
                 type="submit"
                 disabled={!inputPregunta.trim() || enviando}
-                className="px-6 py-3.5 bg-[#002855] hover:bg-[#001f42] text-white font-black rounded-xl text-xs flex items-center gap-2 transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                className="w-9 h-9 rounded-full bg-[#00a884] hover:bg-[#008f6f] active:scale-95 text-white flex items-center justify-center shadow-xs shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                title="Enviar mensaje (o marca 1, 2, 3 o 4)"
               >
-                <span>Consultar</span>
                 <Send size={15} />
               </button>
             </form>
-            <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1 font-medium">
-              <Info size={12} className="text-sky-600" />
-              El Asesor Normativo responderá citando cláusulas exactas, evidencias requeridas para auditorías y recomendaciones operativas.
-            </p>
           </div>
         </div>
       )}

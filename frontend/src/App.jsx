@@ -25,12 +25,34 @@ import ModalInactividad from './components/common/ModalInactividad';
 import LoginView from './components/common/LoginView';
 import BannerObligacionesCaptura from './components/common/BannerObligacionesCaptura';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import MobileBottomNav from './components/layout/MobileBottomNav';
+import MobileExecutiveBar from './components/layout/MobileExecutiveBar';
+import MobilePortalView from './components/mobile/MobilePortalView';
+import { useIsMobile } from './hooks';
 
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [areaFiltroMobile, setAreaFiltroMobile] = useState('');
+  const { isMobile } = useIsMobile();
+  const [forzarModoEscritorio, setForzarModoEscritorio] = useState(() => {
+    try {
+      return sessionStorage.getItem('sgc_forzar_desktop') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const cambiarModoEscritorio = (val) => {
+    setForzarModoEscritorio(val);
+    try {
+      sessionStorage.setItem('sgc_forzar_desktop', val ? 'true' : 'false');
+    } catch {
+      // ignore
+    }
+  };
 
   const {
     isLoaded,
@@ -61,6 +83,19 @@ function App() {
   // Si la sesión no está activa (por logout o inactividad de 1 hora), mostrar pantalla de login
   if (!sesionActiva) {
     return <LoginView />;
+  }
+
+  // Si estamos en un dispositivo móvil (< 768px) y no se ha forzado el modo de escritorio,
+  // mostrar la vista ejecutiva móvil exclusiva (Opción 1: consulta, pendientes y procedimientos).
+  if (isMobile && !forzarModoEscritorio) {
+    return (
+      <div className="bg-slate-50 min-h-screen font-sans text-slate-800">
+        <ModalInactividad />
+        <ErrorBoundary>
+          <MobilePortalView onCambiarAModoEscritorio={() => cambiarModoEscritorio(true)} />
+        </ErrorBoundary>
+      </div>
+    );
   }
 
   // === RENDER MÓDULO ACTIVO ===
@@ -226,26 +261,20 @@ function App() {
           setUsuarioActivoId={setUsuarioActivoId}
         />
 
-        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-5 lg:p-6 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
+        <main className={`flex-1 overflow-x-hidden overflow-y-auto p-3 pb-24 sm:p-5 sm:pb-6 lg:p-6 lg:pb-6 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>
           <div className="relative z-10 w-full">
-            <div className="w-full space-y-5">
-              {/* Banner de Obligaciones de Captura SGC (Primeros 10 días del mes) */}
-              <BannerObligacionesCaptura setActiveTab={setActiveTab} />
+            <div className="w-full space-y-4">
+              {/* Barra Ejecutiva de Consulta Móvil (Sólo visible en pantallas móviles) */}
+              <MobileExecutiveBar
+                areaFiltroMobile={areaFiltroMobile}
+                setAreaFiltroMobile={setAreaFiltroMobile}
+              />
 
-              {activeTab !== 'dashboard' && activeTab !== 'agente_iso' && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
-                  <div>
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
-                      <span>SGC Portal</span>
-                      <span>/</span>
-                      <span className="text-sky-700 font-bold">{activeItem?.label}</span>
-                    </div>
-                    <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                      {activeItem?.label}
-                    </h1>
-                  </div>
-                </div>
-              )}
+              {/* Banner de Obligaciones de Captura SGC (Sólo en escritorio donde se captura) */}
+              <div className="hidden md:block">
+                <BannerObligacionesCaptura setActiveTab={setActiveTab} />
+              </div>
+
               <ErrorBoundary key={activeTab}>
                 {renderModule()}
               </ErrorBoundary>
@@ -253,6 +282,25 @@ function App() {
           </div>
         </main>
       </div>
+
+      {/* Navegación ergonómica inferior en móviles */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
+
+      {/* Botón flotante para regresar a Vista Móvil Ejecutiva si se forzó la versión de escritorio */}
+      {isMobile && forzarModoEscritorio && (
+        <button
+          onClick={() => cambiarModoEscritorio(false)}
+          className="fixed bottom-20 right-4 z-50 bg-[#001f42] hover:bg-sky-900 text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-2xl border border-sky-400/60 flex items-center gap-1.5 transition-transform active:scale-95 animate-fade-in-up"
+          title="Regresar a Vista Móvil Ejecutiva"
+        >
+          <span>📱</span>
+          <span>Volver a Vista Móvil</span>
+        </button>
+      )}
     </div>
   );
 }

@@ -507,8 +507,8 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
             <FileText size={24} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Control Documental & Trazabilidad</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-bold sm:font-extrabold text-slate-900 tracking-tight">Control Documental & Trazabilidad</h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-800 border border-sky-200">
                 ISO 9001:2015 § 7.5.3
               </span>
@@ -642,7 +642,7 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
               {puedeAdministrar && (
                 <button
                   onClick={abrirNuevoModal}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  className="hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
                 >
                   <Plus size={15} strokeWidth={2.5} /> Nuevo Documento
                 </button>

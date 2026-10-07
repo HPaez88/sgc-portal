@@ -113,8 +113,14 @@ describe('Servicio de Contexto Operativo y Briefing Ejecutivo SGC', () => {
     expect(contexto.resumen_conteos.total_docs_pendientes_aprobacion).toBe(1);
     expect(contexto.indicadores_area.length).toBeGreaterThanOrEqual(2);
 
-    // Validar generación de Briefing Markdown
-    const markdown = generarBriefingMarkdownLocal(contexto);
+    // Validar generación de Briefing Markdown solo cuadro (modo conciso predeterminado)
+    const cuadroMarkdown = generarBriefingMarkdownLocal(contexto, { soloCuadro: true });
+    expect(cuadroMarkdown).toContain('Lic. Carmen Leyva');
+    expect(cuadroMarkdown).toContain('Control y Servicios');
+    expect(cuadroMarkdown).toContain('| Módulo SGC | Total Registros | Estado / Alerta Prioritaria |');
+
+    // Validar generación completa
+    const markdown = generarBriefingMarkdownLocal(contexto, { soloCuadro: false });
     expect(markdown).toContain('Lic. Carmen Leyva');
     expect(markdown).toContain('Control y Servicios');
     expect(markdown).toContain('AC#1/26');

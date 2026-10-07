@@ -213,7 +213,7 @@ export function generarContextoOperativo({
 /**
  * Genera el Briefing Ejecutivo estructurado en Markdown en caso de fallback local u offline
  */
-export function generarBriefingMarkdownLocal(ctx) {
+export function generarBriefingMarkdownLocal(ctx, { soloCuadro = true } = {}) {
   const c = ctx.resumen_conteos;
   const tieneAlertas = c.total_indicadores_incumplidos > 0 || c.total_pm_proximos_vencer > 0 || c.total_docs_antiguos_sin_revision > 0 || c.total_ac_pendientes > 0;
 
@@ -221,18 +221,28 @@ export function generarBriefingMarkdownLocal(ctx) {
   md += `**Colaborador:** ${ctx.nombre} | **Área:** ${ctx.area} (${ctx.direccion}) | **Rol:** ${ctx.rol}\n\n`;
   md += `> **Fecha de Evaluación:** ${ctx.fecha_consulta}\n\n`;
 
-  // Tabla resumen de estado
+  const alertaIndicadores = c.total_indicadores_incumplidos > 0
+    ? `🔴 ${c.total_indicadores_incumplidos} Incumplido(s)<br>🟢 ${c.total_indicadores_cumplidos} Cumplido(s)`
+    : `🟢 100% Cumplimiento (${c.total_indicadores_cumplidos} cumplidos)`;
+
+  // Tabla resumen de estado (exactamente 3 columnas consistentes en todas las filas)
   md += `| Módulo SGC | Total Registros | Estado / Alerta Prioritaria |\n`;
   md += `| :--- | :---: | :--- |\n`;
   md += `| ⚠️ **Acciones Correctivas (OOMRSC-20)** | **${c.total_ac_pendientes}** | ${c.total_ac_pendientes > 0 ? `🟡 ${c.total_ac_pendientes} acción(es) abierta(s) en seguimiento` : '🟢 Sin acciones abiertas'} |\n`;
   md += `| 🚀 **Planes de Mejora (OOMRSC-21)** | **${c.total_pm_activos}** | ${c.total_pm_proximos_vencer > 0 ? `🔴 **${c.total_pm_proximos_vencer} plan(es) próximo(s) a vencer**` : '🟢 En cronograma normal'} |\n`;
-  md += `| 🎯 **Indicadores SGC (OOMRSC-05)** | **${c.total_indicadores}** | ${c.total_indicadores_incumplidos > 0 ? `🔴 **${c.total_indicadores_incumplidos} INCUMPLIDO(S)** | 🟢 ${c.total_indicadores_cumplidos} Cumplidos` : `🟢 100% Cumplimiento (${c.total_indicadores_cumplidos} cumplidos)`} |\n`;
+  md += `| 🎯 **Indicadores SGC (OOMRSC-05)** | **${c.total_indicadores}** | ${alertaIndicadores} |\n`;
   md += `| 📑 **Docs. >1 Año sin Revisar (§ 7.5.3)** | **${c.total_docs_antiguos_sin_revision}** | ${c.total_docs_antiguos_sin_revision > 0 ? `⚠️ **${c.total_docs_antiguos_sin_revision} doc(s) requieren revisión activa**` : '🟢 Toda la base vigente (<1 año)'} |\n`;
   md += `| ⏳ **Docs. Pendientes Aprobación SGC** | **${c.total_docs_pendientes_aprobacion}** | ${c.total_docs_pendientes_aprobacion > 0 ? `🟡 ${c.total_docs_pendientes_aprobacion} en Borrador/Revisión` : '🟢 Sin borradores pendientes'} |\n`;
   if (c.total_formularios_revision > 0) {
     md += `| 📝 **Revisión por Dirección (OOMRSC-04)** | **${c.total_formularios_revision}** | 📅 Captura obligatoria durante los primeros 10 días |\n`;
   }
-  md += `\n---\n\n`;
+  md += `\n`;
+
+  if (soloCuadro) {
+    return md;
+  }
+
+  md += `---\n\n`;
 
   // 1. Acciones Correctivas
   md += `### 1. ⚠️ Acciones Correctivas Pendientes (Formato OOMRSC-20 Rev. 18 / ISO 9001 § 10.2)\n`;

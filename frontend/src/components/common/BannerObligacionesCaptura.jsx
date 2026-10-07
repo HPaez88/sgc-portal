@@ -76,7 +76,7 @@ export default function BannerObligacionesCaptura({ setActiveTab }) {
   if (oculto || !tienePendientes) return null;
 
   return (
-    <div className={`p-4 rounded-2xl border shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+    <div className={`hidden md:flex p-4 rounded-2xl border shadow-md transition-all flex-col sm:flex-row sm:items-center justify-between gap-4 ${
       esVencido
         ? 'bg-gradient-to-r from-rose-50 via-red-50 to-orange-50 border-rose-300 text-rose-950'
         : 'bg-gradient-to-r from-amber-50 via-sky-50 to-indigo-50 border-amber-300 text-amber-950'

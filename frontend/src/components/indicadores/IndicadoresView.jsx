@@ -60,6 +60,7 @@ import ControlPresupuestalAreasTab from './ControlPresupuestalAreasTab';
 import EvaluacionTrimestralTab from './EvaluacionTrimestralTab';
 import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamentales';
 import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea } from '../../constants/areas';
+import { useIsMobile } from '../../hooks';
 
 
 
@@ -90,6 +91,7 @@ export default function IndicadoresView({
     usuarioLogueado 
   } = useSGC();
   const toast = useToast();
+  const { isMobile } = useIsMobile();
 
   // Permisos: Admin o personal del SGC
   const esAdminOSGC = Boolean(
@@ -807,7 +809,7 @@ export default function IndicadoresView({
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
               Cuadro de Control de Desempeño
             </h1>
             <p className="text-xs text-sky-100/80 leading-relaxed">
@@ -864,7 +866,7 @@ export default function IndicadoresView({
             {/* Recordatorios por Correo a Áreas con Atraso */}
             <button
               onClick={() => setModalRecordatoriosOpen(true)}
-              className="px-3.5 py-2 text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              className="hidden sm:flex px-3.5 py-2 text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl shadow-md transition-all items-center justify-center gap-1.5 cursor-pointer active:scale-95"
               title="Centro de notificaciones y recordatorios por correo electrónico a titulares de área con retrasos"
             >
               <Mail size={15} />
@@ -880,7 +882,7 @@ export default function IndicadoresView({
                   setPestanaModalInicial('pmd');
                   setModalGestionIndicadorOpen(true);
                 }}
-                className="px-3.5 py-2 text-xs font-extrabold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                className="hidden md:flex px-3.5 py-2 text-xs font-extrabold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl shadow-md transition-all items-center justify-center gap-2 cursor-pointer active:scale-95"
                 title="Dar de alta un nuevo indicador oficial en el catálogo y configurar su Ficha PMD"
               >
                 <PlusCircle size={15} />
@@ -1268,10 +1270,18 @@ export default function IndicadoresView({
                             {/* Valor Real Capturado */}
                             <td className="py-3 px-3 text-center bg-sky-50/30">
                               <button
-                                onClick={() => abrirModalCaptura(ind, mesActivo)}
+                                onClick={() => {
+                                  if (isMobile) {
+                                    handleAbrirFichaAyuntamiento(ind);
+                                  } else {
+                                    abrirModalCaptura(ind, mesActivo);
+                                  }
+                                }}
                                 className="w-full px-2.5 py-1.5 bg-white border border-slate-300 hover:border-sky-500 rounded-lg text-xs font-bold text-slate-900 flex items-center justify-between shadow-2xs group-hover:border-sky-400 transition-all cursor-pointer"
                                 title={
-                                  valReal !== null
+                                  isMobile
+                                    ? 'Clic para consultar ficha técnica oficial'
+                                    : valReal !== null
                                     ? (esAdminOSGC
                                         ? 'Resultado registrado. Clic para modificar (Modo Administrador)'
                                         : 'Resultado ratificado y bloqueado. Clic para consultar detalles.')
@@ -1281,13 +1291,17 @@ export default function IndicadoresView({
                                 <span>
                                   {valReal !== null && valReal !== undefined ? (
                                     <span className="font-mono text-slate-900 font-bold">{valReal}</span>
+                                  ) : isMobile ? (
+                                    <span className="text-slate-400 font-mono text-[11px]">-</span>
                                   ) : (
                                     <span className="text-sky-600 font-semibold flex items-center gap-1">
                                       <Plus size={11} /> Capturar
                                     </span>
                                   )}
                                 </span>
-                                {valReal !== null ? (
+                                {isMobile ? (
+                                  <Eye size={12} className="text-slate-400 shrink-0" title="Consultar ficha" />
+                                ) : valReal !== null ? (
                                   !esAdminOSGC ? (
                                     <Lock size={12} className="text-amber-600 shrink-0" title="Bloqueado por Gobernanza" />
                                   ) : (
@@ -1315,7 +1329,13 @@ export default function IndicadoresView({
                             {/* Acción / RC (Regla de Alto / Bajo Impacto) */}
                             <td className="py-3 px-3 text-center">
                               {esFalla && acc === 'NA' ? (
-                                esAltoImpacto ? (
+                                isMobile ? (
+                                  <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
+                                    esAltoImpacto ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  }`}>
+                                    {esAltoImpacto ? 'AC Req.' : 'RC Req.'}
+                                  </span>
+                                ) : esAltoImpacto ? (
                                   <button
                                     onClick={() => handleCrearAccionCorrectiva(ind, valReal, sem)}
                                     className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1 justify-center w-full transition-all cursor-pointer"
