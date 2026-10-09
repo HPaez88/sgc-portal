@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import {
   Sparkles,
   Bot,
@@ -390,6 +390,23 @@ export default function AgenteISOView({ setActiveTab }) {
 
   // Pestañas principales
   const [tabActiva, setTabActiva] = useState('chat'); // 'chat' | 'consultas' | 'base' | 'clausulas'
+
+  // Altura del chat en escritorio: lo que queda de pantalla debajo de su borde superior
+  // (el banner de captura y el header varían), sin provocar scroll en <main>.
+  const chatRef = useRef(null);
+  const [chatAlto, setChatAlto] = useState(null);
+  useLayoutEffect(() => {
+    const calcular = () => {
+      const el = chatRef.current;
+      if (!el || window.innerWidth < 768) { setChatAlto(null); return; }
+      const main = el.closest('main');
+      const top = el.getBoundingClientRect().top + (main ? main.scrollTop : 0);
+      setChatAlto(Math.max(420, window.innerHeight - top - 24));
+    };
+    calcular();
+    window.addEventListener('resize', calcular);
+    return () => window.removeEventListener('resize', calcular);
+  }, [tabActiva]);
 
   const [normas, setNormas] = useState(NORMAS_BASE);
   const [normaSeleccionada, setNormaSeleccionada] = useState(''); // '' = todas
@@ -1321,7 +1338,7 @@ export default function AgenteISOView({ setActiveTab }) {
       {/* PESTAÑA 1: CHAT ESTILO WHATSAPP (MÓVIL & ESCRITORIO) */}
       {/* ============================================================ */}
       {tabActiva === 'chat' && (
-        <div className="w-full bg-[#f0f2f5] rounded-2xl shadow-card-subtle border border-slate-300/80 flex flex-col h-[calc(100vh-175px)] md:h-[calc(100vh-168px)] min-h-[420px] overflow-hidden">
+        <div ref={chatRef} style={chatAlto ? { height: chatAlto } : undefined} className="w-full bg-[#f0f2f5] rounded-2xl shadow-card-subtle border border-slate-300/80 flex flex-col h-[calc(100vh-175px)] min-h-[420px] overflow-hidden">
           {/* Header Móvil estilo WhatsApp */}
           <div className="md:hidden px-3 py-2 bg-[#001f42] text-white flex items-center justify-between shadow-xs shrink-0">
             <div className="flex items-center gap-2.5">

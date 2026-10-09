@@ -4,7 +4,7 @@
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
 ## 2026-10-09T00:49Z · @claude-code · [FIX] · Escala tipográfica y densidad del Asesor ISO (harness design-direction)
-El portal se veía con letras gigantes en laptops ≥1440px: el root crecía a 17.5/18px, la escala Tailwind estaba inflada (base 1.05rem) y los `text-[10px]` se forzaban a 0.8rem. Se fija root 15px, escala estándar y mínimos legibles en px. En el Asesor Normativo el chat usa la altura real de pantalla y la barra operativa se fusiona con los filtros de norma.
+El portal se veía con letras gigantes en laptops ≥1440px: el root crecía a 17.5/18px, la escala Tailwind estaba inflada (base 1.05rem) y los `text-[10px]` se forzaban a 0.8rem. Se fija root 15px, escala estándar y mínimos legibles en px. En el Asesor Normativo el chat mide en tiempo real el espacio que queda bajo su borde (banner de captura incluido) y la barra operativa se fusiona con los filtros de norma.
 - Archivos: frontend/src/index.css, frontend/tailwind.config.js, frontend/src/components/iso/AgenteISOView.jsx, docs/design/direction.md, STATE.md
 - Tareas STATE: D1, D2, D3
 - Deploy: SÍ (VPS sgc.srv1787150.hstgr.cloud)
