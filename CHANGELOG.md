@@ -3,6 +3,18 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-09T00:49Z · @claude-code · [FIX] · Escala tipográfica y densidad del Asesor ISO (harness design-direction)
+El portal se veía con letras gigantes en laptops ≥1440px: el root crecía a 17.5/18px, la escala Tailwind estaba inflada (base 1.05rem) y los `text-[10px]` se forzaban a 0.8rem. Se fija root 15px, escala estándar y mínimos legibles en px. En el Asesor Normativo el chat usa la altura real de pantalla y la barra operativa se fusiona con los filtros de norma.
+- Archivos: frontend/src/index.css, frontend/tailwind.config.js, frontend/src/components/iso/AgenteISOView.jsx, docs/design/direction.md, STATE.md
+- Tareas STATE: D1, D2, D3
+- Deploy: SÍ (VPS sgc.srv1787150.hstgr.cloud)
+
+## 2026-10-05T06:30Z · @claude-code · [DEPLOY] · Despliegue en VPS Hostinger con Docker, Traefik y respaldo a Backblaze B2
+Stack aislado en /opt/sgc: imagen única (Vite build + FastAPI/uvicorn), Postgres 16 propio, enrutado por Traefik en red `web`, respaldo diario pg_dump cifrado a B2 (`oprink-backups/sgc-portal`). GROQ_API_KEY solo en .env del servidor.
+- Archivos: Dockerfile, .dockerignore, docker-compose.yml, .env.example, deploy/sgc-backup.sh
+- Tareas STATE: D0
+- Deploy: SÍ
+
 ## 2026-10-05T07:30Z · @antigravity · [FEATURE/GOVERNANCE] · Protocolo de Supervisión y Ratificación Humana (POL-TI-01 & ISO 9001/42001) e Interacción Operativa Bidireccional del Agente ISO
 
 - **Gobernanza Human-in-the-Loop Obligatoria (`ModalConfirmacionResponsabilidadHumana.jsx`):**

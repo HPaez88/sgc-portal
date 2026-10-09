@@ -2,20 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Escala base fija: 15px. Antes crecía a 17.5/18px en pantallas >=1440px y,
+   sumado a una escala Tailwind inflada, el portal se veía gigante en laptops grandes. */
 :root, html {
-  font-size: 16.5px;
-}
-
-@media (min-width: 1440px) {
-  :root, html {
-    font-size: 17.5px;
-  }
-}
-
-@media (min-width: 1920px) {
-  :root, html {
-    font-size: 18px;
-  }
+  font-size: 15px;
 }
 
 @layer base {
@@ -30,32 +20,16 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    font-size: 0.95rem;
     line-height: 1.5;
   }
 }
 
-/* Escalar textos mínimos para máxima legibilidad en todo el portal */
-.text-\[9px\] {
-  font-size: 0.74rem !important;
-  line-height: 1.15;
-}
-.text-\[10px\] {
-  font-size: 0.80rem !important;
-  line-height: 1.25;
-}
-.text-\[11px\] {
-  font-size: 0.85rem !important;
-  line-height: 1.3;
-}
-.text-\[12px\] {
-  font-size: 0.90rem !important;
-  line-height: 1.35;
-}
-.text-\[13px\] {
-  font-size: 0.94rem !important;
-  line-height: 1.4;
-}
+/* Tamaños mínimos legibles (px fijos, no escalan con el root; mínimo 11px) */
+.text-\[9px\]  { font-size: 11px !important; line-height: 1.25; }
+.text-\[10px\] { font-size: 11.5px !important; line-height: 1.3; }
+.text-\[11px\] { font-size: 12px !important; line-height: 1.35; }
+.text-\[12px\] { font-size: 12.5px !important; line-height: 1.4; }
+.text-\[13px\] { font-size: 13px !important; line-height: 1.4; }
 
 /* Tabular figures for data, counters, and metrics */
 .font-tabular {

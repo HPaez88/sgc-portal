@@ -1321,7 +1321,7 @@ export default function AgenteISOView({ setActiveTab }) {
       {/* PESTAÑA 1: CHAT ESTILO WHATSAPP (MÓVIL & ESCRITORIO) */}
       {/* ============================================================ */}
       {tabActiva === 'chat' && (
-        <div className="w-full bg-[#f0f2f5] rounded-2xl shadow-card-subtle border border-slate-300/80 flex flex-col h-[calc(100vh-175px)] md:h-[calc(100vh-205px)] min-h-[460px] md:min-h-[550px] overflow-hidden">
+        <div className="w-full bg-[#f0f2f5] rounded-2xl shadow-card-subtle border border-slate-300/80 flex flex-col h-[calc(100vh-175px)] md:h-[calc(100vh-168px)] min-h-[420px] overflow-hidden">
           {/* Header Móvil estilo WhatsApp */}
           <div className="md:hidden px-3 py-2 bg-[#001f42] text-white flex items-center justify-between shadow-xs shrink-0">
             <div className="flex items-center gap-2.5">
@@ -1398,6 +1398,9 @@ export default function AgenteISOView({ setActiveTab }) {
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
+              <span className="hidden lg:inline text-[10px] text-slate-500 font-mono mr-1" title="Contexto operativo del área">
+                {contextoOperativoActual?.area || 'General'} · {contextoOperativoActual?.resumen_conteos?.total_ac_pendientes ?? 0} AC · {contextoOperativoActual?.resumen_conteos?.total_indicadores ?? 0} ind.
+              </span>
               {mensajes.filter(m => m.id !== 'bienvenida').length > 0 && (
                 <>
                   <button
@@ -1433,18 +1436,6 @@ export default function AgenteISOView({ setActiveTab }) {
                 <RefreshCw size={11} /> Limpiar
               </button>
             </div>
-          </div>
-
-          {/* Fila Operativa Escritorio */}
-          <div className="hidden md:flex bg-slate-900 px-3 py-1.5 text-white items-center justify-between text-[11px] shrink-0 border-b border-slate-800">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sky-300">Área: {contextoOperativoActual?.area || 'General'}</span>
-              <span className="text-slate-400">·</span>
-              <span className="text-slate-300">{contextoOperativoActual?.resumen_conteos?.total_ac_pendientes ?? 0} ACs pendientes</span>
-              <span className="text-slate-400">·</span>
-              <span className="text-slate-300">{contextoOperativoActual?.resumen_conteos?.total_indicadores ?? 0} Indicadores</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-mono">ISO 9001 · 42001 · 27001 · 14001 · 45001 · 19011</span>
           </div>
 
           {/* Área de Mensajes estilo Chat de WhatsApp */}
@@ -1810,7 +1801,7 @@ export default function AgenteISOView({ setActiveTab }) {
           </div>
 
           {/* Listado de Cláusulas */}
-          <div className="p-6 overflow-y-auto max-h-[650px] space-y-4">
+          <div className="p-4 overflow-y-auto max-h-[calc(100vh-300px)] space-y-3">
             {cargandoClausulas ? (
               <div className="p-16 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                 <RefreshCw size={24} className="animate-spin text-sky-600" />
@@ -1844,7 +1835,7 @@ export default function AgenteISOView({ setActiveTab }) {
                           <span>•</span>
                           <span>§ {cl.numero}</span>
                         </div>
-                        <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase max-w-3xl leading-snug">
+                        <h3 className="text-base sm:text-lg font-black tracking-tight text-white max-w-3xl leading-snug">
                           {cl.titulo}
                         </h3>
                         {cl.requisito && cl.requisito.trim() && (

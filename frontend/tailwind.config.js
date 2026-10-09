@@ -12,14 +12,14 @@ export default {
         mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'monospace'],
       },
       fontSize: {
-        '2xs': ['0.76rem', { lineHeight: '1.15rem' }],
-        'xs': ['0.84rem', { lineHeight: '1.3rem' }],
-        'sm': ['0.94rem', { lineHeight: '1.45rem' }],
-        'base': ['1.05rem', { lineHeight: '1.6rem' }],
-        'lg': ['1.18rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.32rem', { lineHeight: '1.9rem' }],
-        '2xl': ['1.6rem', { lineHeight: '2.15rem' }],
-        '3xl': ['2rem', { lineHeight: '2.45rem' }],
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
+        'xs': ['0.75rem', { lineHeight: '1.1rem' }],
+        'sm': ['0.875rem', { lineHeight: '1.3rem' }],
+        'base': ['1rem', { lineHeight: '1.5rem' }],
+        'lg': ['1.125rem', { lineHeight: '1.6rem' }],
+        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],
+        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
       },
       colors: {
         oomapas: {
