@@ -12,6 +12,7 @@
 - [x] D1 — Dirección visual registrada (`docs/design/direction.md`, harness design-direction): Swiss/International, escala base 15px fija
 - [x] D2 — Corregir tipografía gigante en laptops grandes: root 16.5–18px → 15px fijo, escala Tailwind estándar, mínimos en px
 - [x] D3 — Asesor Normativo ISO: chat ocupa la altura disponible, barra operativa fusionada en la fila de filtros, hero de cláusulas compacto
+- [x] D4 — Header: campana de notificaciones sin función eliminada; chat del Asesor se recalcula al desaparecer el banner de captura
 - [x] D0 — Despliegue en VPS Hostinger (Docker + Traefik, Postgres propio, respaldo diario cifrado a B2) — ver CHANGELOG 2026-10-05
 
 ## Fase IA & Gobernanza 2026-10-02

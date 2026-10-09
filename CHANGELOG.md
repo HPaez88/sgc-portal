@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-09T01:23Z · @claude-code · [CLEANUP] · Campana sin función fuera del header y chat ISO que se recalcula
+La campana de notificaciones no tenía handler y mostraba un punto azul fijo: se elimina. El chat del Asesor observa el contenedor de <main> con ResizeObserver y recalcula su altura cuando el banner de captura aparece o desaparece.
+- Archivos: frontend/src/components/layout/Header.jsx, frontend/src/components/iso/AgenteISOView.jsx
+- Tareas STATE: D4
+- Deploy: SÍ
+
 ## 2026-10-09T00:49Z · @claude-code · [FIX] · Escala tipográfica y densidad del Asesor ISO (harness design-direction)
 El portal se veía con letras gigantes en laptops ≥1440px: el root crecía a 17.5/18px, la escala Tailwind estaba inflada (base 1.05rem) y los `text-[10px]` se forzaban a 0.8rem. Se fija root 15px, escala estándar y mínimos legibles en px. En el Asesor Normativo el chat mide en tiempo real el espacio que queda bajo su borde (banner de captura incluido) y la barra operativa se fusiona con los filtros de norma.
 - Archivos: frontend/src/index.css, frontend/tailwind.config.js, frontend/src/components/iso/AgenteISOView.jsx, docs/design/direction.md, STATE.md

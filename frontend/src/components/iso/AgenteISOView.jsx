@@ -405,7 +405,11 @@ export default function AgenteISOView({ setActiveTab }) {
     };
     calcular();
     window.addEventListener('resize', calcular);
-    return () => window.removeEventListener('resize', calcular);
+    // Si el banner de captura u otro bloque superior aparece/desaparece, recalcular.
+    const contenido = chatRef.current?.closest('main')?.firstElementChild;
+    const ro = contenido && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(calcular) : null;
+    if (ro) ro.observe(contenido);
+    return () => { window.removeEventListener('resize', calcular); if (ro) ro.disconnect(); };
   }, [tabActiva]);
 
   const [normas, setNormas] = useState(NORMAS_BASE);
