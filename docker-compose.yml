@@ -1,0 +1,62 @@
+# SGC Portal - stack aislado. Depende del Traefik ya corriendo en la red externa "web".
+# Nada se publica al host: Traefik enruta por Host(${DOMAIN}).
+name: sgc
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sgc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sgc_portal}
+      POSTGRES_USER: ${DB_USER:-sgc_portal}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD requerido en .env}
+    volumes:
+      - sgc-pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sgc_portal} -d ${DB_NAME:-sgc_portal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    image: sgc-app:latest
+    container_name: sgc-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql://${DB_USER:-sgc_portal}:${DB_PASSWORD}@db:5432/${DB_NAME:-sgc_portal}
+      ALLOWED_ORIGINS: https://${DOMAIN}
+      DEFAULT_ORGANISMO_ID: ${DEFAULT_ORGANISMO_ID:-1}
+      DEFAULT_ORGANISMO_NOMBRE: ${DEFAULT_ORGANISMO_NOMBRE:-OOMAPASC de Cajeme}
+      DEFAULT_ORGANISMO_SLUG: ${DEFAULT_ORGANISMO_SLUG:-oomapasc}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-20b}
+    networks:
+      - internal
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.sgc.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.sgc.entrypoints=websecure
+      - traefik.http.routers.sgc.tls=true
+      - traefik.http.routers.sgc.tls.certresolver=letsencrypt
+      - traefik.http.services.sgc.loadbalancer.server.port=8000
+
+volumes:
+  sgc-pgdata:
+    name: sgc-pgdata
+
+networks:
+  internal:
+    name: sgc-internal
+  traefik:
+    name: web
+    external: true
