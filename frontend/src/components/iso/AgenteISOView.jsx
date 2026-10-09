@@ -1239,7 +1239,7 @@ export default function AgenteISOView({ setActiveTab }) {
   });
 
   return (
-    <div className="space-y-3 animate-fade-in-up pb-4">
+    <div className="space-y-3 animate-fade-in-up pb-4 md:pb-0">
       {/* HEADER ESCRITORIO (Visible en pantallas medianas y grandes) */}
       <div className="hidden md:block bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] px-4 py-2.5 rounded-2xl shadow-md text-white border border-slate-700/60 relative overflow-hidden">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-2.5">
