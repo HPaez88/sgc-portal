@@ -205,6 +205,12 @@ def get_dashboard(
 # a través de routers/catalogo.py
 
 
+@app.get("/health", tags=["Root"], include_in_schema=False)
+def health():
+    """Sonda de vida sin sesión (healthcheck de Docker/Traefik)."""
+    return {"status": "ok"}
+
+
 @app.get("/", tags=["Root"])
 def root():
     if os.getenv("ENVIRONMENT") == "production":
