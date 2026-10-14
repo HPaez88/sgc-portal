@@ -36,4 +36,4 @@ def descargar_archivo(nombre: str):
     ruta = (ARCHIVOS / Path(nombre).name).resolve()
     if ruta.parent != ARCHIVOS.resolve() or not ruta.is_file():
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
-    return FileResponse(ruta, filename=ruta.name)
+    return FileResponse(ruta, filename=ruta.name, content_disposition_type="inline")
