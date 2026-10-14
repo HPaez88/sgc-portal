@@ -20,6 +20,7 @@ import DocumentosView from './components/documentos';
 import AuditoriasView from './components/auditorias';
 import BitacoraView from './components/bitacora';
 import AgenteISOView from './components/iso/AgenteISOView';
+import ManualCalidadView from './components/manual/ManualCalidadView';
 import RevisionDireccionView from './components/revision/RevisionDireccionView';
 import ModalInactividad from './components/common/ModalInactividad';
 import LoginView from './components/common/LoginView';
@@ -194,6 +195,8 @@ function App() {
         );
       case 'agente_iso':
         return <AgenteISOView setActiveTab={setActiveTab} />;
+      case 'manual':
+        return <ManualCalidadView />;
       case 'bitacora':
         return (
           <DocumentosView

@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-14T04:41Z · @claude-code · [FEATURE] · Módulo Manual de la Calidad y anexos (consulta)
+Nuevo módulo en el menú Gobernanza: Manual OOMLSC-01 Rev 75 navegable por cláusula ISO (4.1 a 10.3) con índice y búsqueda, y una pestaña por anexo real: A18, A19 (7 direcciones), A20 y A21 como tablas filtrables; A11 organigrama como PDF embebido; A10 y A15 marcados como pendientes (formato Office 2003). Contenido generado desde los archivos oficiales de formatos/Docus Sistema con scripts/extraer_manual.py; originales descargables desde el portal. Solo lectura: la edición y el control de cambios quedan en la spec control-documental.
+- Archivos: scripts/extraer_manual.py, backend/routers/manual.py, backend/main.py, backend/knowledge/manual/, frontend/src/components/manual/ManualCalidadView.jsx, frontend/src/App.jsx, frontend/src/components/layout/Sidebar.jsx
+- Tareas STATE: M1, M2, M3
+- Deploy: SÍ
+
 ## 2026-10-14T04:31Z · @claude-code · [DOCS] · Spec control-documental (proposal, plan, tasks)
 Especificación del módulo de Control Documental real: documentos por organismo con secciones, flujo borrador → revisión SGC → publicado, historial con hash, relaciones proceso/cláusula/documento que derivan las matrices A10/A18/A19/A20/A21, archivos en B2, identidad mínima en servidor y RAG sobre documentos reales. Pendiente de aprobación de @human antes de codificar.
 - Archivos: specs/control-documental/proposal.md, specs/control-documental/plan.md, specs/control-documental/tasks.md, STATE.md

@@ -20,7 +20,7 @@ from backend.models import (
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
 )
-from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento
+from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual
 
 load_dotenv()
 
@@ -63,6 +63,7 @@ app.include_router(catalogo.router)
 app.include_router(organismos.router)
 app.include_router(iso_agent.router)
 app.include_router(fichas_ayuntamiento.router)
+app.include_router(manual.router)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

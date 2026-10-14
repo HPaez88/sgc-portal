@@ -7,6 +7,14 @@
 
 ---
 
+## Módulo Manual de la Calidad (consulta) 2026-10-13
+
+- [x] M1 — `scripts/extraer_manual.py`: Manual OOMLSC-01 a 64 secciones por cláusula + anexos xlsx a tablas → `backend/knowledge/manual/manual.json`
+- [x] M2 — API `/api/v1/manual` y descarga de originales
+- [x] M3 — `ManualCalidadView`: índice por cláusula con búsqueda, pestaña por anexo (A18, A19, A20, A21 como tablas filtrables; A11 PDF embebido)
+- [ ] M4 — A10 y A15 pendientes: @human los guarda como .xlsx/.docx y se re-ejecuta el script
+- [ ] M5 — Edición, control de cambios y matrices derivadas → ver spec control-documental
+
 ## Feature control-documental — spec en `specs/control-documental/` (pendiente de aprobación @human)
 
 ### Phase 0 — identidad mínima

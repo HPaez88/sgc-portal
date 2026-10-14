@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Sparkles,
   Award
-} from 'lucide-react';
+, BookOpen } from 'lucide-react';
 
 const Sidebar = ({ 
   activeTab, 
@@ -48,6 +48,7 @@ const Sidebar = ({
     {
       title: 'GOBERNANZA E INTELIGENCIA',
       items: [
+        { id: 'manual', icon: BookOpen, label: 'Manual de la Calidad', badge: 'OOMLSC-01' },
         { id: 'documents', icon: FileText, label: 'Control Documental', badge: 'Trazabilidad' },
         { id: 'agente_iso', icon: Sparkles, label: 'Asesor Normativo ISO', badge: 'IA ISO' },
         { id: 'settings', icon: Settings, label: 'Configuración' },
