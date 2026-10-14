@@ -4,6 +4,7 @@ Versión 3.1 — Cumplimiento con formatos oficiales ISO 9001 + Control 6
 """
 from datetime import datetime, date
 from typing import Optional, List
+from sqlalchemy import Column, Text
 from sqlmodel import Field, SQLModel
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text
 
@@ -287,6 +288,47 @@ class Usuario(SQLModel, table=True):
     debe_cambiar_password: bool = Field(default=True)
     ultimo_acceso: Optional[datetime] = None
     fecha_alta: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODELO: DOCUMENTOS CONTROLADOS (manual, anexos, procedimientos) y sus REVISIONES
+# ═══════════════════════════════════════════════════════════════════════════════
+class Documento(SQLModel, table=True):
+    __tablename__ = "documentos"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
+    clave: str = Field(index=True)              # OOMLSC-01, OOMLSC-A19...
+    titulo: str
+    tipo: str = Field(default="procedimiento")  # manual | anexo | procedimiento | registro | politica
+    ruta_aprobacion: str = Field(default="simple")  # simple | dos_pasos (admin revisa + Director publica)
+    area_responsable: str = Field(default="Sistema de Gestión de Calidad")
+    archivo_original: Optional[str] = None      # nombre en knowledge/manual/archivos (semilla) o id de archivo
+    revision_vigente_id: Optional[int] = None
+    fecha_alta: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DocumentoRevision(SQLModel, table=True):
+    __tablename__ = "documento_revisiones"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    documento_id: int = Field(index=True)
+    numero: int                                  # Rev. 75, 76...
+    estado: str = Field(default="BORRADOR", index=True)  # BORRADOR | EN_REVISION | REVISADO | PUBLICADO | RECHAZADO | OBSOLETO
+    contenido: str = Field(default="[]", sa_column=Column(Text))  # JSON: [{numero, titulo, markdown}]
+    hash: Optional[str] = None                   # SHA-256 del contenido al publicar
+    motivo: Optional[str] = None                 # obligatorio al enviar a revisión
+    comentario: Optional[str] = None             # del revisor / aprobador (o motivo de rechazo)
+    autor_id: Optional[int] = None
+    autor_nombre: Optional[str] = None
+    revisor_id: Optional[int] = None
+    revisor_nombre: Optional[str] = None
+    aprobador_id: Optional[int] = None
+    aprobador_nombre: Optional[str] = None
+    fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_envio: Optional[datetime] = None
+    fecha_revision: Optional[datetime] = None
+    fecha_publicacion: Optional[datetime] = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

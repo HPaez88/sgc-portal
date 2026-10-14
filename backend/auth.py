@@ -21,7 +21,7 @@ from sqlmodel import Session
 from backend.database import get_session
 
 TOKEN_HORAS = 8
-ROLES = ("Super Admin", "Admin", "Auditor", "Encargado", "Usuario")
+ROLES = ("Super Admin", "Admin", "Director", "Auditor", "Encargado", "Usuario")
 ROLES_ADMIN = ("Super Admin", "Admin")
 PASSWORD_MIN = 8
 

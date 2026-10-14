@@ -120,3 +120,20 @@
 .animate-slide-down {
   animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Prosa de documentos controlados (Markdown renderizado): lectura cómoda y tablas legibles */
+.prosa-sgc { font-size: 0.95rem; line-height: 1.7; color: #1e293b; }
+.prosa-sgc p { margin: 0.5rem 0; }
+.prosa-sgc strong { color: #0f172a; }
+.prosa-sgc ul { list-style: disc; padding-left: 1.4rem; margin: 0.5rem 0; }
+.prosa-sgc ol { list-style: decimal; padding-left: 1.4rem; margin: 0.5rem 0; }
+.prosa-sgc li { margin: 0.2rem 0; }
+.prosa-sgc h1, .prosa-sgc h2, .prosa-sgc h3 { font-weight: 800; color: #002855; margin: 1rem 0 0.4rem; }
+.prosa-sgc h3 { font-size: 1rem; }
+.prosa-sgc table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+.prosa-sgc th { background: #0B192C; color: #fff; text-align: left; padding: 0.4rem 0.6rem; white-space: nowrap; }
+.prosa-sgc td { padding: 0.35rem 0.6rem; border-top: 1px solid #e2e8f0; vertical-align: top; min-width: 7rem; }
+.prosa-sgc tr:nth-child(even) td { background: #f8fafc; }
+.prosa-sgc a { color: #0369a1; text-decoration: underline; }
+.prosa-sgc blockquote { border-left: 3px solid #bae6fd; padding-left: 0.8rem; color: #475569; margin: 0.6rem 0; }
+.prosa-sgc code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f1f5f9; padding: 0.1em 0.3em; border-radius: 0.25rem; }

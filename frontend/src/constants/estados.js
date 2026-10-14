@@ -12,7 +12,7 @@ export const ESTADOS_SGC = [
   'CERRADO'
 ];
 
-export const ROLES = ['Super Admin', 'Admin', 'Auditor', 'Encargado', 'Usuario'];
+export const ROLES = ['Super Admin', 'Admin', 'Director', 'Auditor', 'Encargado', 'Usuario'];
 
 export const getEstadoColor = (estado) => {
   switch (estado) {
@@ -52,6 +52,7 @@ export const getRolColor = (rol) => {
   switch (rol) {
     case 'Super Admin': return 'bg-purple-100 text-purple-700';
     case 'Admin': return 'bg-cyan-100 text-cyan-700';
+    case 'Director': return 'bg-emerald-100 text-emerald-800';
     case 'Auditor': return 'bg-blue-100 text-blue-700';
     case 'Encargado': return 'bg-amber-100 text-amber-700';
     case 'Usuario': return 'bg-slate-100 text-slate-600';

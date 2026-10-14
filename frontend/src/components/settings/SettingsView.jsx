@@ -2216,6 +2216,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   <option value="Encargado">Encargado (Su área: AC, PM, indicadores, riesgos)</option>
                   <option value="Auditor">Auditor (Crear AC/PM cualquier área, ver resultados)</option>
                   <option value="Admin">Admin (Compañeros SGC - todas las áreas)</option>
+                  <option value="Director">Director General (aprueba y publica el Manual y anexos)</option>
                   <option value="Super Admin">Super Admin (Control total del sistema)</option>
                 </select>
                 <p className="text-[11px] text-slate-500 mt-1">

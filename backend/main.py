@@ -16,13 +16,14 @@ from sqlmodel import Session, select, func
 from backend.database import create_db_and_tables, get_session, engine
 from backend import auth as auth_lib
 from backend.seed_usuarios import sembrar_usuarios
+from backend.seed_documentos import sembrar_documentos
 from backend.tenant import get_organismo_id
 from backend.models import (
     AccionCorrectiva, PlanDeMejora, Auditor, Replanteo,
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
 )
-from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth
+from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth, documentos
 
 load_dotenv()
 
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
     auth_lib.validar_configuracion()
     create_db_and_tables()
     sembrar_usuarios(engine)
+    sembrar_documentos(engine)
     yield
 
 
@@ -62,7 +64,7 @@ app.add_middleware(
 # Routers. Todo exige sesión salvo /auth (login) y la raíz que sirve el frontend.
 PROTEGIDO = [Depends(auth_lib.usuario_actual)]
 app.include_router(auth.router)
-for r in (acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos):
+for r in (acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, documentos):
     app.include_router(r.router, dependencies=PROTEGIDO)
 
 

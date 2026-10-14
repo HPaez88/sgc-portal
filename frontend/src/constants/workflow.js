@@ -116,6 +116,8 @@ export const ACCIONES_WORKFLOW = [
 export const PERMISOS = {
   'Super Admin': ACCIONES_WORKFLOW,
   Admin: ACCIONES_WORKFLOW,
+  // El Director General aprueba documentos del sistema y consulta todas las áreas
+  Director: ['ver_todas_areas', 'aprobar', 'rechazar'],
   // El auditor evalúa y cierra, no aprueba documentos
   Auditor: ['crear', 'editar', 'cerrar', 'rechazar', 'ver_todas_areas'],
   // El encargado trabaja únicamente su área y envía a revisión

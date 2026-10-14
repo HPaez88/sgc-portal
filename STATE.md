@@ -13,7 +13,11 @@
 - [x] M2 — API `/api/v1/manual` y descarga de originales
 - [x] M3 — `ManualCalidadView`: índice por cláusula con búsqueda, pestaña por anexo (A18, A19, A20, A21 como tablas filtrables; A11 PDF embebido)
 - [ ] M4 — A10 y A15 pendientes: @human los guarda como .xlsx/.docx y se re-ejecuta el script
-- [ ] M5 — Edición, control de cambios y matrices derivadas → ver spec control-documental
+- [x] D-M1 — Modelos `documentos` y `documento_revisiones` (Markdown por sección, hash, estados)
+- [x] D-M2 — Router `/api/v1/documentos`: borrador, edición, envío con motivo, revisión (Admin ≠ autor), publicación (Director), rechazo, historial, diff
+- [x] D-M3 — Semilla del Manual y anexos desde manual.json como Rev. 75 publicada
+- [x] D-M4 — Vista Manual: lectura amplia Markdown, editor por sección con vista previa, barra de flujo, modales de revisión/aprobación, historial con diff
+- [ ] M5 — Matrices derivadas (fase 4) → ver spec control-documental
 
 ## Feature control-documental — spec en `specs/control-documental/` (aprobada por @human 2026-10-13)
 
