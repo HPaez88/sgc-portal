@@ -9,7 +9,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import {
   BookOpen, Download, FileSpreadsheet, FileText, Search, Loader2, Pencil, Send, Check, X, History,
-  ShieldCheck, Clock, AlertCircle, Trash2, ChevronLeft, GitCompare,
+  ShieldCheck, Clock, AlertCircle, Trash2, ChevronLeft, GitCompare, Droplet, Award,
 } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { getApiUrl } from '../../config';
@@ -38,14 +38,53 @@ function Markdown({ texto, className = '' }) {
 
 const nivelDe = (numero) => (String(numero).match(/\./g) || []).length;
 
+// ───────────── Portada (sección 0) ─────────────
+function Portada({ seccion, doc }) {
+  const lineas = (seccion.markdown || '').split(/
++/).map(l => l.replace(/^[#*\s]+|[*\s]+$/g, '')).filter(Boolean);
+  const organismo = lineas.find(l => /organismo|oomapas/i.test(l)) || 'OOMAPAS de Cajeme';
+  const normas = lineas.filter(l => /ISO|NMX/i.test(l));
+  const v = doc.vigente;
+  const fechaLarga = v?.fecha_publicacion ? new Date(v.fecha_publicacion).toLocaleDateString('es-MX', { dateStyle: 'long' }) : '—';
+  return (
+    <section id="sec-0" className="scroll-mt-24 -mx-6 sm:-mx-10 -mt-6 mb-8 rounded-t-2xl overflow-hidden">
+      <div className="relative bg-gradient-to-br from-[#0B192C] via-[#102a4a] to-[#002855] text-white px-8 sm:px-14 py-12 sm:py-16">
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #38bdf8 0, transparent 40%), radial-gradient(circle at 85% 80%, #38bdf8 0, transparent 35%)' }} />
+        <div className="relative max-w-3xl">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/20"><Droplet size={24} className="fill-white/20" /></div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-200 leading-snug">{organismo}</div>
+          </div>
+          <div className="text-xs font-mono text-sky-300 mb-2">{doc.clave} · Sistema de Gestión de la Calidad</div>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.05]">{doc.titulo}</h1>
+          <div className="flex flex-wrap gap-2 mt-5">
+            {normas.map(n => <span key={n} className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 border border-white/20">{n}</span>)}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10 pt-6 border-t border-white/15 text-xs">
+            <div><div className="text-sky-300/80 uppercase tracking-wider text-[10px] font-bold">Revisión vigente</div><div className="text-2xl font-black mt-0.5">Rev. {v?.numero ?? '—'}</div></div>
+            <div><div className="text-sky-300/80 uppercase tracking-wider text-[10px] font-bold">Vigente desde</div><div className="font-semibold mt-1 leading-snug">{fechaLarga}</div></div>
+            <div><div className="text-sky-300/80 uppercase tracking-wider text-[10px] font-bold">Aprobó</div><div className="font-semibold mt-1 leading-snug">{v?.aprobador_nombre || '—'}</div></div>
+            <div><div className="text-sky-300/80 uppercase tracking-wider text-[10px] font-bold">Área responsable</div><div className="font-semibold mt-1 leading-snug">{doc.area_responsable}</div></div>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-8 sm:px-14 py-3 bg-slate-50 border-b border-slate-200 text-[11px] text-slate-600">
+        <span className="inline-flex items-center gap-1.5"><Award size={13} className="text-emerald-600" /> Documento controlado · copia electrónica vigente en el portal SGC</span>
+        {v?.hash && <span className="font-mono text-slate-400" title={v.hash}>Integridad SHA-256 · {v.hash.slice(0, 16)}…</span>}
+      </div>
+    </section>
+  );
+}
+
 // ───────────── Lectura ─────────────
-function Lectura({ secciones, busqueda }) {
+function Lectura({ secciones, busqueda, doc }) {
   const q = busqueda.trim().toLowerCase();
   const hits = useMemo(() => new Set(q.length < 3 ? [] : secciones
     .filter(s => s.titulo.toLowerCase().includes(q) || s.markdown.toLowerCase().includes(q)).map(s => s.numero)), [q, secciones]);
   return (
     <article className="bg-white rounded-2xl border border-slate-200 px-6 sm:px-10 py-6 shadow-card-subtle">
       {secciones.map(s => {
+        if (s.numero === '0' && doc?.tipo === 'manual') return <Portada key="portada" seccion={s} doc={doc} />;
         const nivel = nivelDe(s.numero);
         const Titulo = nivel === 0 ? 'h2' : nivel === 1 ? 'h3' : 'h4';
         const clase = nivel === 0
@@ -335,7 +374,7 @@ export default function ManualCalidadView() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
           <Indice secciones={secMostrar} busqueda={busqueda} setBusqueda={setBusqueda} />
-          <Lectura secciones={secMostrar} busqueda={busqueda} />
+          <Lectura secciones={secMostrar} busqueda={busqueda} doc={doc} />
         </div>
       )}
 
