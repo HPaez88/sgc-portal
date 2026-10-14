@@ -295,10 +295,10 @@ export default function RevisionDireccionView({
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
               Revisión por la Dirección
             </h1>
-            <p className="text-sm text-sky-100/80 leading-relaxed">
+            <p className="text-xs sm:text-sm text-sky-100/80 leading-relaxed">
               Consolidación oficial de desempeño, satisfacción ciudadana, eficacia de procesos, objetivos de calidad y asignación de recursos para la Alta Dirección de OOMAPASC.
             </p>
           </div>
@@ -335,7 +335,7 @@ export default function RevisionDireccionView({
             {esSuperAdminOAdmin && (
               <button
                 onClick={() => setModalAsignacionAbierto(true)}
-                className="px-3.5 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="hidden md:flex px-3.5 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 transition-all items-center justify-center gap-2 shadow-sm"
                 title="Configurar usuarios responsables de formularios"
               >
                 <Users size={15} className="text-purple-400" />

@@ -8,6 +8,7 @@ import ModalConfirmacionEliminar from './common/ModalConfirmacionEliminar';
 import { useToast } from './common/Toast';
 import { useDialogos, Dialogos } from './common/Dialogos';
 import ContenedorModal from './common/ContenedorModal';
+import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
@@ -20,6 +21,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [modalEliminar, setModalEliminar] = useState({ isOpen: false, item: null });
+  const [modalConfirmarEnvio, setModalConfirmarEnvio] = useState(false);
 
   const [form, setForm] = useState({
     id: null,
@@ -250,13 +252,34 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         return;
       }
     }
+    // Abrir modal de verificación y responsabilidad humana obligatoria (ISO 9001 § 10.3 & POL-TI-01)
+    setModalConfirmarEnvio(true);
+  };
+
+  const handleConfirmarEnvioSGC = (ratificacionData) => {
     const cambios = {
       estado: 'EN_REVISION',
-      fecha_envio_sgc: new Date().toISOString()
+      fecha_envio_sgc: new Date().toISOString(),
+      ratificacion_humana: true,
+      ratificado_por: ratificacionData.ratificado_por,
+      ratificado_email: ratificacionData.ratificado_email,
+      fecha_ratificacion_humana: ratificacionData.fecha_ratificacion,
+      declaracion_responsabilidad: ratificacionData.declaracion
     };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
-    setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión'); }, 600);
+    setModalConfirmarEnvio(false);
+
+    registrarMovimiento?.({
+      modulo: 'PLANES_MEJORA',
+      accion: 'ENVIO_SGC_RATIFICADO_HUMANO',
+      descripcion: `Envío formal de Plan de Mejora ${form.folio_codigo || form.folio || `PM#${form.id || 'Borrador'}`} a revisión SGC con supervisión humana validada (ISO § 10.3 & POL-TI-01)`,
+      detalles: `Ratificado por: ${ratificacionData.ratificado_por} | Área: ${form.area || form.gerencia_coordinacion} | Título: ${form.titulo_mejora} | Confirmación: CONFIRMAR`,
+      folio: form.folio_codigo || form.folio || `PM-${form.id || 'Borrador'}`
+    });
+
+    toast.success('Plan de mejora ratificado y enviado a revisión del SGC exitosamente');
+    setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión con supervisión humana validada'); }, 600);
   };
 
   const aprobarSGC = () => {
@@ -606,10 +629,25 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   // Render
+  const modalConfirmarEnvioJSX = (
+    <ModalConfirmacionResponsabilidadHumana
+      isOpen={modalConfirmarEnvio}
+      onClose={() => setModalConfirmarEnvio(false)}
+      onConfirmar={handleConfirmarEnvioSGC}
+      tipo="PLAN_MEJORA"
+      registro={form}
+      equipo={equipo}
+      actividades={actividades}
+      usuarioLogueado={usuarioLogueado}
+      loading={loading}
+    />
+  );
+
   if (vista === 'lista') {
     return (
       <>
         <Dialogos {...propsDialogos} />
+        {modalConfirmarEnvioJSX}
         <ModalConfirmacionEliminar
           isOpen={modalEliminar.isOpen}
           onClose={() => setModalEliminar({ isOpen: false, item: null })}
@@ -637,40 +675,43 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
 
   if (vista === 'nuevo') {
     return (
-      <PlanesForm 
-        step={step}
-        setStep={setStep}
-        form={form}
-        setForm={setForm}
-        error={error}
-        setError={setError}
-        mensaje={mensaje}
-        setMensaje={setMensaje}
-        equipo={equipo}
-        setEquipo={setEquipo}
-        actividades={actividades}
-        setActividades={setActividades}
-        loading={loading}
-        guardarBorrador={guardarBorrador}
-        setVista={setVista}
-        getBotonesWorkflow={getBotonesWorkflow}
-      />
+      <>
+        {modalConfirmarEnvioJSX}
+        <PlanesForm 
+          step={step}
+          setStep={setStep}
+          form={form}
+          setForm={setForm}
+          error={error}
+          setError={setError}
+          mensaje={mensaje}
+          setMensaje={setMensaje}
+          equipo={equipo}
+          setEquipo={setEquipo}
+          actividades={actividades}
+          setActividades={setActividades}
+          loading={loading}
+          guardarBorrador={guardarBorrador}
+          setVista={setVista}
+          getBotonesWorkflow={getBotonesWorkflow}
+        />
+      </>
     );
   }
 
   const modalAuditor = mostrarModalAuditor && (
-    <ContenedorModal isOpen onClose={() => setMostrarModalAuditor(false)} size="md" backdropClassName="bg-black/60 backdrop-blur-sm">
-      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 w-full border border-slate-200">
-        <h3 className="text-lg font-bold text-[#002855] mb-2 flex items-center gap-2">
-          <span className="text-xl">👤</span> Asignar Auditor de Cierre
+    <ContenedorModal isOpen onClose={() => setMostrarModalAuditor(false)} size="2xl" anchoMaximo="max-w-[85vw] xl:max-w-[1000px]" backdropClassName="bg-black/60 backdrop-blur-sm">
+      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full border border-slate-200">
+        <h3 className="text-xl font-bold text-[#002855] mb-2 flex items-center gap-2">
+          <span className="text-2xl">👤</span> Asignar Auditor de Cierre
         </h3>
-        <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+        <p className="text-sm text-slate-600 mb-5 leading-relaxed">
           Seleccione un auditor de los usuarios registrados. Se registrará la asignación y se notificará por correo electrónico institucional con el expediente para auditoría:
         </p>
         <select
           value={auditorSeleccionado}
           onChange={(e) => setAuditorSeleccionado(e.target.value)}
-          className="w-full p-3 border-2 border-slate-200 rounded-xl focus:border-[#002855] outline-none text-sm font-medium transition-colors"
+          className="w-full p-3.5 border-2 border-slate-200 rounded-xl focus:border-[#002855] outline-none text-sm font-medium transition-colors bg-slate-50/50"
         >
           <option value="">-- Seleccionar Auditor Registrado --</option>
           {auditoresDisponibles.map(u => (
@@ -679,11 +720,11 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
             </option>
           ))}
         </select>
-        <div className="flex gap-3 mt-6 justify-end">
-          <button onClick={() => { setMostrarModalAuditor(false); setAuditorSeleccionado(''); }} className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
+        <div className="flex gap-3 mt-8 justify-end">
+          <button onClick={() => { setMostrarModalAuditor(false); setAuditorSeleccionado(''); }} className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors">
             Cancelar
           </button>
-          <button onClick={confirmarAuditor} disabled={!auditorSeleccionado} className="px-5 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+          <button onClick={confirmarAuditor} disabled={!auditorSeleccionado} className="px-6 py-2.5 bg-[#002855] text-white font-medium rounded-xl hover:bg-[#001f42] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
             ✓ Asignar y Notificar
           </button>
         </div>
@@ -692,8 +733,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   );
 
   const modalDictamenJSX = modalDictamen.show && (
-    <ContenedorModal isOpen onClose={() => setModalDictamen({ ...modalDictamen, show: false })} size="xl" backdropClassName="bg-black/60 backdrop-blur-sm">
-      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 w-full border border-slate-200">
+    <ContenedorModal isOpen onClose={() => setModalDictamen({ ...modalDictamen, show: false })} size="3xl" anchoMaximo="max-w-[90vw] xl:max-w-[1250px]" backdropClassName="bg-black/60 backdrop-blur-sm">
+      <div className="max-h-full overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full border border-slate-200">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl">⚖️</span>
@@ -811,6 +852,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   if (vista === 'ver') {
     return (
       <>
+        {modalConfirmarEnvioJSX}
         {modalAuditor}
         {modalDictamenJSX}
         <PlanesDetalle 

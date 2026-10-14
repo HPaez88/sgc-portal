@@ -5,6 +5,7 @@ Genera documentos SGC completos en JSON estructurado.
 import os
 import json
 import re
+from typing import Optional
 from openai import OpenAI
 from fastapi import HTTPException
 from dotenv import load_dotenv
@@ -33,9 +34,19 @@ def get_ai_client() -> OpenAI:
     )
 
 
+def get_chat_model() -> str:
+    """Modelo rápido y económico para chat y consultas RAG normativas en Groq."""
+    return os.getenv("GROQ_CHAT_MODEL", os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"))
+
+
+def get_analysis_model() -> str:
+    """Modelo de alto razonamiento para formulación de Causa Raíz (AC) y Planes de Mejora (PM)."""
+    return os.getenv("GROQ_ANALYSIS_MODEL", "openai/gpt-oss-120b")
+
+
 def get_model() -> str:
-    """Modelo de Groq disponibles."""
-    return os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+    """Compatibilidad general."""
+    return get_chat_model()
 
 
 def _extraer_json(raw: str) -> dict:
@@ -56,14 +67,19 @@ def _extraer_json(raw: str) -> dict:
         )
 
 
-def _call_ai(prompt: str, context: str) -> str:
-    """Hace una llamada a Groq y devuelve el texto."""
+def _call_ai(prompt: str, context: str, model: Optional[str] = None) -> str:
+    """
+    Hace una llamada a Groq y devuelve el texto.
+    Por defecto usa el modelo de análisis profundo (70B) para documentos técnicos.
+    Si el modelo 70B alcanza límite de cuota (429), conmuta automáticamente al modelo 8B.
+    """
     client = get_ai_client()
-    model = get_model()
-    
+    target_model = model or get_analysis_model()
+    fallback_model = get_chat_model()
+
     try:
         response = client.chat.completions.create(
-            model=model,
+            model=target_model,
             messages=[
                 {"role": "system", "content": context},
                 {"role": "user", "content": prompt},
@@ -72,15 +88,34 @@ def _call_ai(prompt: str, context: str) -> str:
         )
         return response.choices[0].message.content.strip()
     except Exception as exc:
+        err_msg = str(exc)
+        # Si el modelo 70B falla por cuota (429) o saturación, reintentar de inmediato con 8B
+        if target_model != fallback_model and ("429" in err_msg or "rate_limit" in err_msg.lower() or "quota" in err_msg.lower()):
+            print(f"[IA FALLBACK] Modelo {target_model} alcanzó límite de cuota. Conmutando a {fallback_model}...")
+            try:
+                response = client.chat.completions.create(
+                    model=fallback_model,
+                    messages=[
+                        {"role": "system", "content": context},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.3,
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as exc_fallback:
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Error con IA (Groq - Fallback {fallback_model}): {str(exc_fallback)}",
+                )
         raise HTTPException(
             status_code=503,
-            detail=f"Error con IA (Groq): {str(exc)}",
+            detail=f"Error con IA (Groq): {err_msg}",
         )
 
 
-def generar_json_desde_prompt(prompt: str, context: str) -> dict:
+def generar_json_desde_prompt(prompt: str, context: str, model: Optional[str] = None) -> dict:
     """Genera y valida una respuesta JSON usando Groq sin exponer la clave al frontend."""
-    raw = _call_ai(prompt, context)
+    raw = _call_ai(prompt, context, model=model)
     return _extraer_json(raw)
 
 

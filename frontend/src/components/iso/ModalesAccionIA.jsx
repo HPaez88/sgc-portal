@@ -19,10 +19,12 @@ import {
   Activity,
   CheckSquare,
   Square,
-  FileText
+  FileText,
+  TrendingUp
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
+import SelectBuscable from '../common/SelectBuscable';
 import { INDICADORES, evalSemaforoOOMRSC05 } from '../../constants/indicadores';
 import { processEvidenceFile } from '../../utils/fileSecurity';
 
@@ -48,14 +50,16 @@ export function ModalActualizarIndicadorIA({
   isOpen,
   onClose,
   indicadorPreseleccionado = null,
+  indicadorInicial = null,
   indicadoresData = {},
   setIndicadoresData,
   usuarioLogueado,
   registrarMovimiento,
   onAccionConfirmada
 }) {
+  const indPre = indicadorPreseleccionado || indicadorInicial;
   const mesActualIndex = Math.min(new Date().getMonth(), 11);
-  const [indicadorId, setIndicadorId] = useState(indicadorPreseleccionado?.id ?? 0);
+  const [indicadorId, setIndicadorId] = useState(indPre?.id ?? 0);
   const [mes, setMes] = useState(MESES[mesActualIndex].clave);
   const [ejercicio, setEjercicio] = useState(2026);
   const [valor, setValor] = useState('');
@@ -64,16 +68,16 @@ export function ModalActualizarIndicadorIA({
 
   // Actualizar cuando cambie el indicador preseleccionado o se abra
   useEffect(() => {
-    if (indicadorPreseleccionado) {
-      setIndicadorId(indicadorPreseleccionado.id);
-      const key = `${indicadorPreseleccionado.id}-${mes}-${ejercicio}`;
+    if (indPre) {
+      setIndicadorId(indPre.id);
+      const key = `${indPre.id}-${mes}-${ejercicio}`;
       const dataG = indicadoresData?.resultados?.[key];
-      const valDef = dataG?.valor !== undefined ? dataG.valor : (indicadorPreseleccionado.valor_default ?? '');
+      const valDef = dataG?.valor !== undefined ? dataG.valor : (indPre.valor_default ?? '');
       setValor(valDef !== null ? String(valDef) : '');
-      setObservacion(dataG?.observacion || indicadorPreseleccionado.observacion_default || '');
-      setAccion(dataG?.accion || indicadorPreseleccionado.accion_default || 'NA');
+      setObservacion(dataG?.observacion || indPre.observacion_default || '');
+      setAccion(dataG?.accion || indPre.accion_default || 'NA');
     }
-  }, [indicadorPreseleccionado, isOpen]);
+  }, [indPre, isOpen]);
 
   const indicadorActivo = useMemo(() => {
     return INDICADORES.find(i => String(i.id) === String(indicadorId)) || INDICADORES[0];
@@ -133,7 +137,7 @@ export function ModalActualizarIndicadorIA({
   };
 
   return (
-    <ContenedorModal isOpen={isOpen} onClose={onClose} size="xl">
+    <ContenedorModal isOpen={isOpen} onClose={onClose} size="4xl" anchoMaximo="max-w-[92vw] xl:max-w-[1350px]">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] to-[#002855] text-white flex items-center justify-between">
@@ -160,32 +164,30 @@ export function ModalActualizarIndicadorIA({
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
-          {/* Selector de Indicador */}
+          {/* Selector de Indicador con Filtro en Tiempo Real */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Seleccionar Indicador Oficial:
-            </label>
-            <select
+            <SelectBuscable
+              label="Seleccionar Indicador Oficial:"
               value={indicadorId}
-              onChange={(e) => {
-                const idSel = Number(e.target.value);
-                setIndicadorId(idSel);
-                const ind = INDICADORES.find(i => i.id === idSel);
-                if (ind) {
-                  const key = `${ind.id}-${mes}-${ejercicio}`;
+              onChange={(idSel, ind) => {
+                const numId = Number(idSel);
+                setIndicadorId(numId);
+                const item = ind || INDICADORES.find(i => i.id === numId);
+                if (item) {
+                  const key = `${item.id}-${mes}-${ejercicio}`;
                   const dataG = indicadoresData?.resultados?.[key];
-                  setValor(dataG?.valor !== undefined ? String(dataG.valor) : (ind.valor_default !== null ? String(ind.valor_default) : ''));
-                  setObservacion(dataG?.observacion || ind.observacion_default || '');
+                  setValor(dataG?.valor !== undefined ? String(dataG.valor) : (item.valor_default !== null ? String(item.valor_default) : ''));
+                  setObservacion(dataG?.observacion || item.observacion_default || '');
                 }
               }}
-              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-            >
-              {INDICADORES.map((ind) => (
-                <option key={ind.id} value={ind.id}>
-                  #{ind.numero !== undefined ? ind.numero : ind.id} - {ind.nombre.substring(0, 75)}... ({ind.area})
-                </option>
-              ))}
-            </select>
+              options={INDICADORES}
+              getOptionValue={(ind) => ind.id}
+              getOptionLabel={(ind) => ind.nombre}
+              getOptionSublabel={(ind) => ind.area}
+              getOptionBadge={(ind) => `#${ind.numero !== undefined ? ind.numero : ind.id}`}
+              searchPlaceholder="Escribe número (#0 a #99), nombre del indicador o área..."
+              placeholder="Buscar indicador oficial por número, nombre o área..."
+            />
           </div>
 
           {/* Ficha rápida del indicador */}
@@ -312,59 +314,116 @@ export function ModalActualizarIndicadorIA({
 // ═══════════════════════════════════════════════════════════════════════════
 // 2. MODAL: REVISAR ACTIVIDAD Y SUBIR EVIDENCIA DE AC (OOMRSC-20)
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. MODAL: SUBIR EVIDENCIA Y GESTIONAR ACTIVIDAD (AC / PLAN DE MEJORA)
+// ═══════════════════════════════════════════════════════════════════════════
 export function ModalGestionarActividadEvidenciaIA({
   isOpen,
   onClose,
   accionPreseleccionada = null,
+  planPreseleccionado = null,
   accionesCorrectivas = [],
   setAccionesCorrectivas,
+  planesMejora = [],
+  setPlanesMejora,
+  puedeTodasAreas = false,
   usuarioLogueado,
   registrarMovimiento,
   onAccionConfirmada
 }) {
   const toast = useToast();
-  const [accionId, setAccionId] = useState(accionPreseleccionada?.id || accionesCorrectivas[0]?.id || 1);
+
+  // Tipo de origen: 'AC' (Acción Correctiva OOMRSC-20) | 'PM' (Plan de Mejora OOMRSC-21)
+  const [tipoElemento, setTipoElemento] = useState(planPreseleccionado && !accionPreseleccionada ? 'PM' : 'AC');
+
+  // Permisos de área: solo el área del usuario a menos que sea SuperAdmin / SGC / puedeTodasAreas
+  const puedeVerTodo = Boolean(
+    puedeTodasAreas ||
+    usuarioLogueado?.rol?.toLowerCase().includes('admin') ||
+    usuarioLogueado?.rol?.toLowerCase().includes('sgc') ||
+    usuarioLogueado?.rol?.toLowerCase().includes('calidad')
+  );
+
+  // Listas restringidas al área del usuario
+  const accionesFiltradas = useMemo(() => {
+    if (puedeVerTodo || !usuarioLogueado?.area) return accionesCorrectivas || [];
+    const filtradas = (accionesCorrectivas || []).filter(a => a.area === usuarioLogueado.area);
+    return filtradas.length > 0 ? filtradas : (accionesCorrectivas || []);
+  }, [accionesCorrectivas, puedeVerTodo, usuarioLogueado]);
+
+  const planesFiltrados = useMemo(() => {
+    if (puedeVerTodo || !usuarioLogueado?.area) return planesMejora || [];
+    const filtrados = (planesMejora || []).filter(p => p.area === usuarioLogueado.area);
+    return filtrados.length > 0 ? filtrados : (planesMejora || []);
+  }, [planesMejora, puedeVerTodo, usuarioLogueado]);
+
+  const [elementoId, setElementoId] = useState(null);
   const [actividadIndex, setActividadIndex] = useState(0);
   const [estadoActividad, setEstadoActividad] = useState('COMPLETADA');
   const [notaEvidencia, setNotaEvidencia] = useState('');
   const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
-  const [avanceAC, setAvanceAC] = useState(100);
+  const [avanceNum, setAvanceNum] = useState(100);
 
+  // Sincronizar selección inicial al abrir
   useEffect(() => {
-    if (accionPreseleccionada) {
-      setAccionId(accionPreseleccionada.id);
-    } else if (accionesCorrectivas.length > 0) {
-      setAccionId(accionesCorrectivas[0].id);
+    if (tipoElemento === 'AC') {
+      if (accionPreseleccionada) {
+        setElementoId(accionPreseleccionada.id);
+      } else if (accionesFiltradas.length > 0) {
+        setElementoId(accionesFiltradas[0].id);
+      }
+    } else {
+      if (planPreseleccionado) {
+        setElementoId(planPreseleccionado.id);
+      } else if (planesFiltrados.length > 0) {
+        setElementoId(planesFiltrados[0].id);
+      }
     }
-  }, [accionPreseleccionada, accionesCorrectivas, isOpen]);
+    setActividadIndex(0);
+    setNotaEvidencia('');
+    setArchivoSeleccionado(null);
+  }, [tipoElemento, accionPreseleccionada, planPreseleccionado, accionesFiltradas, planesFiltrados, isOpen]);
 
-  const accionActiva = useMemo(() => {
-    return accionesCorrectivas.find(a => String(a.id) === String(accionId)) || accionesCorrectivas[0];
-  }, [accionId, accionesCorrectivas]);
+  // Elemento activo
+  const elementoActivo = useMemo(() => {
+    if (tipoElemento === 'AC') {
+      return accionesFiltradas.find(a => String(a.id) === String(elementoId)) || accionesFiltradas[0] || null;
+    }
+    return planesFiltrados.find(p => String(p.id) === String(elementoId)) || planesFiltrados[0] || null;
+  }, [tipoElemento, elementoId, accionesFiltradas, planesFiltrados]);
 
-  // Actividades de la AC
+  // Actividades del elemento activo
   const actividadesList = useMemo(() => {
-    if (!accionActiva) return [];
-    if (Array.isArray(accionActiva.actividades) && accionActiva.actividades.length > 0) {
-      return accionActiva.actividades;
+    if (!elementoActivo) return [];
+
+    if (Array.isArray(elementoActivo.actividades) && elementoActivo.actividades.length > 0) {
+      return elementoActivo.actividades;
     }
-    // Si no tiene actividades detalladas, generamos una por defecto basada en el plan
+
+    if (typeof elementoActivo.actividades_json === 'string') {
+      try {
+        const parsed = JSON.parse(elementoActivo.actividades_json);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) { /* ignore */ }
+    }
+
+    // Fallback de actividad por defecto
     return [
       {
         id: 1,
-        actividad: accionActiva.plan_accion || accionActiva.descripcion || 'Ejecución de acciones inmediatas de corrección',
-        responsable: accionActiva.responsable || usuarioLogueado?.nombre || 'Encargado del Área',
-        fecha_termino: accionActiva.fecha_limite || '2026-05-30',
+        actividad: elementoActivo.plan_accion || elementoActivo.titulo || elementoActivo.descripcion || 'Acción operativa de seguimiento',
+        responsable: elementoActivo.responsable || usuarioLogueado?.nombre || 'Encargado del Área',
+        fecha_termino: elementoActivo.fechaCompromiso || elementoActivo.fecha_limite || '2026-05-30',
         completada: false,
         evidencia: null
       }
     ];
-  }, [accionActiva, usuarioLogueado]);
+  }, [elementoActivo, usuarioLogueado]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!accionActiva) return;
+    if (!elementoActivo) return;
 
     setSubiendo(true);
     try {
@@ -396,40 +455,72 @@ export function ModalGestionarActividadEvidenciaIA({
         return act;
       });
 
-      // Calcular nuevo estado general de la AC
       const todasCompletas = nuevasActividades.every(a => a.completada || a.estado === 'COMPLETADA');
-      const nuevoEstadoAC = todasCompletas ? 'EN_SEGUIMIENTO' : accionActiva.estado;
 
-      const acActualizada = {
-        ...accionActiva,
-        actividades: nuevasActividades,
-        estado: nuevoEstadoAC,
-        ultimo_seguimiento: new Date().toISOString(),
-        avance: avanceAC
-      };
+      if (tipoElemento === 'AC') {
+        const nuevoEstadoAC = todasCompletas ? 'EN_SEGUIMIENTO' : elementoActivo.estado;
+        const acActualizada = {
+          ...elementoActivo,
+          actividades: nuevasActividades,
+          estado: nuevoEstadoAC,
+          ultimo_seguimiento: new Date().toISOString(),
+          avance: avanceNum
+        };
 
-      setAccionesCorrectivas?.(prev => {
-        const arr = Array.isArray(prev) ? prev : [];
-        return arr.map(a => String(a.id) === String(accionActiva.id) ? acActualizada : a);
-      });
+        setAccionesCorrectivas?.(prev => {
+          const arr = Array.isArray(prev) ? prev : [];
+          return arr.map(a => String(a.id) === String(elementoActivo.id) ? acActualizada : a);
+        });
 
-      registrarMovimiento?.({
-        modulo: 'ACCIONES_CORRECTIVAS',
-        accion: 'EVIDENCIA_SUBIDA_IA',
-        descripcion: `Evidencia y seguimiento de actividad registrados en ${accionActiva.folio || `AC#${accionActiva.id}`} vía Asistente IA`,
-        detalles: `Actividad: #${actividadIndex + 1} | Estado: ${estadoActividad} | Archivo: ${archivoSeleccionado?.name || 'Nota escrita'}`,
-        folio: accionActiva.folio || `AC#${accionActiva.id}`
-      });
+        registrarMovimiento?.({
+          modulo: 'ACCIONES_CORRECTIVAS',
+          accion: 'EVIDENCIA_SUBIDA_IA',
+          descripcion: `Evidencia y seguimiento registrados en ${elementoActivo.folio || `AC#${elementoActivo.id}`} vía Asistente IA`,
+          detalles: `Actividad: #${actividadIndex + 1} | Estado: ${estadoActividad} | Archivo: ${archivoSeleccionado?.name || 'Nota escrita'}`,
+          folio: elementoActivo.folio || `AC#${elementoActivo.id}`
+        });
 
-      const actNombre = actividadesList[actividadIndex]?.actividad || `Actividad #${actividadIndex + 1}`;
+        const actNombre = actividadesList[actividadIndex]?.actividad || `Actividad #${actividadIndex + 1}`;
+        onAccionConfirmada?.({
+          tipo: 'ACTIVIDAD_EVIDENCIA_ACTUALIZADA',
+          accion: acActualizada,
+          actividadNombre: actNombre,
+          mensajeChat: `✅ **Evidencia registrada en Acción Correctiva [${elementoActivo.folio || `AC#${elementoActivo.id}`}]:**\n- **Título:** "${elementoActivo.titulo || elementoActivo.descripcion}" (${elementoActivo.area})\n- **Actividad:** "${actNombre}" marcada como **${estadoActividad}**\n- **Evidencia:** ${archivoSeleccionado ? `📎 Archivo adjunto \`${archivoSeleccionado.name}\`` : '📝 Nota operativa registrada'}\n- **Observaciones:** ${notaEvidencia || 'Evidencia verificada y registrada para auditoría.'}\n- **Estado Actual:** \`${nuevoEstadoAC}\` (Auditor Asignado: ${elementoActivo.auditor_asignado || 'Coordinación SGC'}).`
+        });
+      } else {
+        // Plan de Mejora (PM)
+        const nuevoEstadoPM = todasCompletas ? 'EN_SEGUIMIENTO' : (elementoActivo.estado || 'EN_EJECUCION');
+        const pmActualizado = {
+          ...elementoActivo,
+          actividades: nuevasActividades,
+          estado: nuevoEstadoPM,
+          avance: avanceNum,
+          fechaUltimoSeguimiento: new Date().toISOString()
+        };
 
-      onAccionConfirmada?.({
-        tipo: 'ACTIVIDAD_EVIDENCIA_ACTUALIZADA',
-        accion: acActualizada,
-        actividadNombre: actNombre,
-        mensajeChat: `✅ **Actividad y Evidencia registradas en [${accionActiva.folio || `AC#${accionActiva.id}`}]:**\n- **Acción Correctiva:** "${accionActiva.titulo || accionActiva.descripcion}" (${accionActiva.area})\n- **Actividad:** "${actNombre}" marcada como **${estadoActividad}**\n- **Evidencia Documental:** ${archivoSeleccionado ? `📎 Archivo adjunto \`${archivoSeleccionado.name}\`` : '📝 Nota operativa registrada'}\n- **Observaciones:** ${notaEvidencia || 'Evidencia verificada y lista para auditoría de cierre.'}\n- **Estado de la AC:** \`${nuevoEstadoAC}\` (Auditor Asignado: ${accionActiva.auditor_asignado || 'Coordinación SGC'}).`
-      });
+        setPlanesMejora?.(prev => {
+          const arr = Array.isArray(prev) ? prev : [];
+          return arr.map(p => String(p.id) === String(elementoActivo.id) ? pmActualizado : p);
+        });
 
+        registrarMovimiento?.({
+          modulo: 'PLANES_MEJORA',
+          accion: 'EVIDENCIA_SUBIDA_IA',
+          descripcion: `Evidencia y avance registrados en Plan de Mejora ${elementoActivo.folio || `PM#${elementoActivo.id}`} vía Asistente IA`,
+          detalles: `Actividad: #${actividadIndex + 1} | Estado: ${estadoActividad} | Avance: ${avanceNum}%`,
+          folio: elementoActivo.folio || `PM#${elementoActivo.id}`
+        });
+
+        const actNombre = actividadesList[actividadIndex]?.actividad || `Actividad #${actividadIndex + 1}`;
+        onAccionConfirmada?.({
+          tipo: 'ACTIVIDAD_EVIDENCIA_ACTUALIZADA',
+          plan: pmActualizado,
+          actividadNombre: actNombre,
+          mensajeChat: `✅ **Evidencia y Avance registrados en Plan de Mejora [${elementoActivo.folio || `PM#${elementoActivo.id}`}]:**\n- **Plan:** "${elementoActivo.titulo || elementoActivo.descripcion}" (${elementoActivo.area})\n- **Actividad:** "${actNombre}" marcada como **${estadoActividad}**\n- **Avance Reportado:** ${avanceNum}%\n- **Evidencia:** ${archivoSeleccionado ? `📎 Archivo adjunto \`${archivoSeleccionado.name}\`` : '📝 Nota operativa registrada'}\n- **Observaciones:** ${notaEvidencia || 'Avance documentado conforme a OOMRSC-21.'}`
+        });
+      }
+
+      toast.success(`Evidencia y actividad guardadas correctamente.`);
       onClose();
     } catch (err) {
       toast.error(`Error al guardar evidencia: ${err.message}`);
@@ -439,20 +530,20 @@ export function ModalGestionarActividadEvidenciaIA({
   };
 
   return (
-    <ContenedorModal isOpen={isOpen} onClose={onClose} size="xl">
+    <ContenedorModal isOpen={isOpen} onClose={onClose} size="4xl" anchoMaximo="max-w-[92vw] xl:max-w-[1350px]">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400">
-              <AlertTriangle size={22} />
+              <Upload size={22} />
             </div>
             <div>
               <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
-                Gestionar Actividad y Evidencia de AC (OOMRSC-20)
+                Subir Evidencia y Seguimiento de Actividad
               </h3>
               <p className="text-xs text-amber-200/80 font-medium">
-                Seguimiento de plan de acción conforme a ISO 9001 § 10.2
+                Acciones Correctivas (OOMRSC-20) y Planes de Mejora (OOMRSC-21)
               </p>
             </div>
           </div>
@@ -466,38 +557,107 @@ export function ModalGestionarActividadEvidenciaIA({
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
-          {/* Selector de Acción Correctiva */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Acción Correctiva (Folio / Título):
-            </label>
-            <select
-              value={accionId}
-              onChange={(e) => {
-                setAccionId(e.target.value);
+          {/* Selector de Tipo: AC vs PM */}
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => {
+                setTipoElemento('AC');
                 setActividadIndex(0);
               }}
-              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                tipoElemento === 'AC'
+                  ? 'bg-white text-slate-950 shadow-sm border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              {accionesCorrectivas.map((ac) => (
-                <option key={ac.id} value={ac.id}>
-                  [{ac.folio || `AC#${ac.id}`}] {ac.titulo || ac.descripcion} ({ac.area}) - Estado: {ac.estado}
-                </option>
-              ))}
-            </select>
+              <AlertTriangle size={14} className="text-rose-600" />
+              <span>Acción Correctiva (OOMRSC-20) ({accionesFiltradas.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setTipoElemento('PM');
+                setActividadIndex(0);
+              }}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                tipoElemento === 'PM'
+                  ? 'bg-white text-slate-950 shadow-sm border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <TrendingUp size={14} className="text-sky-600" />
+              <span>Plan de Mejora (OOMRSC-21) ({planesFiltrados.length})</span>
+            </button>
           </div>
 
-          {/* Ficha Resumen de la AC */}
-          {accionActiva && (
-            <div className="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200 text-xs space-y-1">
-              <div className="flex items-center justify-between font-bold text-amber-950">
-                <span>Folio Oficial: <strong>{accionActiva.folio || `AC#${accionActiva.id}`}</strong></span>
-                <span>Estado: <span className="px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-900 font-mono text-[11px]">{accionActiva.estado}</span></span>
+          {/* Información de Restricción de Área */}
+          {!puedeVerTodo && usuarioLogueado?.area && (
+            <div className="p-2.5 bg-sky-50 rounded-xl border border-sky-200 text-[11.5px] text-sky-900 flex items-center justify-between">
+              <span>📍 Mostrando registros asignados a tu área: <strong>{usuarioLogueado.area}</strong></span>
+              <span className="font-mono text-[10px] text-sky-700 bg-sky-100 px-2 py-0.5 rounded font-bold">
+                {usuarioLogueado.nombre}
+              </span>
+            </div>
+          )}
+
+          {/* Selector con SelectBuscable */}
+          {tipoElemento === 'AC' ? (
+            <div>
+              <SelectBuscable
+                label="Seleccionar Acción Correctiva de tu Área:"
+                value={elementoId}
+                onChange={(idSel) => {
+                  setElementoId(idSel);
+                  setActividadIndex(0);
+                }}
+                options={accionesFiltradas}
+                getOptionValue={(ac) => ac.id}
+                getOptionLabel={(ac) => ac.titulo || ac.descripcion}
+                getOptionSublabel={(ac) => `${ac.area} • Estado: ${ac.estado}`}
+                getOptionBadge={(ac) => ac.folio || `AC#${ac.id}`}
+                searchPlaceholder="Escribe folio (ej. AC-2026-01), área o causa..."
+                placeholder="Buscar acción correctiva por folio o descripción..."
+              />
+            </div>
+          ) : (
+            <div>
+              <SelectBuscable
+                label="Seleccionar Plan de Mejora de tu Área:"
+                value={elementoId}
+                onChange={(idSel) => {
+                  setElementoId(idSel);
+                  setActividadIndex(0);
+                }}
+                options={planesFiltrados}
+                getOptionValue={(pm) => pm.id}
+                getOptionLabel={(pm) => pm.titulo || pm.descripcion}
+                getOptionSublabel={(pm) => `${pm.area} • Estado: ${pm.estado || 'EN_EJECUCION'}`}
+                getOptionBadge={(pm) => pm.folio || `PM#${pm.id}`}
+                searchPlaceholder="Escribe folio (ej. PM#1/26), área o título..."
+                placeholder="Buscar plan de mejora por folio o título..."
+              />
+            </div>
+          )}
+
+          {/* Ficha Resumen del Elemento Activo */}
+          {elementoActivo && (
+            <div className={`p-3.5 rounded-xl border text-xs space-y-1 ${
+              tipoElemento === 'AC' ? 'bg-amber-50/70 border-amber-200' : 'bg-sky-50/70 border-sky-200'
+            }`}>
+              <div className="flex items-center justify-between font-bold text-slate-900">
+                <span>Folio: <strong>{elementoActivo.folio || `#${elementoActivo.id}`}</strong></span>
+                <span className="px-2 py-0.5 rounded-md bg-white border text-slate-800 font-mono text-[11px]">
+                  Estado: {elementoActivo.estado || 'ACTIVO'}
+                </span>
               </div>
-              <p className="text-slate-700"><strong>Causa / Hallazgo:</strong> {accionActiva.descripcion}</p>
+              <p className="text-slate-700">
+                <strong>{tipoElemento === 'AC' ? 'Causa / Hallazgo:' : 'Objetivo:'}</strong> {elementoActivo.descripcion || elementoActivo.titulo}
+              </p>
               <div className="flex items-center justify-between text-slate-600 text-[11px] pt-1">
-                <span>Auditor Asignado: <strong>{accionActiva.auditor_asignado || 'Coordinación SGC'}</strong></span>
-                <span>Fecha Límite: <strong>{accionActiva.fecha_limite || '2026-05-30'}</strong></span>
+                <span>Responsable: <strong>{elementoActivo.responsable || elementoActivo.auditor_asignado || 'Área'}</strong></span>
+                <span>Fecha Límite: <strong>{elementoActivo.fechaCompromiso || elementoActivo.fecha_limite || '2026-05-30'}</strong></span>
               </div>
             </div>
           )}
@@ -505,9 +665,9 @@ export function ModalGestionarActividadEvidenciaIA({
           {/* Selector de Actividad */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Actividad del Plan de Acción a Actualizar:
+              Actividad del Plan a Actualizar:
             </label>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
               {actividadesList.map((act, idx) => (
                 <div
                   key={idx}
@@ -543,18 +703,18 @@ export function ModalGestionarActividadEvidenciaIA({
             </div>
           </div>
 
-          {/* Estado de la actividad */}
+          {/* Estado de la actividad y Avance */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Estatus de la Actividad Seleccionada:
+                Estatus de la Actividad:
               </label>
               <select
                 value={estadoActividad}
                 onChange={(e) => setEstadoActividad(e.target.value)}
                 className="w-full text-xs font-bold px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
               >
-                <option value="COMPLETADA">🟢 COMPLETADA (Actividad realizada al 100%)</option>
+                <option value="COMPLETADA">🟢 COMPLETADA (Actividad terminada)</option>
                 <option value="EN_PROCESO">🟡 EN PROCESO (Avance parcial)</option>
                 <option value="PENDIENTE">⚪ PENDIENTE</option>
               </select>
@@ -562,15 +722,15 @@ export function ModalGestionarActividadEvidenciaIA({
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Avance General de la AC: ({avanceAC}%)
+                Avance General: ({avanceNum}%)
               </label>
               <input
                 type="range"
                 min="0"
                 max="100"
-                value={avanceAC}
-                onChange={(e) => setAvanceAC(Number(e.target.value))}
-                className="w-full mt-2"
+                value={avanceNum}
+                onChange={(e) => setAvanceNum(Number(e.target.value))}
+                className="w-full mt-2 cursor-pointer"
               />
             </div>
           </div>
@@ -628,7 +788,7 @@ export function ModalGestionarActividadEvidenciaIA({
             <button
               type="submit"
               disabled={subiendo}
-              className="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-[#0B192C] to-[#002855] hover:from-[#1E3E62] hover:to-[#0B192C] rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Save size={14} /> {subiendo ? 'Guardando...' : 'Guardar Evidencia y Actividad'}
             </button>
@@ -647,28 +807,32 @@ export function ModalRatificarDocumentoIA({
   isOpen,
   onClose,
   documentoPreseleccionado = null,
+  documentoInicial = null,
   documentos = [],
+  documentosLista = [],
   setDocumentos,
   usuarioLogueado,
   registrarMovimiento,
   onAccionConfirmada
 }) {
-  const [docId, setDocId] = useState(documentoPreseleccionado?.id || documentos[0]?.id || 1);
+  const docPre = documentoPreseleccionado || documentoInicial;
+  const listaDocs = (documentos && documentos.length > 0) ? documentos : (documentosLista || []);
+  const [docId, setDocId] = useState(docPre?.id || listaDocs[0]?.id || 1);
   const [observacion, setObservacion] = useState(
     'Se realizó la revisión técnica periódica del documento con el personal del área y se ratifica su plena vigencia operativa y apego a la práctica en campo conforme a ISO 9001 § 7.5.3.'
   );
 
   useEffect(() => {
-    if (documentoPreseleccionado) {
-      setDocId(documentoPreseleccionado.id);
-    } else if (documentos.length > 0) {
-      setDocId(documentos[0].id);
+    if (docPre) {
+      setDocId(docPre.id);
+    } else if (listaDocs.length > 0) {
+      setDocId(listaDocs[0].id);
     }
-  }, [documentoPreseleccionado, documentos, isOpen]);
+  }, [docPre, listaDocs, isOpen]);
 
   const docActivo = useMemo(() => {
-    return documentos.find(d => String(d.id) === String(docId)) || documentos[0];
-  }, [docId, documentos]);
+    return listaDocs.find(d => String(d.id) === String(docId)) || listaDocs[0];
+  }, [docId, listaDocs]);
 
   const handleRatificar = (e) => {
     e.preventDefault();
@@ -707,7 +871,7 @@ export function ModalRatificarDocumentoIA({
   };
 
   return (
-    <ContenedorModal isOpen={isOpen} onClose={onClose} size="lg">
+    <ContenedorModal isOpen={isOpen} onClose={onClose} size="2xl" anchoMaximo="max-w-[85vw] xl:max-w-[1100px]">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="px-6 py-4 bg-gradient-to-r from-[#0B192C] to-[#1E3E62] text-white flex items-center justify-between">
@@ -734,22 +898,20 @@ export function ModalRatificarDocumentoIA({
 
         {/* Body Form */}
         <form onSubmit={handleRatificar} className="p-6 space-y-5 overflow-y-auto">
-          {/* Selector de Documento */}
+          {/* Selector de Documento con Filtro en Tiempo Real */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Procedimiento / Registro a Ratificar:
-            </label>
-            <select
+            <SelectBuscable
+              label="Procedimiento / Registro a Ratificar:"
               value={docId}
-              onChange={(e) => setDocId(e.target.value)}
-              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-            >
-              {documentos.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  [{doc.clave}] {doc.titulo} ({doc.tipo} - {doc.area}) - Fecha: {doc.fecha || 'Antigua'}
-                </option>
-              ))}
-            </select>
+              onChange={(idSel) => setDocId(idSel)}
+              options={documentos}
+              getOptionValue={(doc) => doc.id}
+              getOptionLabel={(doc) => doc.titulo}
+              getOptionSublabel={(doc) => `${doc.tipo} - ${doc.area} • Rev. ${doc.version || '01'} (${doc.fecha || 'Antigua'})`}
+              getOptionBadge={(doc) => doc.clave}
+              searchPlaceholder="Escribe clave (ej. PR-CS-01, OOMRSC-20), título o área..."
+              placeholder="Buscar documento o procedimiento..."
+            />
           </div>
 
           {/* Ficha Resumen */}

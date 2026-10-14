@@ -43,7 +43,7 @@ export default function ModalConfirmacionEliminar({
 
   const modalEl = (
     <div className="fixed inset-0 z-[99999] flex items-start justify-center p-4 pt-16 bg-slate-950/80 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-rose-200 overflow-hidden animate-scale-up mb-8">
+      <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-rose-200 overflow-hidden animate-scale-up mb-8">
         {/* Encabezado con alerta */}
         <div className="bg-rose-50 px-6 py-4 border-b border-rose-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-rose-800">

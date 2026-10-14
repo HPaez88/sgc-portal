@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Search, Bell, HelpCircle, ShieldCheck, ChevronDown, History, LogOut, Sparkles } from 'lucide-react';
+import { Menu, Search, HelpCircle, ShieldCheck, ChevronDown, History, LogOut, Sparkles } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import { getRolColor, puedeVerTodasAreas } from '../../constants';
@@ -143,15 +143,6 @@ const Header = ({
           title="Ver Control Documental & Bitácora de Auditoría SGC"
         >
           <History size={18} />
-        </button>
-
-        {/* Notifications */}
-        <button
-          className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-          title="Notificaciones"
-        >
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-sky-500 rounded-full ring-2 ring-white"></span>
         </button>
 
         {/* Help Button */}

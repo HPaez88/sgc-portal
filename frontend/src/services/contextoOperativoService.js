@@ -49,24 +49,85 @@ export function generarContextoOperativo({
   const areaNorm = normalizar(area);
 
   // 1. Acciones Correctivas (OOMRSC-20)
+  const ESTADOS_SEGUIMIENTO_ACTIVO = ['EN_SEGUIMIENTO', 'EN_REVISION', 'REVISION_AUDITOR', 'APROBADO', 'APROBADA'];
+
   const acsArea = (accionesCorrectivas || []).filter(ac => {
+    if (!ac) return false;
     const acAreaNorm = normalizar(ac.area);
     const coincideArea = !areaNorm || acAreaNorm === areaNorm || acAreaNorm.includes(areaNorm) || areaNorm.includes(acAreaNorm);
-    const estaAbierta = ac.estado !== 'CERRADA' && ac.estado !== 'CERRADO';
-    return coincideArea && estaAbierta;
+    if (!coincideArea) return false;
+
+    const estado = (ac.estado || '').toUpperCase();
+    // Excluir borradores no ratificados y registros cerrados o cancelados
+    if (estado === 'BORRADOR' || estado.includes('CERRAD') || estado.includes('CANCEL') || estado.includes('CONCLU')) {
+      return false;
+    }
+    // Solo incluir estados oficiales de seguimiento activo
+    if (!ESTADOS_SEGUIMIENTO_ACTIVO.includes(estado)) {
+      return false;
+    }
+    // Debe tener contenido real (no ser un borrador huérfano ni registro en blanco)
+    const tieneContenido = Boolean(
+      (ac.titulo && ac.titulo.trim() !== 'Acción Correctiva') ||
+      ac.descripcion ||
+      ac.descripcion_no_conformidad_original ||
+      ac.hallazgo ||
+      ac.causa_raiz
+    );
+    return tieneContenido;
   }).map(ac => {
     const diasRest = calcularDiasRestantes(ac.fecha_limite || ac.fechaCompromiso);
+
+    // Formatear folio institucional formal evitando números timestamp crudos
+    let folioOficial = 'AC-Folio en Trámite';
+    if (ac.folio && !/^\d{10,}$/.test(String(ac.folio).replace(/\D/g, ''))) {
+      folioOficial = ac.folio;
+    } else if (ac.folio_codigo && !/^\d{10,}$/.test(String(ac.folio_codigo).replace(/\D/g, ''))) {
+      folioOficial = ac.folio_codigo;
+    } else if (ac.folio_numero) {
+      folioOficial = `AC#${ac.folio_numero}/26`;
+    } else if (typeof ac.id === 'number' && ac.id < 10000) {
+      folioOficial = `AC#${ac.id}/26`;
+    }
+
+    const descFinal = ac.descripcion || ac.descripcion_no_conformidad_original || ac.hallazgo || ac.causa_raiz || 'Sin causa registrada';
+    const titFinal = (ac.titulo && ac.titulo.trim() !== 'Acción Correctiva')
+      ? ac.titulo
+      : (ac.descripcion_no_conformidad_original ? (ac.descripcion_no_conformidad_original.length > 70 ? ac.descripcion_no_conformidad_original.slice(0, 67) + '...' : ac.descripcion_no_conformidad_original) : 'Acción Correctiva');
+
     return {
       id: ac.id,
-      folio: ac.folio || `AC#${ac.id}`,
-      titulo: ac.titulo || ac.descripcion || 'Acción Correctiva',
-      descripcion: ac.descripcion || ac.hallazgo || '',
+      folio: folioOficial,
+      titulo: titFinal,
+      descripcion: descFinal,
       estado: ac.estado || 'EN_SEGUIMIENTO',
       origen: ac.origen || 'Auditoría / Control',
       fecha_limite: ac.fecha_limite || ac.fechaCompromiso || 'Sin fecha',
       dias_restantes: diasRest,
       es_urgente: diasRest !== null && diasRest <= 15,
       auditor_asignado: ac.auditor_asignado || ac.auditor || 'Coordinación SGC'
+    };
+  });
+
+  const borradoresArea = (accionesCorrectivas || []).filter(ac => {
+    if (!ac) return false;
+    const acAreaNorm = normalizar(ac.area);
+    const coincideArea = !areaNorm || acAreaNorm === areaNorm || acAreaNorm.includes(areaNorm) || areaNorm.includes(acAreaNorm);
+    const esBorrador = (ac.estado || '').toUpperCase() === 'BORRADOR';
+    const tieneAlgo = Boolean(ac.descripcion_no_conformidad_original || ac.descripcion || ac.hallazgo || (ac.titulo && ac.titulo !== 'Acción Correctiva'));
+    return coincideArea && esBorrador && tieneAlgo;
+  }).map((ac, idx) => {
+    const desc = ac.descripcion_no_conformidad_original || ac.descripcion || ac.hallazgo || '';
+    const tit = (ac.titulo && ac.titulo.trim() !== 'Acción Correctiva')
+      ? ac.titulo
+      : (desc ? (desc.length > 60 ? desc.slice(0, 57) + '...' : desc) : `Borrador #${idx + 1}`);
+    return {
+      id: ac.id,
+      titulo: tit,
+      descripcion: desc || 'En captura',
+      origen: ac.origen || 'Captura en proceso',
+      fecha_creacion: ac.fecha_creacion_borrador ? ac.fecha_creacion_borrador.split('T')[0] : 'Reciente',
+      estado: 'BORRADOR'
     };
   });
 
@@ -177,6 +238,8 @@ export function generarContextoOperativo({
     periodoActivo: periodoCapturaActivo
   }));
 
+  const pmsProximos = pmsArea.filter(p => p.es_proximo_vencer);
+
   return {
     nombre,
     area,
@@ -184,7 +247,9 @@ export function generarContextoOperativo({
     rol,
     fecha_consulta: new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
     acciones_pendientes: acsArea,
+    borradores_ac: borradoresArea,
     planes_mejora_activos: pmsArea,
+    planes_proximos_vencer: pmsProximos,
     indicadores_area: indicadoresDelArea,
     indicadores_incumplidos: indsIncumplidos,
     indicadores_preventivos: indsPreventivos,
@@ -194,8 +259,9 @@ export function generarContextoOperativo({
     formularios_revision_pendientes: formulariosRevision,
     resumen_conteos: {
       total_ac_pendientes: acsArea.length,
+      total_ac_borradores: borradoresArea.length,
       total_pm_activos: pmsArea.length,
-      total_pm_proximos_vencer: pmsArea.filter(p => p.es_proximo_vencer).length,
+      total_pm_proximos_vencer: pmsProximos.length,
       total_indicadores: indicadoresDelArea.length,
       total_indicadores_cumplidos: indsAceptables.length,
       total_indicadores_preventivos: indsPreventivos.length,
@@ -210,7 +276,7 @@ export function generarContextoOperativo({
 /**
  * Genera el Briefing Ejecutivo estructurado en Markdown en caso de fallback local u offline
  */
-export function generarBriefingMarkdownLocal(ctx) {
+export function generarBriefingMarkdownLocal(ctx, { soloCuadro = true } = {}) {
   const c = ctx.resumen_conteos;
   const tieneAlertas = c.total_indicadores_incumplidos > 0 || c.total_pm_proximos_vencer > 0 || c.total_docs_antiguos_sin_revision > 0 || c.total_ac_pendientes > 0;
 
@@ -218,18 +284,32 @@ export function generarBriefingMarkdownLocal(ctx) {
   md += `**Colaborador:** ${ctx.nombre} | **Área:** ${ctx.area} (${ctx.direccion}) | **Rol:** ${ctx.rol}\n\n`;
   md += `> **Fecha de Evaluación:** ${ctx.fecha_consulta}\n\n`;
 
-  // Tabla resumen de estado
+  const alertaIndicadores = c.total_indicadores_incumplidos > 0
+    ? `🔴 ${c.total_indicadores_incumplidos} Incumplido(s)<br>🟢 ${c.total_indicadores_cumplidos} Cumplido(s)`
+    : `🟢 100% Cumplimiento (${c.total_indicadores_cumplidos} cumplidos)`;
+
+  const estadoAC = c.total_ac_pendientes > 0
+    ? `🟡 ${c.total_ac_pendientes} acción(es) abierta(s) en seguimiento`
+    : (c.total_ac_borradores > 0 ? `📝 ${c.total_ac_borradores} borrador(es) en captura` : '🟢 Sin acciones abiertas');
+
+  // Tabla resumen de estado (exactamente 3 columnas consistentes en todas las filas)
   md += `| Módulo SGC | Total Registros | Estado / Alerta Prioritaria |\n`;
   md += `| :--- | :---: | :--- |\n`;
-  md += `| ⚠️ **Acciones Correctivas (OOMRSC-20)** | **${c.total_ac_pendientes}** | ${c.total_ac_pendientes > 0 ? `🟡 ${c.total_ac_pendientes} acción(es) abierta(s) en seguimiento` : '🟢 Sin acciones abiertas'} |\n`;
+  md += `| ⚠️ **Acciones Correctivas (OOMRSC-20)** | **${c.total_ac_pendientes}** | ${estadoAC} |\n`;
   md += `| 🚀 **Planes de Mejora (OOMRSC-21)** | **${c.total_pm_activos}** | ${c.total_pm_proximos_vencer > 0 ? `🔴 **${c.total_pm_proximos_vencer} plan(es) próximo(s) a vencer**` : '🟢 En cronograma normal'} |\n`;
-  md += `| 🎯 **Indicadores SGC (OOMRSC-05)** | **${c.total_indicadores}** | ${c.total_indicadores_incumplidos > 0 ? `🔴 **${c.total_indicadores_incumplidos} INCUMPLIDO(S)** | 🟢 ${c.total_indicadores_cumplidos} Cumplidos` : `🟢 100% Cumplimiento (${c.total_indicadores_cumplidos} cumplidos)`} |\n`;
+  md += `| 🎯 **Indicadores SGC (OOMRSC-05)** | **${c.total_indicadores}** | ${alertaIndicadores} |\n`;
   md += `| 📑 **Docs. >1 Año sin Revisar (§ 7.5.3)** | **${c.total_docs_antiguos_sin_revision}** | ${c.total_docs_antiguos_sin_revision > 0 ? `⚠️ **${c.total_docs_antiguos_sin_revision} doc(s) requieren revisión activa**` : '🟢 Toda la base vigente (<1 año)'} |\n`;
   md += `| ⏳ **Docs. Pendientes Aprobación SGC** | **${c.total_docs_pendientes_aprobacion}** | ${c.total_docs_pendientes_aprobacion > 0 ? `🟡 ${c.total_docs_pendientes_aprobacion} en Borrador/Revisión` : '🟢 Sin borradores pendientes'} |\n`;
   if (c.total_formularios_revision > 0) {
     md += `| 📝 **Revisión por Dirección (OOMRSC-04)** | **${c.total_formularios_revision}** | 📅 Captura obligatoria durante los primeros 10 días |\n`;
   }
-  md += `\n---\n\n`;
+  md += `\n`;
+
+  if (soloCuadro) {
+    return md;
+  }
+
+  md += `---\n\n`;
 
   // 1. Acciones Correctivas
   md += `### 1. ⚠️ Acciones Correctivas Pendientes (Formato OOMRSC-20 Rev. 18 / ISO 9001 § 10.2)\n`;
@@ -289,23 +369,27 @@ export function generarBriefingMarkdownLocal(ctx) {
   md += `### 4. 📑 Mantenimiento Documental Activo y Trazabilidad (ISO 9001 § 7.5.3)\n`;
   
   if (ctx.documentos_antiguos_sin_revision.length > 0) {
-    md += `⚠️ **ALERTA DE REVISIÓN PERIÓDICA:** Se detectaron **${ctx.documentos_antiguos_sin_revision.length} documento(s) con más de 1 año sin actualizar/revisar** en tu área. La norma exige mantener una revisión activa para evitar no conformidades de obsolescencia operativa en auditoría:\n\n`;
-    ctx.documentos_antiguos_sin_revision.forEach(doc => {
-      md += `- ⚠️ **[${doc.clave}] ${doc.titulo}** (${doc.tipo})\n`;
-      md += `  - **Última Versión:** \`${doc.version}\` | **Fecha:** ${doc.fecha} (**${doc.dias_sin_revision} días sin revisar**)\n`;
-      md += `  - **Acción requerida:** Validar si el procedimiento/registro sigue reflejando la práctica real en campo y ratificar o emitir nueva versión.\n`;
-    });
-    md += `\n`;
+    const totalAntiguos = ctx.documentos_antiguos_sin_revision.length;
+    const procs = ctx.documentos_antiguos_sin_revision.filter(d => (d.tipo || '').toLowerCase().includes('procedimiento')).length;
+    const regs = ctx.documentos_antiguos_sin_revision.filter(d => (d.tipo || '').toLowerCase().includes('registro') || (d.tipo || '').toLowerCase().includes('formato')).length;
+    const otros = totalAntiguos - procs - regs;
+
+    const desglose = [];
+    if (procs > 0) desglose.push(`**${procs} procedimiento(s)**`);
+    if (regs > 0) desglose.push(`**${regs} registro(s)/formato(s)**`);
+    if (otros > 0) desglose.push(`**${otros} otro(s)**`);
+
+    md += `⚠️ **ALERTA DE REVISIÓN PERIÓDICA:** Se detectaron **${totalAntiguos} documento(s) con más de 1 año sin actualizar/revisar** en tu área (${desglose.join(', ')}).\n\n`;
+    md += `⚡ **¿Qué puedes hacer?** Conforme a la norma ISO 9001 § 7.5.3, no es necesario reescribirlos si el método de trabajo sigue vigente; basta con **ratificar su vigencia** para avalar que continúan operando.\n`;
+    md += `- Para ratificarlos de forma rápida y directa sin saturar la pantalla, utiliza el botón de acción rápida **[Ratificar Doc >1 año]** disponible aquí en el asistente.\n`;
+    md += `- Si algún procedimiento o registro sufrió modificaciones operativas en campo, ingresa al módulo de **Documentos** para emitir formalmente una nueva versión.\n\n`;
   } else {
     md += `🟢 *Todos los procedimientos y registros de tu área se encuentran actualizados con vigencia menor a 1 año.*\n\n`;
   }
 
   if (ctx.documentos_pendientes_aprobacion.length > 0) {
-    md += `⏳ **DOCUMENTOS PENDIENTES DE APROBACIÓN POR EL SGC:**\n`;
-    ctx.documentos_pendientes_aprobacion.forEach(doc => {
-      md += `- 📝 **[${doc.clave}] ${doc.titulo}** — Estado actual: \`${doc.estado}\` (En espera de dictamen técnico y firma de Coordinación SGC).\n`;
-    });
-    md += `\n`;
+    const totalPend = ctx.documentos_pendientes_aprobacion.length;
+    md += `⏳ **Documentos pendientes de aprobación SGC:** Se tienen **${totalPend} documento(s)** en proceso de revisión técnica y dictamen por la Coordinación del SGC.\n\n`;
   }
 
   // 5. Revisión por la Dirección
@@ -328,7 +412,7 @@ export function generarBriefingMarkdownLocal(ctx) {
     md += `2. 🚀 **Revisar Plan de Mejora Próximo a Vencer:** Contactar al equipo responsable para verificar entrega de evidencias y validar presupuesto ejercido.\n`;
   }
   if (c.total_docs_antiguos_sin_revision > 0) {
-    md += `3. 📑 **Actualización Documental Activa:** Convocar a revisión del procedimiento \`${ctx.documentos_antiguos_sin_revision[0]?.clave}\` para confirmar vigencia conforme al 7.5.3.\n`;
+    md += `3. 📑 **Actualización Documental Activa:** Ratificar la vigencia de los ${c.total_docs_antiguos_sin_revision} procedimientos/registros de tu área con el botón de acción rápida **[Ratificar Doc >1 año]** para asegurar cumplimiento normativo sin sobrecarga administrativa.\n`;
   }
   if (c.total_ac_pendientes > 0) {
     md += `4. ⚠️ **Seguimiento a Acciones Correctivas:** Verificar que las actividades del plan de acción se encuentren capturadas con evidencia fotográfica o documental en el portal.\n`;

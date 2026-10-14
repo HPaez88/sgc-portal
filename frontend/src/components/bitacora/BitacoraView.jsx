@@ -774,7 +774,7 @@ export default function BitacoraView() {
       {/* Modal Detalle de Movimiento */}
       {movimientoSeleccionado && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-scale-up">
+          <div className="bg-white rounded-2xl max-w-[85vw] xl:max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-scale-up">
             <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white">
               <div className="flex items-center gap-2.5">
                 <History size={18} className="text-sky-400" />

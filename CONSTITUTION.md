@@ -37,6 +37,7 @@
 2. **Un dato mal calculado es peor que un dato ausente.** Los indicadores sin captura muestran `--`, nunca `0%`.
 3. **Los módulos se conectan.** Un indicador fuera de meta puede abrir una AC (§9.1.3 → §10.2); un hallazgo de auditoría también (§9.2 → §10.2); un riesgo sin plan abre un PM (§6.1 → §10.3).
 4. **La información larga debe verse completa.** El plan de acción y los campos de texto libre son protagonistas, no columnas comprimidas.
+5. **Supervisión Humana Obligatoria (Human-in-the-Loop & POL-TI-01).** Ningún análisis, causa raíz o plan de acción generado o asistido por IA puede remitirse al SGC de forma automática. El usuario responsable debe leer la información, aceptar la responsabilidad operativa y escribir la palabra clave estricta `CONFIRMAR` en el modal de ratificación.
 
 ## Restricciones estrictas (nunca)
 

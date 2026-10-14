@@ -1,49 +1,42 @@
 // ═══════════════════════════
-// CONTENEDOR DE MODAL (equivalente ligero de ModalBase)
+// CONTENEDOR DE MODAL (equivalente ligero y robusto de ModalBase)
 //
-// Existe para migrar los modales que ya tienen su propia cabecera y estilos
-// internos: en lugar de reescribir todo el JSX, se envuelve el contenido con
-// este componente y obtiene las dos garantías que hoy faltan en 17 modales:
+// Soporta tanto la API moderna (isOpen, onClose, size) como la API
+// estructurada (abierto, onCerrar, tamano, titulo, pie).
 //
-//   1. PORTAL — se renderiza en document.body, así que `position: fixed` se
-//      ancla al viewport y no al contenedor animado. Sin esto, cualquier
-//      ancestro con `transform` (animate-fade-in-up, animate-slide-up) desplaza
-//      el modal fuera de la pantalla y sus botones quedan inalcanzables.
-//
-//   2. ALTURA SEGURA — el contenido nunca excede el viewport; si es más alto,
-//      hace scroll internamente y los botones de acción siguen visibles.
+// Garantías:
+//   1. PORTAL — se renderiza en document.body, anclándose al viewport.
+//   2. ALTURA SEGURA — scroll interno cuando excede la altura de pantalla.
+//   3. ACCESIBILIDAD — Escape key, foco y bloqueo de scroll de fondo.
 // ═══════════════════════════
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 
 const TAMANOS = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  '2xl': 'max-w-2xl',
-  '3xl': 'max-w-3xl',
-  '4xl': 'max-w-4xl',
-  '5xl': 'max-w-5xl',
+  sm: 'max-w-xl',
+  md: 'max-w-3xl',
+  lg: 'max-w-5xl',
+  xl: 'max-w-6xl',
+  '2xl': 'max-w-7xl',
+  '3xl': 'max-w-[90vw] xl:max-w-[1450px]',
+  '4xl': 'max-w-[92vw] xl:max-w-[1600px]',
+  '5xl': 'max-w-[95vw] xl:max-w-[1750px]',
+  '6xl': 'max-w-[96vw] xl:max-w-[1850px]',
+  full: 'max-w-[98vw]',
   auto: '',
 };
 
-/**
- * Props:
- *  - isOpen: boolean
- *  - onClose: () => void
- *  - size: 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl'|'4xl'|'5xl'|'auto'
- *    (solo se aplica si no se pasa `className` en el hijo)
- *  - closeOnBackdrop: boolean (default true)
- *  - closeOnEscape: boolean (default true)
- *  - backdropClassName: string (para variantes: bg-black/60, bg-slate-950/50, …)
- *  - lockScroll: boolean (default true)
- *  - children: el contenido del modal (normalmente el div de la tarjeta)
- */
 export default function ContenedorModal({
   isOpen,
+  abierto,
   onClose,
-  size = 'lg',
+  onCerrar,
+  size,
+  tamano = 'lg',
+  anchoMaximo,
+  titulo,
+  pie,
   closeOnBackdrop = true,
   closeOnEscape = true,
   backdropClassName = 'bg-slate-950/60 backdrop-blur-xs',
@@ -51,33 +44,42 @@ export default function ContenedorModal({
   children,
   ariaLabel,
 }) {
+  const activo = Boolean(isOpen ?? abierto);
+  const cerrar = onClose || onCerrar;
+  const tamanoFinal = size || tamano || 'lg';
+  const claseAncho = anchoMaximo || (typeof tamanoFinal === 'string' && tamanoFinal.startsWith('max-w-') 
+    ? tamanoFinal 
+    : (TAMANOS[tamanoFinal] ?? TAMANOS.lg));
+
   // Bloqueo del scroll de fondo mientras el modal está abierto.
   useEffect(() => {
-    if (!isOpen || !lockScroll) return undefined;
+    if (!activo || !lockScroll) return undefined;
     const overflowPrevio = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = overflowPrevio; };
-  }, [isOpen, lockScroll]);
+  }, [activo, lockScroll]);
 
   // Cierre con Escape.
   useEffect(() => {
-    if (!isOpen || !closeOnEscape) return undefined;
+    if (!activo || !closeOnEscape) return undefined;
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onClose?.();
+        cerrar?.();
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, closeOnEscape, onClose]);
+  }, [activo, closeOnEscape, cerrar]);
 
-  if (!isOpen) return null;
+  if (!activo) return null;
 
   const manejarBackdrop = (event) => {
     if (!closeOnBackdrop) return;
-    if (event.target === event.currentTarget) onClose?.();
+    if (event.target === event.currentTarget) cerrar?.();
   };
+
+  const tieneEstructura = Boolean(titulo || pie);
 
   const contenido = (
     <div
@@ -87,12 +89,38 @@ export default function ContenedorModal({
       aria-label={ariaLabel}
       onMouseDown={manejarBackdrop}
     >
-      <div className="absolute inset-0 flex items-center justify-center p-4">
+      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-5 lg:p-6 overflow-y-auto">
         <div
           onMouseDown={(event) => event.stopPropagation()}
-          className={`flex max-h-full w-full ${TAMANOS[size] ?? TAMANOS.lg} flex-col`}
+          className={`flex max-h-full w-full ${claseAncho} flex-col my-auto`}
         >
-          {children}
+          {tieneEstructura ? (
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[94vh] w-full">
+              {titulo && (
+                <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
+                  <div className="flex-1">{titulo}</div>
+                  <button
+                    type="button"
+                    onClick={cerrar}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer ml-3 shrink-0"
+                    title="Cerrar modal"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              )}
+              <div className="p-4 sm:p-5 overflow-y-auto flex-1">
+                {children}
+              </div>
+              {pie && (
+                <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                  {pie}
+                </div>
+              )}
+            </div>
+          ) : (
+            children
+          )}
         </div>
       </div>
     </div>

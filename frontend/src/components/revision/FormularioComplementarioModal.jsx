@@ -74,7 +74,8 @@ export default function FormularioComplementarioModal({
     <ContenedorModal
       abierto={abierto}
       onCerrar={onCerrar}
-      tamano="md"
+      tamano="2xl"
+      anchoMaximo="max-w-[88vw] xl:max-w-[1300px]"
       titulo={
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-600 shrink-0">

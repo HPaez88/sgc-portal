@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import {
   Sparkles,
   Bot,
@@ -39,7 +39,12 @@ import {
   TrendingUp,
   FileWarning,
   Activity,
-  Zap
+  Zap,
+  Upload,
+  Cpu,
+  Server,
+  Lock,
+  BookOpenCheck
 } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
@@ -59,6 +64,42 @@ import {
   ModalGestionarActividadEvidenciaIA,
   ModalRatificarDocumentoIA
 } from './ModalesAccionIA';
+import { CLAUSULAS_FALLBACK } from '../../constants/clausulasFallback';
+
+export const OPCIONES_RAPIDAS_MENU = [
+  {
+    num: '1',
+    icono: '📋',
+    titulo: '¿Qué tengo pendiente hoy?',
+    subtitulo: 'Diagnóstico integral de mi área',
+    textoVisible: '1. ¿Qué tengo pendiente hoy?',
+    prompt: '¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05) y procedimientos sin revisar conforme a ISO 9001.'
+  },
+  {
+    num: '2',
+    icono: '🎯',
+    titulo: 'Estado de mis indicadores',
+    subtitulo: 'Metas anuales y semáforo OOMRSC-05',
+    textoVisible: '2. Estado de mis indicadores (OOMRSC-05)',
+    prompt: '¿Cómo van los indicadores oficiales de mi área en el Cuadro de Control OOMRSC-05? ¿Cuáles cumplen la meta anual y cuáles están en semáforo crítico o preventivo?'
+  },
+  {
+    num: '3',
+    icono: '📄',
+    titulo: 'Procedimientos vigentes',
+    subtitulo: 'Revisión periódica (§ 7.5.3)',
+    textoVisible: '3. Procedimientos clave vigentes (§ 7.5.3)',
+    prompt: '¿Qué procedimientos, manuales o formatos clave de mi área están vigentes o requieren atención para mantener la revisión periódica activa conforme a ISO 9001 § 7.5.3?'
+  },
+  {
+    num: '4',
+    icono: '⚠️',
+    titulo: 'Acciones Correctivas y PM',
+    subtitulo: 'Vencimientos y seguimiento',
+    textoVisible: '4. Acciones Correctivas y Planes de Mejora',
+    prompt: '¿Qué acciones correctivas (OOMRSC-20) y planes de mejora (OOMRSC-21) de mi área tienen compromisos próximos o requieren seguimiento?'
+  }
+];
 
 const PREGUNTAS_CATEGORIZADAS = [
   {
@@ -85,6 +126,82 @@ const PREGUNTAS_CATEGORIZADAS = [
         norma: 'SGC OOMAPASC',
         titulo: 'Planes de Mejora próximos a vencer (OOMRSC-21)',
         texto: '¿Qué planes de mejora de mi área están próximos a vencer su fecha compromiso y qué presupuesto y porcentaje de avance tienen asignado?'
+      }
+    ]
+  },
+  {
+    categoria: 'Inteligencia Artificial y Human-in-the-Loop (ISO/IEC 42001:2023)',
+    icon: Cpu,
+    color: 'from-violet-600 to-purple-800',
+    preguntas: [
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Gobernanza Human-in-the-Loop (§ 5.3 & POL-TI-01)',
+        texto: '¿Cómo aplica el principio Human-in-the-Loop (§ 5.3) en el portal SGC para asegurar que la IA actúe como asesora pero nunca apruebe o cierre Acciones Correctivas o Planes de Mejora sin ratificación humana obligatoria?'
+      },
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Mitigación de Alucinaciones con RAG Grounding (§ 6.1)',
+        texto: '¿Qué controles de gestión de riesgos de IA y arquitectura RAG (§ 6.1) garantizan que las respuestas del asistente provengan exclusivamente de las normas ISO oficiales y del acervo documental interno del OOMAPASC?'
+      },
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Transparencia y Explicabilidad Algorítmica (§ 8.2)',
+        texto: '¿Cómo se garantiza la explicabilidad cuando el sistema clasifica un indicador incumplido entre Acción Correctiva (Alto Impacto) o Reporte de Corrección RC (Bajo Impacto)?'
+      },
+      {
+        norma: 'ISO-42001-2023',
+        titulo: 'Evaluación y Desempeño del SGIA (§ 9.2 y 9.3)',
+        texto: '¿Cómo se deben auditar y reportar las métricas de uso y precisión del Asesor IA en las actas de Revisión por la Dirección (OOMRSC-04)?'
+      }
+    ]
+  },
+  {
+    categoria: 'Seguridad de la Información, Ciberseguridad y TI (ISO/IEC 27001:2022)',
+    icon: Server,
+    color: 'from-slate-700 to-cyan-900',
+    preguntas: [
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Control de Acceso RBAC y Política POL-TI-01 (A.5.15)',
+        texto: '¿Cuáles son las directrices de control de acceso por roles (RBAC) y confidencialidad exigidas por ISO 27001 y POL-TI-01 para proteger los datos operativos y la parametrización del SGC?'
+      },
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Seguridad en Telemetría SCADA y Redes de Pozos (§ 6.1 / A.8.24)',
+        texto: '¿Qué controles de ciberseguridad e integridad en tránsito/reposo aplican para la telemetría SCADA y la bitácora de cloro en red (REG-CLORO-01)?'
+      },
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Bitácoras Inmutables y Trazabilidad de Auditoría (A.8.15)',
+        texto: '¿Qué requerimientos establece ISO 27001 para las bitácoras de auditoría (audit_logs) que previenen la alteración o borrado de evidencias en AC, PM e indicadores?'
+      },
+      {
+        norma: 'ISO-27001-2022',
+        titulo: 'Gestión de Incidentes de TI y Continuidad Operativa (§ 10.1)',
+        texto: '¿Cuál es el procedimiento de respuesta inmediata y levantamiento de Acción Correctiva (OOMRSC-20) ante caídas de servidor o brechas de seguridad de TI?'
+      }
+    ]
+  },
+  {
+    categoria: 'Fundamentos de Calidad y Glosario Oficial (ISO 9000:2015)',
+    icon: BookOpenCheck,
+    color: 'from-blue-600 to-sky-800',
+    preguntas: [
+      {
+        norma: 'ISO-9000-2015',
+        titulo: 'Los 7 Principios de Gestión de la Calidad en OOMAPASC',
+        texto: '¿Cuáles son los 7 principios de gestión de la calidad según ISO 9000:2015 (Enfoque al cliente, Liderazgo, Compromiso, Procesos, Mejora, Evidencia, Relaciones) y cómo se aterrizan en OOMAPASC?'
+      },
+      {
+        norma: 'ISO-9000-2015',
+        titulo: 'Corrección vs Acción Correctiva vs Plan de Mejora',
+        texto: '¿Cuál es la diferencia conceptual y operativa entre una Corrección (ej. Reporte de Corrección RC), una Acción Correctiva (OOMRSC-20 con análisis de causa raíz) y un Plan de Mejora (OOMRSC-21)?'
+      },
+      {
+        norma: 'ISO-9000-2015',
+        titulo: 'Evidencia Objetiva y Criterio de Eficacia (§ 3.8.3 y 3.7.11)',
+        texto: '¿Qué se define como Evidencia Objetiva válida y cómo se evalúa la Eficacia de una acción correctiva antes de su dictamen final de cierre?'
       }
     ]
   },
@@ -212,16 +329,28 @@ const PREGUNTAS_CATEGORIZADAS = [
   }
 ];
 
-const CHIPS_RAPIDOS = [
-  { label: '⚡ ¿Qué tengo pendiente hoy?', query: '¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.', norma: '' },
-  { label: '⚠️ Docs. >1 año sin revisar (§ 7.5.3)', query: '¿Qué procedimientos o registros de mi área tienen más de 1 año sin actualizar y requieren revisión periódica activa según ISO 9001 § 7.5.3?', norma: 'ISO-9001-2026' },
-  { label: '🎯 Estado de Indicadores (OOMRSC-05)', query: '¿Cómo van los indicadores oficiales de mi área en el Cuadro de Control OOMRSC-05? ¿Cuáles están cumplidos y cuáles en semáforo crítico?', norma: '' },
-  { label: '⏳ Planes próximos a vencer (OOMRSC-21)', query: '¿Qué planes de mejora de mi área están próximos a vencer su fecha compromiso y qué presupuesto tienen asignado?', norma: '' },
-  { label: '📑 Procedimientos y Formatos SGC', query: '¿Cuáles son los procedimientos operativos y formatos oficiales (OOMRSC-20, OOMRSC-21, REG-CLORO-01) del portal SGC y cómo interactúan entre sí?', norma: '' },
-  { label: '🔗 Matriz de Trazabilidad § 7.5', query: '¿Cómo funciona la matriz de trazabilidad e impacto documental del portal y qué reglas rigen el bloqueo de eliminación de registros?', norma: 'ISO-9001-2026' },
-  { label: '🌟 Transición ISO 9001:2015 vs 2026', query: '¿Cuáles son los cambios más relevantes entre la norma ISO 9001:2015 y la actualización ISO 9001:2026 para OOMAPASC?', norma: 'ISO-9001-2026' },
-  { label: '🛡️ Cierre OOMRSC-20 (§ 10.2)', query: '¿Cómo documentar el análisis de causa raíz y el cierre efectivo de una Acción Correctiva en el formato OOMRSC-20 conforme al 10.2?', norma: 'ISO-9001-2026' }
+
+const NORMAS_BASE = [
+  { id: 'ISO-9001-2026', nombre: 'ISO 9001:2026 — Sistemas de Gestión de la Calidad (Requisitos)', total_clausulas: 33 },
+  { id: 'ISO-42001-2023', nombre: 'ISO/IEC 42001:2023 — Sistema de Gestión de Inteligencia Artificial (SGIA)', total_clausulas: 12 },
+  { id: 'ISO-27001-2022', nombre: 'ISO/IEC 27001:2022 — Ciberseguridad, TI y Seguridad de la Información', total_clausulas: 12 },
+  { id: 'ISO-9000-2015', nombre: 'ISO 9000:2015 — Fundamentos, Vocabulario y Variaciones', total_clausulas: 26 },
+  { id: 'ISO-14001-2015', nombre: 'ISO 14001:2015 — Sistemas de Gestión Ambiental y Saneamiento', total_clausulas: 12 },
+  { id: 'ISO-45001-2018', nombre: 'ISO 45001:2018 — Seguridad y Salud en el Trabajo', total_clausulas: 11 },
+  { id: 'ISO-19011-2018', nombre: 'ISO 19011:2018 — Directrices para Auditorías de Gestión', total_clausulas: 10 }
 ];
+
+const CHAT_STORAGE_KEY_PREFIX = 'sgc_chat_historial_v2_';
+const CHAT_RETENTION_MS = 2 * 24 * 60 * 60 * 1000; // 2 días de persistencia continua (48 horas)
+
+export const MENSAJE_BIENVENIDA_DEFAULT = {
+  id: 'bienvenida',
+  emisor: 'agente',
+  texto: `¡Hola! 👋 Soy tu **Asesor Normativo ISO y SGC** en OOMAPASC.\n\nEstoy conectado en tiempo real para resolver tus dudas operativas o consultar el estado de tu área. Toca una opción rápida o escribe el número (**1, 2, 3 o 4**):`,
+  esBienvenida: true,
+  clausulas: [],
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+};
 
 export default function AgenteISOView({ setActiveTab }) {
   const {
@@ -236,7 +365,8 @@ export default function AgenteISOView({ setActiveTab }) {
     setPlanesMejora,
     indicadoresData,
     setIndicadoresData,
-    areasDetalle
+    areasDetalle,
+    puedeTodasAreas
   } = useSGC();
   const toast = useToast();
 
@@ -251,36 +381,86 @@ export default function AgenteISOView({ setActiveTab }) {
     });
   }, [usuarioLogueado, accionesCorrectivas, planesMejora, indicadoresData, documentos]);
 
+  // Control de Permisos: Solo el Super Administrador puede agregar documentos al modelo RAG
+  const esSuperAdmin = useMemo(() => {
+    const rol = (usuarioLogueado?.rol || '').toLowerCase();
+    const nombre = (usuarioLogueado?.nombre || '').toLowerCase();
+    return rol.includes('super') || rol === 'super_admin' || rol === 'super admin' || nombre.includes('héctor') || nombre.includes('hector') || usuarioLogueado?.id === 1;
+  }, [usuarioLogueado]);
+
   // Pestañas principales
   const [tabActiva, setTabActiva] = useState('chat'); // 'chat' | 'consultas' | 'base' | 'clausulas'
 
-  const [normas, setNormas] = useState([]);
+  // Altura del chat en escritorio: lo que queda de pantalla debajo de su borde superior
+  // (el banner de captura y el header varían), sin provocar scroll en <main>.
+  const chatRef = useRef(null);
+  const [chatAlto, setChatAlto] = useState(null);
+  useLayoutEffect(() => {
+    const calcular = () => {
+      const el = chatRef.current;
+      if (!el || window.innerWidth < 768) { setChatAlto(null); return; }
+      const main = el.closest('main');
+      const top = el.getBoundingClientRect().top + (main ? main.scrollTop : 0);
+      setChatAlto(Math.max(420, window.innerHeight - top - 24));
+    };
+    calcular();
+    window.addEventListener('resize', calcular);
+    // Si el banner de captura u otro bloque superior aparece/desaparece, recalcular.
+    const contenido = chatRef.current?.closest('main')?.firstElementChild;
+    const ro = contenido && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(calcular) : null;
+    if (ro) ro.observe(contenido);
+    return () => { window.removeEventListener('resize', calcular); if (ro) ro.disconnect(); };
+  }, [tabActiva]);
+
+  const [normas, setNormas] = useState(NORMAS_BASE);
   const [normaSeleccionada, setNormaSeleccionada] = useState(''); // '' = todas
   const [documentosConocimiento, setDocumentosConocimiento] = useState([]);
-  const [cargandoNormas, setCargandoNormas] = useState(true);
+  const [cargandoNormas, setCargandoNormas] = useState(false);
 
   // Modales de Acción Rápida desde la IA
   const [modalIndicadorIA, setModalIndicadorIA] = useState({ open: false, indicador: null });
   const [modalActividadEvidenciaIA, setModalActividadEvidenciaIA] = useState({ open: false, accion: null });
   const [modalRatificarDocIA, setModalRatificarDocIA] = useState({ open: false, documento: null });
 
-  // Chat State
-  const [mensajes, setMensajes] = useState([
-    {
-      id: 'bienvenida',
-      emisor: 'agente',
-      texto: `**¡Hola! Soy tu Agente Auditor y Asesor Normativo y Documental ISO.**\n\nEstoy conectado en tiempo real a tu perfil operativo:\n- **Colaborador:** ${usuarioLogueado?.nombre || 'Colaborador SGC'} | **Área:** ${usuarioLogueado?.area || 'Control y Servicios'} (${usuarioLogueado?.direccion || 'Dir. Comercial'})\n- **Normas ISO Oficiales:** ISO 9001:2015 / ISO 9001:2026 (Enmiendas Climáticas), ISO 14001:2015, ISO 45001:2018 e ISO 19011:2018.\n- **Documentación Interna del Portal SGC:** Manual de Calidad \`MC-01\`, Procedimientos (\`PR-CAL-01\`, \`PR-MEJ-01\`, \`PR-POT-01\`, \`PR-AUD-01\`), Formatos/Registros (\`OOMRSC-20\`, \`OOMRSC-21\`, \`REG-CLORO-01\`), Cuadro de Control (\`OOMRSC-05\`) y Matriz de Trazabilidad Documental.\n\nPuedes preguntarme **"¿Qué tengo pendiente hoy?"** o pedirme directamente **"Actualiza el indicador #70 con 92%"**, **"Subir evidencia a AC#1/26"** o **"Ratificar procedimiento PR-CS-01"** para ejecutar y guardar los datos en su módulo correspondiente.`,
-      clausulas: [],
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const storageKey = `${CHAT_STORAGE_KEY_PREFIX}${usuarioLogueado?.id || 'default'}`;
+
+  // Chat State (Persistido durante 2 días en localStorage por colaborador)
+  const [mensajes, setMensajes] = useState(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const ahora = Date.now();
+        // Si el historial tiene menos de 2 días de antigüedad (48 horas), recuperarlo
+        if (parsed?.savedAt && (ahora - parsed.savedAt < CHAT_RETENTION_MS) && Array.isArray(parsed?.mensajes) && parsed.mensajes.length > 0) {
+          return parsed.mensajes;
+        }
+      }
+    } catch (e) {
+      console.warn('Error al recuperar historial de chat guardado:', e);
     }
-  ]);
+    return [MENSAJE_BIENVENIDA_DEFAULT];
+  });
+
+  // Guardar automáticamente en localStorage con TTL de 2 días cada vez que cambien los mensajes
+  useEffect(() => {
+    if (!mensajes || mensajes.length === 0) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        savedAt: Date.now(),
+        mensajes
+      }));
+    } catch (e) {
+      console.warn('Error al persistir historial del Asesor ISO:', e);
+    }
+  }, [mensajes, storageKey]);
   const [inputPregunta, setInputPregunta] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [copiadoId, setCopiadoId] = useState(null);
 
   // Explorador de Cláusulas State
   const [normaExplorando, setNormaExplorando] = useState('ISO-9001-2026');
-  const [clausulasNorma, setClausulasNorma] = useState([]);
+  const [clausulasNorma, setClausulasNorma] = useState(() => CLAUSULAS_FALLBACK['ISO-9001-2026'] || []);
   const [cargandoClausulas, setCargandoClausulas] = useState(false);
   const [busquedaClausula, setBusquedaClausula] = useState('');
 
@@ -298,7 +478,7 @@ export default function AgenteISOView({ setActiveTab }) {
   };
 
   useEffect(() => {
-    if (tabActiva === 'chat') {
+    if (tabActiva === 'chat' && (mensajes.length > 1 || enviando)) {
       scrollToBottom();
     }
   }, [mensajes, enviando, tabActiva]);
@@ -306,7 +486,15 @@ export default function AgenteISOView({ setActiveTab }) {
   // Cargar normas y documentos al montar
   useEffect(() => {
     cargarNormasYDocumentos();
+    cargarClausulas('ISO-9001-2026');
   }, []);
+
+  // Autocargar cláusulas al entrar al tab si aún no se han cargado
+  useEffect(() => {
+    if (tabActiva === 'clausulas' && clausulasNorma.length === 0 && !cargandoClausulas) {
+      cargarClausulas(normaExplorando || 'ISO-9001-2026');
+    }
+  }, [tabActiva]);
 
   const cargarNormasYDocumentos = async () => {
     setCargandoNormas(true);
@@ -314,8 +502,8 @@ export default function AgenteISOView({ setActiveTab }) {
       const resNormas = await fetch('/api/v1/iso/normas');
       if (resNormas.ok) {
         const data = await resNormas.json();
-        setNormas(data.normas || []);
         if (data.normas && data.normas.length > 0) {
+          setNormas(data.normas);
           cargarClausulas(data.normas[0].id);
           setNormaExplorando(data.normas[0].id);
         }
@@ -327,23 +515,28 @@ export default function AgenteISOView({ setActiveTab }) {
         setDocumentosConocimiento(dataDocs.documentos || []);
       }
     } catch (e) {
-      console.error('Error cargando base de conocimiento ISO:', e);
+      console.warn('Backend ISO offline, usando catálogo base de normas:', e);
     } finally {
       setCargandoNormas(false);
     }
   };
 
   const cargarClausulas = async (normaId) => {
+    // Si tenemos fallback para esta norma, cargarlo inmediatamente para que no haya pantalla en blanco
+    if (CLAUSULAS_FALLBACK[normaId] && CLAUSULAS_FALLBACK[normaId].length > 0) {
+      setClausulasNorma(CLAUSULAS_FALLBACK[normaId]);
+    }
     setCargandoClausulas(true);
     try {
       const res = await fetch(`/api/v1/iso/clausulas/${normaId}`);
       if (res.ok) {
         const data = await res.json();
-        setClausulasNorma(data.clausulas || []);
+        if (data.clausulas && data.clausulas.length > 0) {
+          setClausulasNorma(data.clausulas);
+        }
       }
     } catch (e) {
-      console.error('Error cargando cláusulas:', e);
-      toast.error('No se pudieron cargar las cláusulas');
+      console.warn('Error al cargar cláusulas del servidor, conservando catálogo base:', e);
     } finally {
       setCargandoClausulas(false);
     }
@@ -371,9 +564,23 @@ export default function AgenteISOView({ setActiveTab }) {
     toast.success('Operación ejecutada y registrada en el SGC exitosamente');
   };
 
-  const handleEnviarConsulta = async (preguntaTexto = null, normaOverride = null) => {
-    const texto = (preguntaTexto !== null ? preguntaTexto : inputPregunta).trim();
-    if (!texto || enviando) return;
+  const handleEnviarConsulta = async (preguntaTexto = null, normaOverride = null, textoVisibleUsuario = null) => {
+    let rawTexto = (preguntaTexto !== null ? preguntaTexto : inputPregunta).trim();
+    if (!rawTexto || enviando) return;
+
+    let texto = rawTexto;
+    let labelUsuario = textoVisibleUsuario || rawTexto;
+
+    // Detectar si el usuario escribió solo un número (1, 2, 3 o 4) o "opcion 1", "#1", "1.", etc.
+    const matchNumero = rawTexto.match(/^(?:opci[oó]n\s*|#\s*)?([1-4])\.?$/i);
+    if (matchNumero) {
+      const numEncontrado = matchNumero[1];
+      const opcion = OPCIONES_RAPIDAS_MENU.find(o => o.num === numEncontrado);
+      if (opcion) {
+        texto = opcion.prompt;
+        labelUsuario = opcion.textoVisible;
+      }
+    }
 
     // Cambiar a la pestaña de chat automáticamente
     setTabActiva('chat');
@@ -383,7 +590,7 @@ export default function AgenteISOView({ setActiveTab }) {
     const userMsg = {
       id: Date.now().toString(),
       emisor: 'usuario',
-      texto,
+      texto: labelUsuario,
       normaId,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -423,9 +630,25 @@ export default function AgenteISOView({ setActiveTab }) {
     const esEvidenciaAC = (textoLower.includes('subir evidencia') || textoLower.includes('evidencia') || textoLower.includes('revisar actividad') || /actividad\s+de\s+ac/i.test(textoLower)) && !textoLower.includes('¿qué');
     if (esEvidenciaAC) {
       const matchAC = textoLower.match(/ac\s*#?\s*(\d+)/i) || textoLower.match(/(\d+)/);
-      const acNum = matchAC ? Number(matchAC[1]) : (contextoOperativoActual.acciones_pendientes[0]?.id || 1);
-      const acEncontrada = accionesCorrectivas.find(a => String(a.id) === String(acNum) || String(a.folio || '').includes(String(acNum))) ||
-                           accionesCorrectivas[0] || null;
+      const acNum = matchAC ? Number(matchAC[1]) : (contextoOperativoActual.acciones_pendientes[0]?.id || null);
+      const acEncontrada = acNum
+        ? (contextoOperativoActual.acciones_pendientes.find(a => String(a.id) === String(acNum) || String(a.folio || '').includes(String(acNum))) ||
+           accionesCorrectivas.find(a => String(a.id) === String(acNum) || String(a.folio || '').includes(String(acNum))))
+        : contextoOperativoActual.acciones_pendientes[0] || null;
+
+      if (!acEncontrada) {
+        setMensajes(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            emisor: 'agente',
+            texto: `ℹ️ **No se encontró ninguna acción correctiva abierta en seguimiento oficial.**\n\nTu área no tiene folios pendientes ni actividades vencidas en este momento conforme a la norma ISO 9001 § 10.2.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+        setEnviando(false);
+        return;
+      }
 
       setModalActividadEvidenciaIA({ open: true, accion: acEncontrada });
       setMensajes(prev => [
@@ -463,9 +686,268 @@ export default function AgenteISOView({ setActiveTab }) {
       return;
     }
 
+    // 4. Intención de Diagnóstico Ejecutivo / "¿Qué tengo pendiente?" / Opción 1
+    const rawTrim = (rawTexto || '').trim();
+    const esConsultaDiagnostico =
+      rawTrim === '1' ||
+      /^(?:opci[oó]n\s*1|#1|1[.)\s]?)$/i.test(rawTrim) ||
+      /^(?:qu[eé]\s+tengo\s+pendiente|\?qu[eé]\s+tengo\s+pendiente\??|diagn[oó]stico|pendientes|mis\s+pendientes|resumen(?:\s+operativo)?)$/i.test(rawTrim) ||
+      texto.includes('Necesito el balance ejecutivo de Acciones Correctivas') ||
+      ((textoLower.includes('qué tengo pendiente') || textoLower.includes('que tengo pendiente') || textoLower.includes('diagnóstico') || textoLower.includes('diagnostico')) &&
+        !textoLower.includes('cuál') && !textoLower.includes('cual') && !textoLower.includes('cómo van') && !textoLower.includes('como van'));
+
+    if (esConsultaDiagnostico) {
+      const tablaResumen = generarBriefingMarkdownLocal(contextoOperativoActual, { soloCuadro: true });
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: tablaResumen,
+          clausulas: [], // Sin botones ni links a cláusulas
+          normaConsultada: 'SGC OOMAPASC (Diagnóstico)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 5. Pregunta concreta de seguimiento: ¿Cuáles son los indicadores incumplidos / críticos?
+    const esPreguntaIndicadoresIncumplidos =
+      /(?:cu[aá]les|qu[eé]).*(?:incumplid|cr[ií]tic|no\s+cumpl)/i.test(textoLower) ||
+      /(?:indicadores?\s+(?:incumplidos?|cr[ií]ticos?))/i.test(textoLower) ||
+      (/cu[aá]les\s+son\s+los\s+\d+/i.test(textoLower) && (textoLower.includes('incumplid') || textoLower.includes('indicador')));
+
+    if (esPreguntaIndicadoresIncumplidos) {
+      const indsInc = (contextoOperativoActual?.indicadores_area || []).filter(i => i.es_incumplido || i.semaforo === 'Crítico' || i.cumple === 'NO');
+      let respuestaInds = '';
+      if (indsInc.length === 0) {
+        respuestaInds = `🎯 **Indicadores SGC (OOMRSC-05):**\n\nTodos los indicadores de tu área se encuentran en **cumplimiento** conforme a sus metas vigentes. No hay indicadores en semáforo crítico o incumplidos.`;
+      } else {
+        respuestaInds = `🎯 **Indicadores Incumplidos de tu Área (${indsInc.length}):**\n\n` +
+          indsInc.map((ind, idx) => {
+            return `${idx + 1}. **#${ind.numero ?? ind.id} ${ind.nombre}**\n` +
+              `   - **Meta:** ${ind.meta} ${ind.unidad || ''} | **Valor Real:** ${ind.valor_real} ${ind.unidad || ''} (${ind.porcentaje}%)\n` +
+              `   - **Semáforo:** 🔴 Crítico / Incumplido\n` +
+              `   - **Proceso:** ${ind.proceso || 'Operativo'}`;
+          }).join('\n\n') +
+          `\n\n💡 *Para actualizar o capturar un valor, escribe: "actualizar indicador #${indsInc[0]?.numero ?? indsInc[0]?.id}".*`;
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaInds,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-05 (Indicadores)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 6. Pregunta de seguimiento combinada: Acciones Correctivas y Planes de Mejora (Opción 4 del menú)
+    const esPreguntaACyPM =
+      (/(?:acci[oó]n|acciones).*(?:plan|planes)/i.test(textoLower) ||
+       /(?:plan|planes).*(?:acci[oó]n|acciones)/i.test(textoLower)) &&
+      !textoLower.includes('¿qué tengo pendiente');
+
+    if (esPreguntaACyPM) {
+      const acs = (contextoOperativoActual?.acciones_pendientes || []);
+      const borradores = (contextoOperativoActual?.borradores_ac || []);
+      const pms = (contextoOperativoActual?.planes_mejora_activos || []);
+      let respuestaBloque = '';
+
+      // Bloque Acciones Correctivas (OOMRSC-20)
+      if (acs.length === 0 && borradores.length === 0) {
+        respuestaBloque += `✅ **Acciones Correctivas (OOMRSC-20):**\n\nNo tienes acciones correctivas abiertas ni borradores pendientes en tu área.\n\n`;
+      } else {
+        if (acs.length > 0) {
+          respuestaBloque += `⚠️ **Acciones Correctivas Abiertas en Seguimiento (${acs.length}):**\n\n` +
+            acs.map((ac, idx) => {
+              const diasTxt = ac.dias_restantes !== null ? ` (${ac.dias_restantes} días restantes)` : '';
+              return `${idx + 1}. **[${ac.folio}] ${ac.titulo}**\n` +
+                `   - **Estado:** \`${ac.estado}\` | **Auditor:** ${ac.auditor_asignado}\n` +
+                `   - **Fecha Límite:** ${ac.fecha_limite}${diasTxt}\n` +
+                `   - **Causa / Hallazgo:** ${ac.descripcion}`;
+            }).join('\n\n') +
+            `\n\n💡 *Para subir evidencias de actividades, escribe: "subir evidencia para ${acs[0]?.folio}".*\n\n`;
+        } else {
+          respuestaBloque += `✅ **Acciones Correctivas en Seguimiento:**\n\nNo tienes acciones correctivas abiertas en seguimiento oficial.\n\n`;
+        }
+
+        if (borradores.length > 0) {
+          respuestaBloque += `📝 **Borradores pendientes de envío / ratificación (${borradores.length}):**\n\n` +
+            borradores.map((b, idx) => {
+              return `${idx + 1}. **${b.titulo}**\n` +
+                `   - **Estado:** \`BORRADOR\` (En preparación)\n` +
+                `   - **Fecha de registro:** ${b.fecha_creacion}\n` +
+                `   - **Detalle:** ${b.descripcion}`;
+            }).join('\n\n') +
+            `\n\n*(Estos borradores aún no han sido enviados al SGC ni cuentan con folio oficial asignado).*\n\n`;
+        }
+      }
+
+      // Bloque Planes de Mejora (OOMRSC-21)
+      if (pms.length === 0) {
+        respuestaBloque += `🚀 **Planes de Mejora Continua (OOMRSC-21):**\n\nNo hay planes de mejora activos registrados actualmente para tu área.`;
+      } else {
+        respuestaBloque += `🚀 **Planes de Mejora Activos (${pms.length}):**\n\n` +
+          pms.map((pm, idx) => {
+            const diasTxt = pm.dias_restantes !== null ? ` (${pm.dias_restantes} días restantes)` : '';
+            return `${idx + 1}. **[${pm.folio}] ${pm.titulo}**\n` +
+              `   - **Estado:** \`${pm.estado}\` | **Avance:** ${pm.avance}%\n` +
+              `   - **Fecha Compromiso:** ${pm.fecha_termino}${diasTxt}\n` +
+              `   - **Presupuesto:** $${pm.presupuestoEstimado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}\n` +
+              `   - **Objetivo:** ${pm.descripcion}`;
+          }).join('\n\n');
+      }
+
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaBloque,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-20 y OOMRSC-21 (Seguimiento Operativo)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 6b. Pregunta concreta de seguimiento: ¿Cuáles son las acciones correctivas abiertas?
+    const esPreguntaACAbiertas =
+      /(?:cu[aá]les|qu[eé]).*(?:acci[oó]n|acciones).*(?:abiert|pendient|seguimiento)/i.test(textoLower) ||
+      /(?:acciones?\s+(?:correctivas?\s+)?(?:abiertas?|pendientes?))/i.test(textoLower);
+
+    if (esPreguntaACAbiertas) {
+      const acs = (contextoOperativoActual?.acciones_pendientes || []);
+      const borradores = (contextoOperativoActual?.borradores_ac || []);
+      let respuestaAC = '';
+
+      if (acs.length === 0 && borradores.length === 0) {
+        respuestaAC = `✅ **Acciones Correctivas (OOMRSC-20):**\n\nNo tienes acciones correctivas abiertas ni borradores pendientes en tu área.`;
+      } else {
+        if (acs.length > 0) {
+          respuestaAC += `⚠️ **Acciones Correctivas Abiertas en Seguimiento (${acs.length}):**\n\n` +
+            acs.map((ac, idx) => {
+              const diasTxt = ac.dias_restantes !== null ? ` (${ac.dias_restantes} días restantes)` : '';
+              return `${idx + 1}. **[${ac.folio}] ${ac.titulo}**\n` +
+                `   - **Estado:** \`${ac.estado}\` | **Auditor:** ${ac.auditor_asignado}\n` +
+                `   - **Fecha Límite:** ${ac.fecha_limite}${diasTxt}\n` +
+                `   - **Causa / Hallazgo:** ${ac.descripcion}`;
+            }).join('\n\n') +
+            `\n\n💡 *Para subir evidencias de actividades, escribe: "subir evidencia para ${acs[0]?.folio}".*\n\n`;
+        } else {
+          respuestaAC += `✅ **Acciones Correctivas en Seguimiento:**\n\nNo tienes acciones correctivas abiertas en seguimiento oficial.\n\n`;
+        }
+
+        if (borradores.length > 0) {
+          respuestaAC += `📝 **Borradores pendientes de envío / ratificación (${borradores.length}):**\n\n` +
+            borradores.map((b, idx) => {
+              return `${idx + 1}. **${b.titulo}**\n` +
+                `   - **Estado:** \`BORRADOR\` (En preparación)\n` +
+                `   - **Fecha de registro:** ${b.fecha_creacion}\n` +
+                `   - **Detalle:** ${b.descripcion}`;
+            }).join('\n\n') +
+            `\n\n*(Estos borradores aún no han sido enviados al SGC ni cuentan con folio oficial asignado).*`;
+        }
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaAC,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-20 (Acciones Correctivas)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 7. Pregunta concreta de seguimiento: ¿Cuáles son los planes de mejora?
+    const esPreguntaPM =
+      /(?:cu[aá]les|qu[eé]).*(?:plan|planes).*(?:mejora|activ|vencer)/i.test(textoLower) ||
+      /(?:planes?\s+de\s+mejora\s+(?:activos?|pendientes?))/i.test(textoLower);
+
+    if (esPreguntaPM) {
+      const pms = (contextoOperativoActual?.planes_mejora_activos || []);
+      let respuestaPM = '';
+      if (pms.length === 0) {
+        respuestaPM = `🚀 **Planes de Mejora Continua (OOMRSC-21):**\n\nNo hay planes de mejora activos registrados actualmente para tu área.`;
+      } else {
+        respuestaPM = `🚀 **Planes de Mejora Activos (${pms.length}):**\n\n` +
+          pms.map((pm, idx) => {
+            const diasTxt = pm.dias_restantes !== null ? ` (${pm.dias_restantes} días restantes)` : '';
+            return `${idx + 1}. **[${pm.folio}] ${pm.titulo}**\n` +
+              `   - **Estado:** \`${pm.estado}\` | **Avance:** ${pm.avance}%\n` +
+              `   - **Fecha Compromiso:** ${pm.fecha_termino}${diasTxt}\n` +
+              `   - **Presupuesto Estimado:** $${pm.presupuestoEstimado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}\n` +
+              `   - **Objetivo:** ${pm.descripcion}`;
+          }).join('\n\n');
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaPM,
+          clausulas: [],
+          normaConsultada: 'OOMRSC-21 (Planes de Mejora)',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
+    // 8. Pregunta concreta de seguimiento: ¿Cuáles son los documentos sin revisar (>1 año)?
+    const esPreguntaDocsAntiguos =
+      /(?:cu[aá]les|qu[eé]).*doc.*(?:1 a[ñn]o|antiguo|sin revisar|vencido)/i.test(textoLower) ||
+      /documentos?\s+sin\s+revisar/i.test(textoLower);
+
+    if (esPreguntaDocsAntiguos) {
+      const docs = (contextoOperativoActual?.documentos_antiguos_sin_revision || []);
+      let respuestaDocs = '';
+      if (docs.length === 0) {
+        respuestaDocs = `📑 **Control Documental (§ 7.5.3):**\n\nTodos los documentos y procedimientos de tu área están vigentes (revisados en los últimos 365 días).`;
+      } else {
+        respuestaDocs = `📑 **Documentos con más de 1 año sin revisión (${docs.length}):**\n\n` +
+          docs.slice(0, 10).map((d, idx) => {
+            return `${idx + 1}. **[${d.clave}] ${d.titulo}**\n` +
+              `   - **Tipo:** ${d.tipo} | **Versión:** ${d.version}\n` +
+              `   - **Última Revisión:** ${d.fecha} (${d.dias_sin_revision} días sin actualizar)`;
+          }).join('\n\n') +
+          (docs.length > 10 ? `\n\n*...y ${docs.length - 10} documentos más.*` : '') +
+          `\n\n💡 *Para ratificar la vigencia de alguno, escribe: "ratificar ${docs[0]?.clave}".*`;
+      }
+      setMensajes(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          emisor: 'agente',
+          texto: respuestaDocs,
+          clausulas: [],
+          normaConsultada: 'ISO 9001 § 7.5.3',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setEnviando(false);
+      return;
+    }
+
     try {
       const historial = mensajes
-        .filter(m => m.id !== 'bienvenida')
+        .filter(m => m.id !== 'bienvenida' && m.texto && m.texto.trim())
         .map(m => ({
           role: m.emisor === 'usuario' ? 'user' : 'assistant',
           content: m.texto
@@ -490,12 +972,13 @@ export default function AgenteISOView({ setActiveTab }) {
       }
 
       const data = await res.json();
+      const agenteTexto = (data.respuesta && data.respuesta.trim()) || 'En el catálogo oficial del SGC de OOMAPASC no se encuentra registrado dicho formato o documento.';
 
       const agenteMsg = {
         id: (Date.now() + 1).toString(),
         emisor: 'agente',
-        texto: data.respuesta,
-        clausulas: data.clausulas_citadas || [],
+        texto: agenteTexto,
+        clausulas: [],
         normaConsultada: data.norma_consultada,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -512,26 +995,24 @@ export default function AgenteISOView({ setActiveTab }) {
     } catch (e) {
       console.warn('Backend ISO offline or fallback needed:', e);
       
-      // Detección inteligente de consulta de pendientes o estado operativo
-      const esConsultaOperativa = /pendiente|pendientes|área|area|indicador|indicadores|plan|planes|documento|documentos|año|ano|vencer|revisar|revision|resumen/i.test(texto);
+      const textoTrim = texto.toLowerCase().trim();
+      const esSaludo = /^(hola|buen[oa]s?\s*(d[ií]as|tardes|noches)?|saludos|hey|qu[eé]\s+tal)[\s!.]*$/i.test(textoTrim);
+      const esConsultaOperativa = /pendiente|pendientes|área|area|indicador|indicadores|plan|planes|documento|documentos|año|ano|vencer|revisar|revision|resumen/i.test(textoTrim);
       
       let respuestaFinal = '';
-      if (esConsultaOperativa) {
-        respuestaFinal = generarBriefingMarkdownLocal(contextoOperativoActual);
+      if (esSaludo) {
+        respuestaFinal = '👋 ¡Hola! Soy tu Asesor Normativo ISO y SGC en OOMAPASC. ¿En qué puedo orientarte hoy? Puedes consultarme sobre procedimientos, requisitos ISO o consultar el estado de tu área marcando el número **1**.';
+      } else if (esConsultaOperativa) {
+        respuestaFinal = generarBriefingMarkdownLocal(contextoOperativoActual, { soloCuadro: true });
       } else {
-        respuestaFinal = `⚠️ **Nota:** El motor de IA en la nube respondió con un retraso, pero aquí tienes el diagnóstico operativo en tiempo real de tu área:\n\n` + generarBriefingMarkdownLocal(contextoOperativoActual);
+        respuestaFinal = '⚠️ No pude conectar con el motor de IA en la nube para procesar esta pregunta en específico. Por favor intenta reformularla, consultar sobre un procedimiento oficial, o marca **1** para ver tus pendientes.';
       }
 
       const agenteMsg = {
         id: (Date.now() + 1).toString(),
         emisor: 'agente',
         texto: respuestaFinal,
-        clausulas: [
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '7.5.3', titulo: 'Control de la información documentada y mantenimiento activo' },
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '9.1.3', titulo: 'Análisis y evaluación de indicadores (OOMRSC-05)' },
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '10.2', titulo: 'No conformidad y acción correctiva (OOMRSC-20)' },
-          { norma_id: 'ISO-9001-2026', norma: 'ISO 9001:2026', numero: '10.3', titulo: 'Mejora continua (OOMRSC-21)' }
-        ],
+        clausulas: [],
         normaConsultada: normaId || 'SGC OOMAPASC (Operativo)',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -584,7 +1065,7 @@ export default function AgenteISOView({ setActiveTab }) {
     }
   };
 
-  // Formateador robusto de Markdown con soporte para tablas
+  // Formateador robusto y compacto de Markdown con soporte para tablas y código
   const renderMarkdown = (content) => {
     if (!content) return null;
     const lines = content.split('\n');
@@ -597,9 +1078,10 @@ export default function AgenteISOView({ setActiveTab }) {
       // Detección de tablas Markdown
       if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
         const tableLines = [];
-        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
-          tableLines.push(lines[i].trim());
-          i++;
+        let j = i;
+        while (j < lines.length && lines[j].trim().startsWith('|') && lines[j].trim().endsWith('|')) {
+          tableLines.push(lines[j].trim());
+          j++;
         }
         if (tableLines.length >= 2) {
           const headerRow = tableLines[0].split('|').slice(1, -1).map(c => c.trim());
@@ -608,12 +1090,12 @@ export default function AgenteISOView({ setActiveTab }) {
             .map(row => row.split('|').slice(1, -1).map(c => c.trim()));
 
           elements.push(
-            <div key={`tbl-${i}`} className="my-3.5 overflow-x-auto rounded-xl border border-slate-200 shadow-xs bg-white">
-              <table className="min-w-full text-xs text-left divide-y divide-slate-200">
+            <div key={`tbl-${i}`} className="my-2.5 overflow-x-auto rounded-xl border border-slate-200 shadow-2xs bg-white">
+              <table className="min-w-full text-[11.5px] text-left divide-y divide-slate-200">
                 <thead className="bg-[#0B192C] text-white">
                   <tr>
                     {headerRow.map((h, hIdx) => (
-                      <th key={hIdx} className="px-3.5 py-2.5 font-extrabold uppercase tracking-wider text-[11px]">
+                      <th key={hIdx} className="px-3 py-2 font-extrabold uppercase tracking-wider text-[10.5px]">
                         {formatBold(h)}
                       </th>
                     ))}
@@ -621,9 +1103,9 @@ export default function AgenteISOView({ setActiveTab }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {bodyRows.map((r, rIdx) => (
-                    <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white hover:bg-sky-50/50' : 'bg-slate-50/70 hover:bg-sky-50/50'}>
+                    <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white hover:bg-sky-50/50' : 'bg-slate-50/60 hover:bg-sky-50/50'}>
                       {r.map((cell, cIdx) => (
-                        <td key={cIdx} className="px-3.5 py-2.5 text-slate-800 leading-relaxed font-normal">
+                        <td key={cIdx} className="px-3 py-1.5 text-slate-800 leading-normal font-normal">
                           {formatBold(cell)}
                         </td>
                       ))}
@@ -633,6 +1115,7 @@ export default function AgenteISOView({ setActiveTab }) {
               </table>
             </div>
           );
+          i = j;
           continue;
         }
       }
@@ -640,35 +1123,35 @@ export default function AgenteISOView({ setActiveTab }) {
       // Títulos
       if (line.startsWith('### ')) {
         elements.push(
-          <h4 key={i} className="font-black text-sm text-[#002855] mt-4 mb-1.5 flex items-center gap-1.5">
+          <h4 key={i} className="font-bold text-xs text-[#002855] mt-2 mb-0.5 flex items-center gap-1.5">
             {formatBold(line.replace('### ', ''))}
           </h4>
         );
       } else if (line.startsWith('## ')) {
         elements.push(
-          <h3 key={i} className="font-black text-base text-[#002855] mt-5 mb-2.5 border-b border-slate-200 pb-1.5 flex items-center gap-2">
+          <h3 key={i} className="font-bold text-[12.5px] text-[#002855] mt-2 mb-0.5 border-b border-slate-200 pb-0.5 flex items-center gap-1.5">
             {formatBold(line.replace('## ', ''))}
           </h3>
         );
       } else if (line.startsWith('# ')) {
         elements.push(
-          <h2 key={i} className="font-black text-lg text-[#002855] mt-5 mb-3">
+          <h2 key={i} className="font-extrabold text-[13px] text-[#002855] mt-2.5 mb-1">
             {formatBold(line.replace('# ', ''))}
           </h2>
         );
       } else if (line.trim().startsWith('• ') || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         elements.push(
-          <li key={i} className="ml-4 list-disc text-xs text-slate-700 my-0.5 leading-relaxed">
+          <li key={i} className="ml-3.5 list-disc text-xs text-slate-700 my-0.5 leading-snug">
             {formatBold(line.trim().substring(2))}
           </li>
         );
       } else if (line.trim() === '') {
-        elements.push(<div key={i} className="h-1.5" />);
+        elements.push(<div key={i} className="h-0.5" />);
       } else if (line.trim() === '---') {
-        elements.push(<hr key={i} className="my-3 border-slate-200" />);
+        elements.push(<hr key={i} className="my-1.5 border-slate-200" />);
       } else {
         elements.push(
-          <p key={i} className="text-xs text-slate-700 leading-relaxed my-1">
+          <p key={i} className="text-xs text-slate-700 leading-normal my-0.5">
             {formatBold(line)}
           </p>
         );
@@ -681,134 +1164,241 @@ export default function AgenteISOView({ setActiveTab }) {
 
   const formatBold = (text) => {
     if (!text) return text;
-    const parts = text.split(/(\*\*.*?\*\*)/g);
+    if (typeof text !== 'string') return text;
+    // Soporte para saltos de línea con <br> o <br/> (ej. tablas ordenadas verticalmente)
+    if (/<br\s*\/?>/i.test(text)) {
+      const lineas = text.split(/<br\s*\/?>/i);
+      return lineas.map((sub, idx) => (
+        <React.Fragment key={idx}>
+          {idx > 0 && <br />}
+          {formatBold(sub)}
+        </React.Fragment>
+      ));
+    }
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+        return <strong key={i} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={i} className="font-bold text-slate-900 not-italic">{part.slice(1, -1)}</em>;
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <code key={i} className="font-mono text-[10.5px] bg-sky-50 text-sky-900 border border-sky-200 px-1 py-0.2 rounded font-bold">
+            {part.slice(1, -1)}
+          </code>
+        );
       }
       return part;
     });
   };
 
-  const clausulasFiltradas = clausulasNorma.filter(c => {
+  const renderContenidoDetallado = (texto) => {
+    if (!texto) return null;
+    const lineas = texto.split('\n');
+    return (
+      <div className="space-y-1">
+        {lineas.map((line, lIdx) => {
+          let trimmed = line.trim();
+          if (!trimmed) return null;
+
+          // Limpiar prefijos de áreas técnicas y administrativas para no confundir al usuario
+          const limpiarEtiquetasArea = (t) => {
+            if (!t) return '';
+            return t
+              .replace(/^[\*\s-]*(?:Áreas\s+Técnicas|Área\s+Técnica|Técnica|Áreas\s+Administrativas|Área\s+Administrativa|Administrativa|General)[\*\s]*:[\*\s]*/i, '')
+              .replace(/^[\*\s-]*(?:Áreas\s+Técnicas|Área\s+Técnica|Técnica|Áreas\s+Administrativas|Área\s+Administrativa|Administrativa|General)[\*\s]*-[\*\s]*/i, '');
+          };
+
+          if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+            const itemText = limpiarEtiquetasArea(trimmed.substring(2).trim());
+            return (
+              <div key={lIdx} className="flex items-start gap-1.5 pl-1 text-[11.5px] leading-relaxed">
+                <span className="text-sky-600 font-bold mt-0.5">•</span>
+                <span className="flex-1">{formatBold(itemText)}</span>
+              </div>
+            );
+          }
+          return (
+            <p key={lIdx} className="text-[11.5px] leading-relaxed">
+              {formatBold(limpiarEtiquetasArea(trimmed))}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const clausulasFiltradas = (clausulasNorma || []).filter(c => {
+    if (!c) return false;
     if (!busquedaClausula) return true;
     const b = busquedaClausula.toLowerCase();
-    return c.numero.toLowerCase().includes(b) ||
-      c.titulo.toLowerCase().includes(b) ||
-      c.requisito.toLowerCase().includes(b) ||
-      c.interpretacion.toLowerCase().includes(b);
+    return (c.numero || '').toLowerCase().includes(b) ||
+      (c.titulo || '').toLowerCase().includes(b) ||
+      (c.requisito || '').toLowerCase().includes(b) ||
+      (c.interpretacion || '').toLowerCase().includes(b) ||
+      (c.criterio_auditoria || '').toLowerCase().includes(b) ||
+      (c.evidencia_objetiva || '').toLowerCase().includes(b);
   });
 
   return (
-    <div className="space-y-5 animate-fade-in-up pb-10">
-      {/* HEADER DEL AGENTE */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] p-6 rounded-2xl shadow-xl text-white border border-slate-700/60 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 shrink-0">
-              <Sparkles size={28} />
+    <div className="space-y-3 animate-fade-in-up pb-4 md:pb-0">
+      {/* HEADER ESCRITORIO (Visible en pantallas medianas y grandes) */}
+      <div className="hidden md:block bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] px-4 py-2.5 rounded-2xl shadow-md text-white border border-slate-700/60 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-2.5">
+          {/* Título e Identidad */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
+              <Sparkles size={17} />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-2xl font-black tracking-tight text-white">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-sm sm:text-base font-black tracking-tight text-white">
                   Asesor & Auditor Normativo ISO (IA)
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-sky-400/20 text-sky-300 border border-sky-400/30">
-                  RAG Estricto Grounded
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-sky-400/20 text-sky-300 border border-sky-400/30">
+                  RAG Grounded
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                  OOMAPASC Calidad
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                  OOMAPASC
                 </span>
               </div>
-              <p className="text-xs text-slate-300 font-medium mt-1 max-w-3xl leading-relaxed">
-                Consultas fundamentadas exclusivamente en la documentación oficial de normas ISO (9001, 14001, 45001, 19011) y lineamientos de auditoría para una correcta ejecución y resolución satisfactoria.
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-            <button
-              onClick={() => setModalDocCustomAbierto(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold rounded-xl text-xs transition-all shadow-md cursor-pointer"
-            >
-              <Plus size={15} strokeWidth={3} /> Agregar Documento a Base
-            </button>
+          {/* Navegación de Pestañas */}
+          <div className="flex items-center gap-1.5 flex-wrap w-full lg:w-auto justify-start lg:justify-end">
+            <div className="flex items-center gap-1 p-1 bg-black/30 backdrop-blur-xs rounded-xl border border-white/10 flex-wrap text-xs">
+              <button
+                onClick={() => setTabActiva('chat')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'chat'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <MessageSquare size={13} />
+                <span>Asesor Chat</span>
+              </button>
+
+              <button
+                onClick={() => setTabActiva('consultas')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'consultas'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <HelpCircle size={13} />
+                <span>Consultas ({PREGUNTAS_CATEGORIZADAS.reduce((acc, c) => acc + c.preguntas.length, 0)})</span>
+              </button>
+
+              <button
+                onClick={() => setTabActiva('base')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'base'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <BookMarked size={13} />
+                <span>Base Normas ({documentosConocimiento.length || normas.length})</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setTabActiva('clausulas');
+                  if (normas.length > 0 && !clausulasNorma.length) {
+                    cargarClausulas(normas[0].id);
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  tabActiva === 'clausulas'
+                    ? 'bg-sky-400 text-slate-950 shadow-xs font-black'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <BookOpen size={13} />
+                <span>Explorador Cláusulas</span>
+              </button>
+            </div>
+
+            {esSuperAdmin && (
+              <button
+                onClick={() => setModalDocCustomAbierto(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black rounded-xl text-xs transition-all shadow-xs cursor-pointer ml-1"
+                title="Solo el Super Administrador puede agregar documentos a la base del modelo"
+              >
+                <Plus size={13} strokeWidth={3} />
+                <span>+ Agregar Documento</span>
+              </button>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* NAVEGACIÓN DE PESTAÑAS PRINCIPALES */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setTabActiva('chat')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'chat'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <MessageSquare size={15} /> Asesor Normativo (Pantalla Completa)
-            </button>
+      {/* ============================================================ */}
+      {/* PESTAÑA 1: CHAT ESTILO WHATSAPP (MÓVIL & ESCRITORIO) */}
+      {/* ============================================================ */}
+      {tabActiva === 'chat' && (
+        <div ref={chatRef} style={chatAlto ? { height: chatAlto } : undefined} className="w-full bg-[#f0f2f5] rounded-2xl shadow-card-subtle border border-slate-300/80 flex flex-col h-[calc(100vh-175px)] min-h-[420px] overflow-hidden">
+          {/* Header Móvil estilo WhatsApp */}
+          <div className="md:hidden px-3 py-2 bg-[#001f42] text-white flex items-center justify-between shadow-xs shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#00a884] flex items-center justify-center text-white shadow-xs">
+                <Bot size={18} />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold leading-tight flex items-center gap-1.5">
+                  Asesor ISO OOMAPASC
+                </h3>
+                <span className="text-[10px] text-emerald-300 flex items-center gap-1 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  En línea · RAG Grounded
+                </span>
+              </div>
+            </div>
 
-            <button
-              onClick={() => setTabActiva('consultas')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'consultas'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <HelpCircle size={15} /> Consultas Frecuentes
-              <span className="px-1.5 py-0.2 bg-black/20 text-[10px] rounded-full font-mono">
-                {PREGUNTAS_CATEGORIZADAS.reduce((acc, c) => acc + c.preguntas.length, 0)}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setTabActiva('base')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'base'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <BookMarked size={15} /> Base Indexada & Normas
-              <span className="px-1.5 py-0.2 bg-black/20 text-[10px] rounded-full font-mono">
-                {documentosConocimiento.length || normas.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                setTabActiva('clausulas');
-                if (normas.length > 0 && !clausulasNorma.length) {
-                  cargarClausulas(normas[0].id);
-                }
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                tabActiva === 'clausulas'
-                  ? 'bg-sky-400 text-slate-950 shadow-md ring-2 ring-sky-300/40'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/20'
-              }`}
-            >
-              <BookOpen size={15} /> Explorador de Cláusulas
-            </button>
+            <div className="flex items-center gap-1.5">
+              <select
+                value={normaSeleccionada}
+                onChange={(e) => setNormaSeleccionada(e.target.value)}
+                className="bg-slate-800 text-slate-200 border border-slate-700 text-[10px] font-bold rounded-lg px-2 py-1 outline-none max-w-[125px] truncate"
+                title="Norma a consultar"
+              >
+                <option value="">Todas las normas</option>
+                {normas.map(n => <option key={n.id} value={n.id}>{n.id}</option>)}
+              </select>
+              {mensajes.length > 1 && (
+                <button
+                  onClick={() => {
+                    setMensajes([MENSAJE_BIENVENIDA_DEFAULT]);
+                    try { localStorage.removeItem(storageKey); } catch (e) {}
+                    toast.info('Chat reiniciado');
+                  }}
+                  className="p-1 rounded-lg text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors"
+                  title="Reiniciar chat"
+                >
+                  <RefreshCw size={12} />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Filtro por norma activo en chat */}
-          {tabActiva === 'chat' && (
+          {/* Header Escritorio (Filtros de norma y exportación) */}
+          <div className="hidden md:flex px-4 py-2 bg-slate-50 border-b border-slate-200 items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
-                <ShieldCheck size={13} className="text-sky-400" /> Norma:
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-extrabold text-slate-800 mr-1">
+                Norma:
               </span>
               <button
                 onClick={() => setNormaSeleccionada('')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
                   normaSeleccionada === ''
-                    ? 'bg-white text-slate-950 shadow-xs'
-                    : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                    ? 'bg-[#0B192C] text-white shadow-2xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
                 }`}
               >
                 Todas
@@ -817,384 +1407,168 @@ export default function AgenteISOView({ setActiveTab }) {
                 <button
                   key={n.id}
                   onClick={() => setNormaSeleccionada(n.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
                     normaSeleccionada === n.id
-                      ? 'bg-white text-slate-950 shadow-xs'
-                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                      ? 'bg-[#0B192C] text-white shadow-2xs'
+                      : 'bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200'
                   }`}
                 >
                   {n.id.replace(/-/g, ' ')}
                 </button>
               ))}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* ============================================================ */}
-      {/* PESTAÑA 1: CHAT A PANTALLA COMPLETA (AMPLIADO 100%) */}
-      {/* ============================================================ */}
-      {tabActiva === 'chat' && (
-        <div className="w-full bg-white rounded-2xl shadow-card-subtle border border-slate-200 flex flex-col h-[740px] overflow-hidden">
-          {/* Header de conversación y chips rápidos */}
-          <div className="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2.5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-slate-800">
-                  Sesión Activa con Asesor Normativo ISO
-                </span>
-                {normaSeleccionada ? (
-                  <span className="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded border border-sky-200">
-                    Filtro: {normaSeleccionada}
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-mono font-bold bg-slate-200/70 text-slate-700 px-2 py-0.5 rounded">
-                    Búsqueda Global (4 Normas + Guías de Transición)
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                {mensajes.filter(m => m.id !== 'bienvenida').length > 0 && (
-                  <>
-                    <button
-                      onClick={() => {
-                        exportarSesionCompletaISOPDF({ mensajes, usuario: usuarioLogueado });
-                        toast.success('Sesión consolidada descargada en PDF');
-                      }}
-                      className="text-[11px] font-bold text-sky-950 bg-sky-100 hover:bg-sky-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-sky-200 shadow-2xs"
-                      title="Descargar todas las consultas de la sesión en un informe PDF"
-                    >
-                      <Download size={12} className="text-sky-700" /> Descargar Sesión (PDF)
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        exportarSesionCompletaISOMarkdown({ mensajes, usuario: usuarioLogueado });
-                        toast.success('Historial descargado en Markdown (.md)');
-                      }}
-                      className="text-[11px] font-bold text-slate-700 bg-white hover:bg-slate-100 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-slate-200 shadow-2xs"
-                      title="Descargar historial de consultas en archivo Markdown"
-                    >
-                      <FileDown size={12} className="text-slate-600" /> Exportar .MD
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={() => setMensajes([mensajes[0]])}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors cursor-pointer ml-1"
-                >
-                  <RefreshCw size={13} /> Limpiar Chat
-                </button>
-              </div>
-            </div>
-
-            {/* LIVE AREA BRIEFING BANNER */}
-            <div className="bg-gradient-to-r from-slate-900 via-[#0B192C] to-[#1E3E62] p-3 rounded-xl text-white shadow-xs border border-slate-700/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <div className="px-2.5 py-1 rounded-lg bg-sky-500/20 border border-sky-400/30 text-sky-300 font-extrabold text-[11px] flex items-center gap-1.5">
-                  <Activity size={13} className="text-sky-400 animate-pulse" />
-                  <span>Área: {contextoOperativoActual.area}</span>
-                </div>
-
-                <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-                  {/* Badge ACs */}
-                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
-                    contextoOperativoActual.resumen_conteos.total_ac_pendientes > 0
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/30'
-                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                  }`}>
-                    <AlertTriangle size={11} /> {contextoOperativoActual.resumen_conteos.total_ac_pendientes} ACs
-                  </span>
-
-                  {/* Badge PMs */}
-                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
-                    contextoOperativoActual.resumen_conteos.total_pm_proximos_vencer > 0
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse'
-                      : 'bg-sky-500/20 text-sky-300 border-sky-400/30'
-                  }`}>
-                    <TrendingUp size={11} /> {contextoOperativoActual.resumen_conteos.total_pm_activos} PMs {contextoOperativoActual.resumen_conteos.total_pm_proximos_vencer > 0 ? '(⚠️ por vencer)' : ''}
-                  </span>
-
-                  {/* Badge Indicadores */}
-                  <span className={`px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border ${
-                    contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/30'
-                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                  }`}>
-                    <Target size={11} /> {contextoOperativoActual.resumen_conteos.total_indicadores} Inds. {contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos > 0 ? `(🔴 ${contextoOperativoActual.resumen_conteos.total_indicadores_incumplidos} Incump.)` : `(🟢 Cumple)`}
-                  </span>
-
-                  {/* Badge Docs >1 año */}
-                  {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
-                    <span className="px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border bg-amber-500/20 text-amber-300 border-amber-400/30">
-                      <FileWarning size={11} /> {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision} Docs &gt;1 año
-                    </span>
-                  )}
-
-                  {/* Badge Docs Borrador */}
-                  {contextoOperativoActual.resumen_conteos.total_docs_pendientes_aprobacion > 0 && (
-                    <span className="px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border bg-purple-500/20 text-purple-300 border-purple-400/30">
-                      <FileText size={11} /> {contextoOperativoActual.resumen_conteos.total_docs_pendientes_aprobacion} Borrador/SGC
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-                <button
-                  onClick={() => handleEnviarConsulta('¿Qué tengo pendiente en mi área hoy? Necesito el balance ejecutivo de Acciones Correctivas (OOMRSC-20), Planes de Mejora (OOMRSC-21), Indicadores del mes (OOMRSC-05), procedimientos >1 año sin revisar (§ 7.5.3) y documentos pendientes por aprobar por el SGC.')}
-                  disabled={enviando}
-                  className="px-3 py-1.5 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-black rounded-lg text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
-                  title="Obtener el diagnóstico completo de pendientes de mi área"
-                >
-                  <Zap size={14} className="text-amber-300 fill-amber-300" />
-                  <span>¿Qué tengo pendiente?</span>
-                </button>
-
-                <button
-                  onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
-                  className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                  title="Capturar o actualizar valor de un indicador del área"
-                >
-                  <Target size={13} />
-                  <span>Actualizar Indicador</span>
-                </button>
-
-                <button
-                  onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null })}
-                  className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                  title="Subir evidencia o marcar actividad de una Acción Correctiva"
-                >
-                  <AlertTriangle size={13} />
-                  <span>Subir Evidencia AC</span>
-                </button>
-
-                {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
-                  <button
-                    onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
-                    className="px-2.5 py-1.5 bg-purple-500 hover:bg-purple-400 text-white font-extrabold rounded-lg text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                    title="Ratificar vigencia de procedimientos con >1 año sin revisar"
-                  >
-                    <ShieldCheck size={13} />
-                    <span>Ratificar Doc &gt;1 año</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Chips Rápidos de Consulta */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                Sugerencias:
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="hidden lg:inline text-[10px] text-slate-500 font-mono mr-1" title="Contexto operativo del área">
+                {contextoOperativoActual?.area || 'General'} · {contextoOperativoActual?.resumen_conteos?.total_ac_pendientes ?? 0} AC · {contextoOperativoActual?.resumen_conteos?.total_indicadores ?? 0} ind.
               </span>
-              {CHIPS_RAPIDOS.map((chip, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleEnviarConsulta(chip.query, chip.norma)}
-                  disabled={enviando}
-                  className="px-2.5 py-1 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg text-[11px] font-medium text-slate-700 hover:text-sky-900 transition-all shrink-0 cursor-pointer shadow-xs disabled:opacity-50"
-                >
-                  {chip.label}
-                </button>
-              ))}
+              {mensajes.filter(m => m.id !== 'bienvenida').length > 0 && (
+                <>
+                  <button
+                    onClick={() => {
+                      exportarSesionCompletaISOPDF({ mensajes, usuario: usuarioLogueado });
+                      toast.success('Sesión consolidada descargada en PDF');
+                    }}
+                    className="text-[10.5px] font-bold text-sky-900 bg-sky-100/80 hover:bg-sky-200 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-sky-200 shadow-2xs"
+                  >
+                    <Download size={11} className="text-sky-700" /> PDF Sesión
+                  </button>
+                  <button
+                    onClick={() => {
+                      exportarSesionCompletaISOMarkdown({ mensajes, usuario: usuarioLogueado });
+                      toast.success('Historial descargado en Markdown (.md)');
+                    }}
+                    className="text-[10.5px] font-bold text-slate-700 bg-white hover:bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer border border-slate-200 shadow-2xs"
+                  >
+                    <FileDown size={11} className="text-slate-600" /> .MD
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={() => {
+                  setMensajes([MENSAJE_BIENVENIDA_DEFAULT]);
+                  try { localStorage.removeItem(storageKey); } catch (e) {}
+                  toast.info('Chat reiniciado');
+                }}
+                className="text-[10.5px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors cursor-pointer px-1.5 py-1 rounded hover:bg-slate-200/50"
+                title="Reiniciar chat"
+              >
+                <RefreshCw size={11} /> Limpiar
+              </button>
             </div>
           </div>
 
-          {/* Mensajes a ancho completo */}
-          <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6 bg-gradient-to-b from-slate-50/40 to-white">
+          {/* Área de Mensajes estilo Chat de WhatsApp */}
+          <div className="flex-1 p-2.5 sm:p-4 overflow-y-auto space-y-2.5 bg-[#efeae2]/30">
             {mensajes.map((m) => {
               const esUsuario = m.emisor === 'usuario';
               return (
                 <div
                   key={m.id}
-                  className={`flex gap-4 ${esUsuario ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${esUsuario ? 'justify-end' : 'justify-start'} animate-fade-in`}
                 >
-                  {!esUsuario && (
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0 mt-0.5">
-                      <Bot size={22} />
-                    </div>
-                  )}
-
                   <div
-                    className={`max-w-[95%] lg:max-w-[90%] rounded-2xl p-5 shadow-sm text-xs ${
+                    className={`relative text-xs sm:text-[13px] leading-relaxed shadow-2xs ${
                       esUsuario
-                        ? 'bg-[#002855] text-white rounded-tr-none'
-                        : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none ring-1 ring-slate-100'
+                        ? 'bg-[#d9fdd3] text-[#111b21] rounded-2xl rounded-tr-xs border border-[#bbf7ad]/60 max-w-[85%] sm:max-w-[75%] p-2.5 sm:p-3 ml-auto'
+                        : 'bg-white text-slate-850 rounded-2xl rounded-tl-xs border border-slate-200/80 max-w-[92%] sm:max-w-[82%] p-2.5 sm:p-3 mr-auto'
                     }`}
                   >
-                    {/* Badge y Timestamp */}
-                    <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-100">
-                      <span className={`font-bold text-xs ${esUsuario ? 'text-sky-300' : 'text-[#002855]'}`}>
-                        {esUsuario ? (usuarioLogueado?.nombre || 'Auditor / Usuario') : 'Agente Asesor Normativo ISO'}
-                      </span>
-                      <span className={`text-[10px] font-mono ${esUsuario ? 'text-slate-300' : 'text-slate-400'}`}>
-                        {m.timestamp}
-                      </span>
-                    </div>
+                    {!esUsuario && (
+                      <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-slate-100 text-[10px]">
+                        <span className="font-bold text-emerald-800 flex items-center gap-1">
+                          <Bot size={13} className="text-emerald-600" /> Asesor ISO · OOMAPASC
+                        </span>
+                        <span className="text-slate-400 font-mono text-[9.5px]">{m.timestamp}</span>
+                      </div>
+                    )}
 
-                    {/* Contenido formateado */}
-                    <div className="space-y-1.5 leading-relaxed">
+                    {/* Contenido del mensaje */}
+                    <div className="space-y-1">
                       {esUsuario ? (
-                        <p className="leading-relaxed font-semibold text-sm">{m.texto}</p>
+                        <p className="font-medium">{m.texto}</p>
                       ) : (
                         renderMarkdown(m.texto)
                       )}
                     </div>
 
-                    {/* Cláusulas citadas */}
-                    {!esUsuario && m.clausulas && m.clausulas.length > 0 && (
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
-                          <Scale size={13} className="text-sky-600" /> Cláusulas Oficiales Citadas:
+                    {/* Opciones Rápidas integradas en el Mensaje de Bienvenida */}
+                    {m.esBienvenida && (
+                      <div className="mt-2.5 pt-2 border-t border-slate-200/80 space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                          Opciones Rápidas (Toca una opción o escribe el número):
                         </span>
-                        {m.clausulas.map((c, i) => (
-                          <button
-                            key={i}
-                            onClick={() => {
-                              setNormaExplorando(c.norma_id || 'ISO-9001-2026');
-                              cargarClausulas(c.norma_id || 'ISO-9001-2026');
-                              setTabActiva('clausulas');
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[11px] font-mono font-bold text-sky-900 transition-colors cursor-pointer"
-                            title={`${c.norma} § ${c.numero} - ${c.titulo}`}
-                          >
-                            <span>§ {c.numero}</span>
-                            <span className="text-slate-600 font-sans truncate max-w-[200px]">{c.titulo}</span>
-                          </button>
-                        ))}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {OPCIONES_RAPIDAS_MENU.map((opt) => (
+                            <button
+                              key={opt.num}
+                              onClick={() => handleEnviarConsulta(opt.prompt, null, opt.textoVisible)}
+                              disabled={enviando}
+                              className="w-full text-left p-2 rounded-xl bg-slate-50 hover:bg-emerald-50 active:bg-emerald-100 border border-slate-200 hover:border-emerald-300 transition-all cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-slate-800 group-hover:bg-[#00a884] text-white text-[10px] font-black flex items-center justify-center shrink-0 transition-colors">
+                                {opt.num}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-950 block truncate">
+                                  {opt.icono} {opt.titulo}
+                                </span>
+                                <span className="text-[10px] text-slate-500 block truncate">
+                                  {opt.subtitulo}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
 
-                    {/* Acciones de respuesta */}
-                    {!esUsuario && m.id !== 'bienvenida' && (
-                      <div className="mt-4 pt-3 border-t border-slate-100 space-y-2.5 text-xs">
-                        {/* Botones de acción directa disparables desde la respuesta del Agente */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mr-1">
-                            Acciones Directas:
-                          </span>
-                          <button
-                            onClick={() => setModalIndicadorIA({ open: true, indicador: contextoOperativoActual.indicadores_area[0] || null })}
-                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                            title="Capturar o actualizar valor de un indicador del área"
-                          >
-                            <Target size={12} className="text-emerald-600" />
-                            <span>Actualizar Indicador</span>
-                          </button>
-                          <button
-                            onClick={() => setModalActividadEvidenciaIA({ open: true, accion: contextoOperativoActual.acciones_pendientes[0] || null })}
-                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                            title="Subir evidencia o marcar actividad de una Acción Correctiva"
-                          >
-                            <AlertTriangle size={12} className="text-amber-600" />
-                            <span>Subir Evidencia / AC</span>
-                          </button>
-                          {contextoOperativoActual.resumen_conteos.total_docs_antiguos_sin_revision > 0 && (
-                            <button
-                              onClick={() => setModalRatificarDocIA({ open: true, documento: contextoOperativoActual.documentos_antiguos_sin_revision[0] || null })}
-                              className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                              title="Ratificar revisión activa de documento > 1 año"
-                            >
-                              <ShieldCheck size={12} className="text-purple-600" />
-                              <span>Ratificar Doc &gt;1 año</span>
-                            </button>
-                          )}
-                        </div>
 
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-                          <div className="flex items-center gap-3">
-                            {setActiveTab && (
-                              <button
-                                onClick={() => setActiveTab('ac')}
-                                className="text-[#002855] hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                              >
-                                Ir a Acciones Correctivas (OOMRSC-20) <ArrowRight size={12} />
-                              </button>
-                            )}
-                          </div>
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            onClick={() => {
-                              const idx = mensajes.findIndex((item) => item.id === m.id);
-                              const pregunta = obtenerPreguntaPrevia(idx);
-                              exportarConsultaISOPDF({
-                                pregunta,
-                                respuesta: m.texto,
-                                clausulas: m.clausulas || [],
-                                normaConsultada: m.normaConsultada || normaSeleccionada || 'Todas las Normas ISO y SGC',
-                                usuario: usuarioLogueado,
-                                timestamp: m.timestamp
-                              });
-                              toast.success('Dictamen PDF generado y descargado');
-                            }}
-                            className="flex items-center gap-1 text-sky-950 font-bold px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 transition-all cursor-pointer shadow-2xs text-[11px]"
-                            title="Descargar esta respuesta como Dictamen Técnico en PDF"
-                          >
-                            <Download size={13} className="text-sky-700" />
-                            <span>Descargar PDF</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              const idx = mensajes.findIndex((item) => item.id === m.id);
-                              const pregunta = obtenerPreguntaPrevia(idx);
-                              exportarConsultaISOMarkdown({
-                                pregunta,
-                                respuesta: m.texto,
-                                clausulas: m.clausulas || [],
-                                normaConsultada: m.normaConsultada || normaSeleccionada || 'Todas las Normas ISO y SGC',
-                                usuario: usuarioLogueado,
-                                timestamp: m.timestamp
-                              });
-                              toast.success('Archivo Markdown (.md) descargado');
-                            }}
-                            className="flex items-center gap-1 text-slate-700 font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer shadow-2xs text-[11px]"
-                            title="Descargar esta respuesta en formato Markdown (.md)"
-                          >
-                            <FileDown size={13} className="text-slate-600" />
-                            <span>Descargar .MD</span>
-                          </button>
-
+                    {/* Acciones de exportar o copiar */}
+                    {!esUsuario && !m.esBienvenida && (
+                      <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => copiarAlPortapapeles(m.texto, m.id)}
-                            className="flex items-center gap-1 text-slate-500 hover:text-slate-800 font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer text-[11px]"
-                            title="Copiar texto al portapapeles"
+                            className="hover:text-slate-700 font-medium flex items-center gap-1 transition-colors"
                           >
                             {copiadoId === m.id ? (
                               <>
-                                <Check size={13} className="text-emerald-600" />
-                                <span className="text-emerald-700">Copiado</span>
+                                <Check size={11} className="text-emerald-600" />
+                                <span className="text-emerald-700 font-bold">Copiado</span>
                               </>
                             ) : (
                               <>
-                                <Copy size={13} />
+                                <Copy size={11} />
                                 <span>Copiar</span>
                               </>
                             )}
                           </button>
                         </div>
+                        <span>{m.timestamp}</span>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Hora del mensaje para el usuario estilo WhatsApp */}
+                    {esUsuario && (
+                      <div className="flex items-center justify-end gap-1 mt-0.5 text-[9.5px] text-slate-500">
+                        <span>{m.timestamp}</span>
+                        <span className="text-sky-600 font-bold">✓✓</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
 
+            {/* Indicador de escribiendo */}
             {enviando && (
-              <div className="flex gap-4 justify-start animate-fade-in">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0B192C] to-[#002855] text-sky-400 flex items-center justify-center shadow-md shrink-0">
-                  <Bot size={22} className="animate-spin" />
-                </div>
-                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-4.5 shadow-sm text-xs text-slate-700 flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-ping" />
-                  <span className="font-bold text-slate-800">
-                    Analizando base de conocimiento ISO y requisitos técnicos de OOMAPASC...
-                  </span>
+              <div className="flex justify-start animate-fade-in">
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-3.5 py-2 shadow-2xs flex items-center gap-2 text-xs text-slate-600">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-medium text-slate-700">El Asesor está escribiendo...</span>
                 </div>
               </div>
             )}
@@ -1202,39 +1576,33 @@ export default function AgenteISOView({ setActiveTab }) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Barra de entrada a ancho completo */}
-          <div className="p-4 bg-white border-t border-slate-200">
+          {/* Barra de Entrada estilo WhatsApp */}
+          <div className="p-2 sm:p-2.5 bg-[#f0f2f5] border-t border-slate-200 shrink-0">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleEnviarConsulta();
               }}
-              className="flex items-center gap-3"
+              className="flex items-center gap-2"
             >
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={inputPregunta}
-                  onChange={(e) => setInputPregunta(e.target.value)}
-                  placeholder="Escribe tu duda sobre cualquier cláusula ISO (ej. ¿Cómo cumplir con el 8.5.1 en redes y plantas?)..."
-                  disabled={enviando}
-                  className="w-full pl-5 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:bg-white outline-none transition-all disabled:opacity-60"
-                />
-              </div>
+              <input
+                type="text"
+                value={inputPregunta}
+                onChange={(e) => setInputPregunta(e.target.value)}
+                placeholder="Escribe tu consulta o marca 1, 2, 3 o 4..."
+                disabled={enviando}
+                className="flex-1 bg-white border border-slate-300 rounded-full px-4 py-2 text-xs sm:text-[13px] outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder:text-slate-400 shadow-2xs disabled:opacity-60"
+              />
 
               <button
                 type="submit"
                 disabled={!inputPregunta.trim() || enviando}
-                className="px-6 py-3.5 bg-[#002855] hover:bg-[#001f42] text-white font-black rounded-xl text-xs flex items-center gap-2 transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                className="w-9 h-9 rounded-full bg-[#00a884] hover:bg-[#008f6f] active:scale-95 text-white flex items-center justify-center shadow-xs shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                title="Enviar mensaje (o marca 1, 2, 3 o 4)"
               >
-                <span>Consultar</span>
                 <Send size={15} />
               </button>
             </form>
-            <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1 font-medium">
-              <Info size={12} className="text-sky-600" />
-              El Asesor Normativo responderá citando cláusulas exactas, evidencias requeridas para auditorías y recomendaciones operativas.
-            </p>
           </div>
         </div>
       )}
@@ -1324,14 +1692,17 @@ export default function AgenteISOView({ setActiveTab }) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setModalDocCustomAbierto(true)}
-                  className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
-                >
-                  <Plus size={15} strokeWidth={3} /> Agregar Documento Personalizado
-                </button>
-              </div>
+              {esSuperAdmin && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setModalDocCustomAbierto(true)}
+                    className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    title="Solo el Super Administrador puede registrar nuevos documentos en la base de la IA"
+                  >
+                    <Plus size={15} strokeWidth={3} /> Agregar Documento Personalizado
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Listado de Documentos */}
@@ -1451,69 +1822,135 @@ export default function AgenteISOView({ setActiveTab }) {
           </div>
 
           {/* Listado de Cláusulas */}
-          <div className="p-6 overflow-y-auto max-h-[650px] space-y-4">
+          <div className="p-4 overflow-y-auto max-h-[calc(100vh-300px)] space-y-3">
             {cargandoClausulas ? (
               <div className="p-16 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                 <RefreshCw size={24} className="animate-spin text-sky-600" />
                 <span>Cargando cláusulas oficiales de la norma...</span>
               </div>
             ) : clausulasFiltradas.length === 0 ? (
-              <div className="p-16 text-center text-xs text-slate-500">
-                No se encontraron cláusulas para los términos ingresados.
+              <div className="p-16 text-center text-xs text-slate-500 flex flex-col items-center gap-3">
+                <span className="font-medium text-slate-600">No se encontraron cláusulas para la norma o filtro seleccionado.</span>
+                <button
+                  onClick={() => cargarClausulas(normaExplorando || 'ISO-9001-2026')}
+                  className="px-4 py-2 bg-[#002855] text-white rounded-xl font-bold text-xs hover:bg-[#0B192C] transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <RefreshCw size={14} />
+                  <span>Cargar Cláusulas Oficiales de {normaExplorando}</span>
+                </button>
               </div>
             ) : (
-              clausulasFiltradas.map((cl, idx) => (
-                <div
-                  key={idx}
-                  className="p-5 rounded-2xl border border-slate-200/90 bg-slate-50/40 hover:bg-white hover:border-sky-300 transition-all space-y-3 shadow-xs"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/70">
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-xs font-black bg-[#002855] text-white px-2.5 py-1 rounded-lg shadow-xs">
-                        § {cl.numero}
-                      </span>
-                      <h4 className="font-black text-sm text-slate-900">{cl.titulo}</h4>
-                    </div>
-                    <button
-                      onClick={() => {
-                        handleEnviarConsulta(`Explícame a detalle el cumplimiento de la cláusula ${cl.numero} (${cl.titulo}) para el organismo OOMAPASC y qué evidencia objetiva se requiere.`, normaExplorando);
-                      }}
-                      className="px-3 py-1.5 bg-sky-100 hover:bg-sky-200 text-sky-950 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-xs"
+              clausulasFiltradas.map((cl, idx) => {
+                const esCapitulo = !!cl.es_capitulo || /^\d+\.?$/.test((cl.numero || '').trim()) || /^Cap[ií]tulo/i.test(cl.numero || '');
+
+                if (esCapitulo) {
+                  return (
+                    <div
+                      key={idx}
+                      className="my-5 p-6 rounded-3xl bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#002855] text-white shadow-xl border border-sky-900/60 relative overflow-hidden"
                     >
-                      <Bot size={14} /> Consultar con Asesor IA →
-                    </button>
-                  </div>
+                      <div className="absolute top-0 right-0 w-80 h-80 bg-sky-400/10 rounded-full blur-3xl pointer-events-none" />
+                      <div className="relative z-10 flex flex-col items-center text-center space-y-2.5">
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-400/20 text-sky-200 border border-sky-400/30 text-xs font-mono font-black uppercase tracking-wider shadow-inner">
+                          <span>📌 CAPÍTULO PRINCIPAL DE LA NORMA</span>
+                          <span>•</span>
+                          <span>§ {cl.numero}</span>
+                        </div>
+                        <h3 className="text-base sm:text-lg font-black tracking-tight text-white max-w-3xl leading-snug">
+                          {cl.titulo}
+                        </h3>
+                        {cl.requisito && cl.requisito.trim() && (
+                          <div className="text-xs sm:text-sm text-sky-100/90 max-w-3xl leading-relaxed font-medium pt-1">
+                            {renderContenidoDetallado(cl.requisito)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
 
-                  <div className="text-xs space-y-2 text-slate-700 leading-relaxed">
-                    <div className="p-3 bg-white rounded-xl border border-slate-200/70">
-                      <span className="text-[11px] font-extrabold text-slate-900 block mb-0.5">📌 Requisito Oficial:</span>
-                      <p className="text-slate-700">{cl.requisito}</p>
+                return (
+                  <div
+                    key={idx}
+                    className="p-5 rounded-2xl border border-slate-200/90 bg-white hover:border-sky-300 hover:shadow-md transition-all space-y-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-sm font-black bg-[#002855] text-white px-3 py-1 rounded-xl shadow-xs">
+                          § {cl.numero}
+                        </span>
+                        <h4 className="font-black text-base text-slate-900 tracking-tight">{cl.titulo}</h4>
+                      </div>
+                      <button
+                        onClick={() => {
+                          handleEnviarConsulta(`Explícame a detalle el cumplimiento de la cláusula ${cl.numero} (${cl.titulo}) para el organismo OOMAPASC y qué evidencia objetiva se requiere.`, normaExplorando);
+                        }}
+                        className="px-3.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-[#002855] border border-sky-200 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Bot size={14} className="text-sky-600" /> Consultar con Asesor IA →
+                      </button>
                     </div>
 
-                    {cl.interpretacion && (
-                      <div className="p-3 bg-sky-50/50 rounded-xl border border-sky-100">
-                        <span className="text-[11px] font-extrabold text-[#002855] block mb-0.5">🛠️ Interpretación Técnica OOMAPASC:</span>
-                        <p className="text-slate-800">{cl.interpretacion}</p>
+                    {/* Requisito Oficial Centrado y Destacado en Grande */}
+                    {cl.requisito && (
+                      <div className="p-4 sm:p-5 bg-gradient-to-b from-sky-50/50 via-white to-slate-50/70 rounded-2xl border border-sky-200/80 shadow-xs space-y-2">
+                        <div className="flex items-center justify-center">
+                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-sky-100 text-sky-950 border border-sky-300/80 flex items-center gap-1.5 shadow-2xs">
+                            <span>📜</span>
+                            <span>Requisito Oficial de la Norma</span>
+                          </span>
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold text-slate-900 text-center leading-relaxed max-w-4xl mx-auto px-2">
+                          {renderContenidoDetallado(cl.requisito)}
+                        </div>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    {/* Interpretación General OOMAPASC */}
+                    {cl.interpretacion && (
+                      <div className="p-4 bg-sky-50/70 rounded-2xl border border-sky-100 shadow-2xs">
+                        <span className="text-[11px] font-black text-[#002855] block mb-1.5 flex items-center gap-1.5">
+                          <span>🛠️</span>
+                          <span>Interpretación Institucional en OOMAPASC:</span>
+                        </span>
+                        <div className="text-xs text-slate-800 leading-relaxed font-medium">
+                          {renderContenidoDetallado(cl.interpretacion)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Evidencias Objetivas & Criterio Universal de Auditoría */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-0.5">
                       {cl.evidencia_objetiva && (
-                        <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                          <span className="text-[11px] font-extrabold text-emerald-900 block mb-0.5">📑 Evidencia Objetiva Requerida:</span>
-                          <p className="text-emerald-950">{cl.evidencia_objetiva}</p>
+                        <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100 shadow-2xs flex flex-col justify-between">
+                          <div>
+                            <span className="text-[11px] font-black text-emerald-950 block mb-1.5 flex items-center gap-1.5">
+                              <span>📑</span>
+                              <span>Evidencias Objetivas Requeridas:</span>
+                            </span>
+                            <div className="text-xs text-emerald-950 leading-relaxed font-medium">
+                              {renderContenidoDetallado(cl.evidencia_objetiva)}
+                            </div>
+                          </div>
                         </div>
                       )}
                       {cl.criterio_auditoria && (
-                        <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100">
-                          <span className="text-[11px] font-extrabold text-purple-900 block mb-0.5">💡 Criterio de Auditoría / Cierre:</span>
-                          <p className="text-purple-950">{cl.criterio_auditoria}</p>
+                        <div className="p-4 bg-purple-50/60 rounded-2xl border border-purple-100 shadow-2xs flex flex-col justify-between">
+                          <div>
+                            <span className="text-[11px] font-black text-purple-950 block mb-1.5 flex items-center gap-1.5">
+                              <span>💡</span>
+                              <span>Criterio Universal de Auditoría / Cierre:</span>
+                            </span>
+                            <div className="text-xs text-purple-950 leading-relaxed font-medium">
+                              {renderContenidoDetallado(cl.criterio_auditoria)}
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -1526,7 +1963,8 @@ export default function AgenteISOView({ setActiveTab }) {
         <ContenedorModal
           isOpen
           onClose={() => setModalDocCustomAbierto(false)}
-          size="lg"
+          size="3xl"
+          anchoMaximo="max-w-[88vw] xl:max-w-[1200px]"
           backdropClassName="bg-black/60 backdrop-blur-sm"
         >
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
@@ -1597,8 +2035,9 @@ export default function AgenteISOView({ setActiveTab }) {
       <ModalActualizarIndicadorIA
         isOpen={modalIndicadorIA.open}
         onClose={() => setModalIndicadorIA({ open: false, indicador: null })}
+        indicadorPreseleccionado={modalIndicadorIA.indicador}
         indicadorInicial={modalIndicadorIA.indicador}
-        indicadoresLista={contextoOperativoActual.indicadores_area || []}
+        indicadoresLista={contextoOperativoActual?.indicadores_area || []}
         indicadoresData={indicadoresData}
         setIndicadoresData={setIndicadoresData}
         usuarioLogueado={usuarioLogueado}
@@ -1606,13 +2045,17 @@ export default function AgenteISOView({ setActiveTab }) {
         onAccionConfirmada={handleAccionConfirmada}
       />
 
-      {/* 2. Modal Gestionar Actividad y Subir Evidencia AC */}
+      {/* 2. Modal Gestionar Actividad y Subir Evidencia (AC / PM) */}
       <ModalGestionarActividadEvidenciaIA
         isOpen={modalActividadEvidenciaIA.open}
-        onClose={() => setModalActividadEvidenciaIA({ open: false, accion: null })}
-        accionInicial={modalActividadEvidenciaIA.accion}
-        accionesLista={accionesCorrectivas || []}
+        onClose={() => setModalActividadEvidenciaIA({ open: false, accion: null, plan: null })}
+        accionPreseleccionada={modalActividadEvidenciaIA.accion}
+        planPreseleccionado={modalActividadEvidenciaIA.plan}
+        accionesCorrectivas={accionesCorrectivas || []}
         setAccionesCorrectivas={setAccionesCorrectivas}
+        planesMejora={planesMejora || []}
+        setPlanesMejora={setPlanesMejora}
+        puedeTodasAreas={puedeTodasAreas}
         usuarioLogueado={usuarioLogueado}
         registrarMovimiento={registrarMovimiento}
         onAccionConfirmada={handleAccionConfirmada}
@@ -1622,7 +2065,9 @@ export default function AgenteISOView({ setActiveTab }) {
       <ModalRatificarDocumentoIA
         isOpen={modalRatificarDocIA.open}
         onClose={() => setModalRatificarDocIA({ open: false, documento: null })}
+        documentoPreseleccionado={modalRatificarDocIA.documento}
         documentoInicial={modalRatificarDocIA.documento}
+        documentos={documentos || []}
         documentosLista={documentos || []}
         setDocumentos={setDocumentos}
         usuarioLogueado={usuarioLogueado}

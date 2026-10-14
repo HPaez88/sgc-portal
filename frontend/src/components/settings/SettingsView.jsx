@@ -1678,7 +1678,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* MODAL: NUEVA / EDITAR ÁREA */}
       {/* ============================================================ */}
       {modalArea.show && (
-        <ContenedorModal isOpen onClose={() => setModalArea({ show: false, esEdicion: false, data: {} })} size="lg">
+        <ContenedorModal isOpen onClose={() => setModalArea({ show: false, esEdicion: false, data: {} })} size="2xl" anchoMaximo="max-w-[85vw] xl:max-w-[1050px]">
           <div className="max-h-full overflow-y-auto bg-white rounded-2xl p-6 w-full shadow-2xl space-y-4 animate-scale-in">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-extrabold text-slate-900 text-sm tracking-tight flex items-center gap-2">
@@ -1779,7 +1779,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* MODAL: NUEVA / EDITAR DIRECCIÓN */}
       {/* ============================================================ */}
       {modalDireccion.show && (
-        <ContenedorModal isOpen onClose={() => setModalDireccion({ show: false, esEdicion: false, data: {} })} size="lg">
+        <ContenedorModal isOpen onClose={() => setModalDireccion({ show: false, esEdicion: false, data: {} })} size="2xl" anchoMaximo="max-w-[85vw] xl:max-w-[1050px]">
           <div className="max-h-full overflow-y-auto bg-white rounded-2xl p-6 w-full shadow-2xl space-y-4 animate-scale-in">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-extrabold text-slate-900 text-sm tracking-tight flex items-center gap-2">
@@ -1880,7 +1880,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* MODAL: NUEVO / EDITAR PROCESO */}
       {/* ============================================================ */}
       {modalProceso.show && (
-        <ContenedorModal isOpen onClose={() => setModalProceso({ show: false, esEdicion: false, data: {} })} size="2xl">
+        <ContenedorModal isOpen onClose={() => setModalProceso({ show: false, esEdicion: false, data: {} })} size="4xl" anchoMaximo="max-w-[92vw] xl:max-w-[1400px]">
           <div className="max-h-full overflow-y-auto bg-white rounded-2xl p-6 w-full shadow-2xl space-y-4 animate-scale-in flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <h3 className="font-extrabold text-slate-900 text-sm tracking-tight flex items-center gap-2">
@@ -2077,7 +2077,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* MODAL: NUEVO / EDITAR USUARIO */}
       {/* ============================================================ */}
       {modalUsuario.show && (
-        <ContenedorModal isOpen onClose={() => setModalUsuario({ show: false, esEdicion: false, data: {} })} size="lg">
+        <ContenedorModal isOpen onClose={() => setModalUsuario({ show: false, esEdicion: false, data: {} })} size="3xl" anchoMaximo="max-w-[88vw] xl:max-w-[1150px]">
           <div className="max-h-full overflow-y-auto bg-white rounded-2xl p-6 w-full shadow-2xl space-y-4 animate-scale-in">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-extrabold text-slate-900 text-sm tracking-tight flex items-center gap-2">

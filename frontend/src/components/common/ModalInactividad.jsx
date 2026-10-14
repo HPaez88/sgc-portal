@@ -80,7 +80,7 @@ export default function ModalInactividad() {
 
   const modalEl = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-amber-200 overflow-hidden p-6 space-y-4 animate-bounce-subtle">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-amber-200 overflow-hidden p-6 space-y-4 animate-bounce-subtle">
         <div className="flex items-center gap-3 text-amber-700">
           <div className="p-2.5 bg-amber-100 rounded-xl text-amber-600">
             <Clock size={24} className="animate-spin-slow" />

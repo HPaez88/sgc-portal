@@ -3,6 +3,53 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-14T04:41Z · @claude-code · [FEATURE] · Módulo Manual de la Calidad y anexos (consulta)
+Nuevo módulo en el menú Gobernanza: Manual OOMLSC-01 Rev 75 navegable por cláusula ISO (4.1 a 10.3) con índice y búsqueda, y una pestaña por anexo real: A18, A19 (7 direcciones), A20 y A21 como tablas filtrables; A11 organigrama como PDF embebido; A10 y A15 marcados como pendientes (formato Office 2003). Contenido generado desde los archivos oficiales de formatos/Docus Sistema con scripts/extraer_manual.py; originales descargables desde el portal. Solo lectura: la edición y el control de cambios quedan en la spec control-documental.
+- Archivos: scripts/extraer_manual.py, backend/routers/manual.py, backend/main.py, backend/knowledge/manual/, frontend/src/components/manual/ManualCalidadView.jsx, frontend/src/App.jsx, frontend/src/components/layout/Sidebar.jsx
+- Tareas STATE: M1, M2, M3
+- Deploy: SÍ
+
+## 2026-10-14T04:31Z · @claude-code · [DOCS] · Spec control-documental (proposal, plan, tasks)
+Especificación del módulo de Control Documental real: documentos por organismo con secciones, flujo borrador → revisión SGC → publicado, historial con hash, relaciones proceso/cláusula/documento que derivan las matrices A10/A18/A19/A20/A21, archivos en B2, identidad mínima en servidor y RAG sobre documentos reales. Pendiente de aprobación de @human antes de codificar.
+- Archivos: specs/control-documental/proposal.md, specs/control-documental/plan.md, specs/control-documental/tasks.md, STATE.md
+- Tareas STATE: T0.1 a T5.1 (control-documental)
+- Deploy: NO
+
+## 2026-10-09T01:23Z · @claude-code · [CLEANUP] · Campana sin función fuera del header y chat ISO que se recalcula
+La campana de notificaciones no tenía handler y mostraba un punto azul fijo: se elimina. El chat del Asesor observa el contenedor de <main> con ResizeObserver y recalcula su altura cuando el banner de captura aparece o desaparece.
+- Archivos: frontend/src/components/layout/Header.jsx, frontend/src/components/iso/AgenteISOView.jsx
+- Tareas STATE: D4
+- Deploy: SÍ
+
+## 2026-10-09T00:49Z · @claude-code · [FIX] · Escala tipográfica y densidad del Asesor ISO (harness design-direction)
+El portal se veía con letras gigantes en laptops ≥1440px: el root crecía a 17.5/18px, la escala Tailwind estaba inflada (base 1.05rem) y los `text-[10px]` se forzaban a 0.8rem. Se fija root 15px, escala estándar y mínimos legibles en px. En el Asesor Normativo el chat mide en tiempo real el espacio que queda bajo su borde (banner de captura incluido) y la barra operativa se fusiona con los filtros de norma.
+- Archivos: frontend/src/index.css, frontend/tailwind.config.js, frontend/src/components/iso/AgenteISOView.jsx, docs/design/direction.md, STATE.md
+- Tareas STATE: D1, D2, D3
+- Deploy: SÍ (VPS sgc.srv1787150.hstgr.cloud)
+
+## 2026-10-05T06:30Z · @claude-code · [DEPLOY] · Despliegue en VPS Hostinger con Docker, Traefik y respaldo a Backblaze B2
+Stack aislado en /opt/sgc: imagen única (Vite build + FastAPI/uvicorn), Postgres 16 propio, enrutado por Traefik en red `web`, respaldo diario pg_dump cifrado a B2 (`oprink-backups/sgc-portal`). GROQ_API_KEY solo en .env del servidor.
+- Archivos: Dockerfile, .dockerignore, docker-compose.yml, .env.example, deploy/sgc-backup.sh
+- Tareas STATE: D0
+- Deploy: SÍ
+
+## 2026-10-05T07:30Z · @antigravity · [FEATURE/GOVERNANCE] · Protocolo de Supervisión y Ratificación Humana (POL-TI-01 & ISO 9001/42001) e Interacción Operativa Bidireccional del Agente ISO
+
+- **Gobernanza Human-in-the-Loop Obligatoria (`ModalConfirmacionResponsabilidadHumana.jsx`):**
+  - Implementación de barrera de control en **Acciones Correctivas (OOMRSC-20)** y **Planes de Mejora (OOMRSC-21)** para evitar envíos automáticos o desatendidos asistidos por IA.
+  - El usuario debe leer el resumen, suscribir la Declaración Jurada de Responsabilidad Operativa, marcar la casilla de verificación y escribir textualmente la palabra **`CONFIRMAR`** para habilitar el envío al SGC.
+  - Persistencia de metadatos oficiales: `ratificacion_humana: true`, `ratificado_por`, `fecha_ratificacion_humana`, `declaracion_responsabilidad` e inyección de auditoría en `bitacora_movimientos` (`ENVIO_SGC_RATIFICADO_HUMANO`).
+- **Asistente Normativo ISO Bidireccional (`AgenteISOView.jsx` + `ModalesAccionIA.jsx`):**
+  - Diagnóstico ejecutivo en tiempo real por área (*"¿Qué tengo pendiente?"*).
+  - Captura directa en el Cuadro de Control OOMRSC-05 (100 indicadores oficiales) con semáforo institucional en tiempo real.
+  - Gestión y subida segura de evidencias a actividades de AC (archivos PDF/imágenes validados con `processEvidenceFile`).
+  - Ratificación activa de procedimientos con >1 año sin revisión conforme a ISO 9001 § 7.5.3.
+- **Auditoría Integral Hpaez Harness:**
+  - 70/70 pruebas unitarias aprobadas en Vitest.
+  - Cero diálogos nativos bloqueantes (`alert`/`confirm`) en frontend.
+  - Compilación de producción en Vite en 1.42s sin errores.
+  - Documentación técnica y operativa actualizada en `DOCUMENTACION.md` v5.0.0, `CONSTITUTION.md` y `AGENTS.md`.
+
 ## 2026-10-02T19:30Z · @antigravity · [FEATURE/DASHBOARD] · Torre de Control Estratégica y Panel de Revisión por la Dirección (ISO 9001 § 9.3)
 
 - **Panel Ejecutivo de Dirección Completo (`DashboardView.jsx`):** Rediseño exhaustivo para la Alta Dirección y Consejo Directivo, integrando filtros multi-período por Ejercicio (2025, 2026, 2027), Corte Temporal (Acumulado Anual, Cuatrimestres C1/C2/C3, Trimestres T1-T4) y Ámbito por Dirección (General, Técnica, Comercial, Administrativa, Programas Sociales, Órgano de Control Interno).
