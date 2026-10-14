@@ -37,6 +37,10 @@ primer día.
 - `BORRADOR → EN_REVISION → PUBLICADO | RECHAZADO → BORRADOR`, más `OBSOLETO`.
 - Publicar crea una `revision` inmutable (snapshot JSON + hash SHA-256 + aprobador). Editar un
   documento publicado abre un nuevo borrador a partir del snapshot vigente.
+- Al enviar a revisión es obligatorio el **motivo del cambio** (auditoría, hallazgo, mejora, cambio normativo,
+  acción correctiva) y, si aplica, el folio de AC o auditoría que lo origina.
+- Los cambios de **metadatos de la ficha** (proceso, área, cláusulas, relaciones) se registran igual que los de
+  contenido: toda edición genera entrada en el historial del documento.
 - Rationale: ISO 9001 § 7.5.3 (control de cambios, versión vigente identificable, evidencia).
 
 ### Decision 4: identidad mínima en servidor antes que todo

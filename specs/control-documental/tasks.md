@@ -29,7 +29,7 @@
 - **Depends on:** —
 ### T1.4 — Router `/api/v1/documentos`: CRUD con permisos por rol/área, enviar a revisión, aprobar/rechazar, publicar (snapshot + hash), historial, diff
 - **Archivos:** backend/routers/documentos.py, tests/test_documentos.py
-- **Acceptance:** Usuario → 403 al editar; Encargado de otra área → 403; publicar sin proceso → 422; publicar crea revisión con hash
+- **Acceptance:** Usuario → 403 al editar; Encargado de otra área → 403; publicar sin proceso → 422; enviar a revisión sin motivo → 422; publicar crea revisión con hash; cambiar proceso/área/cláusulas genera entrada en historial
 - **Depends on:** T1.1, T0.2
 
 ## Phase 2: semilla real y limpieza
