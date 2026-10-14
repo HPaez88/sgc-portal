@@ -253,6 +253,30 @@ class Auditor(SQLModel, table=True):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# MODELO: ARCHIVOS (evidencias y documentos en Backblaze B2; binario fuera de la BD)
+# ═══════════════════════════════════════════════════════════════════════════════
+class Archivo(SQLModel, table=True):
+    __tablename__ = "archivos"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
+    entidad: str = Field(default="evidencia", index=True)   # 'ac' | 'pm' | 'auditoria' | 'documento' | 'evidencia'
+    referencia: Optional[str] = Field(default=None, index=True)  # folio o id de la entidad
+    descripcion: Optional[str] = None
+    nombre_original: str
+    nombre: str
+    mime: str
+    tipo: str                      # 'imagen' | 'pdf'
+    bytes_original: int
+    bytes: int
+    sha256: str = Field(index=True)
+    clave_b2: str
+    estado_escaneo: str = Field(default="limpio")
+    subido_por: str = Field(default="Usuario")
+    fecha_subida: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MODELO: DATOS DE ÁREA (Directorio - Hoja1 de Control 6)
 # ═══════════════════════════════════════════════════════════════════════════════
 class DatosArea(SQLModel, table=True):

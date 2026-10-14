@@ -87,7 +87,7 @@ export default function AccionesDetalle({
     if (!file) return;
     setSubiendoIndex(index);
     try {
-      const res = await processEvidenceFile(file, usuarioLogueado?.nombre || 'Usuario');
+      const res = await processEvidenceFile(file, usuarioLogueado?.nombre || 'Usuario', { entidad: 'ac', referencia: form?.folio_codigo || form?.id });
       if (!res.success) {
         toast.error(res.error);
         if (setError) setError(res.error);

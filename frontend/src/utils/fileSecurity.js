@@ -4,7 +4,7 @@
  * Módulo de validación de seguridad contra archivos maliciosos y compresión
  * de imágenes en el navegador para evidencias de actividades (ISO 9001:2015).
  */
-import { uploadEvidencia } from '../supabase';
+import { subirArchivo, urlArchivo } from '../services/archivosService';
 
 const EXTENSIONES_PELIGROSAS = new Set([
   'exe', 'bat', 'cmd', 'sh', 'vbs', 'js', 'mjs', 'html', 'htm', 'scr', 
@@ -175,7 +175,7 @@ export function fileToDataUrl(file) {
 /**
  * Flujo completo: Valida seguridad, comprime imagen y genera el registro de evidencia.
  */
-export async function processEvidenceFile(file, usuarioNombre = 'Usuario') {
+export async function processEvidenceFile(file, usuarioNombre = 'Usuario', contexto = {}) {
   // 1. Validar seguridad
   const check = await validateSafeFile(file);
   if (!check.valid) {
@@ -203,23 +203,23 @@ export async function processEvidenceFile(file, usuarioNombre = 'Usuario') {
     previewUrl = await fileToDataUrl(file);
   }
 
-  // 3. Subir a Supabase Storage si está disponible
-  let remoteUrl = '';
-  try {
-    const upRes = await uploadEvidencia(finalFile);
-    if (upRes && upRes.url) {
-      remoteUrl = upRes.url;
-    }
-  } catch (e) {
-    console.warn('Supabase upload falló, usando DataURL segura:', e);
+  // 3. Subir al backend: antivirus + saneado + Backblaze B2. Sin respaldo silencioso:
+  //    si falla, la evidencia no se adjunta y el usuario ve el motivo.
+  const subida = await subirArchivo(finalFile, { entidad: contexto.entidad || 'evidencia', referencia: contexto.referencia, subidoPor: usuarioNombre });
+  if (!subida?.ok || !subida.data?.id) {
+    const detalle = subida?.error?.message || subida?.error?.detail || subida?.error || 'No se pudo guardar el archivo en el servidor.';
+    return { success: false, error: typeof detalle === 'string' ? detalle : JSON.stringify(detalle) };
   }
-
-  const finalUrl = remoteUrl || previewUrl;
+  const registro = subida.data;
+  const finalUrl = urlArchivo(registro.id);
+  tamanoComprimidoKb = Math.round(registro.bytes / 1024);
 
   return {
     success: true,
     evidencia: {
       url: finalUrl,
+      archivo_id: registro.id,
+      sha256: registro.sha256,
       preview: previewUrl,
       nombre: file.name,
       tipo: check.type, // 'image' | 'pdf'

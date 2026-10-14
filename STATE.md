@@ -23,7 +23,7 @@
 - [ ] `T0.3` @claude-code — Frontend login contra API, sin contraseña visible
 ### Phase 1 — modelo y API
 - [ ] `T1.1` @claude-code — Modelos de documentos, secciones, revisiones, relaciones
-- [ ] `T1.2` @claude-code — Archivos a B2 con validación y antivirus (requiere bucket)
+- [x] `T1.2` @claude-code — Archivos a B2 con validación y antivirus (evidencias de AC/PM ya usan el pipeline; bucket SGC-Portal conectado 2026-10-14)
 - [ ] `T1.3` @claude-code — Extracción de texto a secciones (docx/xlsx/pdf)
 - [ ] `T1.4` @claude-code — Router documentos con permisos y flujo de aprobación
 ### Phase 2 — semilla y limpieza

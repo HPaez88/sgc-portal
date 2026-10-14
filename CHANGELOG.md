@@ -3,6 +3,13 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-14T05:39Z · @claude-code · [FEATURE/SECURITY] · Pipeline de archivos: antivirus + saneado + Backblaze B2 (T1.2)
+Las evidencias de AC y PM dejan de guardarse como base64/Supabase y pasan por el backend: tipo real por magic bytes, escaneo ClamAV (obligatorio en producción), imágenes re-codificadas a WebP ≤1600 px sin EXIF, PDF rechazado si trae JavaScript, OpenAction, Launch o archivos incrustados y re-guardado linealizado, deduplicación por SHA-256, binario en bucket privado B2 (org/entidad/uuid) y metadatos en tabla `archivos`. Lectura por enlace firmado que caduca en 15 min (`/api/v1/archivos/{id}/url`). Si la subida falla, la evidencia no se adjunta y se muestra el motivo (sin respaldo silencioso). ClamAV corre como servicio `sgc-clamav` en el compose.
+- Archivos: backend/services/archivos_service.py, backend/routers/archivos.py, backend/models.py (Archivo), backend/main.py, backend/tests/test_archivos_service.py, requirements.txt, requirements-dev.txt, frontend/src/services/archivosService.js, frontend/src/utils/fileSecurity.js, frontend/src/components/acciones/AccionesDetalle.jsx, frontend/src/components/planes/PlanesDetalle.jsx, docker-compose.yml (rama deploy)
+- Tareas STATE: T1.2 (control-documental)
+- Deploy: SÍ
+- Notas: pendiente fase 0 (usuarios en servidor) para que `subido_por` sea verificado y no declarado por el cliente.
+
 ## 2026-10-14T04:41Z · @claude-code · [FEATURE] · Módulo Manual de la Calidad y anexos (consulta)
 Nuevo módulo en el menú Gobernanza: Manual OOMLSC-01 Rev 75 navegable por cláusula ISO (4.1 a 10.3) con índice y búsqueda, y una pestaña por anexo real: A18, A19 (7 direcciones), A20 y A21 como tablas filtrables; A11 organigrama como PDF embebido; A10 y A15 marcados como pendientes (formato Office 2003). Contenido generado desde los archivos oficiales de formatos/Docus Sistema con scripts/extraer_manual.py; originales descargables desde el portal. Solo lectura: la edición y el control de cambios quedan en la spec control-documental.
 - Archivos: scripts/extraer_manual.py, backend/routers/manual.py, backend/main.py, backend/knowledge/manual/, frontend/src/components/manual/ManualCalidadView.jsx, frontend/src/App.jsx, frontend/src/components/layout/Sidebar.jsx
