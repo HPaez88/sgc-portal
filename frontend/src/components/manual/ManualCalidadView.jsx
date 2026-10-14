@@ -171,7 +171,10 @@ export default function ManualCalidadView() {
   const [activo, setActivo] = useState('manual');
 
   useEffect(() => {
-    api.get('/api/v1/manual').then(setDatos).catch(e => setError(e.message || 'No se pudo cargar el manual'));
+    api.get('/api/v1/manual').then(r => {
+      if (r?.ok && r.data?.manual) setDatos(r.data);
+      else setError(r?.error?.message || r?.error || 'No se pudo cargar el manual');
+    }).catch(e => setError(e.message || 'No se pudo cargar el manual'));
   }, []);
 
   if (error) return <div className="p-6 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl">{error}</div>;
