@@ -7,6 +7,32 @@
 
 ---
 
+## Feature control-documental — spec en `specs/control-documental/` (pendiente de aprobación @human)
+
+### Phase 0 — identidad mínima
+- [ ] `T0.1` @claude-code — Tabla usuarios + migración con hash bcrypt
+- [ ] `T0.2` @claude-code — Login API + dependencia usuario_actual
+- [ ] `T0.3` @claude-code — Frontend login contra API, sin contraseña visible
+### Phase 1 — modelo y API
+- [ ] `T1.1` @claude-code — Modelos de documentos, secciones, revisiones, relaciones
+- [ ] `T1.2` @claude-code — Archivos a B2 con validación y antivirus (requiere bucket)
+- [ ] `T1.3` @claude-code — Extracción de texto a secciones (docx/xlsx/pdf)
+- [ ] `T1.4` @claude-code — Router documentos con permisos y flujo de aprobación
+### Phase 2 — semilla y limpieza
+- [ ] `T2.1` @claude-code — Seed con los 8 documentos reales
+- [ ] `T2.2` @claude-code — Eliminar catálogo y conocimiento ficticios
+### Phase 3 — UI
+- [ ] `T3.1` @claude-code — Catálogo
+- [ ] `T3.2` @claude-code — Ficha + visor
+- [ ] `T3.3` @claude-code — Editor de borrador y asignación de proceso
+- [ ] `T3.4` @claude-code — Bandeja de aprobación e historial
+### Phase 4 — matrices derivadas
+- [ ] `T4.1` @claude-code — Tablas A19/A20/A18/A10
+- [ ] `T4.2` @claude-code — Matriz de procesos A21 derivada + alerta sin proceso
+- [ ] `T4.3` @claude-code — Exportación Excel oficial
+### Phase 5 — RAG
+- [ ] `T5.1` @claude-code — Asesor ISO sobre documentos reales
+
 ## Diseño y despliegue 2026-10-08
 
 - [x] D1 — Dirección visual registrada (`docs/design/direction.md`, harness design-direction): Swiss/International, escala base 15px fija

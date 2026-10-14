@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-14T04:31Z · @claude-code · [DOCS] · Spec control-documental (proposal, plan, tasks)
+Especificación del módulo de Control Documental real: documentos por organismo con secciones, flujo borrador → revisión SGC → publicado, historial con hash, relaciones proceso/cláusula/documento que derivan las matrices A10/A18/A19/A20/A21, archivos en B2, identidad mínima en servidor y RAG sobre documentos reales. Pendiente de aprobación de @human antes de codificar.
+- Archivos: specs/control-documental/proposal.md, specs/control-documental/plan.md, specs/control-documental/tasks.md, STATE.md
+- Tareas STATE: T0.1 a T5.1 (control-documental)
+- Deploy: NO
+
 ## 2026-10-09T01:23Z · @claude-code · [CLEANUP] · Campana sin función fuera del header y chat ISO que se recalcula
 La campana de notificaciones no tenía handler y mostraba un punto azul fijo: se elimina. El chat del Asesor observa el contenedor de <main> con ResizeObserver y recalcula su altura cuando el banner de captura aparece o desaparece.
 - Archivos: frontend/src/components/layout/Header.jsx, frontend/src/components/iso/AgenteISOView.jsx
