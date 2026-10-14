@@ -1,6 +1,8 @@
 """Pruebas de la lógica pura del pipeline de archivos (sin ClamAV ni B2)."""
 import io
+import zipfile
 
+import docx as python_docx
 import pikepdf
 import pytest
 from fastapi import HTTPException
@@ -36,15 +38,37 @@ def _pdf(con_js=False) -> bytes:
     return buf.getvalue()
 
 
+def _pdf_escaneado(px=2600) -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (px, px), (240, 240, 240)).save(buf, format="PDF", resolution=300)
+    return buf.getvalue()
+
+
+def _docx(con_macro=False) -> bytes:
+    buf = io.BytesIO()
+    d = python_docx.Document()
+    d.add_paragraph("Evidencia de prueba")
+    d.save(buf)
+    if not con_macro:
+        return buf.getvalue()
+    salida = io.BytesIO()
+    with zipfile.ZipFile(buf) as zin, zipfile.ZipFile(salida, "w") as zout:
+        for n in zin.namelist():
+            zout.writestr(n, zin.read(n))
+        zout.writestr("word/vbaProject.bin", b"macro falsa")
+    return salida.getvalue()
+
+
 def test_detecta_tipo_por_contenido_no_por_extension():
     assert svc.detectar_mime(_png()) == "image/png"
     assert svc.detectar_mime(_pdf()) == "application/pdf"
-    assert svc.detectar_mime(b"MZ\x90\x00 ejecutable") is None
+    assert svc.detectar_mime(_docx()) == "application/zip"
+    assert svc.detectar_mime(b"MZ\x90 ejecutable") is None
 
 
 def test_rechaza_tipo_no_permitido():
     with pytest.raises(HTTPException) as e:
-        svc.validar_y_sanear("virus.jpg", b"MZ\x90\x00 no es imagen")
+        svc.validar_y_sanear("virus.jpg", b"MZ\x90 no es imagen")
     assert e.value.status_code == 422
 
 
@@ -64,6 +88,35 @@ def test_pdf_limpio_pasa_y_pdf_con_javascript_se_rechaza():
     assert limpio.tipo == "pdf" and limpio.contenido.startswith(b"%PDF")
     with pytest.raises(HTTPException) as e:
         svc.validar_y_sanear("malo.pdf", _pdf(con_js=True))
+    assert e.value.status_code == 422
+
+
+def test_pdf_escaneado_se_comprime_y_pierde_metadatos():
+    original = _pdf_escaneado()
+    resultado = svc.validar_y_sanear("escaneo.pdf", original)
+    assert len(resultado.contenido) < len(original) * 0.5
+    with pikepdf.open(io.BytesIO(resultado.contenido)) as pdf:
+        img = next(iter(pdf.pages[0].get_images().values()))
+        assert max(int(img.Width), int(img.Height)) <= svc.PDF_IMAGEN_LADO_MAX
+        assert "/Metadata" not in pdf.Root and not dict(pdf.docinfo)
+
+
+def test_docx_limpio_pasa_sin_docprops_y_con_macro_se_rechaza():
+    limpio = svc.validar_y_sanear("informe.docx", _docx())
+    assert limpio.tipo == "docx" and limpio.mime == svc.MIME_DOCX
+    nombres = zipfile.ZipFile(io.BytesIO(limpio.contenido)).namelist()
+    assert "word/document.xml" in nombres and not any(n.lower().startswith("docprops/") for n in nombres)
+    with pytest.raises(HTTPException) as e:
+        svc.validar_y_sanear("macro.docx", _docx(con_macro=True))
+    assert e.value.status_code == 422
+
+
+def test_zip_que_no_es_docx_se_rechaza():
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("payload.exe", b"MZ")
+    with pytest.raises(HTTPException) as e:
+        svc.validar_y_sanear("algo.docx", buf.getvalue())
     assert e.value.status_code == 422
 
 

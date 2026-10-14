@@ -1,8 +1,9 @@
 """
 archivos_service.py — Pipeline de archivos del portal (evidencias y documentos).
 
-Flujo por archivo:  magic bytes → antivirus (ClamAV) → saneado (imagen re-codificada /
-PDF sin scripts) → Backblaze B2 (S3) → metadatos en Postgres (router).
+Flujo por archivo:  magic bytes → antivirus (ClamAV) → saneado y compresión (imagen re-codificada /
+PDF sin scripts y con imágenes reducidas / Word .docx sin macros) → Backblaze B2 (S3) → metadatos
+en Postgres (router).
 
 Lógica pura (validar/sanear) separada de la red (ClamAV/B2) para poder probarla sin servicios.
 """
@@ -10,7 +11,9 @@ import hashlib
 import io
 import logging
 import os
+import re
 import uuid
+import zipfile
 from dataclasses import dataclass
 
 from fastapi import HTTPException
@@ -18,19 +21,25 @@ from fastapi import HTTPException
 log = logging.getLogger("sgc.archivos")
 
 # ───────────── Constantes (calibrar con uso real) ─────────────
+# Evidencias: sirven para ver qué se hizo, no para imprimir en alta calidad. Se comprime a fondo.
 MAX_BYTES_IMAGEN = 15 * 1024 * 1024
 MAX_BYTES_PDF = 25 * 1024 * 1024
-IMAGEN_LADO_MAX = 1600
-IMAGEN_CALIDAD_WEBP = 80
+MAX_BYTES_DOCX = 10 * 1024 * 1024
+IMAGEN_LADO_MAX = 1280          # px, lado mayor
+IMAGEN_CALIDAD_WEBP = 72
+PDF_IMAGEN_LADO_MAX = 1400      # imágenes dentro de PDF escaneados
+PDF_IMAGEN_CALIDAD_JPEG = 68
 URL_FIRMADA_SEGUNDOS = 15 * 60
 
+MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 MAGIC = {
     b"\x89PNG\r\n\x1a\n": "image/png",
     b"\xff\xd8\xff": "image/jpeg",
     b"%PDF": "application/pdf",
+    b"PK\x03\x04": "application/zip",   # docx (se confirma por estructura)
 }
-# claves PDF que permiten ejecutar código o esconder archivos
-PDF_CLAVES_PELIGROSAS = ("/JavaScript", "/JS", "/OpenAction", "/AA", "/Launch", "/EmbeddedFiles", "/EmbeddedFile", "/RichMedia", "/XFA")
+# Entradas de un .docx que permiten ejecutar código o traer contenido externo
+DOCX_ENTRADAS_PROHIBIDAS = ("vbaproject", "/embeddings/", "activex", "oleobject", ".bin", ".exe", ".js")
 
 
 @dataclass(frozen=True)
@@ -38,7 +47,7 @@ class ArchivoSaneado:
     contenido: bytes
     mime: str
     extension: str
-    tipo: str  # 'imagen' | 'pdf'
+    tipo: str  # 'imagen' | 'pdf' | 'docx'
     sha256: str
 
 
@@ -57,13 +66,50 @@ def _sanear_imagen(contenido: bytes) -> bytes:
 
     with Image.open(io.BytesIO(contenido)) as img:
         img = ImageOps.exif_transpose(img)  # respeta la orientación antes de tirar el EXIF
-        if img.mode not in ("RGB", "RGBA"):
+        if img.mode == "RGBA":  # evidencias no necesitan transparencia; RGB pesa menos
+            fondo = Image.new("RGB", img.size, (255, 255, 255))
+            fondo.paste(img, mask=img.split()[3])
+            img = fondo
+        elif img.mode != "RGB":
             img = img.convert("RGB")
-        img.thumbnail((IMAGEN_LADO_MAX, IMAGEN_LADO_MAX))
+        img.thumbnail((IMAGEN_LADO_MAX, IMAGEN_LADO_MAX), Image.Resampling.LANCZOS)
         salida = io.BytesIO()
         # Re-codificar desde los píxeles elimina metadatos y cualquier carga oculta en el contenedor.
-        img.save(salida, format="WEBP", quality=IMAGEN_CALIDAD_WEBP, method=4)
+        img.save(salida, format="WEBP", quality=IMAGEN_CALIDAD_WEBP, method=6)
         return salida.getvalue()
+
+
+def _comprimir_imagenes_pdf(pdf) -> None:
+    """Reduce y re-codifica a JPEG las imágenes grandes de un PDF (escaneos). Si una falla, se deja como está."""
+    import pikepdf
+    from PIL import Image
+
+    for pagina in pdf.pages:
+        for nombre, obj in list(pagina.get_images().items()):
+            try:
+                pimg = pikepdf.PdfImage(obj)
+                ancho, alto = pimg.width, pimg.height
+                if max(ancho, alto) <= PDF_IMAGEN_LADO_MAX and obj.get("/Filter") == pikepdf.Name.DCTDecode:
+                    continue  # ya es JPEG pequeño
+                if "/SMask" in obj or "/Mask" in obj:
+                    continue  # transparencia: no se toca
+                with pimg.as_pil_image() as im:
+                    im = im.convert("L") if im.mode in ("1", "L", "LA") else im.convert("RGB")
+                    im.thumbnail((PDF_IMAGEN_LADO_MAX, PDF_IMAGEN_LADO_MAX), Image.Resampling.LANCZOS)
+                    buf = io.BytesIO()
+                    im.save(buf, format="JPEG", quality=PDF_IMAGEN_CALIDAD_JPEG, optimize=True)
+                    datos = buf.getvalue()
+                    if len(datos) >= len(obj.read_raw_bytes()):
+                        continue  # no mejora
+                    espacio = pikepdf.Name.DeviceGray if im.mode == "L" else pikepdf.Name.DeviceRGB
+                    obj.write(datos, filter=pikepdf.Name.DCTDecode)
+                    obj.Width, obj.Height = im.width, im.height
+                    obj.ColorSpace, obj.BitsPerComponent = espacio, 8
+                    for k in ("/Decode", "/DecodeParms"):
+                        if k in obj:
+                            del obj[k]
+            except Exception as e:  # imagen rara (JBIG2, CCITT, indexada...): se conserva sin cambios
+                log.info("Imagen de PDF no recomprimida (%s): %s", nombre, e)
 
 
 def _sanear_pdf(contenido: bytes) -> bytes:
@@ -75,7 +121,7 @@ def _sanear_pdf(contenido: bytes) -> bytes:
         raise HTTPException(status_code=422, detail=f"PDF inválido o cifrado: {e}") from e
     with pdf:
         raiz = pdf.Root
-        if "/OpenAction" in raiz or "/AA" in raiz or "/AcroForm" in raiz and "/XFA" in raiz.AcroForm:
+        if "/OpenAction" in raiz or "/AA" in raiz or ("/AcroForm" in raiz and "/XFA" in raiz.AcroForm):
             raise HTTPException(status_code=422, detail="PDF rechazado: contiene acciones automáticas al abrir.")
         nombres = raiz.get("/Names", {})
         if "/JavaScript" in nombres or "/EmbeddedFiles" in nombres:
@@ -87,23 +133,65 @@ def _sanear_pdf(contenido: bytes) -> bytes:
                 accion = anot.get("/A", {})
                 if accion.get("/S") in ("/JavaScript", "/Launch", "/ImportData", "/SubmitForm"):
                     raise HTTPException(status_code=422, detail="PDF rechazado: contiene enlaces que ejecutan acciones.")
+        _comprimir_imagenes_pdf(pdf)
+        # Metadatos fuera: no aportan a la evidencia y pueden traer datos personales del equipo origen
+        if "/Metadata" in raiz:
+            del raiz["/Metadata"]
+        if "/Info" in pdf.trailer:
+            del pdf.trailer["/Info"]
         salida = io.BytesIO()
-        pdf.save(salida, linearize=True, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+        pdf.save(salida, linearize=True, compress_streams=True, recompress_flate=True,
+                 object_stream_mode=pikepdf.ObjectStreamMode.generate)
         return salida.getvalue()
 
 
+def _sanear_docx(contenido: bytes) -> bytes:
+    """Acepta solo .docx con estructura válida, sin macros, objetos incrustados ni ActiveX. Re-comprime al máximo."""
+    try:
+        zin = zipfile.ZipFile(io.BytesIO(contenido))
+        nombres = zin.namelist()
+    except zipfile.BadZipFile as e:
+        raise HTTPException(status_code=422, detail="El archivo Word está dañado o no es un .docx.") from e
+    if "[Content_Types].xml" not in nombres or "word/document.xml" not in nombres:
+        raise HTTPException(status_code=422, detail="Solo se admiten documentos Word .docx (no .doc ni otros formatos).")
+    tipos = zin.read("[Content_Types].xml").decode("utf-8", "ignore").lower()
+    if "macroenabled" in tipos or "vbaproject" in tipos:
+        raise HTTPException(status_code=422, detail="Word rechazado: contiene macros.")
+    for n in nombres:
+        nl = n.lower()
+        if any(p in nl for p in DOCX_ENTRADAS_PROHIBIDAS):
+            raise HTTPException(status_code=422, detail="Word rechazado: contiene macros, objetos incrustados o ActiveX.")
+        if nl.endswith(".rels"):
+            rels = zin.read(n).decode("utf-8", "ignore")
+            for m in re.finditer(r'<Relationship[^>]*TargetMode="External"[^>]*>', rels, re.I):
+                if "/hyperlink" not in m.group(0):
+                    raise HTTPException(status_code=422, detail="Word rechazado: referencia contenido externo (no hipervínculos).")
+    salida = io.BytesIO()
+    with zipfile.ZipFile(salida, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zout:
+        for n in nombres:
+            if n.lower().startswith("docprops/"):
+                continue  # metadatos de autor/equipo: fuera
+            zout.writestr(n, zin.read(n))
+    return salida.getvalue()
+
+
 def validar_y_sanear(nombre: str, contenido: bytes) -> ArchivoSaneado:
-    """Valida tipo y tamaño por contenido real (no por extensión) y devuelve el archivo saneado."""
+    """Valida tipo y tamaño por contenido real (no por extensión) y devuelve el archivo saneado y comprimido."""
     if not contenido:
         raise HTTPException(status_code=422, detail="Archivo vacío.")
     mime = detectar_mime(contenido)
     if mime is None:
-        raise HTTPException(status_code=422, detail="Solo se admiten imágenes JPG, PNG, WEBP y documentos PDF.")
+        raise HTTPException(status_code=422, detail="Solo se admiten imágenes JPG, PNG o WEBP, documentos PDF y Word (.docx).")
     if mime == "application/pdf":
         if len(contenido) > MAX_BYTES_PDF:
             raise HTTPException(status_code=413, detail="El PDF excede 25 MB.")
         limpio = _sanear_pdf(contenido)
         tipo, ext, mime_final = "pdf", "pdf", "application/pdf"
+    elif mime == "application/zip":
+        if len(contenido) > MAX_BYTES_DOCX:
+            raise HTTPException(status_code=413, detail="El documento Word excede 10 MB.")
+        limpio = _sanear_docx(contenido)
+        tipo, ext, mime_final = "docx", "docx", MIME_DOCX
     else:
         if len(contenido) > MAX_BYTES_IMAGEN:
             raise HTTPException(status_code=413, detail="La imagen excede 15 MB.")

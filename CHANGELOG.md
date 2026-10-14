@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-14T08:04Z · @claude-code · [SECURITY] · Archivos: solo imagen/PDF/Word, validación estructural y compresión máxima
+Tipos permitidos cerrados a JPG/PNG/WEBP, PDF y Word .docx (sin .doc, sin macros, sin objetos incrustados ni ActiveX; solo hipervínculos como referencia externa; se eliminan docProps). Imágenes a 1280 px WebP q72 sin transparencia ni EXIF. PDF: además de rechazar scripts, se reducen a 1400 px y re-codifican a JPEG las imágenes internas (escaneos), se eliminan metadatos XMP e Info y se re-comprimen los streams. Tests: 9/9.
+- Archivos: backend/services/archivos_service.py, backend/tests/test_archivos_service.py, frontend/src/utils/fileSecurity.js
+- Tareas STATE: T1.2
+- Deploy: SÍ
+
 ## 2026-10-14T05:39Z · @claude-code · [FEATURE/SECURITY] · Pipeline de archivos: antivirus + saneado + Backblaze B2 (T1.2)
 Las evidencias de AC y PM dejan de guardarse como base64/Supabase y pasan por el backend: tipo real por magic bytes, escaneo ClamAV (obligatorio en producción), imágenes re-codificadas a WebP ≤1600 px sin EXIF, PDF rechazado si trae JavaScript, OpenAction, Launch o archivos incrustados y re-guardado linealizado, deduplicación por SHA-256, binario en bucket privado B2 (org/entidad/uuid) y metadatos en tabla `archivos`. Lectura por enlace firmado que caduca en 15 min (`/api/v1/archivos/{id}/url`). Si la subida falla, la evidencia no se adjunta y se muestra el motivo (sin respaldo silencioso). ClamAV corre como servicio `sgc-clamav` en el compose.
 - Archivos: backend/services/archivos_service.py, backend/routers/archivos.py, backend/models.py (Archivo), backend/main.py, backend/tests/test_archivos_service.py, requirements.txt, requirements-dev.txt, frontend/src/services/archivosService.js, frontend/src/utils/fileSecurity.js, frontend/src/components/acciones/AccionesDetalle.jsx, frontend/src/components/planes/PlanesDetalle.jsx, docker-compose.yml (rama deploy)

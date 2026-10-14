@@ -12,7 +12,7 @@ const EXTENSIONES_PELIGROSAS = new Set([
   'apk', 'php', 'asp', 'aspx', 'py', 'ps1', 'wsf', 'reg', 'hta', 'com', 'bin'
 ]);
 
-const EXTENSIONES_PERMITIDAS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf']);
+const EXTENSIONES_PERMITIDAS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf', 'docx']);
 
 /**
  * Valida que el archivo sea estrictamente una Imagen o un PDF genuino.
@@ -40,14 +40,14 @@ export async function validateSafeFile(file) {
   if (EXTENSIONES_PELIGROSAS.has(ext)) {
     return { 
       valid: false, 
-      error: `Archivo potencialmente peligroso detectado (.${ext}). Por seguridad institucional solo se admiten Fotos (JPG, PNG, WEBP) y Documentos PDF.` 
+      error: `Archivo potencialmente peligroso detectado (.${ext}). Por seguridad institucional solo se admiten Fotos (JPG, PNG, WEBP), Documentos PDF y Word (.docx).` 
     };
   }
 
   if (!EXTENSIONES_PERMITIDAS.has(ext)) {
     return { 
       valid: false, 
-      error: `Formato (.${ext}) no admitido. Únicamente se permite subir una Foto (JPG, PNG, WEBP) o Documento PDF.` 
+      error: `Formato (.${ext}) no admitido. Únicamente se permite subir una Foto (JPG, PNG, WEBP), un PDF o un Word (.docx).` 
     };
   }
 
@@ -68,6 +68,12 @@ export async function validateSafeFile(file) {
     // WEBP Magic Bytes: RIFF en bytes 0..3 y WEBP en bytes 8..11
     const isRIFF = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46;
     const isWEBP = isRIFF && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+
+    // DOCX: contenedor ZIP (PK); el servidor valida la estructura interna y rechaza macros.
+    const isZIP = bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04;
+    if (ext === 'docx' && isZIP) {
+      return { valid: true, type: 'docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
+    }
 
     if (ext === 'pdf' && isPDF) {
       return { valid: true, type: 'pdf', mime: 'application/pdf' };
@@ -198,8 +204,7 @@ export async function processEvidenceFile(file, usuarioNombre = 'Usuario', conte
       console.warn('Fallo compresión client-side, usando archivo original:', e);
       previewUrl = await fileToDataUrl(file);
     }
-  } else {
-    // Es PDF
+  } else if (check.type === 'pdf') {
     previewUrl = await fileToDataUrl(file);
   }
 
