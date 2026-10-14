@@ -21,22 +21,6 @@ services:
       timeout: 5s
       retries: 5
 
-  clamav:
-    # Antivirus para archivos subidos. Carga firmas al arrancar (1-3 min) y las actualiza sola (freshclam).
-    image: clamav/clamav:stable
-    container_name: sgc-clamav
-    restart: unless-stopped
-    volumes:
-      - sgc-clamav-db:/var/lib/clamav
-    networks:
-      - internal
-    healthcheck:
-      test: ["CMD", "clamdcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 240s
-
   app:
     build: .
     image: sgc-app:latest
@@ -44,8 +28,6 @@ services:
     restart: unless-stopped
     depends_on:
       db:
-        condition: service_healthy
-      clamav:
         condition: service_healthy
     environment:
       ENVIRONMENT: production
@@ -62,11 +44,13 @@ services:
       B2_BUCKET: ${B2_BUCKET:-}
       B2_ENDPOINT: ${B2_ENDPOINT:-}
       B2_REGION: ${B2_REGION:-us-east-005}
+      # Antivirus compartido del VPS: stack /opt/clamav en la red externa "antivirus"
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
     networks:
       - internal
       - traefik
+      - antivirus
     labels:
       - traefik.enable=true
       - traefik.docker.network=web
@@ -79,12 +63,13 @@ services:
 volumes:
   sgc-pgdata:
     name: sgc-pgdata
-  sgc-clamav-db:
-    name: sgc-clamav-db
 
 networks:
   internal:
     name: sgc-internal
   traefik:
     name: web
+    external: true
+  antivirus:
+    name: antivirus
     external: true
