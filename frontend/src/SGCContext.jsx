@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { isSupabaseConfigured, supabase } from './supabase';
 import { 
-  USUARIOS_INICIALES, 
   AREAS as defaultAreas, 
   PROCESOS as defaultProcesos, 
   DIRECCIONES as defaultDirecciones, 
@@ -27,7 +26,7 @@ import {
   suscribirEstadoSync,
   vaciarColas,
 } from './services/syncService';
-import { setOrganismoActivo } from './services/apiClient';
+import { api, setOrganismoActivo, getToken, setToken, EVENTO_SESION_EXPIRADA } from './services/apiClient';
 
 const SGCContext = createContext();
 
@@ -136,7 +135,9 @@ export const useSGC = () => {
       usuarioActivoId: null, setUsuarioActivoId: () => {},
       sesionActiva: true, setSesionActiva: () => {},
       motivoCierreSesion: '', setMotivoCierreSesion: () => {},
-      iniciarSesion: () => ({ success: true }),
+      iniciarSesion: async () => ({ success: false }),
+      cambiarPassword: async () => ({ success: false }),
+      recargarUsuarios: async () => ({ ok: false }),
       cerrarSesion: () => {},
       estadoSync: { pendientes: 0, ultimoError: null, ultimaSync: null },
       puede: () => false,
@@ -212,7 +213,7 @@ export const SGCProvider = ({ children }) => {
   const [accionesCorrectivas, setAccionesCorrectivas] = useLocalStorage('sgc-acciones-correctivas', ACCIONES_CORRECTIVAS_INICIALES);
   const [planesMejora, setPlanesMejora] = useLocalStorage('sgc-planes-mejora', PLANES_MEJORA_INICIALES);
   const [indicadoresData, setIndicadoresData] = useLocalStorage('sgc-indicadores-data', INDICADORES_DATA_INICIALES);
-  const [usuarios, setUsuarios] = useLocalStorage('sgc-usuarios', USUARIOS_INICIALES);
+  const [usuarios, setUsuarios] = useState([]); // lista del organismo, cargada del backend tras iniciar sesión
 
   // Catálogos
   const [areas, setAreas] = useLocalStorage('sgc-config-areas', defaultAreas);
@@ -229,8 +230,9 @@ export const SGCProvider = ({ children }) => {
   const [estadosNormativos, setEstadosNormativos] = useLocalStorage('sgc-config-estados-doc', DEFAULT_ESTADOS_NORMATIVOS);
 
   // Usuario activo y estado de sesión
-  const [usuarioActivoId, setUsuarioActivoId] = useLocalStorage('sgc-usuario-activo', 1);
-  const [sesionActiva, setSesionActiva] = useLocalStorage('sgc-sesion-activa', true);
+  const [usuarioSesion, setUsuarioSesion] = useLocalStorage('sgc-usuario-sesion', null);
+  const [sesionActiva, setSesionActiva] = useLocalStorage('sgc-sesion-activa', false);
+  const usuarioActivoId = usuarioSesion?.id ?? null;
   const [motivoCierreSesion, setMotivoCierreSesion] = useState('');
   const [riesgos, setRiesgos] = useLocalStorage('sgc-riesgos', [
     { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo', area: 'Operación', direccion: 'Dir. Técnica', proceso: 'Producción', plan_accion: 'Mejorar monitoreo de cloro', fecha_termino: '2026-06-30', evaluacion: 'En proceso', estado_plan: 'EN_PROCESO' },
@@ -307,13 +309,7 @@ export const SGCProvider = ({ children }) => {
     });
   }, [setRiesgos, saveToSupabase]);
 
-  const setUsuariosSync = useCallback((data) => {
-    setUsuarios((prev) => {
-      const newValue = typeof data === 'function' ? data(prev) : data;
-      saveToSupabase('usuarios', Array.isArray(newValue) ? newValue : [newValue]);
-      return newValue;
-    });
-  }, [setUsuarios, saveToSupabase]);
+  const setUsuariosSync = setUsuarios; // los usuarios viven en el backend (/api/v1/auth/usuarios)
 
   const setDocumentosSync = useCallback((data) => {
     setDocumentos((prev) => {
@@ -476,7 +472,6 @@ export const SGCProvider = ({ children }) => {
 
         await syncTable('acciones_correctivas', setAccionesCorrectivas, 'sgc-acciones-correctivas', accionesCorrectivas);
         await syncTable('planes_mejora', setPlanesMejora, 'sgc-planes-mejora', planesMejora);
-        await syncTable('usuarios', setUsuarios, 'sgc-usuarios', usuarios);
         await syncTable('riesgos', setRiesgos, 'sgc-riesgos', riesgos);
         await syncTable('documentos', setDocumentos, 'sgc-documentos', documentos);
         await syncTable('auditorias', setAuditorias, 'sgc-auditorias', auditorias);
@@ -494,10 +489,7 @@ export const SGCProvider = ({ children }) => {
 
   // === PERMISOS Y USUARIO ACTIVO ===
   const listaUsuarios = usuarios || [];
-  const usuarioLogueado =
-    listaUsuarios.find((u) => String(u.id) === String(usuarioActivoId)) ||
-    listaUsuarios[0] ||
-    null;
+  const usuarioLogueado = (sesionActiva && getToken() && usuarioSesion) ? usuarioSesion : null;
   const puedeTodasAreas = puedeVerTodasAreas(usuarioLogueado);
   const areaUsuario = usuarioLogueado?.area || '';
   const puede = useCallback((accion) => can(usuarioLogueado, accion), [usuarioLogueado]);
@@ -592,39 +584,39 @@ export const SGCProvider = ({ children }) => {
   });
 
   // === AUTENTICACIÓN Y CONTROL DE ACCESO ===
-  const iniciarSesion = useCallback((identificador, password) => {
-    const usr = (usuarios || []).find(u =>
-      String(u.id) === String(identificador) ||
-      (u.email && u.email.toLowerCase() === String(identificador).toLowerCase().trim()) ||
-      (u.nombre && u.nombre.toLowerCase() === String(identificador).toLowerCase().trim())
-    );
+  const recargarUsuarios = useCallback(async () => {
+    const r = await api.get('/api/v1/auth/usuarios');
+    if (r.ok && Array.isArray(r.data)) setUsuarios(r.data);
+    return r;
+  }, []);
 
-    if (!usr) {
-      return { success: false, error: 'Usuario no encontrado en la plataforma.' };
+  const iniciarSesion = useCallback(async (email, password) => {
+    const r = await api.post('/api/v1/auth/login', { email, password });
+    if (!r.ok || !r.data?.token) {
+      return { success: false, error: r.error?.message || r.error?.detail || 'Correo o contraseña incorrectos.' };
     }
-
-    const passwordEsperada = usr.password || 'sgc2026';
-    const passwordIngresada = String(password || '').trim();
-
-    if (passwordIngresada !== passwordEsperada && passwordIngresada !== 'sgc2026') {
-      return { success: false, error: 'Contraseña incorrecta. Verifique sus datos.' };
-    }
-
-    setUsuarioActivoId(usr.id);
+    setToken(r.data.token);
+    setUsuarioSesion(r.data.usuario);
     setSesionActiva(true);
     setMotivoCierreSesion('');
-
     registrarMovimiento({
       modulo: 'SESION',
       accion: 'INICIO_SESION',
-      descripcion: `Inicio de sesión exitoso: ${usr.nombre} (${usr.rol})`,
-      detalles: 'Autenticación con usuario y contraseña validada por el sistema',
+      descripcion: `Inicio de sesión exitoso: ${r.data.usuario.nombre} (${r.data.usuario.rol})`,
+      detalles: 'Autenticación validada por el servidor (token de sesión)',
       folio: 'AUTH-OK',
-      usuario: usr
+      usuario: r.data.usuario
     });
+    recargarUsuarios();
+    return { success: true, usuario: r.data.usuario };
+  }, [setUsuarioSesion, setSesionActiva, registrarMovimiento, recargarUsuarios]);
 
-    return { success: true, usuario: usr };
-  }, [usuarios, setUsuarioActivoId, setSesionActiva, registrarMovimiento]);
+  const cambiarPassword = useCallback(async (passwordActual, passwordNueva) => {
+    const r = await api.post('/api/v1/auth/cambiar-password', { password_actual: passwordActual, password_nueva: passwordNueva });
+    if (!r.ok) return { success: false, error: r.error?.message || r.error?.detail || 'No se pudo cambiar la contraseña.' };
+    setUsuarioSesion(r.data);
+    return { success: true };
+  }, [setUsuarioSesion]);
 
   const cerrarSesion = useCallback((motivo = 'Cierre de sesión manual') => {
     if (usuarioLogueado) {
@@ -638,7 +630,22 @@ export const SGCProvider = ({ children }) => {
     }
     setMotivoCierreSesion(motivo);
     setSesionActiva(false);
-  }, [usuarioLogueado, registrarMovimiento, setSesionActiva]);
+    setToken(null);
+    setUsuarioSesion(null);
+    setUsuarios([]);
+  }, [usuarioLogueado, registrarMovimiento, setSesionActiva, setUsuarioSesion]);
+
+  // El apiClient avisa cuando el backend responde 401 con token presente (sesión caducada o revocada).
+  useEffect(() => {
+    const onExpirada = () => cerrarSesion('Tu sesión expiró o fue cerrada en el servidor. Vuelve a iniciar sesión.');
+    window.addEventListener(EVENTO_SESION_EXPIRADA, onExpirada);
+    return () => window.removeEventListener(EVENTO_SESION_EXPIRADA, onExpirada);
+  }, [cerrarSesion]);
+
+  // Al recargar la página con sesión vigente, recuperar la lista de usuarios del organismo.
+  useEffect(() => {
+    if (sesionActiva && getToken() && usuarioSesion) recargarUsuarios();
+  }, [sesionActiva, usuarioSesion, recargarUsuarios]);
 
   const value = {
     isLoaded,
@@ -661,7 +668,8 @@ export const SGCProvider = ({ children }) => {
     setEvidencias: setEvidenciasSync,
     usuarioLogueado,
     usuarioActivoId,
-    setUsuarioActivoId,
+    recargarUsuarios,
+    cambiarPassword,
     puede,
     puedeTodasAreas,
     areaUsuario,

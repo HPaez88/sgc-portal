@@ -253,6 +253,43 @@ class Auditor(SQLModel, table=True):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# MODELO: USUARIOS (identidad en servidor; contraseña solo como hash bcrypt)
+# ═══════════════════════════════════════════════════════════════════════════════
+class UsuarioPublico(SQLModel):
+    """Lo que el frontend puede ver de un usuario. Nunca incluye el hash."""
+    id: int
+    organismo_id: int
+    nombre: str
+    email: str
+    telefono: Optional[str] = None
+    area: str
+    direccion: Optional[str] = None
+    rol: str
+    activo: bool
+    debe_cambiar_password: bool
+    ultimo_acceso: Optional[datetime] = None
+    fecha_alta: datetime
+
+
+class Usuario(SQLModel, table=True):
+    __tablename__ = "usuarios"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
+    nombre: str
+    email: str = Field(index=True, unique=True)
+    telefono: Optional[str] = None
+    area: str
+    direccion: Optional[str] = None
+    rol: str = Field(default="Usuario")   # Super Admin | Admin | Auditor | Encargado | Usuario
+    activo: bool = Field(default=True)
+    password_hash: Optional[str] = None   # None = no puede iniciar sesión hasta que se le restablezca
+    debe_cambiar_password: bool = Field(default=True)
+    ultimo_acceso: Optional[datetime] = None
+    fecha_alta: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MODELO: ARCHIVOS (evidencias y documentos en Backblaze B2; binario fuera de la BD)
 # ═══════════════════════════════════════════════════════════════════════════════
 class Archivo(SQLModel, table=True):

@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
+from backend.auth import usuario_actual
 from backend.database import get_session
-from backend.models import Archivo
+from backend.models import Archivo, Usuario
 from backend.services import archivos_service as svc
 from backend.tenant import get_organismo_id
 
@@ -25,11 +26,12 @@ async def subir_archivo(
     entidad: str = Form("evidencia"),
     referencia: Optional[str] = Form(None),
     descripcion: Optional[str] = Form(None),
-    subido_por: str = Form("Usuario"),
     session: Session = Depends(get_session),
     organismo_id: int = Depends(get_organismo_id),
+    usuario: Usuario = Depends(usuario_actual),
 ):
     """Valida, escanea, sanea y guarda un archivo. Rechaza con 413/422/503 según el caso."""
+    subido_por = usuario.nombre
     contenido = await archivo.read(MAX_LECTURA)
     if len(contenido) >= MAX_LECTURA:
         raise HTTPException(status_code=413, detail="El archivo excede el tamaño máximo permitido.")

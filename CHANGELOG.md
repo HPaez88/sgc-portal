@@ -3,6 +3,13 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-14T15:00Z · @claude-code · [SECURITY] · Fase 0: identidad en servidor (usuarios, bcrypt, sesión con token)
+Los usuarios dejan de vivir en el navegador con contraseñas en claro. Tabla `usuarios` en Postgres con hash bcrypt, login por correo y contraseña, token JWT de 8 h, toda la API protegida (401 sin sesión) y organismo tomado del token. Se eliminan la clave maestra `sgc2026`, la pista de contraseña en el login y el selector de "cambiar usuario" del header que permitía suplantar sin contraseña. Configuración gestiona usuarios contra la API: alta con contraseña temporal mostrada una sola vez, restablecer, baja lógica. Al primer arranque se siembran los 7 usuarios; solo el Super Admin recibe contraseña inicial (SEED_ADMIN_PASSWORD) y debe cambiarla al entrar. `subido_por` en archivos ahora sale de la sesión. Tests backend 18/18.
+- Archivos: backend/auth.py, backend/routers/auth.py, backend/seed_usuarios.py, backend/models.py, backend/main.py, backend/tenant.py, backend/routers/archivos.py, backend/tests/test_auth.py, requirements.txt, frontend/src/services/apiClient.js, frontend/src/SGCContext.jsx, frontend/src/App.jsx, frontend/src/components/common/LoginView.jsx, frontend/src/components/layout/Header.jsx, frontend/src/components/settings/SettingsView.jsx, docker-compose.yml (rama deploy)
+- Tareas STATE: T0.1, T0.2, T0.3
+- Deploy: SÍ
+- Notas: AUTH_SECRET obligatorio en producción. 2FA/SSO quedan en roadmap.
+
 ## 2026-10-14T08:04Z · @claude-code · [SECURITY] · Archivos: solo imagen/PDF/Word, validación estructural y compresión máxima
 Tipos permitidos cerrados a JPG/PNG/WEBP, PDF y Word .docx (sin .doc, sin macros, sin objetos incrustados ni ActiveX; solo hipervínculos como referencia externa; se eliminan docProps). Imágenes a 1280 px WebP q72 sin transparencia ni EXIF. PDF: además de rechazar scripts, se reducen a 1400 px y re-codifican a JPEG las imágenes internas (escaneos), se eliminan metadatos XMP e Info y se re-comprimen los streams. Tests: 9/9.
 - Archivos: backend/services/archivos_service.py, backend/tests/test_archivos_service.py, frontend/src/utils/fileSecurity.js

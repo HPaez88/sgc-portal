@@ -47,12 +47,36 @@ export function setOrganismoActivo(id) {
   organismoActivo = id ?? null;
 }
 
+// ───────────── Sesión (token firmado por el backend) ─────────────
+const TOKEN_KEY = 'sgc-token';
+export const EVENTO_SESION_EXPIRADA = 'sgc:sesion-expirada';
+
+export function getToken() {
+  try { return window.localStorage.getItem(TOKEN_KEY) || null; } catch { return null; }
+}
+
+export function setToken(token) {
+  try {
+    if (token) window.localStorage.setItem(TOKEN_KEY, token);
+    else window.localStorage.removeItem(TOKEN_KEY);
+  } catch { /* almacenamiento bloqueado: la sesión dura lo que dure la pestaña */ }
+}
+
 function construirHeaders(extra = {}) {
   const headers = { Accept: 'application/json', ...extra };
   if (organismoActivo != null) {
     headers['X-Organismo-Id'] = String(organismoActivo);
   }
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
+}
+
+/** Un 401 con token presente significa sesión caducada o revocada: se avisa al contexto una sola vez. */
+function notificarSesionExpirada(path) {
+  if (!getToken() || path.includes('/auth/login')) return;
+  setToken(null);
+  try { window.dispatchEvent(new CustomEvent(EVENTO_SESION_EXPIRADA)); } catch { /* sin window */ }
 }
 
 /**
@@ -84,6 +108,7 @@ export async function request(path, { method = 'GET', body, headers, signal, tim
     const contentType = response.headers.get('content-type') || '';
     const esJson = contentType.includes('application/json');
     const payload = esJson ? await response.json().catch(() => null) : null;
+    if (response.status === 401) notificarSesionExpirada(path);
 
     if (!response.ok) {
       const detalle = extraerDetalle(payload) || `Error HTTP ${response.status}`;

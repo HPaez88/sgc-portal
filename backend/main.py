@@ -13,14 +13,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select, func
 
-from backend.database import create_db_and_tables, get_session
+from backend.database import create_db_and_tables, get_session, engine
+from backend import auth as auth_lib
+from backend.seed_usuarios import sembrar_usuarios
 from backend.tenant import get_organismo_id
 from backend.models import (
     AccionCorrectiva, PlanDeMejora, Auditor, Replanteo,
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
 )
-from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos
+from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth
 
 load_dotenv()
 
@@ -28,7 +30,9 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Ciclo de vida de la aplicación."""
+    auth_lib.validar_configuracion()
     create_db_and_tables()
+    sembrar_usuarios(engine)
     yield
 
 
@@ -55,22 +59,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
-app.include_router(acciones.router)
-app.include_router(planes.router)
-app.include_router(ai.router)
-app.include_router(catalogo.router)
-app.include_router(organismos.router)
-app.include_router(iso_agent.router)
-app.include_router(fichas_ayuntamiento.router)
-app.include_router(manual.router)
-app.include_router(archivos.router)
+# Routers. Todo exige sesión salvo /auth (login) y la raíz que sirve el frontend.
+PROTEGIDO = [Depends(auth_lib.usuario_actual)]
+app.include_router(auth.router)
+for r in (acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos):
+    app.include_router(r.router, dependencies=PROTEGIDO)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DASHBOARD — Estadísticas estilo Control 6
 # ═══════════════════════════════════════════════════════════════════════════════
-@app.get("/api/v1/dashboard", tags=["Dashboard"])
+@app.get("/api/v1/dashboard", tags=["Dashboard"], dependencies=PROTEGIDO)
 def get_dashboard(
     session: Session = Depends(get_session),
     organismo_id: int = Depends(get_organismo_id),

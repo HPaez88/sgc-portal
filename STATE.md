@@ -15,12 +15,12 @@
 - [ ] M4 — A10 y A15 pendientes: @human los guarda como .xlsx/.docx y se re-ejecuta el script
 - [ ] M5 — Edición, control de cambios y matrices derivadas → ver spec control-documental
 
-## Feature control-documental — spec en `specs/control-documental/` (pendiente de aprobación @human)
+## Feature control-documental — spec en `specs/control-documental/` (aprobada por @human 2026-10-13)
 
 ### Phase 0 — identidad mínima
-- [ ] `T0.1` @claude-code — Tabla usuarios + migración con hash bcrypt
-- [ ] `T0.2` @claude-code — Login API + dependencia usuario_actual
-- [ ] `T0.3` @claude-code — Frontend login contra API, sin contraseña visible
+- [x] `T0.1` @claude-code — Tabla usuarios + migración con hash bcrypt
+- [x] `T0.2` @claude-code — Login API + dependencia usuario_actual
+- [x] `T0.3` @claude-code — Frontend login contra API, sin contraseña visible
 ### Phase 1 — modelo y API
 - [ ] `T1.1` @claude-code — Modelos de documentos, secciones, revisiones, relaciones
 - [x] `T1.2` @claude-code — Archivos a B2 con validación y antivirus (evidencias de AC/PM ya usan el pipeline; bucket SGC-Portal conectado 2026-10-14)

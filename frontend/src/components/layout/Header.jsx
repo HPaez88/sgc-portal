@@ -98,19 +98,9 @@ const Header = ({
 
           <div className="text-left min-w-0 max-w-[120px] sm:max-w-[200px] md:max-w-[260px] lg:max-w-[300px]">
             <div className="flex items-center gap-1.5 min-w-0">
-              <select
-                value={usuarioLogueado?.id ?? ''}
-                onChange={(e) => setUsuarioActivoId?.(e.target.value)}
-                className="bg-transparent text-xs font-bold text-slate-900 outline-none cursor-pointer truncate w-full max-w-full pr-1 hover:text-sky-700 transition-colors"
-                title="Cambiar usuario de simulación"
-                aria-label="Usuario activo"
-              >
-                {usuarios.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.nombre} ({u.rol})
-                  </option>
-                ))}
-              </select>
+              <span className="text-xs font-bold text-slate-900 truncate" title={usuarioLogueado?.email || ''}>
+                {usuarioLogueado?.nombre || 'Usuario'}
+              </span>
             </div>
             <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-slate-500 truncate">
               <span className="font-medium text-slate-600 truncate">{usuarioLogueado?.area || 'Sin área asignada'}</span>

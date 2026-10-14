@@ -82,7 +82,7 @@ function App() {
   } = useSGC();
 
   // Si la sesión no está activa (por logout o inactividad de 1 hora), mostrar pantalla de login
-  if (!sesionActiva) {
+  if (!sesionActiva || !usuarioLogueado || usuarioLogueado.debe_cambiar_password) {
     return <LoginView />;
   }
 

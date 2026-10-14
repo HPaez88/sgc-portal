@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getRolColor } from '../../constants';
 import { useSGC } from '../../SGCContext';
+import { api } from '../../services/apiClient';
 import { useToast } from '../common/Toast';
 import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import ContenedorModal from '../common/ContenedorModal';
@@ -29,7 +30,9 @@ import {
   Settings,
   CheckSquare,
   Square,
-  Layers
+  Layers,
+  KeyRound,
+  Copy
 } from 'lucide-react';
 
 export default function SettingsView({ usuarios = [], setUsuarios }) {
@@ -66,7 +69,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   const [modalDireccion, setModalDireccion] = useState({ show: false, esEdicion: false, data: { id: null, nombre: '', director: '', correo: '', siglas: '', telefono: '' } });
   const [modalProceso, setModalProceso] = useState({ show: false, esEdicion: false, data: { id: null, clave: '', nombre: '', tipo: 'Operativo', areaResponsable: '', areasInvolucradas: [] } });
   const [busquedaAreaModal, setBusquedaAreaModal] = useState('');
-  const [modalUsuario, setModalUsuario] = useState({ show: false, esEdicion: false, data: { id: null, nombre: '', email: '', telefono: '', area: '', direccion: '', rol: 'Usuario', password: '' } });
+  const [modalUsuario, setModalUsuario] = useState({ show: false, esEdicion: false, data: { id: null, nombre: '', email: '', telefono: '', area: '', direccion: '', rol: 'Usuario' } });
+  const [claveTemporal, setClaveTemporal] = useState(null); // { nombre, email, password } se muestra una sola vez
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
   const [mensajeExito, setMensajeExito] = useState('');
 
@@ -491,25 +495,41 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     });
   };
 
-  const guardarUsuario = () => {
+  const { recargarUsuarios } = useSGC();
+
+  const guardarUsuario = async () => {
     const { nombre, email, area, rol } = modalUsuario.data;
     if (!nombre.trim()) return toast.warning('El nombre completo es obligatorio.');
     if (!email.trim()) return toast.warning('El correo institucional es obligatorio.');
     if (!area.trim()) return toast.warning('Debe asignar un Área al usuario obligatoriamente.');
-
+    const cuerpo = {
+      nombre: nombre.trim(), email: email.trim().toLowerCase(), telefono: modalUsuario.data.telefono || null,
+      area: area.trim(), direccion: modalUsuario.data.direccion || null, rol, activo: modalUsuario.data.activo ?? true,
+    };
+    const r = modalUsuario.esEdicion
+      ? await api.put(`/api/v1/auth/usuarios/${modalUsuario.data.id}`, cuerpo)
+      : await api.post('/api/v1/auth/usuarios', cuerpo);
+    if (!r.ok) return toast.error(r.error?.message || r.error?.detail || 'No se pudo guardar el usuario.');
+    await recargarUsuarios();
+    setModalUsuario({ show: false, esEdicion: false, data: {} });
     if (modalUsuario.esEdicion) {
-      const updatedUser = { ...modalUsuario.data };
-      if (updatedUser.newPassword) {
-        updatedUser.password = updatedUser.newPassword;
-      }
-      delete updatedUser.newPassword;
-      safeSetUsuarios(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
       notificar(`✓ Usuario "${nombre}" actualizado correctamente`);
     } else {
-      safeSetUsuarios(prev => [...prev, modalUsuario.data]);
+      setClaveTemporal({ nombre, email: cuerpo.email, password: r.data.password_temporal });
       notificar(`✓ Usuario "${nombre}" creado con área "${area}"`);
     }
-    setModalUsuario({ show: false, esEdicion: false, data: {} });
+  };
+
+  const restablecerPassword = async (user) => {
+    const r = await api.post(`/api/v1/auth/usuarios/${user.id}/restablecer-password`);
+    if (!r.ok) return toast.error(r.error?.message || r.error?.detail || 'No se pudo restablecer la contraseña.');
+    await recargarUsuarios();
+    setClaveTemporal({ nombre: user.nombre, email: user.email, password: r.data.password_temporal });
+    registrarMovimiento({
+      modulo: 'SEGURIDAD', accion: 'RESTABLECER_PASSWORD',
+      descripcion: `Contraseña restablecida para "${user.nombre}" (${user.email})`,
+      detalles: 'Se generó una contraseña temporal; el usuario debe cambiarla al entrar.', folio: 'SEG-USER'
+    });
   };
 
   const eliminarUsuario = (user) => {
@@ -522,10 +542,12 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       show: true,
       type: 'Usuario',
       name: user.nombre,
-      action: (motivo) => {
-        safeSetUsuarios(prev => prev.filter(u => u.id !== user.id));
+      action: async (motivo) => {
+        const r = await api.delete(`/api/v1/auth/usuarios/${user.id}`);
         setConfirmDelete({ show: false, type: '', name: '', action: null });
-        notificar(`🗑️ Usuario "${user.nombre}" eliminado`);
+        if (!r.ok) return toast.error(r.error?.message || r.error?.detail || 'No se pudo desactivar el usuario.');
+        await recargarUsuarios();
+        notificar(`🗑️ Usuario "${user.nombre}" desactivado (su historial se conserva)`);
         registrarMovimiento({
           modulo: 'SEGURIDAD',
           accion: 'ELIMINACION',
@@ -1145,7 +1167,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   <th className="py-3 px-4">Área Asignada</th>
                   <th className="py-3 px-4">Dirección</th>
                   <th className="py-3 px-4">Perfil / Rol</th>
-                  <th className="py-3 px-4">Contraseña</th>
+                  <th className="py-3 px-4">Acceso</th>
                   <th className="py-3 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -1190,8 +1212,12 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                             {u.rol}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-400 font-mono">
-                          {u.password ? '••••••••' : <span className="text-slate-300 italic">Sin clave</span>}
+                        <td className="py-3 px-4 text-[10px] font-bold">
+                          {u.activo === false
+                            ? <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">Inactivo</span>
+                            : u.debe_cambiar_password
+                              ? <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200" title="Contraseña temporal pendiente de cambio">Temporal</span>
+                              : <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">Activo</span>}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
@@ -1201,6 +1227,13 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                               title="Editar usuario"
                             >
                               <Edit size={14} />
+                            </button>
+                            <button
+                              onClick={() => restablecerPassword(u)}
+                              className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                              title="Restablecer contraseña (genera una temporal)"
+                            >
+                              <KeyRound size={14} />
                             </button>
                             {puedeEliminarCatalogo && !esSuperAdmin ? (
                               <button
@@ -2198,23 +2231,13 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                 </p>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  {modalUsuario.esEdicion ? 'Nueva Contraseña (Opcional)' : 'Contraseña Inicial'}
-                </label>
-                <input
-                  type="password"
-                  value={modalUsuario.esEdicion ? modalUsuario.data.newPassword || '' : modalUsuario.data.password || ''}
-                  onChange={(e) => {
-                    if (modalUsuario.esEdicion) {
-                      setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, newPassword: e.target.value } });
-                    } else {
-                      setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, password: e.target.value } });
-                    }
-                  }}
-                  placeholder={modalUsuario.esEdicion ? 'Dejar en blanco para conservar actual...' : 'Contraseña de acceso...'}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
-                />
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg text-[11px] text-sky-900 leading-relaxed flex items-start gap-2">
+                <KeyRound size={14} className="shrink-0 mt-0.5" />
+                <span>
+                  {modalUsuario.esEdicion
+                    ? 'La contraseña no se edita aquí. Usa "Restablecer contraseña" en la tabla para generar una temporal.'
+                    : 'Al crear el usuario se genera una contraseña temporal que verás una sola vez. El usuario deberá cambiarla al entrar.'}
+                </span>
               </div>
             </div>
 
@@ -2239,6 +2262,31 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* ============================================================ */}
       {/* MODAL: CONFIRMAR ELIMINACIÓN CON DOBLE CONFIRMACIÓN */}
       {/* ============================================================ */}
+      {claveTemporal && (
+        <ContenedorModal onClose={() => setClaveTemporal(null)} titulo="Contraseña temporal generada" isOpen anchoMaximo="max-w-md">
+          <div className="space-y-3">
+            <p className="text-xs text-slate-700 leading-relaxed">
+              Entrega esta contraseña a <strong>{claveTemporal.nombre}</strong> ({claveTemporal.email}) por un medio seguro.
+              Solo se muestra <strong>una vez</strong>; al entrar deberá definir la suya.
+            </p>
+            <div className="flex items-center gap-2 p-3 bg-slate-900 text-white rounded-xl font-mono text-base tracking-wider">
+              <span className="flex-1 select-all">{claveTemporal.password}</span>
+              <button
+                onClick={() => { navigator.clipboard?.writeText(claveTemporal.password); toast.success('Contraseña copiada'); }}
+                className="p-1.5 rounded-lg hover:bg-white/10 cursor-pointer" title="Copiar"
+              >
+                <Copy size={15} />
+              </button>
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => setClaveTemporal(null)} className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl cursor-pointer">
+                Entendido
+              </button>
+            </div>
+          </div>
+        </ContenedorModal>
+      )}
+
       <ModalConfirmacionEliminar
         isOpen={confirmDelete.show}
         onClose={() => setConfirmDelete({ show: false, type: '', name: '', action: null })}
