@@ -40,8 +40,7 @@ const nivelDe = (numero) => (String(numero).match(/\./g) || []).length;
 
 // ───────────── Portada (sección 0) ─────────────
 function Portada({ seccion, doc }) {
-  const lineas = (seccion.markdown || '').split(/
-+/).map(l => l.replace(/^[#*\s]+|[*\s]+$/g, '')).filter(Boolean);
+  const lineas = (seccion.markdown || '').split(/\n+/).map(l => l.replace(/^[#*\s]+|[*\s]+$/g, '')).filter(Boolean);
   const organismo = lineas.find(l => /organismo|oomapas/i.test(l)) || 'OOMAPAS de Cajeme';
   const normas = lineas.filter(l => /ISO|NMX/i.test(l));
   const v = doc.vigente;
