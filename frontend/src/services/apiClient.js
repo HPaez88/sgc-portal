@@ -72,6 +72,26 @@ function construirHeaders(extra = {}) {
   return headers;
 }
 
+/**
+ * Varias pantallas usan fetch() directo a /api (Asesor ISO, exportadores). En vez de tocar cada una,
+ * se agrega la sesión a toda petición same-origin hacia /api que no traiga Authorization.
+ */
+if (typeof window !== 'undefined' && !window.__sgcFetchConSesion) {
+  const fetchOriginal = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    const url = typeof input === 'string' ? input : input?.url || '';
+    const esApi = url.startsWith('/api/') || url.startsWith(`${window.location.origin}/api/`);
+    const token = getToken();
+    if (esApi && token) {
+      const headers = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined));
+      if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
+      return fetchOriginal(input, { ...init, headers });
+    }
+    return fetchOriginal(input, init);
+  };
+  window.__sgcFetchConSesion = true;
+}
+
 /** Un 401 con token presente significa sesión caducada o revocada: se avisa al contexto una sola vez. */
 function notificarSesionExpirada(path) {
   if (!getToken() || path.includes('/auth/login')) return;

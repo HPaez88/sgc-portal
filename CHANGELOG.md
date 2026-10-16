@@ -3,6 +3,13 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-16T14:38Z · @claude-code · [FIX] · Regresión de la fase 0: Asesor ISO, exportaciones, PDF y evidencias respondían 401
+Al exigir sesión en toda la API quedaron sin token las llamadas fetch() directas (Asesor ISO, diagnóstico IA del panel, exportación de fichas) y los recursos embebidos que el navegador pide sin cabeceras (<img> de evidencias, <iframe> del PDF, enlaces "Original"). Se agrega la sesión a todo fetch same-origin hacia /api y una cookie HttpOnly SameSite=Strict que el backend acepta solo en GET (lectura), por lo que no habilita escrituras ni CSRF. Nuevo /api/v1/auth/logout que borra la cookie. Tests backend 26/26.
+- Archivos: backend/auth.py, backend/routers/auth.py, backend/tests/test_auth.py, frontend/src/services/apiClient.js, frontend/src/SGCContext.jsx
+- Tareas STATE: T0.2, T0.3 (corrección)
+- Deploy: SÍ
+- Notas: detectado al revisar el portal contra el video "5 formas de que te demanden por una app".
+
 ## 2026-10-16T04:04Z · @claude-code · [FEATURE] · Persistencia central: lo capturado se guarda en Postgres y se ve en cualquier equipo
 Las capturas operativas (acciones correctivas, planes de mejora, indicadores, riesgos, auditorías, catálogos, bitácora, revisión por la dirección, presupuesto…) vivían solo en el localStorage del navegador. Ahora el servidor es la fuente de verdad: tabla `estado_portal` (JSON por clave y organismo, con quién y cuándo) y API `/api/v1/estado`. El hook `useLocalStorage` conserva la caché local para arranque rápido y trabajo sin red, descarga el estado al iniciar sesión, sube una vez lo que este navegador tenía capturado (migración) y guarda cada cambio con debounce y reintento. El badge "Sincronizado" del header ahora refleja el servidor. Tests backend 25/25.
 - Archivos: backend/models.py (EstadoPortal), backend/routers/estado.py, backend/main.py, backend/tests/test_estado.py, frontend/src/services/estadoService.js, frontend/src/hooks.js, frontend/src/hooks/useLocalStorage.js, frontend/src/SGCContext.jsx, frontend/src/App.jsx, BannerObligacionesCaptura.jsx, IndicadoresView.jsx, RevisionDireccionView.jsx, ControlPresupuestalAreasTab.jsx, ProyectosPresupuestoTab.jsx

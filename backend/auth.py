@@ -15,7 +15,7 @@ from typing import Optional
 
 import bcrypt
 import jwt
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 from sqlmodel import Session
 
 from backend.database import get_session
@@ -94,20 +94,36 @@ def _extraer_bearer(authorization: Optional[str]) -> Optional[str]:
     return token.strip() if esquema.lower() == "bearer" and token else None
 
 
-def datos_token_opcional(authorization: Optional[str] = Header(default=None)) -> Optional[dict]:
-    """Decodifica el token si viene; no exige sesión. Útil para resolver el organismo."""
+COOKIE_SESION = "sgc_sesion"
+METODOS_LECTURA = ("GET", "HEAD")
+
+
+def _token_de(request: Request, authorization: Optional[str]) -> Optional[str]:
+    """Bearer siempre; la cookie solo vale para lecturas (GET): así <img>, <iframe> y enlaces de descarga
+    funcionan sin exponer el token en la URL, y la cookie no sirve para escribir (sin riesgo CSRF)."""
     token = _extraer_bearer(authorization)
+    if token:
+        return token
+    if request.method in METODOS_LECTURA:
+        return request.cookies.get(COOKIE_SESION)
+    return None
+
+
+def datos_token_opcional(request: Request, authorization: Optional[str] = Header(default=None)) -> Optional[dict]:
+    """Decodifica el token si viene; no exige sesión. Útil para resolver el organismo."""
+    token = _token_de(request, authorization)
     return decodificar_token(token) if token else None
 
 
 # ───────────── Dependencias ─────────────
 def usuario_actual(
+    request: Request,
     authorization: Optional[str] = Header(default=None),
     session: Session = Depends(get_session),
 ):
     from backend.models import Usuario
 
-    token = _extraer_bearer(authorization)
+    token = _token_de(request, authorization)
     if not token:
         raise HTTPException(status_code=401, detail="Se requiere iniciar sesión.")
     datos = decodificar_token(token)

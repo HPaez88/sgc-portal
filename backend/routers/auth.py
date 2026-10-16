@@ -5,7 +5,9 @@ Las contraseñas temporales se devuelven UNA sola vez (al crear o restablecer) y
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+import os
+
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlmodel import Session, select
 
@@ -42,7 +44,7 @@ def _publico(u: Usuario) -> UsuarioPublico:
 
 # ───────────── Sesión ─────────────
 @router.post("/login")
-def login(datos: LoginInput, session: Session = Depends(get_session)):
+def login(datos: LoginInput, response: Response, session: Session = Depends(get_session)):
     usuario = session.exec(select(Usuario).where(Usuario.email == datos.email.lower().strip())).first()
     # Mismo mensaje exista o no el correo: no revelar cuentas.
     if not usuario or not usuario.activo or not auth.verificar_password(datos.password, usuario.password_hash):
@@ -51,7 +53,17 @@ def login(datos: LoginInput, session: Session = Depends(get_session)):
     session.add(usuario)
     session.commit()
     session.refresh(usuario)
-    return {"token": auth.crear_token(usuario), "usuario": _publico(usuario)}
+    token = auth.crear_token(usuario)
+    # Cookie de solo lectura (GET) para recursos embebidos: HttpOnly, misma-site estricta, 8 h.
+    response.set_cookie(auth.COOKIE_SESION, token, max_age=auth.TOKEN_HORAS * 3600, httponly=True,
+                        secure=os.getenv("ENVIRONMENT") == "production", samesite="strict", path="/api/")
+    return {"token": token, "usuario": _publico(usuario)}
+
+
+@router.post("/logout", status_code=204)
+def logout(response: Response):
+    response.delete_cookie(auth.COOKIE_SESION, path="/api/")
+    return None
 
 
 @router.get("/me", response_model=UsuarioPublico)

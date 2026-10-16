@@ -100,3 +100,16 @@ def test_baja_logica_bloquea_el_acceso(cliente):
     assert cliente.delete(f"/api/v1/auth/usuarios/{uid}", headers=cab).status_code == 204
     r = cliente.post("/api/v1/auth/login", json={"email": "prueba@oomapasc.gob.mx", "password": "NuevaClave2026!"})
     assert r.status_code == 401
+
+
+def test_cookie_sirve_solo_para_lectura(cliente):
+    cliente.cookies.clear()
+    r = cliente.post("/api/v1/auth/login", json={"email": ADMIN, "password": "ClaveInicial2026"})
+    assert r.status_code == 200 and "sgc_sesion" in r.cookies
+    # GET con cookie (como <img>/<iframe>) funciona sin cabecera
+    assert cliente.get("/api/v1/organismos").status_code == 200
+    # escritura con solo la cookie se rechaza (sin riesgo CSRF)
+    assert cliente.put("/api/v1/estado/sgc-x", json={"valor": 1}).status_code == 401
+    cliente.post("/api/v1/auth/logout")
+    cliente.cookies.clear()
+    assert cliente.get("/api/v1/organismos").status_code == 401

@@ -631,6 +631,7 @@ export const SGCProvider = ({ children }) => {
     }
     setMotivoCierreSesion(motivo);
     setSesionActiva(false);
+    api.post('/api/v1/auth/logout').catch(() => {});
     setToken(null);
     setUsuarioSesion(null);
     setUsuarios([]);
