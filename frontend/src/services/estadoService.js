@@ -88,6 +88,11 @@ export async function cargarDesdeServidor() {
   for (const [clave, fns] of setters) {
     if (servidor.has(clave)) {
       const valor = servidor.get(clave);
+      const local = leerCache(clave);
+      // Red de seguridad: si este equipo tenía algo distinto, se conserva una copia local antes de que mande el servidor.
+      if (local !== undefined && JSON.stringify(local) !== JSON.stringify(valor)) {
+        try { window.localStorage.setItem(`respaldo:${clave}:${Date.now()}`, JSON.stringify(local)); } catch { /* sin espacio */ }
+      }
       escribirCache(clave, valor);
       fns.forEach((fn) => fn(valor));
     } else {
