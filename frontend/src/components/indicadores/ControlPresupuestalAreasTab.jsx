@@ -29,6 +29,7 @@ import {
 } from '../../constants/presupuestoAreas';
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
+import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 
 const STORAGE_KEY = 'sgc-control-presupuestal-areas';
 
@@ -38,7 +39,7 @@ export default function ControlPresupuestalAreasTab({ esAdminOSGC = false, ejerc
 
   const [presupuestos, setPresupuestos] = useState(() => {
     try {
-      const g = localStorage.getItem(STORAGE_KEY);
+      const g = leerEstadoTexto(STORAGE_KEY);
       if (g) {
         const parsed = JSON.parse(g);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -79,7 +80,7 @@ export default function ControlPresupuestalAreasTab({ esAdminOSGC = false, ejerc
   const persistirPresupuestos = (nuevos) => {
     setPresupuestos(nuevos);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevos));
+      escribirEstadoTexto(STORAGE_KEY, JSON.stringify(nuevos));
     } catch (e) {
       console.error('Error guardando presupuestos', e);
     }

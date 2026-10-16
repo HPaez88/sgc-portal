@@ -3,6 +3,13 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-16T04:04Z · @claude-code · [FEATURE] · Persistencia central: lo capturado se guarda en Postgres y se ve en cualquier equipo
+Las capturas operativas (acciones correctivas, planes de mejora, indicadores, riesgos, auditorías, catálogos, bitácora, revisión por la dirección, presupuesto…) vivían solo en el localStorage del navegador. Ahora el servidor es la fuente de verdad: tabla `estado_portal` (JSON por clave y organismo, con quién y cuándo) y API `/api/v1/estado`. El hook `useLocalStorage` conserva la caché local para arranque rápido y trabajo sin red, descarga el estado al iniciar sesión, sube una vez lo que este navegador tenía capturado (migración) y guarda cada cambio con debounce y reintento. El badge "Sincronizado" del header ahora refleja el servidor. Tests backend 25/25.
+- Archivos: backend/models.py (EstadoPortal), backend/routers/estado.py, backend/main.py, backend/tests/test_estado.py, frontend/src/services/estadoService.js, frontend/src/hooks.js, frontend/src/hooks/useLocalStorage.js, frontend/src/SGCContext.jsx, frontend/src/App.jsx, BannerObligacionesCaptura.jsx, IndicadoresView.jsx, RevisionDireccionView.jsx, ControlPresupuestalAreasTab.jsx, ProyectosPresupuestoTab.jsx
+- Tareas STATE: P1, P2, P3, P4
+- Deploy: SÍ
+- Notas: último en escribir gana por clave. Migración a tablas propias por módulo queda como P5.
+
 ## 2026-10-14T19:36Z · @claude-code · [FEATURE/SPEC-DELTA] · Manual de la Calidad editable con ruta de aprobación en dos pasos
 Delta aprobado por @human (specs/control-documental/delta-manual-aprobacion.md). El Manual y anexos pasan a Postgres como documentos controlados con revisiones: contenido Markdown por sección, estados BORRADOR → EN_REVISION → REVISADO → PUBLICADO (o RECHAZADO), motivo obligatorio, hash SHA-256 al publicar, historial y diff por sección. Reglas: edita Admin/Super Admin; revisa otro administrador distinto del autor; publica el Director General (rol nuevo `Director`, Super Admin suple) distinto del revisor. Lectura ampliada: columna completa, tipografía mayor, tablas Markdown legibles. Semilla inicial Rev. 75 desde manual.json. Tests backend 22/22.
 - Archivos: backend/models.py (Documento, DocumentoRevision), backend/routers/documentos.py, backend/seed_documentos.py, backend/auth.py (rol Director), backend/main.py, backend/tests/test_documentos.py, frontend/src/components/manual/ManualCalidadView.jsx, frontend/src/index.css (.prosa-sgc), frontend/src/constants/estados.js, frontend/src/constants/workflow.js, frontend/src/components/settings/SettingsView.jsx, frontend/package.json (marked, dompurify)

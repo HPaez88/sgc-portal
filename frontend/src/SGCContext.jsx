@@ -23,9 +23,9 @@ import {
   guardarInmediato,
   localesMasRecientes,
   mapearRegistroRemoto,
-  suscribirEstadoSync,
   vaciarColas,
 } from './services/syncService';
+import { suscribirEstadoSync, cargarDesdeServidor, limpiarSesionSync } from './services/estadoService';
 import { api, setOrganismoActivo, getToken, setToken, EVENTO_SESION_EXPIRADA } from './services/apiClient';
 
 const SGCContext = createContext();
@@ -608,6 +608,7 @@ export const SGCProvider = ({ children }) => {
       usuario: r.data.usuario
     });
     recargarUsuarios();
+    cargarDesdeServidor();
     return { success: true, usuario: r.data.usuario };
   }, [setUsuarioSesion, setSesionActiva, registrarMovimiento, recargarUsuarios]);
 
@@ -633,6 +634,7 @@ export const SGCProvider = ({ children }) => {
     setToken(null);
     setUsuarioSesion(null);
     setUsuarios([]);
+    limpiarSesionSync();
   }, [usuarioLogueado, registrarMovimiento, setSesionActiva, setUsuarioSesion]);
 
   // El apiClient avisa cuando el backend responde 401 con token presente (sesión caducada o revocada).
@@ -644,7 +646,7 @@ export const SGCProvider = ({ children }) => {
 
   // Al recargar la página con sesión vigente, recuperar la lista de usuarios del organismo.
   useEffect(() => {
-    if (sesionActiva && getToken() && usuarioSesion) recargarUsuarios();
+    if (sesionActiva && getToken() && usuarioSesion) { recargarUsuarios(); cargarDesdeServidor(); }
   }, [sesionActiva, usuarioSesion, recargarUsuarios]);
 
   const value = {

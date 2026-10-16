@@ -13,6 +13,7 @@ import {
 import { useSGC } from '../../SGCContext';
 import { FORMULARIOS_COMPLEMENTARIOS_CONFIG } from '../../constants/revisionDireccion';
 import { INDICADORES } from '../../constants/indicadores';
+import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 
 export default function BannerObligacionesCaptura({ setActiveTab }) {
   const {
@@ -30,7 +31,7 @@ export default function BannerObligacionesCaptura({ setActiveTab }) {
 
   const asignacionesResponsables = useMemo(() => {
     try {
-      const g = localStorage.getItem('sgc-asignaciones-formularios');
+      const g = leerEstadoTexto('sgc-asignaciones-formularios');
       if (g) return JSON.parse(g);
     } catch (e) { /* ignore */ }
     const def = {};
@@ -42,7 +43,7 @@ export default function BannerObligacionesCaptura({ setActiveTab }) {
 
   const revisionesGuardadas = useMemo(() => {
     try {
-      const g = localStorage.getItem('sgc-revisiones-direccion');
+      const g = leerEstadoTexto('sgc-revisiones-direccion');
       if (g) return JSON.parse(g);
     } catch (e) { /* ignore */ }
     return [];

@@ -332,6 +332,20 @@ class DocumentoRevision(SQLModel, table=True):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# MODELO: ESTADO DEL PORTAL (capturas operativas por organismo y clave; JSON completo por clave)
+# ═══════════════════════════════════════════════════════════════════════════════
+class EstadoPortal(SQLModel, table=True):
+    __tablename__ = "estado_portal"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
+    clave: str = Field(index=True)                  # sgc-acciones-correctivas, sgc-riesgos...
+    valor: str = Field(default="null", sa_column=Column(Text))
+    actualizado: datetime = Field(default_factory=datetime.utcnow)
+    actualizado_por: Optional[str] = None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MODELO: ARCHIVOS (evidencias y documentos en Backblaze B2; binario fuera de la BD)
 # ═══════════════════════════════════════════════════════════════════════════════
 class Archivo(SQLModel, table=True):

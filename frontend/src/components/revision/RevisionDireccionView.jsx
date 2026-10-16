@@ -41,6 +41,7 @@ import FormularioComplementarioModal from './FormularioComplementarioModal';
 import AsignacionResponsablesModal from './AsignacionResponsablesModal';
 import { exportarRevisionDireccionOOMRSC04 } from '../../services/revisionExporter';
 import { useToast } from '../common/Toast';
+import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -70,7 +71,7 @@ export default function RevisionDireccionView({
 
   // Almacén de Revisiones por la Dirección (con persistencia local en memoria / contexto)
   const [revisiones, setRevisiones] = useState(() => {
-    const guardado = localStorage.getItem('sgc-revisiones-direccion');
+    const guardado = leerEstadoTexto('sgc-revisiones-direccion');
     if (guardado) {
       try { return JSON.parse(guardado); } catch (e) { /* ignore */ }
     }
@@ -79,7 +80,7 @@ export default function RevisionDireccionView({
 
   // Asignaciones de formularios complementarios a usuarios responsables
   const [asignacionesResponsables, setAsignacionesResponsables] = useState(() => {
-    const guardado = localStorage.getItem('sgc-asignaciones-formularios');
+    const guardado = leerEstadoTexto('sgc-asignaciones-formularios');
     if (guardado) {
       try { return JSON.parse(guardado); } catch (e) { /* ignore */ }
     }
@@ -91,7 +92,7 @@ export default function RevisionDireccionView({
   });
 
   const [diaLimiteCaptura, setDiaLimiteCaptura] = useState(() => {
-    const guardado = localStorage.getItem('sgc-dia-limite-captura');
+    const guardado = leerEstadoTexto('sgc-dia-limite-captura');
     return guardado ? Number(guardado) : 10;
   });
 
@@ -156,7 +157,7 @@ export default function RevisionDireccionView({
       } else {
         nuevas = [actualizada, ...prev];
       }
-      localStorage.setItem('sgc-revisiones-direccion', JSON.stringify(nuevas));
+      escribirEstadoTexto('sgc-revisiones-direccion', JSON.stringify(nuevas));
       return nuevas;
     });
   };
@@ -184,12 +185,12 @@ export default function RevisionDireccionView({
   // Guardar asignaciones de responsables
   const handleGuardarAsignaciones = (nuevasAsignaciones) => {
     setAsignacionesResponsables(nuevasAsignaciones);
-    localStorage.setItem('sgc-asignaciones-formularios', JSON.stringify(nuevasAsignaciones));
+    escribirEstadoTexto('sgc-asignaciones-formularios', JSON.stringify(nuevasAsignaciones));
   };
 
   const handleGuardarDiaLimite = (nuevoDia) => {
     setDiaLimiteCaptura(nuevoDia);
-    localStorage.setItem('sgc-dia-limite-captura', String(nuevoDia));
+    escribirEstadoTexto('sgc-dia-limite-captura', String(nuevoDia));
   };
 
   // Guardar cambios en salidas

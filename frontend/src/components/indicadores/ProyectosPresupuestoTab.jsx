@@ -32,6 +32,7 @@ import {
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import ModalGestionProyectoPresupuestario from './ModalGestionProyectoPresupuestario';
+import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 
 const STORAGE_KEY = 'sgc-proyectos-presupuesto-2026';
 
@@ -42,7 +43,7 @@ export default function ProyectosPresupuestoTab({ esAdminOSGC = false, ejercicio
   // Estado con persistencia local
   const [proyectos, setProyectos] = useState(() => {
     try {
-      const g = localStorage.getItem(STORAGE_KEY);
+      const g = leerEstadoTexto(STORAGE_KEY);
       if (g) {
         const parsed = JSON.parse(g);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -73,7 +74,7 @@ export default function ProyectosPresupuestoTab({ esAdminOSGC = false, ejercicio
   const persistirProyectos = (nuevosProyectos) => {
     setProyectos(nuevosProyectos);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevosProyectos));
+      escribirEstadoTexto(STORAGE_KEY, JSON.stringify(nuevosProyectos));
     } catch (e) {
       console.error('Error guardando proyectos en localStorage', e);
     }

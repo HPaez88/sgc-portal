@@ -45,6 +45,14 @@
 ### Phase 5 — RAG
 - [ ] `T5.1` @claude-code — Asesor ISO sobre documentos reales
 
+## Persistencia central 2026-10-15
+
+- [x] P1 — Tabla `estado_portal` + API `/api/v1/estado` (JSON por clave y organismo, quién/cuándo)
+- [x] P2 — `useLocalStorage` sincronizado con el servidor (caché local, debounce, reintento, migración inicial de lo capturado en cada navegador)
+- [x] P3 — Usos directos de localStorage (indicadores, revisión por la dirección, banner, presupuesto) pasan por estadoService
+- [x] P4 — App espera el estado del organismo tras iniciar sesión; badge del header refleja la sincronización real
+- [ ] P5 — Migrar clave por clave a tablas propias (AC y PM ya tienen tablas en backend) → spec
+
 ## Diseño y despliegue 2026-10-08
 
 - [x] D1 — Dirección visual registrada (`docs/design/direction.md`, harness design-direction): Swiss/International, escala base 15px fija

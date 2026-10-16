@@ -78,12 +78,22 @@ function App() {
     areaUsuario,
     usuarioActivoId,
     setUsuarioActivoId,
-    sesionActiva
+    sesionActiva,
+    estadoSync
   } = useSGC();
 
   // Si la sesión no está activa (por logout o inactividad de 1 hora), mostrar pantalla de login
   if (!sesionActiva || !usuarioLogueado || usuarioLogueado.debe_cambiar_password) {
     return <LoginView />;
+  }
+  // Con sesión vigente, esperar el estado del organismo (segundos) antes de mostrar módulos:
+  // así una computadora nueva ve lo mismo que las demás desde el primer render.
+  if (!estadoSync?.cargado && !estadoSync?.ultimoError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-600 text-sm">
+        <div className="flex items-center gap-3"><span className="w-4 h-4 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" /> Cargando información del organismo…</div>
+      </div>
+    );
   }
 
   // Si estamos en un dispositivo móvil (< 768px) y no se ha forzado el modo de escritorio,

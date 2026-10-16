@@ -1,26 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
+import { esClaveSincronizada, guardar, leerCache, registrar } from './services/estadoService';
 
 export function useLocalStorage(key, initialValue) {
+  // Caché local para arrancar rápido; el servidor manda en cuanto carga (ver estadoService).
   const [storedValue, setStoredValue] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error('Error loading from localStorage:', error);
-      return initialValue;
-    }
+    const cache = leerCache(key);
+    return cache === undefined ? initialValue : cache;
   });
 
+  useEffect(() => {
+    if (!esClaveSincronizada(key)) return undefined;
+    return registrar(key, setStoredValue, leerCache(key));
+  }, [key]);
+
   const setValue = useCallback((value) => {
-    try {
-      setStoredValue(prev => {
-        const valueToStore = value instanceof Function ? value(prev) : value;
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-        return valueToStore;
-      });
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-    }
+    setStoredValue((prev) => {
+      const valueToStore = value instanceof Function ? value(prev) : value;
+      guardar(key, valueToStore);
+      return valueToStore;
+    });
   }, [key]);
 
   return [storedValue, setValue];

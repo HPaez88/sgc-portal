@@ -61,6 +61,7 @@ import EvaluacionTrimestralTab from './EvaluacionTrimestralTab';
 import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamentales';
 import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea } from '../../constants/areas';
 import { useIsMobile } from '../../hooks';
+import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 
 
 
@@ -148,7 +149,7 @@ export default function IndicadoresView({
   // Reportes de corrección históricos (con persistencia local)
   const [reportesCorreccion, setReportesCorreccion] = useState(() => {
     try {
-      const g = localStorage.getItem('sgc-reportes-correccion');
+      const g = leerEstadoTexto('sgc-reportes-correccion');
       if (g) return JSON.parse(g);
     } catch (e) { /* ignore */ }
     return REPORTES_CORRECCION_INICIALES;
@@ -178,7 +179,7 @@ export default function IndicadoresView({
         actualizados = [reporteActualizado, ...prev];
       }
       try {
-        localStorage.setItem('sgc-reportes-correccion', JSON.stringify(actualizados));
+        escribirEstadoTexto('sgc-reportes-correccion', JSON.stringify(actualizados));
       } catch (e) { /* ignore */ }
       return actualizados;
     });
@@ -187,7 +188,7 @@ export default function IndicadoresView({
   // Fichas Técnicas Oficiales Gubernamentales (Ayuntamiento de Cajeme)
   const [fichasPersonalizadas, setFichasPersonalizadas] = useState(() => {
     try {
-      const g = localStorage.getItem('sgc-fichas-gubernamentales');
+      const g = leerEstadoTexto('sgc-fichas-gubernamentales');
       if (g) return JSON.parse(g);
     } catch (e) { /* ignore */ }
     return indicadoresData?.fichasPersonalizadas || {};
@@ -215,7 +216,7 @@ export default function IndicadoresView({
     };
     setFichasPersonalizadas(nuevo);
     try {
-      localStorage.setItem('sgc-fichas-gubernamentales', JSON.stringify(nuevo));
+      escribirEstadoTexto('sgc-fichas-gubernamentales', JSON.stringify(nuevo));
     } catch (e) { /* ignore */ }
     
     setIndicadoresData?.(prev => ({
@@ -598,7 +599,7 @@ export default function IndicadoresView({
     setReportesCorreccion(prev => {
       const actualizados = [reportePayload, ...prev];
       try {
-        localStorage.setItem('sgc-reportes-correccion', JSON.stringify(actualizados));
+        escribirEstadoTexto('sgc-reportes-correccion', JSON.stringify(actualizados));
       } catch (e) { /* ignore */ }
       return actualizados;
     });
