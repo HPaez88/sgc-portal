@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye } from 'lucide-react';
 import { FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
+import { getFechaCompromiso, formatearFecha } from '../../constants/workflow';
 
 export default function PlanesLista({ 
   planesMejora, 
@@ -270,7 +271,7 @@ export default function PlanesLista({
                     <th className="p-3">Categoría</th>
                     <th className="p-3">Estado</th>
                     <th className="p-3">Vencimiento</th>
-                    <th className="p-3">Fecha</th>
+                    <th className="p-3">Fecha de cierre</th>
                     <th className="p-3 text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -296,7 +297,9 @@ export default function PlanesLista({
                         </span>
                       </td>
                       <td className="p-3 text-slate-500 font-medium">
-                        {pm.created_at ? new Date(pm.created_at).toLocaleDateString('es-MX') : '-'}
+                        <span title={`Apertura: ${formatearFecha(pm.fecha_apertura || pm.created_at)}`}>
+                          {formatearFecha(pm.fecha_cierre || getFechaCompromiso(pm))}
+                        </span>
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-1.5 justify-center">

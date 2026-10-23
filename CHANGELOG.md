@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T09:37Z · @claude-code · [FIX] · Listas de AC y PM muestran la fecha de cierre vigente, sin desfase de un día
+La columna "Fecha" mostraba la apertura; ahora es "Fecha de cierre" (cierre real si ya cerró, si no la fecha compromiso vigente con replanteos) y la apertura queda en el tooltip. Las fechas solo-día se interpretaban como medianoche UTC y en México se veían un día antes, lo que también restaba un día al semáforo de vencimiento: nuevo `parseFecha` en hora local usado por `getFechaCompromiso`, `diasRestantes` y la nueva `formatearFecha`. Tests frontend 73/73.
+- Archivos: frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js, frontend/src/components/acciones/AccionesLista.jsx, frontend/src/components/planes/PlanesLista.jsx
+- Tareas STATE: C1 (ajuste)
+- Deploy: SÍ
+
 ## 2026-10-23T09:03Z · @claude-code · [FEATURE] · AC y PM reales del Control 6 en el portal + edición por el SGC
 Se eliminan las acciones y mejoras de ejemplo y se cargan las abiertas del Control 6 (21 AC, 6 PM) como formatos OOMRSC-20/OOMRSC-21 en estado EN_SEGUIMIENTO, con folio original, área, dirección y proceso del catálogo, responsable y correo de la hoja Datos, fecha de apertura, fecha de cierre original, replanteos y fecha vigente. Causas, equipo y actividades quedan pendientes (`pendiente_formato`) hasta recibir el Excel de cada folio. Los administradores del SGC tienen "Editar formato (SGC)" en registros en seguimiento: abre el asistente con el contenido actual y guarda sin cambiar estado ni folio, con registro en bitácora.
 - Archivos: scripts/importar_control6.py, frontend/src/SGCContext.jsx, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, .gitignore

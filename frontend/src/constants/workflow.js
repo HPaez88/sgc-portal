@@ -166,6 +166,21 @@ export const cumpleFiltroEstado = (estado, filtro) => {
   return canonico === filtro || estado === filtro;
 };
 
+// Fechas solo-día ("2026-12-23") se leen en hora LOCAL. new Date("2026-12-23") las toma como
+// medianoche UTC y en México las muestra un día antes.
+export const parseFecha = (valor) => {
+  if (!valor) return null;
+  if (valor instanceof Date) return valor;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(valor));
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(valor);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+export const formatearFecha = (valor) => {
+  const d = parseFecha(valor);
+  return d ? d.toLocaleDateString('es-MX') : '-';
+};
+
 // Fecha compromiso de un registro AC/PM (toma la primera fecha disponible)
 export const getFechaCompromiso = (registro) => {
   if (!registro) return null;
@@ -176,15 +191,15 @@ export const getFechaCompromiso = (registro) => {
     registro.fecha_limite,
   ];
   const fecha = candidatos.find((f) => f);
-  return fecha ? new Date(fecha) : null;
+  return fecha ? parseFecha(fecha) : null;
 };
 
 export const diasRestantes = (fecha) => {
   if (!fecha) return null;
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  const objetivo = new Date(fecha);
-  if (Number.isNaN(objetivo.getTime())) return null;
+  const objetivo = parseFecha(fecha);
+  if (!objetivo) return null;
   objetivo.setHours(0, 0, 0, 0);
   return Math.round((objetivo.getTime() - hoy.getTime()) / 86400000);
 };

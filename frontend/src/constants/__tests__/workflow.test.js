@@ -11,6 +11,8 @@ import {
   esCerrado,
   cumpleFiltroEstado,
   getVencimiento,
+  parseFecha,
+  diasRestantes,
   diasRestantes,
   getFechaCompromiso,
 } from '../workflow';
@@ -138,5 +140,18 @@ describe('vencimiento de compromisos', () => {
   it('sin fecha devuelve el nivel sin_fecha', () => {
     expect(getVencimiento({ estado: 'EN_SEGUIMIENTO' }).nivel).toBe('sin_fecha');
     expect(getVencimiento(null).nivel).toBe('sin_fecha');
+  });
+});
+
+describe('fechas solo-día en hora local', () => {
+  it('"2026-12-23" se lee como el 23 local, no el 22', () => {
+    const d = parseFecha('2026-12-23');
+    expect([d.getFullYear(), d.getMonth() + 1, d.getDate()]).toEqual([2026, 12, 23]);
+  });
+  it('los días restantes no pierden un día', () => {
+    const hoy = new Date();
+    const en10 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 10);
+    const iso = `${en10.getFullYear()}-${String(en10.getMonth() + 1).padStart(2, '0')}-${String(en10.getDate()).padStart(2, '0')}`;
+    expect(diasRestantes(iso)).toBe(10);
   });
 });

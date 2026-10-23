@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye } from 'lucide-react';
 import { ORIGENES_AC, FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
+import { getFechaCompromiso, formatearFecha } from '../../constants/workflow';
 
 export default function AccionesLista({ 
   accionesCorrectivas, 
@@ -348,7 +349,7 @@ export default function AccionesLista({
                     <th className="p-3">Origen</th>
                     <th className="p-3">Estado</th>
                     <th className="p-3">Vencimiento</th>
-                    <th className="p-3">Fecha</th>
+                    <th className="p-3">Fecha de cierre</th>
                     <th className="p-3 text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -372,7 +373,9 @@ export default function AccionesLista({
                         </span>
                       </td>
                       <td className="p-3 text-slate-500 font-medium">
-                        {ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}
+                        <span title={`Apertura: ${formatearFecha(ac.fecha_apertura || ac.fecha_creacion_borrador)}`}>
+                          {formatearFecha(ac.fecha_cierre || getFechaCompromiso(ac))}
+                        </span>
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-1.5 justify-center">
