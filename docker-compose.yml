@@ -34,6 +34,9 @@ services:
       # Identidad: secreto de firma de sesiones y contraseña inicial del Super Admin (solo primer arranque)
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET requerido en .env (openssl rand -hex 32)}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      # Correo de notificaciones (Resend). Vacío = apagado; el portal usa el correo del usuario.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       DATABASE_URL: postgresql://${DB_USER:-sgc_portal}:${DB_PASSWORD}@db:5432/${DB_NAME:-sgc_portal}
       ALLOWED_ORIGINS: https://${DOMAIN}
       DEFAULT_ORGANISMO_ID: ${DEFAULT_ORGANISMO_ID:-1}
