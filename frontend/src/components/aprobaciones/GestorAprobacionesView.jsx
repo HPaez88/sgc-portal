@@ -3,6 +3,7 @@ import { Check, X, Eye } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { getEstadoColor, getEstadoLabel, getVencimiento, can } from '../../constants';
 import { useDialogos, Dialogos } from '../common/Dialogos';
+import { asignarFolio } from '../../services/folioService';
 
 export default function GestorAprobacionesView({
   accionesCorrectivas,
@@ -196,9 +197,7 @@ export default function GestorAprobacionesView({
     if (!confirma) return;
 
     if (app.tipo === 'Acción Correctiva') {
-      const folioNumero = accionesCorrectivas.filter(a => a.folio_codigo !== 'Pendiente de aprobación').length + 1;
-      const anio = new Date().getFullYear().toString().slice(-2);
-      const folioCodigo = `AC#${folioNumero}/${anio}`;
+      const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('AC', accionesCorrectivas);
 
       const nuevoObj = {
         ...app.objeto_original,
@@ -223,9 +222,7 @@ export default function GestorAprobacionesView({
       });
 
     } else if (app.tipo === 'Plan de Mejora') {
-      const folioNumero = planesMejora.filter(p => p.folio || p.folio_codigo).length + 1;
-      const anio = new Date().getFullYear().toString().slice(-2);
-      const folioCodigo = `PM#${folioNumero}/${anio}`;
+      const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('PM', planesMejora);
 
       const nuevoObj = {
         ...app.objeto_original,

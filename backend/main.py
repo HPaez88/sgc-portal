@@ -3,6 +3,7 @@ main.py — Portal SGC OOMAPASC de Cajeme (FastAPI)
 Versión 3.1 — Control 6 integrado + Workflow completo
 """
 import os
+from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, date
 from dotenv import load_dotenv
@@ -48,6 +49,7 @@ app = FastAPI(
 # Serve static frontend in production
 if os.getenv("ENVIRONMENT") == "production":
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+    app.mount("/icons", StaticFiles(directory="frontend/dist/icons"), name="icons")
 
 # CORS
 raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5180,http://127.0.0.1:5180,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000")
@@ -211,6 +213,20 @@ def get_dashboard(
 def health():
     """Sonda de vida sin sesión (healthcheck de Docker/Traefik)."""
     return {"status": "ok"}
+
+
+_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+_RAIZ_PWA = {"manifest.webmanifest": "application/manifest+json", "sw.js": "application/javascript", "favicon.svg": "image/svg+xml"}
+
+
+@app.get("/{archivo}", include_in_schema=False)
+def archivo_raiz_pwa(archivo: str):
+    """Archivos de la app instalable que deben vivir en la raíz (manifest, service worker, favicon)."""
+    tipo = _RAIZ_PWA.get(archivo)
+    ruta = _DIST / archivo
+    if not tipo or not ruta.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(ruta, media_type=tipo, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/", tags=["Root"])

@@ -12,7 +12,9 @@ import { api, getToken } from './apiClient';
 const DEBOUNCE_MS = 800;
 const REINTENTO_MS = 15000;
 // Claves de sesión/preferencia local que NO se sincronizan.
-const CLAVES_LOCALES = new Set(['sgc-token', 'sgc-usuario-sesion', 'sgc-sesion-activa', 'sgc-usuario-activo']);
+// sgc-usuarios-actividad: marca de 'última actividad' cada pocos segundos; subirla al servidor hacía
+// parpadear el indicador de sincronización sin aportar datos del SGC.
+const CLAVES_LOCALES = new Set(['sgc-token', 'sgc-usuario-sesion', 'sgc-sesion-activa', 'sgc-usuario-activo', 'sgc-usuarios-actividad']);
 
 export const esClaveSincronizada = (clave) => typeof clave === 'string' && clave.startsWith('sgc-') && !CLAVES_LOCALES.has(clave);
 
@@ -54,6 +56,8 @@ export function registrar(clave, setter, valorLocal) {
 export function guardar(clave, valor) {
   escribirCache(clave, valor);
   if (!esClaveSincronizada(clave) || !getToken()) return;
+  // Sin cambios respecto a lo que ya tiene el servidor: no hay nada que subir.
+  if (!pendientes.has(clave) && servidor?.has(clave) && JSON.stringify(servidor.get(clave)) === JSON.stringify(valor)) return;
   pendientes.set(clave, valor);
   actualizarEstado({ pendientes: pendientes.size });
   clearTimeout(timers.get(clave));

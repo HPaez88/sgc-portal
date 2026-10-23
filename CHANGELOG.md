@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T09:46Z · @claude-code · [FIX/FEATURE] · Folios AC#n/aaaa y OM#n/aaaa por año, portal instalable y sincronización estable
+Folios: antes se calculaban contando registros (daba AC#22/26 y repetía folios). Ahora `siguienteFolio` toma el máximo entre los registros del año y el contador `sgc-config-folios` (último emitido, incluidas cerradas del Control 6: AC 24, OM 9 en 2026), usa la nomenclatura del Control 6 y reinicia cada año; aplica en AC, PM y el gestor de aprobaciones. App instalable: manifest, íconos 192/512/maskable/apple, service worker que no guarda datos en caché, favicon propio (antes apuntaba a un vite.svg inexistente); el backend sirve manifest, sw.js, favicon e íconos. El indicador "Sincronizado" parpadeaba porque cada 3 s de actividad del mouse subía la clave de presencia: ahora es local y no se reenvían valores idénticos al servidor. Tests frontend 78/78, backend 26/26.
+- Archivos: frontend/src/constants/folio.js, frontend/src/constants/__tests__/folio.test.js, frontend/src/services/folioService.js, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/components/aprobaciones/GestorAprobacionesView.jsx, frontend/src/services/estadoService.js, frontend/public/(manifest.webmanifest, sw.js, favicon.svg, icons/), frontend/index.html, frontend/src/main.jsx, backend/main.py, scripts/importar_control6.py
+- Tareas STATE: C6, C7, C8
+- Deploy: SÍ
+
 ## 2026-10-23T09:37Z · @claude-code · [FIX] · Listas de AC y PM muestran la fecha de cierre vigente, sin desfase de un día
 La columna "Fecha" mostraba la apertura; ahora es "Fecha de cierre" (cierre real si ya cerró, si no la fecha compromiso vigente con replanteos) y la apertura queda en el tooltip. Las fechas solo-día se interpretaban como medianoche UTC y en México se veían un día antes, lo que también restaba un día al semáforo de vencimiento: nuevo `parseFecha` en hora local usado por `getFechaCompromiso`, `diasRestantes` y la nueva `formatearFecha`. Tests frontend 73/73.
 - Archivos: frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js, frontend/src/components/acciones/AccionesLista.jsx, frontend/src/components/planes/PlanesLista.jsx

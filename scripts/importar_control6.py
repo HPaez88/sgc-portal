@@ -211,6 +211,17 @@ def construir_pm(r, direccion, proceso_de, dir_personas):
     }
 
 
+def ultimos_folios(ws, tipo):
+    """Último número emitido por año, incluidas las cerradas (base del consecutivo AC#n/aaaa, OM#n/aaaa)."""
+    out = {}
+    for r in tabla(ws):
+        m = re.search(r"#\s*(\d+)\s*[\\/]\s*(\d{4})", str(r.get("FOLIO") or ""))
+        if m:
+            anio, num = m.group(2), int(m.group(1))
+            out[anio] = max(out.get(anio, 0), num)
+    return {tipo: out}
+
+
 def cargar(ruta):
     wb = openpyxl.load_workbook(ruta, read_only=True, data_only=True)
     direccion, proceso_de = catalogos_portal()
@@ -220,11 +231,12 @@ def cargar(ruta):
     pms = [construir_pm(r, direccion, proceso_de, personas)
            for r in tabla(wb["Mejoras"]) if norm(r.get("ESTATUS")) == "abierta"]
     assert len({a["id"] for a in acs}) == len(acs) and len({p["id"] for p in pms}) == len(pms), "ids duplicados"
-    return acs, pms
+    contador = {**ultimos_folios(wb["Acciones"], "AC"), **ultimos_folios(wb["Mejoras"], "PM")}
+    return acs, pms, contador
 
 
 # ───────────── envío al portal ─────────────
-def aplicar(url, acs, pms):
+def aplicar(url, acs, pms, contador):
     import urllib.request
 
     def peticion(metodo, ruta, cuerpo=None, token=None):
@@ -245,6 +257,7 @@ def aplicar(url, acs, pms):
     limpio = lambda xs: [{k: v for k, v in x.items() if not k.startswith("_")} for x in xs]
     peticion("PUT", "/api/v1/estado/sgc-acciones-correctivas", {"valor": limpio(acs)}, token)
     peticion("PUT", "/api/v1/estado/sgc-planes-mejora", {"valor": limpio(pms)}, token)
+    peticion("PUT", "/api/v1/estado/sgc-config-folios", {"valor": contador}, token)
     final = peticion("GET", "/api/v1/estado", token=token)
     print(f"en servidor: {len(final['sgc-acciones-correctivas']['valor'])} AC · {len(final['sgc-planes-mejora']['valor'])} PM")
 
@@ -255,15 +268,16 @@ def main():
     ap.add_argument("--aplicar", action="store_true")
     ap.add_argument("--url", default=URL_DEFECTO)
     a = ap.parse_args()
-    acs, pms = cargar(a.excel)
+    acs, pms, contador = cargar(a.excel)
     for titulo, xs in (("ACCIONES CORRECTIVAS", acs), ("PLANES DE MEJORA", pms)):
         print(f"\n{titulo}: {len(xs)} abiertas")
         for x in xs:
             print(f"  {x['folio_codigo']:<13} {x['area'][:30]:<30} {x['proceso'][:22]:<22} apertura {x['fecha_apertura']}  vence {x['fecha_limite']}  resp. {x.get('responsable') or x.get('responsable_actividad_inmediata') or '—'}")
             for av in x["_avisos"]:
                 print(f"      ! {av}")
+    print(f"\nÚltimo folio emitido por año (siguiente = +1): {contador}")
     if a.aplicar:
-        aplicar(a.url.rstrip("/"), acs, pms)
+        aplicar(a.url.rstrip("/"), acs, pms, contador)
     else:
         print("\nVista previa: no se envió nada. Usa --aplicar para cargar al portal.")
 

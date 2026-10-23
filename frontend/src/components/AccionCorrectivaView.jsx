@@ -9,7 +9,8 @@ import { useToast } from './common/Toast';
 import { useDialogos, Dialogos } from './common/Dialogos';
 import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
-import { ESTADOS_SGC, getEstadoColor, getEstadoLabel, can, generarFolio, getDireccionDeArea, puedeVerArea } from '../constants';
+import { ESTADOS_SGC, getEstadoColor, getEstadoLabel, can, getDireccionDeArea, puedeVerArea } from '../constants';
+import { asignarFolio } from '../services/folioService';
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
   const { registrarMovimiento } = useSGC();
@@ -300,9 +301,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   };
 
   const aprobarSGC = () => {
-    const folioNumero = accionesCorrectivas.filter(ac => ac.folio_codigo && ac.folio_codigo !== 'Pendiente de aprobación').length + 1;
-    const anio = new Date().getFullYear().toString().slice(-2);
-    const folioCodigo = `AC#${folioNumero}/${anio}`;
+    const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('AC', accionesCorrectivas);
     const cambios = {
       estado: 'EN_SEGUIMIENTO', folio_numero: folioNumero, folio_codigo: folioCodigo,
       anio_folio: anio, fecha_aprobacion_sgc: new Date().toISOString(), fecha_apertura: new Date().toISOString(),

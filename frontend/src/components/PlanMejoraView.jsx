@@ -10,6 +10,7 @@ import { useDialogos, Dialogos } from './common/Dialogos';
 import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
+import { asignarFolio } from '../services/folioService';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
   const { registrarMovimiento } = useSGC();
@@ -283,9 +284,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   const aprobarSGC = () => {
-    const folioNumero = planesMejora.filter(p => (p.folio_codigo || p.folio) && (p.folio_codigo || p.folio) !== 'Pendiente de aprobación').length + 1;
-    const anio = new Date().getFullYear().toString().slice(-2);
-    const folioCodigo = `PM#${folioNumero}/${anio}`;
+    const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('PM', planesMejora);
     const cambios = {
       estado: 'EN_SEGUIMIENTO',
       folio: folioCodigo,
