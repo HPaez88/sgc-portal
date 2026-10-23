@@ -11,6 +11,7 @@ import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
 import { asignarFolio } from '../services/folioService';
+import { motivoBloqueoCierre } from '../constants/workflow';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
   const { registrarMovimiento } = useSGC();
@@ -367,6 +368,13 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   const solicitarCierre = async () => {
+    const bloqueo = motivoBloqueoCierre(actividades);
+    if (bloqueo) {
+      setError(bloqueo);
+      setMensaje('');
+      toast.error(bloqueo);
+      return;
+    }
     const { ok } = await confirmar({
       titulo: 'Solicitar cierre del Plan de Mejora',
       mensaje: 'El expediente se enviará formalmente al SGC para solicitar el cierre y la asignación de un auditor de eficacia.',
@@ -412,29 +420,72 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       };
       setMensaje('✅ Plan de Mejora dictaminado y cerrado como EFECTIVO');
     } else {
-      // Regla ISO y usuario: Si no es efectiva, retorna a APROBADO / EN_SEGUIMIENTO con comentarios para seguir trabajando en ella
+      // Regla SGC: un cierre NO efectivo se cierra; el auditor decide si se le da seguimiento con
+      // una nueva mejora (borrador ligado que el área analiza y el SGC aprueba con folio nuevo) o solo se cierra.
+      if (!['NUEVA_ACCION', 'SOLO_CERRAR'].includes(modalDictamen.destino)) {
+        toast.warning('Indique si se dará seguimiento con una nueva mejora o solo se cierra como no efectiva.');
+        return;
+      }
       const historial = Array.isArray(form.historial_dictamenes) ? [...form.historial_dictamenes] : [];
       historial.push({
         fecha: new Date().toISOString(),
         auditor: usuarioLogueado?.nombre || form.auditor_cierre || 'Auditor',
         resultado: 'NO_EFECTIVA',
+        destino: modalDictamen.destino,
         conclusion: modalDictamen.conclusion.trim()
       });
+      const conSeguimiento = modalDictamen.destino === 'NUEVA_ACCION';
+      const nueva = conSeguimiento ? {
+          id: Date.now(),
+          folio: null, folio_codigo: 'Pendiente de aprobación', folio_numero: null,
+          estado: 'BORRADOR',
+          titulo_mejora: `Seguimiento de ${form.folio_codigo}: ${form.titulo_mejora || ''}`.slice(0, 250),
+          area: form.area, gerencia_coordinacion: form.gerencia_coordinacion || form.area, direccion: form.direccion, proceso: form.proceso,
+          categoria_mejora: form.categoria_mejora || '', periodo_mejora: '', origen: 'Cierre no eficaz',
+          descripcion_situacion_actual: `Seguimiento por cierre NO EFECTIVO de ${form.folio_codigo}. ${form.descripcion_situacion_actual || ''}\n\nDictamen del auditor: ${modalDictamen.conclusion.trim()}`,
+          situacion_deseada: form.situacion_deseada || '', beneficios: form.beneficios || '',
+          accion_origen_folio: form.folio_codigo, accion_origen_id: form.id, origen_modulo: 'Auditoría de cierre', origen_referencia: form.folio_codigo, generado_por: 'SGC Portal',
+          creado_por: usuarioLogueado?.nombre || 'Auditor', creador_email: usuarioLogueado?.email || '', creador_area: form.area,
+          fecha_creacion_borrador: new Date().toISOString(), created_at: new Date().toISOString(),
+          integrantes: form.integrantes || '[]', actividades: '[]',
+          clave_formato: 'OOMRSC-21', revision_formato: 'Rev. 02'
+        } : null;
 
       cambios = {
-        estado: 'EN_SEGUIMIENTO',
+        estado: 'CERRADO_NO_EFECTIVO',
+        fecha_cierre: new Date().toISOString(),
         resultado_cierre: 'NO_EFECTIVA',
+        decision_no_efectiva: modalDictamen.destino,
+        accion_seguimiento_id: nueva ? nueva.id : null,
         conclusion_eficacia: modalDictamen.conclusion.trim(),
         evidencia_objetiva_revisada: modalDictamen.evidenciaVerificada.trim(),
         observaciones_auditor: modalDictamen.conclusion.trim(),
         historial_dictamenes: historial
       };
-      setMensaje('⚠️ Plan devuelto para continuar seguimiento. El área responsable puede complementar actividades y evidencias.');
+
+      if (nueva) {
+        setTimeout(() => setPlanesMejora(prev => [...prev, nueva]), 0);
+        registrarMovimiento({
+          modulo: 'PLANES_MEJORA', accion: 'SEGUIMIENTO_NO_EFECTIVA',
+          descripcion: `Cierre NO EFECTIVO de ${form.folio_codigo} con seguimiento: se abre borrador ligado para el área ${form.area}`,
+          detalles: `Auditor: ${usuarioLogueado?.nombre || 'Auditor'} | Conclusión: ${modalDictamen.conclusion.trim().slice(0, 200)}`,
+          folio: form.folio_codigo || ''
+        });
+        setMensaje('🔁 Cerrada como NO EFECTIVA. Se abrió un borrador de seguimiento ligado para que el área haga un nuevo análisis.');
+      } else {
+        registrarMovimiento({
+          modulo: 'PLANES_MEJORA', accion: 'CIERRE_NO_EFECTIVO',
+          descripcion: `Cierre NO EFECTIVO de ${form.folio_codigo} sin acción de seguimiento`,
+          detalles: `Auditor: ${usuarioLogueado?.nombre || 'Auditor'} | Conclusión: ${modalDictamen.conclusion.trim().slice(0, 200)}`,
+          folio: form.folio_codigo || ''
+        });
+        setMensaje('⛔ Plan de Mejora cerrada como NO EFECTIVA, sin acción de seguimiento.');
+      }
     }
 
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
-    setModalDictamen({ show: false, resultado: 'EFECTIVA', conclusion: '', evidenciaVerificada: '' });
+    setModalDictamen({ show: false, resultado: 'EFECTIVA', conclusion: '', evidenciaVerificada: '', destino: '' });
     setTimeout(() => { setVista('lista'); }, 700);
   };
 
@@ -762,7 +813,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
             </div>
           </div>
           <button 
-            onClick={() => setModalDictamen({ show: false, resultado: 'EFECTIVA', conclusion: '', evidenciaVerificada: '' })}
+            onClick={() => setModalDictamen({ show: false, resultado: 'EFECTIVA', conclusion: '', evidenciaVerificada: '', destino: '' })}
             className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1"
           >
             ✕
@@ -802,14 +853,32 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
                 }`}
               >
                 <div className="flex items-center gap-2 font-bold text-sm text-amber-800">
-                  <span>❌</span> No Efectivo (Regresar)
+                  <span>❌</span> No Efectivo
                 </div>
                 <p className="text-xs mt-1 text-slate-500">
-                  Requiere trabajo adicional. Regresa a seguimiento con observaciones para solventar.
+                  La causa no se eliminó o la evidencia no es suficiente. Se cierra como no efectiva.
                 </p>
               </button>
             </div>
           </div>
+
+          {modalDictamen.resultado === 'NO_EFECTIVA' && (
+            <div className="p-3 rounded-xl border-2 border-amber-200 bg-amber-50/50">
+              <p className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">¿Qué sigue con este cierre no efectivo?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  ['NUEVA_ACCION', '🔁 Dar seguimiento con una nueva mejora', 'Se cierra esta y se abre un borrador ligado para que el área haga un nuevo análisis; el SGC le asigna folio nuevo.'],
+                  ['SOLO_CERRAR', '⛔ Solo cerrar como no efectiva', 'Se cierra sin acción adicional. Queda registrado el dictamen.'],
+                ].map(([valor, titulo, texto]) => (
+                  <button key={valor} type="button" onClick={() => setModalDictamen(d => ({ ...d, destino: valor }))}
+                    className={`p-2.5 rounded-lg border-2 text-left transition-all ${modalDictamen.destino === valor ? 'border-amber-500 bg-white shadow-sm' : 'border-slate-200 bg-white/70 hover:border-slate-300'}`}>
+                    <div className="text-sm font-bold text-slate-900">{titulo}</div>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{texto}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -847,7 +916,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         <div className="flex gap-3 mt-6 justify-end pt-3 border-t border-slate-100">
           <button
             type="button"
-            onClick={() => setModalDictamen({ show: false, resultado: 'EFECTIVA', conclusion: '', evidenciaVerificada: '' })}
+            onClick={() => setModalDictamen({ show: false, resultado: 'EFECTIVA', conclusion: '', evidenciaVerificada: '', destino: '' })}
             className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50"
           >
             Cancelar

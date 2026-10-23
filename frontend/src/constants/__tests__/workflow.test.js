@@ -12,6 +12,7 @@ import {
   cumpleFiltroEstado,
   getVencimiento,
   parseFecha,
+  motivoBloqueoCierre,
   diasRestantes,
   diasRestantes,
   getFechaCompromiso,
@@ -153,5 +154,20 @@ describe('fechas solo-día en hora local', () => {
     const en10 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 10);
     const iso = `${en10.getFullYear()}-${String(en10.getMonth() + 1).padStart(2, '0')}-${String(en10.getDate()).padStart(2, '0')}`;
     expect(diasRestantes(iso)).toBe(10);
+  });
+});
+
+describe('regla: sin evidencia no hay solicitud de cierre', () => {
+  it('bloquea si no hay actividades', () => {
+    expect(motivoBloqueoCierre([])).toMatch(/al menos una actividad/);
+    expect(motivoBloqueoCierre(undefined)).toMatch(/al menos una actividad/);
+  });
+  it('bloquea y nombra las actividades sin evidencia', () => {
+    const m = motivoBloqueoCierre([{ actividad: 'Capacitar personal', evidencia_real: '/api/v1/archivos/3/url' }, { actividad: 'Actualizar procedimiento' }]);
+    expect(m).toMatch(/1 actividad/);
+    expect(m).toMatch(/Actualizar procedimiento/);
+  });
+  it('permite si todas tienen evidencia', () => {
+    expect(motivoBloqueoCierre([{ actividad: 'A', evidencia_real: 'x' }, { actividad: 'B', evidencia_real: 'y' }])).toBeNull();
   });
 });

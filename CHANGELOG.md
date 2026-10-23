@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T09:58Z · @claude-code · [FEATURE] · Regla de evidencia para cierre y decisión del auditor ante cierre no efectivo
+Solicitar cierre de una AC o PM exige al menos una actividad y evidencia en todas (`motivoBloqueoCierre`, con aviso que nombra las actividades faltantes). Dictamen NO EFECTIVO: ya no regresa a seguimiento; el auditor debe elegir "Dar seguimiento con una nueva acción" (se cierra como CERRADO_NO_EFECTIVO y se crea un borrador ligado con área, proceso, descripción y dictamen, origen "Cierre no eficaz", para análisis del área y aprobación con folio nuevo) o "Solo cerrar como no efectiva". Ambos casos quedan en bitácora e historial de dictámenes. Tests frontend 81/81.
+- Archivos: frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx
+- Tareas STATE: C10, C11
+- Deploy: SÍ
+
 ## 2026-10-23T09:54Z · @claude-code · [FIX] · Las evidencias y actividades no quedaban guardadas en la ficha de AC/PM
 `guardarBorrador` reutilizaba el JSON de actividades ya guardado (`form.actividades_json || …`), así que "Guardar evidencia" y las ediciones de actividades en el asistente no se persistían en registros existentes: el archivo llegaba a Backblaze pero la ficha no lo referenciaba. Ahora se guardan siempre las actividades en pantalla (el override solo aplica cuando viene explícito, como en replanteos). Además, subir o retirar una evidencia guarda la ficha de inmediato, y ya no se incrusta la vista previa en base64 dentro del registro (cientos de KB por evidencia; la imagen se muestra desde el servidor).
 - Archivos: frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/components/acciones/AccionesDetalle.jsx, frontend/src/components/planes/PlanesDetalle.jsx, frontend/src/utils/fileSecurity.js

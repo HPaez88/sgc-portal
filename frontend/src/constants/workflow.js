@@ -166,6 +166,20 @@ export const cumpleFiltroEstado = (estado, filtro) => {
   return canonico === filtro || estado === filtro;
 };
 
+// Regla SGC: no se solicita el cierre de una AC o PM sin evidencia en TODAS sus actividades.
+// Devuelve null si se puede solicitar, o el motivo para mostrarlo al usuario.
+export const motivoBloqueoCierre = (actividades) => {
+  const lista = Array.isArray(actividades) ? actividades : [];
+  if (lista.length === 0) return 'Registra al menos una actividad con su evidencia antes de solicitar el cierre.';
+  const sinEvidencia = lista
+    .map((a, i) => ({ nombre: (a?.actividad || a?.descripcion || `Actividad ${i + 1}`).toString().trim(), ok: Boolean(a?.evidencia_real) }))
+    .filter((a) => !a.ok);
+  if (sinEvidencia.length === 0) return null;
+  const nombres = sinEvidencia.slice(0, 3).map((a) => `"${a.nombre.slice(0, 60)}"`).join(', ');
+  const resto = sinEvidencia.length > 3 ? ` y ${sinEvidencia.length - 3} más` : '';
+  return `No se puede solicitar el cierre: falta evidencia en ${sinEvidencia.length} actividad(es): ${nombres}${resto}.`;
+};
+
 // Fechas solo-día ("2026-12-23") se leen en hora LOCAL. new Date("2026-12-23") las toma como
 // medianoche UTC y en México las muestra un día antes.
 export const parseFecha = (valor) => {
