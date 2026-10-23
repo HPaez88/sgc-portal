@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T09:54Z · @claude-code · [FIX] · Las evidencias y actividades no quedaban guardadas en la ficha de AC/PM
+`guardarBorrador` reutilizaba el JSON de actividades ya guardado (`form.actividades_json || …`), así que "Guardar evidencia" y las ediciones de actividades en el asistente no se persistían en registros existentes: el archivo llegaba a Backblaze pero la ficha no lo referenciaba. Ahora se guardan siempre las actividades en pantalla (el override solo aplica cuando viene explícito, como en replanteos). Además, subir o retirar una evidencia guarda la ficha de inmediato, y ya no se incrusta la vista previa en base64 dentro del registro (cientos de KB por evidencia; la imagen se muestra desde el servidor).
+- Archivos: frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/components/acciones/AccionesDetalle.jsx, frontend/src/components/planes/PlanesDetalle.jsx, frontend/src/utils/fileSecurity.js
+- Tareas STATE: C3 (corrección)
+- Deploy: SÍ
+
 ## 2026-10-23T09:50Z · @claude-code · [FEATURE] · Aviso con botón "Actualizar portal" al publicarse una versión nueva
 `AvisoActualizacion` compara el bundle en ejecución (assets/index-<hash>.js) con el que sirve el index.html del servidor; revisa cada 5 minutos y al volver a la pestaña. Si cambió, muestra un aviso con el botón "Actualizar portal", que espera a que se suban los cambios pendientes (máx. 10 s) y recarga. No recarga solo para no interrumpir capturas. El index.html se sirve con `Cache-Control: no-cache`.
 - Archivos: frontend/src/components/common/AvisoActualizacion.jsx, frontend/src/main.jsx, backend/main.py, STATE.md

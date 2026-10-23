@@ -123,7 +123,8 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
       fecha_creacion_borrador: datosActuales.fecha_creacion_borrador || new Date().toISOString(),
       equipo_json: JSON.stringify(equipo),
       causas_json: JSON.stringify(causas),
-      actividades_json: datosActuales.actividades_json || JSON.stringify(actividades)
+      // Lo que está en pantalla manda; solo se usa el override cuando viene explícito (replanteos).
+      actividades_json: overrideData?.actividades_json ?? JSON.stringify(actividades)
     };
 
     let listasActualizadas;

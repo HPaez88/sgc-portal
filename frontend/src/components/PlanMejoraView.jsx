@@ -144,7 +144,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       fecha_creacion_borrador: datosActuales.fecha_creacion_borrador || datosActuales.created_at || new Date().toISOString(),
       created_at: datosActuales.created_at || new Date().toISOString(),
       integrantes: JSON.stringify(equipo),
-      actividades: datosActuales.actividades || JSON.stringify(actividades)
+      // Lo que está en pantalla manda; solo se usa el override cuando viene explícito (replanteos).
+      actividades: overrideData?.actividades ?? JSON.stringify(actividades)
     };
 
     let listasActualizadas;

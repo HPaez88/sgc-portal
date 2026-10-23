@@ -100,6 +100,8 @@ export default function AccionesDetalle({
         evidencia_obj: res.evidencia
       };
       setActividades(nuevo);
+      // Se liga a la ficha de inmediato: el archivo ya está en el servidor y no debe quedar huérfano.
+      await guardarBorrador({ actividades_json: JSON.stringify(nuevo) });
       if (setMensaje) setMensaje(`✓ Evidencia procesada, comprimida y validada (${res.evidencia.tamano_kb} KB)`);
     } catch (err) {
       console.error(err);
@@ -124,6 +126,7 @@ export default function AccionesDetalle({
       evidencia_obj: null
     };
     setActividades(nuevo);
+    await guardarBorrador({ actividades_json: JSON.stringify(nuevo) });
   };
 
   const handleGuardarEvidencia = async () => {

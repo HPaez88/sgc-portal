@@ -225,7 +225,9 @@ export async function processEvidenceFile(file, usuarioNombre = 'Usuario', conte
       url: finalUrl,
       archivo_id: registro.id,
       sha256: registro.sha256,
-      preview: previewUrl,
+      // La vista previa se carga desde el servidor (url); guardar la imagen en base64 en la ficha
+      // inflaba cada registro cientos de KB y topaba el límite de la API.
+      preview: '',
       nombre: file.name,
       tipo: check.type, // 'image' | 'pdf'
       tamano_kb: tamanoComprimidoKb,
