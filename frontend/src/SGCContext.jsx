@@ -147,58 +147,10 @@ export const useSGC = () => {
   return context;
 };
 
-export const ACCIONES_CORRECTIVAS_INICIALES = [
-  {
-    id: 1,
-    folio: 'AC#1/26',
-    titulo: 'Desviación en tiempos de respuesta de reconexión de tomas',
-    descripcion: 'Se identificaron 14 órdenes de reconexión con demora mayor a 48 horas en el sector oriente de la ciudad.',
-    area: 'Control y Servicios',
-    direccion: 'Dir. Comercial',
-    proceso: 'Comercialización',
-    origen: 'Atención Ciudadana / OCI',
-    estado: 'EN_SEGUIMIENTO',
-    causa_raiz: 'Falta de asignación oportuna de cuadrillas vespertinas y desfase en confirmación de pago en sistema.',
-    plan_accion: 'Implementar notificación digital automática a cuadrillas en tiempo real y reprogramación de rutas.',
-    responsable: 'Lic. Carmen Leyva',
-    fecha_limite: '2026-05-25',
-    auditor_asignado: 'Lic. Héctor Manuel Páez León'
-  },
-  {
-    id: 2,
-    folio: 'AC#2/26',
-    titulo: 'Calibración y verificación periódica de manómetros en cuadrillas',
-    descripcion: 'Hallazgo de auditoría interna PR-AUD-01: 3 cuadrillas no contaban con bitácora de verificación de manómetros.',
-    area: 'Control y Servicios',
-    direccion: 'Dir. Comercial',
-    proceso: 'Comercialización',
-    origen: 'Auditoría Interna SGC',
-    estado: 'APROBADO',
-    causa_raiz: 'Inexistencia de programa de calibración preventiva para equipo menor en campo.',
-    plan_accion: 'Establecer el registro trimestral de verificación y calibración con laboratorio acreditado.',
-    responsable: 'Lic. Carmen Leyva',
-    fecha_limite: '2026-06-15',
-    auditor_asignado: 'Lic. Roberto Torres'
-  }
-];
+// Sin datos de ejemplo: las AC y PM reales viven en el servidor (/api/v1/estado). Ver scripts/importar_control6.py
+export const ACCIONES_CORRECTIVAS_INICIALES = [];
 
-export const PLANES_MEJORA_INICIALES = [
-  {
-    id: 1,
-    folio: 'PM#1/26',
-    titulo: 'Digitalización y Georreferenciación de Órdenes de Reconexión en Tiempo Real',
-    descripcion: 'Migración de órdenes impresas a terminales móviles para cuadrillas de Control y Servicios para reducir tiempos de atención a <2 horas.',
-    area: 'Control y Servicios',
-    direccion: 'Dir. Comercial',
-    proceso: 'Comercialización',
-    estado: 'EN_EJECUCION',
-    fechaInicio: '2026-02-01',
-    fechaCompromiso: '2026-05-15', // Próximo a vencer
-    presupuestoEstimado: 85000,
-    responsable: 'Lic. Carmen Leyva',
-    avance: 75
-  }
-];
+export const PLANES_MEJORA_INICIALES = [];
 
 export const INDICADORES_DATA_INICIALES = {
   32: { valor_real: 17485597.42, observacion: 'Supera meta mensual', accion: 'NA' },

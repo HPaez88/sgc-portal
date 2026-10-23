@@ -527,6 +527,17 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     setMensaje('✕ Solicitud de replanteamiento rechazada por el SGC.');
   };
 
+  // El SGC puede corregir el contenido de un plan vigente sin cambiar su estado ni su folio.
+  const editarFormatoSGC = () => {
+    registrarMovimiento({
+      modulo: 'PLANES_MEJORA', accion: 'EDICION_SGC',
+      descripcion: `Edición del formato ${form.folio_codigo || ''} (OOMRSC-21) por el SGC`,
+      detalles: `Estado conservado: ${form.estado} | Área: ${form.area}`, folio: form.folio_codigo || ''
+    });
+    setStep(1);
+    setVista('nuevo');
+  };
+
   const getBotonesWorkflow = () => {
     const botones = [];
     const rol = usuarioLogueado?.rol || 'Usuario';
@@ -576,6 +587,13 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
           </button>
         );
         if (esAdmin) {
+          if (vista !== 'nuevo') {
+            botones.push(
+              <button key="editar_sgc" onClick={editarFormatoSGC} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-800 font-medium rounded-lg hover:bg-slate-50 transition-colors ml-2 shadow-sm">
+                ✏️ Editar formato (SGC)
+              </button>
+            );
+          }
           botones.push(
             <button key="auditor" onClick={asignarAuditor} className="px-6 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors ml-2 shadow-sm">
               👤 Asignar Auditor

@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T09:03Z · @claude-code · [FEATURE] · AC y PM reales del Control 6 en el portal + edición por el SGC
+Se eliminan las acciones y mejoras de ejemplo y se cargan las abiertas del Control 6 (21 AC, 6 PM) como formatos OOMRSC-20/OOMRSC-21 en estado EN_SEGUIMIENTO, con folio original, área, dirección y proceso del catálogo, responsable y correo de la hoja Datos, fecha de apertura, fecha de cierre original, replanteos y fecha vigente. Causas, equipo y actividades quedan pendientes (`pendiente_formato`) hasta recibir el Excel de cada folio. Los administradores del SGC tienen "Editar formato (SGC)" en registros en seguimiento: abre el asistente con el contenido actual y guarda sin cambiar estado ni folio, con registro en bitácora.
+- Archivos: scripts/importar_control6.py, frontend/src/SGCContext.jsx, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, .gitignore
+- Tareas STATE: C1, C2, C3
+- Deploy: SÍ (código + datos en /api/v1/estado, respaldo previo)
+
 ## 2026-10-16T14:38Z · @claude-code · [FIX] · Regresión de la fase 0: Asesor ISO, exportaciones, PDF y evidencias respondían 401
 Al exigir sesión en toda la API quedaron sin token las llamadas fetch() directas (Asesor ISO, diagnóstico IA del panel, exportación de fichas) y los recursos embebidos que el navegador pide sin cabeceras (<img> de evidencias, <iframe> del PDF, enlaces "Original"). Se agrega la sesión a todo fetch same-origin hacia /api y una cookie HttpOnly SameSite=Strict que el backend acepta solo en GET (lectura), por lo que no habilita escrituras ni CSRF. Nuevo /api/v1/auth/logout que borra la cookie. Tests backend 26/26.
 - Archivos: backend/auth.py, backend/routers/auth.py, backend/tests/test_auth.py, frontend/src/services/apiClient.js, frontend/src/SGCContext.jsx

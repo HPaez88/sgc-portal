@@ -45,6 +45,14 @@
 ### Phase 5 — RAG
 - [ ] `T5.1` @claude-code — Asesor ISO sobre documentos reales
 
+## AC y PM reales desde Control 6 — 2026-10-23
+
+- [x] C1 — `scripts/importar_control6.py`: AC y PM abiertos del Control 6 → formatos OOMRSC-20/21 EN_SEGUIMIENTO (área, dirección, proceso, responsable de hoja Datos, fechas y replanteos)
+- [x] C2 — Datos de ejemplo de AC/PM eliminados del código; servidor reemplazado con 21 AC + 6 PM (respaldo previo)
+- [x] C3 — Botón "Editar formato (SGC)" en AC y PM en seguimiento: el SGC corrige contenido sin cambiar estado ni folio, queda en bitácora
+- [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
+- [ ] C5 — Revisar en Control 6: AC#20/2026 replanteo #3 con fecha anterior; AC#24/2026 sin fecha de cierre; responsable de AC#1/2026; proceso de Jurídico (OM#5, OM#9)
+
 ## Persistencia central 2026-10-15
 
 - [x] P1 — Tabla `estado_portal` + API `/api/v1/estado` (JSON por clave y organismo, quién/cuándo)

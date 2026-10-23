@@ -288,6 +288,17 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión con supervisión humana validada'); }, 600);
   };
 
+  // El SGC puede corregir el contenido de un formato vigente sin cambiar su estado ni su folio.
+  const editarFormatoSGC = () => {
+    registrarMovimiento({
+      modulo: 'ACCIONES_CORRECTIVAS', accion: 'EDICION_SGC',
+      descripcion: `Edición del formato ${form.folio_codigo || ''} (OOMRSC-20) por el SGC`,
+      detalles: `Estado conservado: ${form.estado} | Área: ${form.area}`, folio: form.folio_codigo || ''
+    });
+    setStep(1);
+    setVista('nuevo');
+  };
+
   const aprobarSGC = () => {
     const folioNumero = accionesCorrectivas.filter(ac => ac.folio_codigo && ac.folio_codigo !== 'Pendiente de aprobación').length + 1;
     const anio = new Date().getFullYear().toString().slice(-2);
@@ -539,6 +550,9 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
         );
       } else if (form.estado === 'EN_SEGUIMIENTO' || form.estado === 'APROBADO') {
         botones.push(
+          <button key="editar_sgc" onClick={editarFormatoSGC} className="px-5 py-2.5 bg-white border border-slate-300 text-slate-800 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+            ✏️ Editar formato (SGC)
+          </button>,
           <button key="solicitar_cierre" onClick={solicitarCierre} className="px-5 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1.5">
             <span>🚀</span> Solicitar Cierre al SGC
           </button>,
