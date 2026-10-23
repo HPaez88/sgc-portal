@@ -4,9 +4,11 @@
 // documentos y cierres no efectivos. No cuentan en el control hasta que el SGC asigna folio.
 // "Avisar al responsable" abre el correo del usuario con el mensaje listo (lo envía él).
 // ═══════════════════════════════════════════════════════════════
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Eye, Mail, Inbox, CheckCircle2 } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
+import { api } from '../../services/apiClient';
+import { useToast } from './Toast';
 import { formatearFecha, diasDesde } from '../../constants/workflow';
 
 const TEXTO = {
@@ -19,16 +21,43 @@ const descripcionDe = (r) =>
 
 export default function PorAbrirPanel({ tipo, registros, onVer, setRegistros }) {
   const { areasDetalle = [], registrarMovimiento, usuarioLogueado } = useSGC();
+  const toast = useToast();
   const t = TEXTO[tipo];
+  // Si el servidor tiene correo configurado (Resend), el aviso sale desde allá; si no, se abre el correo del usuario.
+  const [correoServidor, setCorreoServidor] = useState(null);
+  const [enviandoId, setEnviandoId] = useState(null);
+  useEffect(() => { api.get('/api/v1/notificaciones/estado').then((r) => setCorreoServidor(r.ok && r.data?.activo ? r.data.remitente : null)); }, []);
 
   const correoDe = (r) => {
     if (Array.isArray(r.correos_responsables) && r.correos_responsables.length) return r.correos_responsables.join(',');
     return areasDetalle.find((a) => a.nombre === r.area)?.correo || '';
   };
 
-  const avisar = (r) => {
+  const registrarAviso = (r, para, via) => {
+    const ahora = new Date().toISOString();
+    setRegistros((prev) => prev.map((x) => (x.id === r.id
+      ? { ...x, avisos_apertura: [...(x.avisos_apertura || []), { fecha: ahora, por: usuarioLogueado?.nombre || '', para, via }] }
+      : x)));
+    registrarMovimiento?.({
+      modulo: tipo === 'AC' ? 'ACCIONES_CORRECTIVAS' : 'PLANES_MEJORA', accion: 'AVISO_APERTURA',
+      descripcion: `Aviso de apertura de ${t.titulo} al área ${r.area || ''} (${via === 'servidor' ? 'enviado por el portal' : 'correo del usuario'})`,
+      detalles: `Para: ${para || 'sin correo registrado'} | Origen: ${r.origen_modulo || r.origen || 'SGC'}`, folio: r.origen_referencia || '',
+    });
+  };
+
+  const avisar = async (r) => {
     const para = correoDe(r);
     const origen = r.origen_modulo || r.origen || 'SGC';
+    if (correoServidor && para) {
+      setEnviandoId(r.id);
+      const res = await api.post('/api/v1/notificaciones/apertura', {
+        tipo, area: r.area || '', origen, referencia: r.origen_referencia || '', descripcion: descripcionDe(r),
+        destinatarios: para.split(','),
+      });
+      setEnviandoId(null);
+      if (res.ok) { registrarAviso(r, para, 'servidor'); toast.success(`Aviso enviado a ${para}`); return; }
+      toast.error(res.error?.message || res.error?.detail || 'No se pudo enviar; se abrirá tu correo.');
+    }
     const asunto = `Apertura requerida de ${t.titulo} (${t.formato}) — ${r.area || 'Área'}`;
     const cuerpo = [
       'Buen día,',
@@ -46,15 +75,7 @@ export default function PorAbrirPanel({ tipo, registros, onVer, setRegistros }) 
     ].join('\n');
     window.location.href = `mailto:${encodeURIComponent(para)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
 
-    const ahora = new Date().toISOString();
-    setRegistros((prev) => prev.map((x) => (x.id === r.id
-      ? { ...x, avisos_apertura: [...(x.avisos_apertura || []), { fecha: ahora, por: usuarioLogueado?.nombre || '', para }] }
-      : x)));
-    registrarMovimiento?.({
-      modulo: tipo === 'AC' ? 'ACCIONES_CORRECTIVAS' : 'PLANES_MEJORA', accion: 'AVISO_APERTURA',
-      descripcion: `Aviso de apertura de ${t.titulo} al área ${r.area || ''}`,
-      detalles: `Para: ${para || 'sin correo registrado'} | Origen: ${origen}`, folio: r.origen_referencia || '',
-    });
+    registrarAviso(r, para, 'correo del usuario');
   };
 
   if (registros.length === 0) {
@@ -112,9 +133,10 @@ export default function PorAbrirPanel({ tipo, registros, onVer, setRegistros }) 
                       <button onClick={() => onVer(r)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-800 font-bold hover:bg-sky-100 cursor-pointer">
                         <Eye size={13} /> Ver
                       </button>
-                      <button onClick={() => avisar(r)} title={correo ? `Abrir correo para ${correo}` : 'Abrir correo (sin destinatario registrado)'}
+                      <button onClick={() => avisar(r)} disabled={enviandoId === r.id}
+                        title={correoServidor && correo ? `Enviar desde ${correoServidor} a ${correo}` : correo ? `Abrir tu correo para ${correo}` : 'Abrir correo (sin destinatario registrado)'}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 cursor-pointer">
-                        <Mail size={13} /> Avisar al responsable
+                        <Mail size={13} /> {enviandoId === r.id ? 'Enviando…' : 'Avisar al responsable'}
                       </button>
                     </div>
                   </td>

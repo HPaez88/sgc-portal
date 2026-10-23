@@ -3,6 +3,13 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T10:11Z · @claude-code · [FEATURE] · Notificaciones por correo con Resend (listas, se activan con la llave)
+`correo_service` envía por la API de Resend con plantilla HTML institucional y texto plano, valida y deduplica destinatarios (máx. 10), escapa el contenido y responde al correo de quien avisa. `POST /api/v1/notificaciones/apertura` (Super Admin, Admin, Auditor; 30 avisos por hora por usuario) y `GET /api/v1/notificaciones/estado`. Sin `RESEND_API_KEY` y `MAIL_FROM` queda apagado y el botón "Avisar al responsable" abre el correo del usuario como antes. Tests backend 30/30.
+- Archivos: backend/services/correo_service.py, backend/routers/notificaciones.py, backend/main.py, backend/tests/test_correo.py, frontend/src/components/common/PorAbrirPanel.jsx, docker-compose.yml y .env.example (rama deploy)
+- Tareas STATE: C13a
+- Deploy: SÍ
+- Notas: portalsgc.com está registrado por un tercero; disponibles portalsgc.mx, .com.mx, .app, .net.
+
 ## 2026-10-23T10:04Z · @claude-code · [FIX] · Botón para regresar a la lista en Acciones Correctivas y Planes de Mejora
 La ficha y el formulario solo tenían "Volver a Lista" al final de la página y volver a pulsar el módulo en el menú no regresaba a la lista. Nueva `BarraRegreso` fija arriba en la ficha y en el formulario (con el folio en contexto), y cada clic en el menú remonta el módulo para abrirlo en su lista.
 - Archivos: frontend/src/components/common/BarraRegreso.jsx, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/App.jsx

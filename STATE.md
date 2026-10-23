@@ -57,7 +57,8 @@
 - [x] C10 — Regla: sin evidencia en todas las actividades no se solicita cierre (AC y PM)
 - [x] C11 — Cierre no efectivo: el auditor elige "seguimiento con nueva acción" (borrador ligado) o "solo cerrar"; ambos quedan CERRADO_NO_EFECTIVO
 - [x] C12 — Pestaña "Por abrir" en AC y PM (hallazgos, riesgos, indicadores, documentos, cierres no efectivos) con aviso al responsable por correo (mailto) y registro de avisos
-- [ ] C13 — Envío automático de correo desde el servidor (requiere cuenta SMTP del organismo)
+- [x] C13a — Integración Resend lista (servicio, endpoint con roles y límite por hora, plantilla HTML, fallback mailto)
+- [ ] C13b — Activar Resend: dominio propio verificado + RESEND_API_KEY y MAIL_FROM en el .env del VPS (@human)
 - [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
 - [ ] C5 — Revisar en Control 6: AC#20/2026 replanteo #3 con fecha anterior; AC#24/2026 sin fecha de cierre; responsable de AC#1/2026; proceso de Jurídico (OM#5, OM#9)
 
