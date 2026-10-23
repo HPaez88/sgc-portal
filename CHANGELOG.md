@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T10:26Z · @claude-code · [DOCS] · Plan multiempresa (solo plan, sin implementar)
+Diagnóstico y plan para vender el portal a otras empresas: la capa de datos ya aísla por organismo (11 de 12 tablas, organismo desde el token, B2 por carpeta); falta mover a datos por organismo los catálogos, la marca, la nomenclatura, el manual y el conocimiento del Asesor, cerrar la lista global de organismos, correo único por organismo y alta de empresa con rol de plataforma. Decisión: una sola base con aislamiento por fila. Marcado como backlog: no se implementa hasta indicación de @human.
+- Archivos: specs/multiempresa/proposal.md, specs/multiempresa/plan.md, specs/multiempresa/tasks.md, STATE.md
+- Tareas STATE: Backlog multiempresa
+- Deploy: NO
+
 ## 2026-10-23T10:11Z · @claude-code · [FEATURE] · Notificaciones por correo con Resend (listas, se activan con la llave)
 `correo_service` envía por la API de Resend con plantilla HTML institucional y texto plano, valida y deduplica destinatarios (máx. 10), escapa el contenido y responde al correo de quien avisa. `POST /api/v1/notificaciones/apertura` (Super Admin, Admin, Auditor; 30 avisos por hora por usuario) y `GET /api/v1/notificaciones/estado`. Sin `RESEND_API_KEY` y `MAIL_FROM` queda apagado y el botón "Avisar al responsable" abre el correo del usuario como antes. Tests backend 30/30.
 - Archivos: backend/services/correo_service.py, backend/routers/notificaciones.py, backend/main.py, backend/tests/test_correo.py, frontend/src/components/common/PorAbrirPanel.jsx, docker-compose.yml y .env.example (rama deploy)

@@ -45,6 +45,10 @@
 ### Phase 5 — RAG
 - [ ] `T5.1` @claude-code — Asesor ISO sobre documentos reales
 
+## Backlog (planeado, NO implementar hasta indicación de @human)
+
+- [ ] Multiempresa — plan en `specs/multiempresa/` (fases 0–6: fugas y pruebas de aislamiento, configuración por organismo, catálogos, marca y nomenclatura, manual/Asesor, alta de empresa, integraciones)
+
 ## AC y PM reales desde Control 6 — 2026-10-23
 
 - [x] C1 — `scripts/importar_control6.py`: AC y PM abiertos del Control 6 → formatos OOMRSC-20/21 EN_SEGUIMIENTO (área, dirección, proceso, responsable de hoja Datos, fechas y replanteos)
