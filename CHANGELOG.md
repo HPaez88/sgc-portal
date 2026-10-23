@@ -3,6 +3,13 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T10:01Z · @claude-code · [FEATURE] · Pestaña "Por abrir" en Acciones Correctivas y Planes de Mejora
+Separa el control oficial (con folio) de lo detectado sin apertura: borradores generados por el sistema o el auditor (hallazgos de auditoría, indicadores fuera de meta, riesgos, documentos, cierres no efectivos) con origen, área, descripción, antigüedad (en rojo después de 15 días) y avisos enviados. "Avisar al responsable" abre el correo del usuario con destinatario (correos del registro o del catálogo de áreas), asunto y cuerpo listos, y registra el aviso en la ficha y en la bitácora. No cuentan en el control hasta que el SGC asigna folio. Tests frontend 82/82.
+- Archivos: frontend/src/components/common/PorAbrirPanel.jsx, frontend/src/components/acciones/AccionesLista.jsx, frontend/src/components/planes/PlanesLista.jsx, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js
+- Tareas STATE: C12
+- Deploy: SÍ
+- Notas: el envío automático desde el servidor queda como C13 (cuenta SMTP pendiente).
+
 ## 2026-10-23T09:58Z · @claude-code · [FEATURE] · Regla de evidencia para cierre y decisión del auditor ante cierre no efectivo
 Solicitar cierre de una AC o PM exige al menos una actividad y evidencia en todas (`motivoBloqueoCierre`, con aviso que nombra las actividades faltantes). Dictamen NO EFECTIVO: ya no regresa a seguimiento; el auditor debe elegir "Dar seguimiento con una nueva acción" (se cierra como CERRADO_NO_EFECTIVO y se crea un borrador ligado con área, proceso, descripción y dictamen, origen "Cierre no eficaz", para análisis del área y aprobación con folio nuevo) o "Solo cerrar como no efectiva". Ambos casos quedan en bitácora e historial de dictámenes. Tests frontend 81/81.
 - Archivos: frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx

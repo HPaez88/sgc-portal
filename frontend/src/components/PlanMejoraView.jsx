@@ -729,6 +729,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         />
         <PlanesLista 
           planesMejora={planesMejora}
+          setPlanesMejora={setPlanesMejora}
           setVista={setVista}
           setStep={setStep}
           resetForm={resetForm}

@@ -713,6 +713,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
         />
         <AccionesLista 
           accionesCorrectivas={accionesCorrectivas}
+          setAccionesCorrectivas={setAccionesCorrectivas}
           setForm={setForm}
           setEquipo={setEquipo}
           setCausas={setCausas}

@@ -180,6 +180,19 @@ export const motivoBloqueoCierre = (actividades) => {
   return `No se puede solicitar el cierre: falta evidencia en ${sinEvidencia.length} actividad(es): ${nombres}${resto}.`;
 };
 
+// Detectada pero sin apertura oficial: borrador creado por el sistema o por el auditor
+// (hallazgo, indicador, riesgo, documento, cierre no eficaz). Va en la pestaña "Por abrir", no en el control.
+export const esPorAbrir = (r) =>
+  Boolean(r) && ['BORRADOR', 'GENERADO_IA'].includes(r.estado) && Boolean(r.origen_modulo || r.accion_origen_folio);
+
+export const diasDesde = (valor) => {
+  const d = parseFecha(valor);
+  if (!d) return null;
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const x = new Date(d); x.setHours(0, 0, 0, 0);
+  return Math.round((hoy - x) / 86400000);
+};
+
 // Fechas solo-día ("2026-12-23") se leen en hora LOCAL. new Date("2026-12-23") las toma como
 // medianoche UTC y en México las muestra un día antes.
 export const parseFecha = (valor) => {

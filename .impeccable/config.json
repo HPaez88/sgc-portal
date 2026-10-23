@@ -20,6 +20,15 @@
         ],
         "createdAt": "2026-10-23T09:51:35.322Z",
         "reason": "claude-code: botón con text-slate-950 (casi negro) sobre bg-sky-400, contraste alto; mismo patrón que pestañas del portal"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "frontend/src/components/common/PorAbrirPanel.jsx"
+        ],
+        "createdAt": "2026-10-23T10:01:53.768Z",
+        "reason": "claude-code: botón con text-slate-950 sobre bg-amber-500, contraste alto"
       }
     ]
   }

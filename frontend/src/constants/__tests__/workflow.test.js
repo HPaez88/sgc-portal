@@ -13,6 +13,7 @@ import {
   getVencimiento,
   parseFecha,
   motivoBloqueoCierre,
+  esPorAbrir,
   diasRestantes,
   diasRestantes,
   getFechaCompromiso,
@@ -169,5 +170,14 @@ describe('regla: sin evidencia no hay solicitud de cierre', () => {
   });
   it('permite si todas tienen evidencia', () => {
     expect(motivoBloqueoCierre([{ actividad: 'A', evidencia_real: 'x' }, { actividad: 'B', evidencia_real: 'y' }])).toBeNull();
+  });
+});
+
+describe('pestaña Por abrir', () => {
+  it('solo borradores detectados por el sistema o el auditor', () => {
+    expect(esPorAbrir({ estado: 'BORRADOR', origen_modulo: 'Auditoría' })).toBe(true);
+    expect(esPorAbrir({ estado: 'BORRADOR', accion_origen_folio: 'AC#20/2026' })).toBe(true);
+    expect(esPorAbrir({ estado: 'BORRADOR' })).toBe(false);
+    expect(esPorAbrir({ estado: 'EN_SEGUIMIENTO', origen_modulo: 'Auditoría' })).toBe(false);
   });
 });

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye } from 'lucide-react';
 import { ORIGENES_AC, FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
-import { getFechaCompromiso, formatearFecha } from '../../constants/workflow';
+import { getFechaCompromiso, formatearFecha, esPorAbrir } from '../../constants/workflow';
+import PorAbrirPanel from '../common/PorAbrirPanel';
 
 export default function AccionesLista({ 
   accionesCorrectivas, 
+  setAccionesCorrectivas,
   setForm, 
   setEquipo, 
   setCausas, 
@@ -29,7 +31,10 @@ export default function AccionesLista({
   const años = [...new Set(aniosRaw)].sort((a,b) => b - a);
   
   // Filtrar acciones (estado canónico + búsqueda + vencimiento)
-  const accionesFiltradas = accionesCorrectivas.filter(ac => {
+  const [pestana, setPestana] = useState('control');
+  const porAbrir = accionesCorrectivas.filter(esPorAbrir);
+  const enControl = accionesCorrectivas.filter((r) => !esPorAbrir(r));
+  const accionesFiltradas = enControl.filter(ac => {
     const anioAC = ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null;
     if (filtroAnio && anioAC !== parseInt(filtroAnio)) return false;
     if (!cumpleFiltroEstado(ac.estado, filtroEstado)) return false;
@@ -130,6 +135,19 @@ export default function AccionesLista({
         </button>
       </div>
       
+      {/* Pestañas: control oficial vs detectadas por abrir */}
+      <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-full sm:w-fit">
+        {[['control', 'En control', enControl.length], ['por_abrir', 'Por abrir', porAbrir.length]].map(([id, texto, n]) => (
+          <button key={id} onClick={() => setPestana(id)}
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${pestana === id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
+            {texto} <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] ${id === 'por_abrir' && n > 0 ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-700'}`}>{n}</span>
+          </button>
+        ))}
+      </div>
+
+      {pestana === 'por_abrir' ? (
+        <PorAbrirPanel tipo="AC" registros={porAbrir} onVer={handleVer} setRegistros={setAccionesCorrectivas} />
+      ) : (<>
       {/* ── FILTROS MÓVILES COMPACTOS (< md) ── */}
       <div className="md:hidden bg-white p-2.5 rounded-xl shadow-2xs border border-slate-200 space-y-2">
         <div className="flex items-center gap-2">
@@ -399,6 +417,7 @@ export default function AccionesLista({
           </div>
         </>
       )}
+      </>)}
     </div>
   );
 }
