@@ -12,6 +12,7 @@ import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionRe
 import { getEstadoColor, getEstadoLabel } from '../constants';
 import { asignarFolio } from '../services/folioService';
 import { motivoBloqueoCierre } from '../constants/workflow';
+import BarraRegreso from './common/BarraRegreso';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
   const { registrarMovimiento } = useSGC();
@@ -746,6 +747,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   if (vista === 'nuevo') {
     return (
       <>
+        <BarraRegreso onVolver={() => setVista('lista')} texto="Volver a Planes de Mejora" detalle={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' ? `Editando ${form.folio_codigo}` : 'Nuevo registro'} />
         {modalConfirmarEnvioJSX}
         <PlanesForm 
           step={step}
@@ -940,6 +942,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   if (vista === 'ver') {
     return (
       <>
+        <BarraRegreso onVolver={() => setVista('lista')} texto="Volver a Planes de Mejora" detalle={form.folio_codigo || ''} />
         {modalConfirmarEnvioJSX}
         {modalAuditor}
         {modalDictamenJSX}

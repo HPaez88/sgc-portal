@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T10:04Z · @claude-code · [FIX] · Botón para regresar a la lista en Acciones Correctivas y Planes de Mejora
+La ficha y el formulario solo tenían "Volver a Lista" al final de la página y volver a pulsar el módulo en el menú no regresaba a la lista. Nueva `BarraRegreso` fija arriba en la ficha y en el formulario (con el folio en contexto), y cada clic en el menú remonta el módulo para abrirlo en su lista.
+- Archivos: frontend/src/components/common/BarraRegreso.jsx, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/App.jsx
+- Tareas STATE: C12 (ajuste)
+- Deploy: SÍ
+
 ## 2026-10-23T10:01Z · @claude-code · [FEATURE] · Pestaña "Por abrir" en Acciones Correctivas y Planes de Mejora
 Separa el control oficial (con folio) de lo detectado sin apertura: borradores generados por el sistema o el auditor (hallazgos de auditoría, indicadores fuera de meta, riesgos, documentos, cierres no efectivos) con origen, área, descripción, antigüedad (en rojo después de 15 días) y avisos enviados. "Avisar al responsable" abre el correo del usuario con destinatario (correos del registro o del catálogo de áreas), asunto y cuerpo listos, y registra el aviso en la ficha y en la bitácora. No cuentan en el control hasta que el SGC asigna folio. Tests frontend 82/82.
 - Archivos: frontend/src/components/common/PorAbrirPanel.jsx, frontend/src/components/acciones/AccionesLista.jsx, frontend/src/components/planes/PlanesLista.jsx, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js

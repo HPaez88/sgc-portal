@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSGC } from './SGCContext';
 
 // Layout
@@ -35,7 +35,11 @@ import { useIsMobile } from './hooks';
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTabEstado, setActiveTabEstado] = useState('dashboard');
+  const [navNonce, setNavNonce] = useState(0);
+  const activeTab = activeTabEstado;
+  // Cada clic en el menú remonta el módulo: si estabas dentro de una ficha, vuelves a su lista.
+  const setActiveTab = useCallback((id) => { setNavNonce((n) => n + 1); setActiveTabEstado(id); }, []);
   const [areaFiltroMobile, setAreaFiltroMobile] = useState('');
   const { isMobile } = useIsMobile();
   const [forzarModoEscritorio, setForzarModoEscritorio] = useState(() => {
@@ -288,7 +292,7 @@ function App() {
                 <BannerObligacionesCaptura setActiveTab={setActiveTab} />
               </div>
 
-              <ErrorBoundary key={activeTab}>
+              <ErrorBoundary key={`${activeTab}-${navNonce}`}>
                 {renderModule()}
               </ErrorBoundary>
             </div>

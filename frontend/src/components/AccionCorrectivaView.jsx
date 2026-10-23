@@ -12,6 +12,7 @@ import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionRe
 import { ESTADOS_SGC, getEstadoColor, getEstadoLabel, can, getDireccionDeArea, puedeVerArea } from '../constants';
 import { asignarFolio } from '../services/folioService';
 import { motivoBloqueoCierre } from '../constants/workflow';
+import BarraRegreso from './common/BarraRegreso';
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
   const { registrarMovimiento } = useSGC();
@@ -733,6 +734,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   if (vista === 'nuevo') {
     return (
       <>
+        <BarraRegreso onVolver={() => setVista('lista')} texto="Volver a Acciones Correctivas" detalle={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' ? `Editando ${form.folio_codigo}` : 'Nuevo registro'} />
         {modalConfirmarEnvioJSX}
         <AccionesWizard 
           step={step}
@@ -931,6 +933,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   if (vista === 'ver') {
     return (
       <>
+        <BarraRegreso onVolver={() => setVista('lista')} texto="Volver a Acciones Correctivas" detalle={form.folio_codigo || ''} />
         <Dialogos {...propsDialogos} />
         {modalConfirmarEnvioJSX}
         {modalAuditor}
