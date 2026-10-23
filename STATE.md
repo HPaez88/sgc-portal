@@ -53,6 +53,7 @@
 - [x] C6 — Folios consecutivos por año con nomenclatura del Control 6 (AC#25/2026, OM#10/2026), contador en servidor sembrado con el último emitido; reinicio anual
 - [x] C7 — Portal instalable como app (manifest, íconos, service worker sin caché de datos)
 - [x] C8 — Indicador de sincronización sin parpadeo (presencia local, no se reenvían valores sin cambios)
+- [x] C9 — Aviso "Actualizar portal" cuando el servidor tiene versión nueva (revisa cada 5 min y al volver a la pestaña; espera a guardar pendientes)
 - [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
 - [ ] C5 — Revisar en Control 6: AC#20/2026 replanteo #3 con fecha anterior; AC#24/2026 sin fecha de cierre; responsable de AC#1/2026; proceso de Jurídico (OM#5, OM#9)
 

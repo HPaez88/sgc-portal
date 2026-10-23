@@ -3,6 +3,12 @@
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 > Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
+## 2026-10-23T09:50Z · @claude-code · [FEATURE] · Aviso con botón "Actualizar portal" al publicarse una versión nueva
+`AvisoActualizacion` compara el bundle en ejecución (assets/index-<hash>.js) con el que sirve el index.html del servidor; revisa cada 5 minutos y al volver a la pestaña. Si cambió, muestra un aviso con el botón "Actualizar portal", que espera a que se suban los cambios pendientes (máx. 10 s) y recarga. No recarga solo para no interrumpir capturas. El index.html se sirve con `Cache-Control: no-cache`.
+- Archivos: frontend/src/components/common/AvisoActualizacion.jsx, frontend/src/main.jsx, backend/main.py, STATE.md
+- Tareas STATE: C9
+- Deploy: SÍ
+
 ## 2026-10-23T09:46Z · @claude-code · [FIX/FEATURE] · Folios AC#n/aaaa y OM#n/aaaa por año, portal instalable y sincronización estable
 Folios: antes se calculaban contando registros (daba AC#22/26 y repetía folios). Ahora `siguienteFolio` toma el máximo entre los registros del año y el contador `sgc-config-folios` (último emitido, incluidas cerradas del Control 6: AC 24, OM 9 en 2026), usa la nomenclatura del Control 6 y reinicia cada año; aplica en AC, PM y el gestor de aprobaciones. App instalable: manifest, íconos 192/512/maskable/apple, service worker que no guarda datos en caché, favicon propio (antes apuntaba a un vite.svg inexistente); el backend sirve manifest, sw.js, favicon e íconos. El indicador "Sincronizado" parpadeaba porque cada 3 s de actividad del mouse subía la clave de presencia: ahora es local y no se reenvían valores idénticos al servidor. Tests frontend 78/78, backend 26/26.
 - Archivos: frontend/src/constants/folio.js, frontend/src/constants/__tests__/folio.test.js, frontend/src/services/folioService.js, frontend/src/components/AccionCorrectivaView.jsx, frontend/src/components/PlanMejoraView.jsx, frontend/src/components/aprobaciones/GestorAprobacionesView.jsx, frontend/src/services/estadoService.js, frontend/public/(manifest.webmanifest, sw.js, favicon.svg, icons/), frontend/index.html, frontend/src/main.jsx, backend/main.py, scripts/importar_control6.py

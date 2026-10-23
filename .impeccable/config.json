@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-10-14T04:49:24.204Z",
         "reason": "claude-code: la pestaña activa usa text-slate-950 (casi negro) sobre bg-sky-400, contraste alto; mismo patrón que el header del Asesor ISO"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "frontend/src/components/common/AvisoActualizacion.jsx"
+        ],
+        "createdAt": "2026-10-23T09:51:35.322Z",
+        "reason": "claude-code: botón con text-slate-950 (casi negro) sobre bg-sky-400, contraste alto; mismo patrón que pestañas del portal"
       }
     ]
   }

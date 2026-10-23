@@ -232,7 +232,7 @@ def archivo_raiz_pwa(archivo: str):
 @app.get("/", tags=["Root"])
 def root():
     if os.getenv("ENVIRONMENT") == "production":
-        return FileResponse("frontend/dist/index.html")
+        return FileResponse("frontend/dist/index.html", headers={"Cache-Control": "no-cache"})
     return {
         "mensaje": "Portal SGC OOMAPASC de Cajeme — API v3.1",
         "version": "3.1.0",

@@ -4,6 +4,7 @@ import App from './App.jsx'
 import './index.css'
 import { SGCProvider } from './SGCContext.jsx'
 import { ToastProvider } from './components/common/Toast.jsx'
+import AvisoActualizacion from './components/common/AvisoActualizacion.jsx'
 
 // Instalable como app (PWA). Solo en producción para no interferir con el servidor de desarrollo.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ToastProvider>
       <SGCProvider>
         <App />
+        <AvisoActualizacion />
       </SGCProvider>
     </ToastProvider>
   </React.StrictMode>,
