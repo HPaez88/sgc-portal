@@ -16,6 +16,7 @@ configuración actual, así que no nota el cambio.
 | 3 | marca y nomenclatura | Header, Login, Sidebar, PDFs, folio.js, formatos | med | 1 |
 | 4 | manual y Asesor ISO por organismo | seed_documentos.py, iso_rag_service.py, knowledge/ | med | 1 |
 | 5 | alta de empresa + rol de plataforma | routers/plataforma.py, vista de alta, auth (rol Plataforma) | high | 0–4 |
+| 3b | módulos activables + indicadores ligeros | OrganismoConfig.modulos, Sidebar, IndicadoresView (pestañas por módulo) | med | 1 |
 | 6 | integraciones por organismo (opcional) | remitente de correo, llave de IA, subdominio | low | 5 |
 
 ## Technical decisions
@@ -39,6 +40,16 @@ configuración actual, así que no nota el cambio.
 ### Decision 4: pruebas de aislamiento obligatorias
 - Chosen: una prueba que crea dos organismos y verifica 403/404 cruzados en cada endpoint de datos.
   Se agrega al CI y bloquea cualquier endpoint nuevo sin filtro.
+
+### Decision 5: núcleo ISO + paquetes de sector activables
+- Chosen: `OrganismoConfig.modulos` (lista de paquetes activos). Núcleo siempre activo: AC, PM, riesgos,
+  auditorías, control documental/manual, indicadores básicos (captura mensual, meta, semáforo y AC desde
+  indicador fuera de meta), revisión por la dirección. Paquete "gobierno_municipal": fichas PMD/Ayuntamiento,
+  proyectos de presupuesto, control presupuestal por áreas, evaluación trimestral. Menú, pestañas, rutas
+  de API y exportes se ocultan/rechazan si el paquete no está activo.
+- Rationale: el módulo de indicadores de OOMAPASC mezcla ISO 9001 § 9.1 con obligaciones del Ayuntamiento;
+  una empresa necesita solo lo primero. Activar por configuración evita mantener dos versiones del código.
+- Rejected: un fork del portal para empresas (duplica mantenimiento); dejar todo visible (confunde y pesa).
 
 ## Risks
 | Risk | Likelihood | Impact | Mitigation |

@@ -25,6 +25,13 @@
 ### T3.2 — `folio.js` y formatos (OOMRSC-20/21) desde la config del organismo
 ### T3.3 — Check en CI: "OOMAPASC" no aparece fuera de la semilla del organismo 1
 
+## Phase 3b: módulos activables e indicadores ligeros
+### T3b.1 — `OrganismoConfig.modulos` con catálogo de paquetes (`nucleo` siempre; `gobierno_municipal` opcional)
+### T3b.2 — Indicadores: pestañas `cuadro` y `procesos` en el núcleo; `fichas`, `proyectos`, `trimestral` y control presupuestal solo con `gobierno_municipal`
+- **Acceptance:** organismo sin el paquete no ve esas pestañas ni puede llamar `/api/v1/fichas/*` (403)
+### T3b.3 — Sidebar, Panel principal y revisión por la dirección se adaptan a los paquetes activos
+### T3b.4 — OOMAPASC (org 1) queda con `gobierno_municipal` activo: sin cambios visibles
+
 ## Phase 4: manual y Asesor ISO
 ### T4.1 — Manual y anexos por organismo (documentos ya tienen `organismo_id`; semilla solo para org 1)
 ### T4.2 — Asesor ISO: normas ISO compartidas; conocimiento interno (manual, procedimientos) filtrado por organismo

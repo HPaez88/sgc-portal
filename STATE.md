@@ -47,7 +47,7 @@
 
 ## Backlog (planeado, NO implementar hasta indicación de @human)
 
-- [ ] Multiempresa — plan en `specs/multiempresa/` (fases 0–6: fugas y pruebas de aislamiento, configuración por organismo, catálogos, marca y nomenclatura, manual/Asesor, alta de empresa, integraciones)
+- [ ] Multiempresa — plan en `specs/multiempresa/` (fases 0–6: fugas y pruebas de aislamiento, configuración por organismo, catálogos, marca y nomenclatura, módulos activables con indicadores ligeros para empresas, manual/Asesor, alta de empresa, integraciones)
 
 ## AC y PM reales desde Control 6 — 2026-10-23
 

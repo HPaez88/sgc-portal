@@ -25,6 +25,9 @@ Asesor ISO están fijos en el código. Un segundo cliente vería datos de refere
 5. Nomenclatura propia de OOMAPASC: formatos OOMRSC-20/21, folios AC#/OM#, fichas del Ayuntamiento.
 6. Sin alta de empresa (cliente nuevo, primer administrador, catálogos iniciales).
 7. Un solo dominio, llave de IA y remitente de correo.
+8. Indicadores cargados de funciones de gobierno que una empresa no usa: fichas del Plan Municipal de
+   Desarrollo (Ayuntamiento), proyectos de presupuesto, control presupuestal por áreas y evaluación
+   trimestral institucional. Para una empresa el módulo debe quedarse en lo esencial de ISO 9001 § 9.1.
 
 ## Objetivo
 
@@ -37,6 +40,12 @@ datos, sin afectar a OOMAPASC (organismo 1).
 folios), manual y conocimiento del Asesor por organismo, alta de empresa con primer administrador,
 rol de plataforma (dueño del producto) separado de los roles de cada empresa, cierre de fugas entre
 organismos, pruebas automáticas de aislamiento.
+
+**Módulos activables por organismo:** el núcleo ISO 9001 (acciones correctivas, planes de mejora,
+riesgos, auditorías, control documental y manual, indicadores básicos, revisión por la dirección) va para
+todos; los paquetes de sector se encienden solo donde aplican. Primer paquete: "Gobierno municipal"
+(fichas PMD/Ayuntamiento, proyectos de presupuesto, control presupuestal, evaluación trimestral),
+activo únicamente en OOMAPASC.
 
 **No entra (todavía):** facturación y planes de suscripción, base de datos separada por cliente,
 dominios personalizados por cliente, marketplace de plantillas.
