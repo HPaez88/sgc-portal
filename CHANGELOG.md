@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-06T15:40Z · @claude-code · [FEATURE] · Lista AC con no conformidad, AC/RC en el cuadro de indicadores, correo para admins
+Lista de AC: la columna Proceso se cambió por No conformidad; el origen muestra el número ("Auditoría Interna #9", "Indicador #39"). Con origen Indicador el formato pide elegir el indicador (origen_referencia) y el cuadro de control muestra junto a cada indicador los folios de AC y RC abiertas. Botón de correo libre solo para Admin/Super Admin (sale por Resend cuando esté configurado; mientras, abre Outlook). Corregido el botón RC de Evaluación trimestral (llamaba a una función inexistente). Datos: AC#2,3,4,5/2026 → indicadores 39,38,40,37; AC#22/2026 → 35; AC#6/2026 → 26 (respaldo sgc-20261106-1537.dump). Sin ligar por ambigüedad: AC#14/2025, AC#17/2025, AC#1/2026, AC#10/2026.
+- Tareas STATE: C16
+- Deploy: SI (06a6526)
+
 > Formato: `## 2026-11-06T09:16Z · @claude-code · [DATA] · Alta de AC#25/2026 y AC#26/2026 (Auditoría #9)
 Agregadas al control como En seguimiento, apertura 27/10/2026, fecha de cierre 22/12/2026 y 07/12/2026, mismas reglas que la importación del Control 6 (pendiente_formato). AC#24/2026 recibe su fecha de cierre 12/12/2026. Contador de folios AC 2026 → 26 (la siguiente será AC#27/2026). Respaldo previo sgc-20261106-0916.dump.
 - Tareas STATE: C15
