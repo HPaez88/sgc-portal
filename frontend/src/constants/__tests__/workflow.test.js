@@ -17,6 +17,7 @@ import {
   diasRestantes,
   diasRestantes,
   getFechaCompromiso,
+  calcularFechaFinal,
 } from '../workflow';
 
 const usuario = (rol, area = 'Control de Calidad') => ({ id: 1, nombre: 'Test', rol, area });
@@ -179,5 +180,31 @@ describe('pestaña Por abrir', () => {
     expect(esPorAbrir({ estado: 'BORRADOR', accion_origen_folio: 'AC#20/2026' })).toBe(true);
     expect(esPorAbrir({ estado: 'BORRADOR' })).toBe(false);
     expect(esPorAbrir({ estado: 'EN_SEGUIMIENTO', origen_modulo: 'Auditoría' })).toBe(false);
+  });
+});
+
+describe('fecha final calculada por actividades', () => {
+  const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  it('suma 2 semanas a la actividad más tardía', () => {
+    // 2026-11-04 es miércoles: +14 = miércoles 2026-11-18
+    const acts = [{ fecha_termino_sugerida: '2026-10-01' }, { fecha_termino_sugerida: '2026-11-04' }];
+    expect(fmt(calcularFechaFinal(acts))).toBe('2026-11-18');
+  });
+
+  it('recorre al lunes si cae en fin de semana', () => {
+    expect(fmt(calcularFechaFinal([{ fecha_termino_sugerida: '2026-11-07' }]))).toBe('2026-11-23'); // sábado
+    expect(fmt(calcularFechaFinal([{ fecha_termino_sugerida: '2026-11-08' }]))).toBe('2026-11-23'); // domingo
+  });
+
+  it('sin actividades con fecha no calcula y usa la fecha del registro', () => {
+    expect(calcularFechaFinal([{ actividad: 'x' }])).toBeNull();
+    const importado = { estado: 'EN_SEGUIMIENTO', actividades_json: '[]', fecha_limite: '2026-10-30' };
+    expect(fmt(getFechaCompromiso(importado))).toBe('2026-10-30');
+  });
+
+  it('las actividades mandan sobre la fecha del registro', () => {
+    const r = { fecha_limite: '2026-10-30', actividades_json: JSON.stringify([{ fecha_termino_sugerida: '2026-12-01' }]) };
+    expect(fmt(getFechaCompromiso(r))).toBe('2026-12-15');
   });
 });

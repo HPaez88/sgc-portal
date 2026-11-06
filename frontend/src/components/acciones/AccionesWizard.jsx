@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ORIGENES_AC, ROLES_EQUIPO } from '../../constants';
 import { useSGC } from '../../SGCContext';
 import { generarPropuestaIA } from './AccionesAI';
+import BarraActividades from '../common/BarraActividades';
 import { 
   Sparkles, 
   Users, 
@@ -785,6 +786,24 @@ export default function AccionesWizard({
                 </div>
               ))}
             </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCausas([...causas, { id: Date.now(), causa: '', es_causa_principal: causas.length === 0 }])}
+                className="text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 px-3.5 py-1.5 rounded-lg border border-sky-200/80 transition-colors"
+              >
+                + Agregar causa
+              </button>
+              {causas.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setCausas(causas.slice(0, -1))}
+                  className="text-xs font-semibold text-slate-600 bg-white hover:bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200 transition-colors"
+                >
+                  Quitar la última
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Actividades Correctivas */}
@@ -880,6 +899,7 @@ export default function AccionesWizard({
                 </tbody>
               </table>
             </div>
+            <BarraActividades actividades={actividades} setActividades={setActividades} />
           </div>
 
           {/* Workflow Action Bar */}

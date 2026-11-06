@@ -208,9 +208,42 @@ export const formatearFecha = (valor) => {
   return d ? d.toLocaleDateString('es-MX') : '-';
 };
 
-// Fecha compromiso de un registro AC/PM (toma la primera fecha disponible)
+// Regla SGC: la fecha final de una AC/PM es la actividad más tardía + 2 semanas, en día hábil
+// (si cae sábado o domingo se recorre al lunes). Los replanteos mueven la fecha de la actividad,
+// así que la fecha final se recalcula sola.
+// ponytail: hábil = lunes a viernes; no descuenta días festivos. Agregar calendario si el SGC lo pide.
+export const DIAS_HOLGURA_CIERRE = 14;
+
+export const calcularFechaFinal = (actividades) => {
+  const fechas = (Array.isArray(actividades) ? actividades : [])
+    .map((a) => parseFecha(a?.fecha_termino_sugerida))
+    .filter(Boolean)
+    .map((d) => d.getTime());
+  if (fechas.length === 0) return null;
+  const f = new Date(Math.max(...fechas));
+  f.setHours(0, 0, 0, 0);
+  f.setDate(f.getDate() + DIAS_HOLGURA_CIERRE);
+  if (f.getDay() === 6) f.setDate(f.getDate() + 2);
+  if (f.getDay() === 0) f.setDate(f.getDate() + 1);
+  return f;
+};
+
+const leerActividades = (registro) => {
+  if (Array.isArray(registro.actividades)) return registro.actividades;
+  try {
+    const lista = JSON.parse(registro.actividades_json || '[]');
+    return Array.isArray(lista) ? lista : [];
+  } catch {
+    return [];
+  }
+};
+
+// Fecha compromiso de un registro AC/PM: la calculada por sus actividades; si aún no tiene
+// actividades con fecha (p. ej. importadas del Control 6), la primera fecha disponible.
 export const getFechaCompromiso = (registro) => {
   if (!registro) return null;
+  const calculada = calcularFechaFinal(leerActividades(registro));
+  if (calculada) return calculada;
   const candidatos = [
     registro.fecha_cierre_estimada,
     registro.fecha_cierre,

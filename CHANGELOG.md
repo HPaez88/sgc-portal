@@ -1,7 +1,13 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
-> Formato: `## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
+> Formato: `## 2026-11-06T08:15Z · @claude-code · [FEATURE] · Fecha final calculada y captura manual de causas y actividades
+La fecha final (compromiso) de AC y PM ya no se toma de la primera fecha que exista: es la actividad más tardía + 14 días, recorrida al lunes si cae en fin de semana (`calcularFechaFinal` en workflow.js; sin festivos). Como el replanteo cambia la fecha de la actividad, la final se recalcula sola. Registros sin actividades con fecha (importados del Control 6) siguen usando su fecha original. Los formularios de AC y PM no tenían cómo agregar causas ni actividades a mano: solo las llenaba la IA; ahora hay "+ Agregar causa", "+ Agregar actividad" y "Quitar la última", más la fecha final visible bajo la tabla. Tests frontend 86/86.
+- Archivos: frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js, frontend/src/components/common/BarraActividades.jsx, frontend/src/components/acciones/AccionesWizard.jsx, frontend/src/components/planes/PlanesForm.jsx, STATE.md
+- Tareas STATE: C14
+- Deploy: SI
+
+## YYYY-MM-DDTHH:MMZ · @autor · [TAG] · Título corto`
 
 ## 2026-10-23T10:26Z · @claude-code · [DOCS] · Plan multiempresa (solo plan, sin implementar)
 Diagnóstico y plan para vender el portal a otras empresas: la capa de datos ya aísla por organismo (11 de 12 tablas, organismo desde el token, B2 por carpeta); falta mover a datos por organismo los catálogos, la marca, la nomenclatura, el manual y el conocimiento del Asesor, cerrar la lista global de organismos, correo único por organismo y alta de empresa con rol de plataforma. Decisión: una sola base con aislamiento por fila. Marcado como backlog: no se implementa hasta indicación de @human.

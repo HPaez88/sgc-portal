@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CATEGORIAS_MEJORA, PERIODOS, ORIGENES_PM, ROLES_EQUIPO } from '../../constants';
 import { useSGC } from '../../SGCContext';
 import { generarPlanMejoraIA } from './PlanesAI';
+import BarraActividades from '../common/BarraActividades';
 import { 
   Sparkles, 
   Target, 
@@ -693,6 +694,7 @@ export default function PlanesForm({
                 </tbody>
               </table>
             </div>
+            <BarraActividades actividades={actividades} setActividades={setActividades} />
           </div>
 
           {/* Workflow Action Bar */}
