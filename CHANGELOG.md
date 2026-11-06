@@ -1,7 +1,12 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
-> Formato: `## 2026-11-06T08:15Z · @claude-code · [FEATURE] · Fecha final calculada y captura manual de causas y actividades
+> Formato: `## 2026-11-06T08:40Z · @claude-code · [FIX] · Fechas de actividades un día antes en el detalle de AC y PM
+El detalle leía las fechas solo-día ("2026-11-20") con `new Date()`, que las toma como medianoche UTC: en México se mostraban un día antes y la actividad se marcaba "Vencida" un día antes de tiempo. Ahora usa `parseFecha`/`formatearFecha` (hora local), igual que las listas.
+- Archivos: frontend/src/components/acciones/AccionesDetalle.jsx, frontend/src/components/planes/PlanesDetalle.jsx
+- Deploy: SI
+
+## 2026-11-06T08:15Z · @claude-code · [FEATURE] · Fecha final calculada y captura manual de causas y actividades
 La fecha final (compromiso) de AC y PM ya no se toma de la primera fecha que exista: es la actividad más tardía + 14 días, recorrida al lunes si cae en fin de semana (`calcularFechaFinal` en workflow.js; sin festivos). Como el replanteo cambia la fecha de la actividad, la final se recalcula sola. Registros sin actividades con fecha (importados del Control 6) siguen usando su fecha original. Los formularios de AC y PM no tenían cómo agregar causas ni actividades a mano: solo las llenaba la IA; ahora hay "+ Agregar causa", "+ Agregar actividad" y "Quitar la última", más la fecha final visible bajo la tabla. Tests frontend 86/86.
 - Archivos: frontend/src/constants/workflow.js, frontend/src/constants/__tests__/workflow.test.js, frontend/src/components/common/BarraActividades.jsx, frontend/src/components/acciones/AccionesWizard.jsx, frontend/src/components/planes/PlanesForm.jsx, STATE.md
 - Tareas STATE: C14

@@ -1,3 +1,4 @@
+import { formatearFecha, parseFecha } from '../../constants/workflow';
 import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -274,9 +275,9 @@ export default function AccionesDetalle({
     y += 5;
 
     const seguimientoData = [
-      ['Fecha Creación:', form.fecha_creacion_borrador ? new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-', 'Apertura SGC:', form.fecha_apertura ? new Date(form.fecha_apertura).toLocaleDateString('es-MX') : '-'],
+      ['Fecha Creación:', form.fecha_creacion_borrador ? formatearFecha(form.fecha_creacion_borrador) : '-', 'Apertura SGC:', form.fecha_apertura ? formatearFecha(form.fecha_apertura) : '-'],
       ['Aprobado por SGC:', form.aprobado_por_sgc || '-', 'Auditor Asignado:', form.auditor_cierre || 'Por asignar'],
-      ['Fecha Cierre:', form.fecha_cierre ? new Date(form.fecha_cierre).toLocaleDateString('es-MX') : 'En seguimiento', 'Resultado Cierre:', form.resultado_cierre || 'En proceso']
+      ['Fecha Cierre:', form.fecha_cierre ? formatearFecha(form.fecha_cierre) : 'En seguimiento', 'Resultado Cierre:', form.resultado_cierre || 'En proceso']
     ];
     autoTable(doc, {
       startY: y,
@@ -359,9 +360,9 @@ export default function AccionesDetalle({
 
             {/* Fechas de Seguimiento */}
             <div className="text-xs text-blue-100/80 space-y-0.5 text-left md:text-right font-medium">
-              <p>Creada: {form.fecha_creacion_borrador ? new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}</p>
+              <p>Creada: {form.fecha_creacion_borrador ? formatearFecha(form.fecha_creacion_borrador) : '-'}</p>
               {form.fecha_apertura && (
-                <p>Apertura: {new Date(form.fecha_apertura).toLocaleDateString('es-MX')}</p>
+                <p>Apertura: {formatearFecha(form.fecha_apertura)}</p>
               )}
             </div>
           </div>
@@ -379,7 +380,7 @@ export default function AccionesDetalle({
             </p>
             {form.solicitante_cierre && (
               <p className="text-xs text-purple-600 mt-2 font-medium">
-                Solicitado por: <strong>{form.solicitante_cierre}</strong> • Fecha: {form.fecha_solicitud_cierre ? new Date(form.fecha_solicitud_cierre).toLocaleDateString('es-MX') : 'Reciente'}
+                Solicitado por: <strong>{form.solicitante_cierre}</strong> • Fecha: {form.fecha_solicitud_cierre ? formatearFecha(form.fecha_solicitud_cierre) : 'Reciente'}
               </p>
             )}
           </div>
@@ -488,7 +489,7 @@ export default function AccionesDetalle({
             {form.fecha_actividad_inmediata && (
               <div className="bg-white p-3 rounded-lg border border-slate-200">
                 <p className="text-xs font-bold text-slate-500 mb-1">FECHA DE TÉRMINO</p>
-                <p className="font-medium text-white font-mono">{new Date(form.fecha_actividad_inmediata).toLocaleDateString('es-MX')}</p>
+                <p className="font-medium text-white font-mono">{formatearFecha(form.fecha_actividad_inmediata)}</p>
               </div>
             )}
           </div>
@@ -579,19 +580,19 @@ export default function AccionesDetalle({
                         {/* Fecha anterior en chiquito si fue replanteada y aprobada */}
                         {a.historial_replanteos && a.historial_replanteos.length > 0 && (
                           <div className="text-[10px] text-slate-400 line-through">
-                            Ant: {new Date(a.historial_replanteos[a.historial_replanteos.length - 1].fecha_anterior).toLocaleDateString('es-MX')}
+                            Ant: {formatearFecha(a.historial_replanteos[a.historial_replanteos.length - 1].fecha_anterior)}
                           </div>
                         )}
 
                         {/* Fecha actual normal */}
                         <div className="font-mono font-bold text-slate-800 text-sm">
-                          {a.fecha_termino_sugerida ? new Date(a.fecha_termino_sugerida).toLocaleDateString('es-MX') : '-'}
+                          {a.fecha_termino_sugerida ? formatearFecha(a.fecha_termino_sugerida) : '-'}
                         </div>
 
                         {/* Semáforo: En tiempo o Vencida */}
                         {a.fecha_termino_sugerida && (() => {
                           const hoy = new Date(); hoy.setHours(0,0,0,0);
-                          const f = new Date(a.fecha_termino_sugerida);
+                          const f = parseFecha(a.fecha_termino_sugerida);
                           const vencida = f < hoy && !estaCerrada;
                           return vencida ? (
                             <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
@@ -607,7 +608,7 @@ export default function AccionesDetalle({
                         {/* Botón Replantear Fecha: se activa cuando vence la fecha límite */}
                         {tieneFolio && !estaCerrada && (() => {
                           const hoy = new Date(); hoy.setHours(0,0,0,0);
-                          const f = a.fecha_termino_sugerida ? new Date(a.fecha_termino_sugerida) : null;
+                          const f = a.fecha_termino_sugerida ? parseFecha(a.fecha_termino_sugerida) : null;
                           const vencida = f && f < hoy;
                           const replanteosCount = a.replantamientos_count || 0;
                           const tieneSolicitud = a.solicitud_replanteo && a.solicitud_replanteo.estado === 'PENDIENTE';
@@ -623,7 +624,7 @@ export default function AccionesDetalle({
                                   </span>
                                 </div>
                                 <p className="text-[11px] font-semibold text-slate-800">
-                                  Propuesta: <strong className="text-amber-950">{new Date(a.solicitud_replanteo.nueva_fecha).toLocaleDateString('es-MX')}</strong>
+                                  Propuesta: <strong className="text-amber-950">{formatearFecha(a.solicitud_replanteo.nueva_fecha)}</strong>
                                 </p>
                                 <p className="text-[10px] text-slate-600 italic line-clamp-2 mt-0.5" title={a.solicitud_replanteo.justificacion}>
                                   "{a.solicitud_replanteo.justificacion}"
@@ -895,25 +896,25 @@ export default function AccionesDetalle({
           <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
             <p className="text-xs font-bold text-slate-500 mb-1">CREACIÓN</p>
             <p className="font-mono text-sm font-medium text-slate-800">
-              {form.fecha_creacion_borrador ? new Date(form.fecha_creacion_borrador).toLocaleDateString('es-MX') : '-'}
+              {form.fecha_creacion_borrador ? formatearFecha(form.fecha_creacion_borrador) : '-'}
             </p>
           </div>
           <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
             <p className="text-xs font-bold text-slate-500 mb-1">ENVÍO A SGC</p>
             <p className="font-mono text-sm font-medium text-slate-800">
-              {form.fecha_envio_sgc ? new Date(form.fecha_envio_sgc).toLocaleDateString('es-MX') : '-'}
+              {form.fecha_envio_sgc ? formatearFecha(form.fecha_envio_sgc) : '-'}
             </p>
           </div>
           <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
             <p className="text-xs font-bold text-slate-500 mb-1">APERTURA</p>
             <p className="font-mono text-sm font-medium text-slate-800">
-              {form.fecha_apertura ? new Date(form.fecha_apertura).toLocaleDateString('es-MX') : '-'}
+              {form.fecha_apertura ? formatearFecha(form.fecha_apertura) : '-'}
             </p>
           </div>
           <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
             <p className="text-xs font-bold text-slate-500 mb-1">CIERRE</p>
             <p className="font-mono text-sm font-medium text-slate-800">
-              {form.fecha_cierre ? new Date(form.fecha_cierre).toLocaleDateString('es-MX') : '-'}
+              {form.fecha_cierre ? formatearFecha(form.fecha_cierre) : '-'}
             </p>
           </div>
         </div>
@@ -960,7 +961,7 @@ export default function AccionesDetalle({
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Actividad</p>
                 <p className="text-sm font-semibold text-slate-800 mt-0.5">{modalReplanteo.actividadNombre}</p>
                 <p className="text-xs text-slate-600 mt-2">
-                  Fecha límite actual: <strong className="font-mono">{modalReplanteo.fechaActual ? new Date(modalReplanteo.fechaActual).toLocaleDateString('es-MX') : 'No establecida'}</strong>
+                  Fecha límite actual: <strong className="font-mono">{modalReplanteo.fechaActual ? formatearFecha(modalReplanteo.fechaActual) : 'No establecida'}</strong>
                 </p>
               </div>
 
