@@ -1,7 +1,12 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
-> Formato: `## 2026-11-06T08:40Z · @claude-code · [FIX] · Fechas de actividades un día antes en el detalle de AC y PM
+> Formato: `## 2026-11-06T09:16Z · @claude-code · [DATA] · Alta de AC#25/2026 y AC#26/2026 (Auditoría #9)
+Agregadas al control como En seguimiento, apertura 27/10/2026, fecha de cierre 22/12/2026 y 07/12/2026, mismas reglas que la importación del Control 6 (pendiente_formato). AC#24/2026 recibe su fecha de cierre 12/12/2026. Contador de folios AC 2026 → 26 (la siguiente será AC#27/2026). Respaldo previo sgc-20261106-0916.dump.
+- Tareas STATE: C15
+- Deploy: NO (datos)
+
+## 2026-11-06T08:40Z · @claude-code · [FIX] · Fechas de actividades un día antes en el detalle de AC y PM
 El detalle leía las fechas solo-día ("2026-11-20") con `new Date()`, que las toma como medianoche UTC: en México se mostraban un día antes y la actividad se marcaba "Vencida" un día antes de tiempo. Ahora usa `parseFecha`/`formatearFecha` (hora local), igual que las listas.
 - Archivos: frontend/src/components/acciones/AccionesDetalle.jsx, frontend/src/components/planes/PlanesDetalle.jsx
 - Deploy: SI
