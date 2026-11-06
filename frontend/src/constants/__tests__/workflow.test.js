@@ -2,6 +2,8 @@
 // Estas reglas gobiernan qué puede hacer cada rol y cuándo un registro está vencido.
 import { describe, it, expect } from 'vitest';
 import {
+  etiquetaOrigen,
+  correosDe,
   TRANSICIONES,
   PERMISOS,
   can,
@@ -206,5 +208,21 @@ describe('fecha final calculada por actividades', () => {
   it('las actividades mandan sobre la fecha del registro', () => {
     const r = { fecha_limite: '2026-10-30', actividades_json: JSON.stringify([{ fecha_termino_sugerida: '2026-12-01' }]) };
     expect(fmt(getFechaCompromiso(r))).toBe('2026-12-15');
+  });
+});
+
+describe('etiquetaOrigen y correosDe', () => {
+  it('pone el número de auditoría o de indicador', () => {
+    expect(etiquetaOrigen({ origen: 'Auditoría Interna', numero_auditoria: '#9' })).toBe('Auditoría Interna #9');
+    expect(etiquetaOrigen({ origen: 'Auditoría Interna', numero_auditoria: '9' })).toBe('Auditoría Interna #9');
+    expect(etiquetaOrigen({ origen: 'Auditoría Externa', numero_auditoria: 'A2025-15985' })).toBe('Auditoría Externa A2025-15985');
+    expect(etiquetaOrigen({ origen: 'Indicador', origen_referencia: '39' })).toBe('Indicador #39');
+    expect(etiquetaOrigen({ origen: 'Queja' })).toBe('Queja');
+    expect(etiquetaOrigen({})).toBe('-');
+  });
+  it('lee correos de lista o de texto importado', () => {
+    expect(correosDe({ correos_responsables: ['a@x.mx', 'a@x.mx'] })).toEqual(['a@x.mx']);
+    expect(correosDe({ correos_responsables: "['mmendoza@oomapasc.gob.mx', 'b@y.mx']" })).toEqual(['mmendoza@oomapasc.gob.mx', 'b@y.mx']);
+    expect(correosDe({})).toEqual([]);
   });
 });

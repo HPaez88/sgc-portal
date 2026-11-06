@@ -62,6 +62,9 @@ import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamenta
 import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea } from '../../constants/areas';
 import { useIsMobile } from '../../hooks';
 import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
+import { esCerrado } from '../../constants/workflow';
+
+const RC_CERRADOS = ['CERRADA', 'CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO', 'ESCALADO_A_AC'];
 
 
 
@@ -87,6 +90,7 @@ export default function IndicadoresView({
     areas = [], 
     procesos = [], 
     direcciones = [], 
+    accionesCorrectivas = [],
     setAccionesCorrectivas, 
     registrarMovimiento, 
     usuarioLogueado 
@@ -636,6 +640,19 @@ export default function IndicadoresView({
   };
 
   // Filtrado de Indicadores para el Cuadro de Control
+  // AC y RC abiertas ligadas a cada indicador (las AC por origen_referencia, los RC por indicadorId).
+  const vinculosPorIndicador = useMemo(() => {
+    const mapa = {};
+    const agregar = (id, v) => { (mapa[String(id)] = mapa[String(id)] || []).push(v); };
+    (accionesCorrectivas || []).forEach((ac) => {
+      if (ac.origen === 'Indicador' && ac.origen_referencia && ac.folio_codigo && !esCerrado(ac.estado)) agregar(ac.origen_referencia, { tipo: 'AC', folio: ac.folio_codigo });
+    });
+    (reportesCorreccion || []).forEach((rc) => {
+      if (rc.indicadorId !== undefined && rc.indicadorId !== null && !RC_CERRADOS.includes(rc.estado)) agregar(rc.indicadorId, { tipo: 'RC', folio: rc.folio });
+    });
+    return mapa;
+  }, [accionesCorrectivas, reportesCorreccion]);
+
   const indicadoresFiltrados = useMemo(() => {
     return listaIndicadores.filter(ind => {
       if (!puedeTodasAreas && areaUsuario && ind.area !== areaUsuario) return false;
@@ -1362,6 +1379,14 @@ export default function IndicadoresView({
                                   {acc}
                                 </span>
                               )}
+                              {(vinculosPorIndicador[String(ind.id)] || []).filter(v => v.folio !== acc).map(v => (
+                                <span key={v.tipo + v.folio} title={v.tipo === 'AC' ? 'Acción correctiva abierta' : 'Reporte de corrección abierto'}
+                                  className={`mt-1 block font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
+                                    v.tipo === 'AC' ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-amber-50 text-amber-900 border-amber-200'
+                                  }`}>
+                                  {v.folio}
+                                </span>
+                              ))}
                             </td>
 
                             {/* Configuración Integral & Ficha PMD (Solo el engrane) */}
@@ -1671,7 +1696,7 @@ export default function IndicadoresView({
           listaIndicadores={listaIndicadores}
           resultados={resultados}
           ejercicio={ejercicio}
-          onAbrirGenerarRC={(ind, val, sem) => handleAbrirGenerarRC(ind, val, sem)}
+          onAbrirGenerarRC={handleAbrirCrearRC}
         />
       )}
 

@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
-import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye } from 'lucide-react';
+import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye, Mail } from 'lucide-react';
 import { ORIGENES_AC, FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
-import { getFechaCompromiso, formatearFecha, esPorAbrir } from '../../constants/workflow';
+import { getFechaCompromiso, formatearFecha, esPorAbrir, etiquetaOrigen, correosDe } from '../../constants/workflow';
 import PorAbrirPanel from '../common/PorAbrirPanel';
+import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
+
+const noConformidadDe = (ac) => ac.descripcion_no_conformidad_final || ac.descripcion_no_conformidad_original || ac.descripcion_problema || '';
+
+const correoInicial = (ac) => ({
+  para: correosDe(ac).join(', '),
+  asunto: `${ac.folio_codigo || 'Acción correctiva'} — ${ac.area || ''}`,
+  mensaje: `Buen día,
+
+Respecto a la acción correctiva ${ac.folio_codigo || ''} (${ac.area || ''}):
+${noConformidadDe(ac).slice(0, 500)}
+
+`,
+});
 
 export default function AccionesLista({ 
   accionesCorrectivas, 
@@ -25,6 +39,8 @@ export default function AccionesLista({
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroVencimiento, setFiltroVencimiento] = useState('');
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
+  const [correoPara, setCorreoPara] = useState(null);
+  const esAdmin = puedeMandarCorreo(usuarioLogueado);
 
   // Obtener años únicos de las acciones
   const aniosRaw = accionesCorrectivas.map(ac => ac.fecha_creacion_borrador ? new Date(ac.fecha_creacion_borrador).getFullYear() : null).filter(Boolean);
@@ -329,21 +345,16 @@ export default function AccionesLista({
                     <h3 className="text-xs font-bold text-slate-900 leading-snug line-clamp-1">
                       {ac.area || 'Sin área asignada'}
                     </h3>
-                    {ac.proceso && (
-                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                        Proceso: {ac.proceso}
-                      </p>
-                    )}
                   </div>
 
-                  {ac.descripcion_problema && (
+                  {noConformidadDe(ac) && (
                     <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
-                      {ac.descripcion_problema}
+                      {noConformidadDe(ac)}
                     </p>
                   )}
 
                   <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400">
-                    <span>Origen: <strong className="text-slate-600 font-semibold">{ac.origen || '-'}</strong></span>
+                    <span>Origen: <strong className="text-slate-600 font-semibold">{etiquetaOrigen(ac)}</strong></span>
                     <span className="text-sky-700 font-bold flex items-center gap-0.5">
                       Ver detalle <ChevronRight size={12} />
                     </span>
@@ -363,7 +374,7 @@ export default function AccionesLista({
                   <tr>
                     <th className="p-3 font-mono">Folio</th>
                     <th className="p-3">Área</th>
-                    <th className="p-3">Proceso</th>
+                    <th className="p-3">No conformidad</th>
                     <th className="p-3">Origen</th>
                     <th className="p-3">Estado</th>
                     <th className="p-3">Vencimiento</th>
@@ -378,8 +389,10 @@ export default function AccionesLista({
                         {ac.folio_codigo || 'Pendiente'}
                       </td>
                       <td className="p-3 text-slate-800 font-medium">{ac.area || '-'}</td>
-                      <td className="p-3 text-slate-700">{ac.proceso || '-'}</td>
-                      <td className="p-3 text-slate-500">{ac.origen || '-'}</td>
+                      <td className="p-3 text-slate-700 max-w-sm" title={noConformidadDe(ac)}>
+                        <span className="line-clamp-2">{noConformidadDe(ac) || '-'}</span>
+                      </td>
+                      <td className="p-3 text-slate-500 whitespace-nowrap">{etiquetaOrigen(ac)}</td>
                       <td className="p-3">
                         <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getEstadoColor(ac.estado)}`}>
                           {getEstadoLabel(ac.estado)}
@@ -401,6 +414,12 @@ export default function AccionesLista({
                             className="text-cyan-700 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-md font-bold transition-colors flex items-center gap-1">
                             <Eye size={12} /> Ver
                           </button>
+                          {esAdmin && (
+                            <button onClick={() => setCorreoPara(ac)} title="Mandar correo"
+                              className="text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md transition-colors">
+                              <Mail size={12} />
+                            </button>
+                          )}
                           {can(usuarioLogueado, 'eliminar') && (
                             <button onClick={() => eliminarAC(ac.id)}
                               className="text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md transition-colors">
@@ -418,6 +437,8 @@ export default function AccionesLista({
         </>
       )}
       </>)}
+      <ModalCorreo abierto={Boolean(correoPara)} onClose={() => setCorreoPara(null)}
+        inicial={correoPara ? correoInicial(correoPara) : {}} folio={correoPara?.folio_codigo || ''} />
     </div>
   );
 }

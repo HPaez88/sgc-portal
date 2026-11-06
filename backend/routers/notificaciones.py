@@ -15,6 +15,7 @@ from backend.services import correo_service as correo
 router = APIRouter(prefix="/api/v1/notificaciones", tags=["Notificaciones"])
 
 ROLES_AVISAN = ("Super Admin", "Admin", "Auditor")
+ROLES_CORREO_LIBRE = ("Super Admin", "Admin")
 LIMITE_POR_HORA = 30  # ponytail: en memoria por proceso; con varios workers mover a Redis/Postgres
 _envios: dict[int, deque] = defaultdict(deque)
 
@@ -25,6 +26,12 @@ class AvisoApertura(BaseModel):
     origen: str = Field(default="SGC", max_length=120)
     referencia: str = Field(default="", max_length=80)
     descripcion: str = Field(default="", max_length=4000)
+    destinatarios: list[str] = Field(min_length=1, max_length=correo.MAX_DESTINATARIOS)
+
+
+class AvisoLibre(BaseModel):
+    asunto: str = Field(min_length=3, max_length=200)
+    mensaje: str = Field(min_length=3, max_length=4000)
     destinatarios: list[str] = Field(min_length=1, max_length=correo.MAX_DESTINATARIOS)
 
 
@@ -49,5 +56,16 @@ def aviso_apertura(datos: AvisoApertura, request: Request, usuario: Usuario = De
     url = str(request.base_url).rstrip("/")
     asunto, cuerpo, texto = correo.plantilla_apertura(datos.tipo, datos.area, datos.origen, datos.referencia,
                                                       datos.descripcion, usuario.nombre, url)
+    id_correo = correo.enviar(para, asunto, cuerpo, texto, responder_a=usuario.email)
+    return {"enviado": True, "id": id_correo, "destinatarios": para}
+
+
+@router.post("/libre")
+def aviso_libre(datos: AvisoLibre, request: Request, usuario: Usuario = Depends(auth.requiere_rol(*ROLES_CORREO_LIBRE))):
+    """Correo redactado por un administrador (cualquier aviso que no tenga plantilla)."""
+    para = correo.limpiar_destinatarios(datos.destinatarios)
+    _controlar_ritmo(usuario.id)
+    asunto, cuerpo, texto = correo.plantilla_libre(datos.asunto.strip(), datos.mensaje.strip(), usuario.nombre,
+                                                   str(request.base_url).rstrip("/"))
     id_correo = correo.enviar(para, asunto, cuerpo, texto, responder_a=usuario.email)
     return {"enviado": True, "id": id_correo, "destinatarios": para}

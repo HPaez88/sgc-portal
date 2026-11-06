@@ -130,6 +130,8 @@ export const PROCESOS_DETALLE_INICIALES = [
 // Orígenes de Acción Correctiva (unión formato oficial OOMRSC-20 + registros previos)
 export const ORIGENES_AC = [
   'Auditoría',
+  'Auditoría Interna',
+  'Auditoría Externa',
   'Análisis de datos',
   'Ensayo no conforme',
   'Indicador',

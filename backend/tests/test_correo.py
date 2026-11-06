@@ -18,6 +18,12 @@ def test_plantilla_escapa_html_y_lleva_datos():
     assert "AUD-7" in texto and "Por abrir" in texto
 
 
+def test_plantilla_libre_escapa_y_respeta_parrafos():
+    asunto, cuerpo, texto = correo.plantilla_libre("Junta", "Linea 1\n<b>x</b>", "Lic. H", "https://sgc")
+    assert asunto == "Junta" and "<p>Linea 1</p>" in cuerpo and "&lt;b&gt;x&lt;/b&gt;" in cuerpo
+    assert "Lic. H" in texto
+
+
 def test_sin_llave_queda_apagado(monkeypatch):
     monkeypatch.delenv("RESEND_API_KEY", raising=False)
     assert not correo.configurado()

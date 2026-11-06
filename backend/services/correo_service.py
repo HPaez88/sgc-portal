@@ -79,6 +79,25 @@ def plantilla_apertura(tipo: str, area: str, origen: str, referencia: str, descr
     return asunto, cuerpo, texto
 
 
+def plantilla_libre(asunto: str, mensaje: str, remitente_nombre: str, url_portal: str) -> tuple[str, str, str]:
+    """(asunto, html, texto) de un aviso libre que redacta un administrador."""
+    texto = f"{mensaje}\n\n--\n{remitente_nombre}\nSistema de Gestión de Calidad · {url_portal}"
+    e = html.escape
+    parrafos = "".join(f"<p>{e(p)}</p>" for p in mensaje.split("\n") if p.strip())
+    cuerpo = f"""<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;color:#1e293b">
+  <div style="background:#0b192c;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0">
+    <div style="font-size:12px;color:#7dd3fc;letter-spacing:1px">PORTAL SGC · AVISO</div>
+    <div style="font-size:18px;font-weight:bold;margin-top:4px">{e(asunto)}</div>
+  </div>
+  <div style="border:1px solid #e2e8f0;border-top:0;padding:20px;border-radius:0 0 12px 12px">
+    {parrafos}
+    <p style="margin:20px 0"><a href="{e(url_portal)}" style="background:#0272c4;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Abrir el Portal SGC</a></p>
+    <p style="font-size:13px;color:#475569">{e(remitente_nombre)}<br>Sistema de Gestión de Calidad</p>
+  </div>
+</div>"""
+    return asunto, cuerpo, texto
+
+
 def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, responder_a: str | None = None) -> str:
     """Envía por Resend y devuelve el id del correo. 503 si no está configurado, 502 si Resend falla."""
     if not configurado():

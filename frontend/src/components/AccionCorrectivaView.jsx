@@ -208,7 +208,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
       toast.warning('Debe seleccionar el Origen de la no conformidad.');
       return;
     }
-    if (form.origen === 'Auditoría' && !form.numero_auditoria?.trim()) {
+    if (/^auditor/i.test(form.origen || '') && !form.numero_auditoria?.trim()) {
       toast.warning('El Número de Auditoría es obligatorio cuando el origen es Auditoría.');
       return;
     }

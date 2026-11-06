@@ -3,6 +3,9 @@ import { ORIGENES_AC, ROLES_EQUIPO } from '../../constants';
 import { useSGC } from '../../SGCContext';
 import { generarPropuestaIA } from './AccionesAI';
 import BarraActividades from '../common/BarraActividades';
+import { INDICADORES } from '../../constants/indicadores';
+
+const esAuditoria = (origen) => /^auditor/i.test(origen || '');
 import { 
   Sparkles, 
   Users, 
@@ -75,7 +78,7 @@ export default function AccionesWizard({
     if (!form.area?.trim()) return 'Debe seleccionar el Área responsable.';
     if (!form.proceso?.trim()) return 'Debe seleccionar el Proceso afectado.';
     if (!form.origen?.trim()) return 'Debe seleccionar el Origen de la no conformidad.';
-    if (form.origen === 'Auditoría' && !form.numero_auditoria?.trim()) {
+    if (esAuditoria(form.origen) && !form.numero_auditoria?.trim()) {
       return 'El Número de Auditoría es obligatorio cuando el origen es Auditoría.';
     }
     if (!form.descripcion_no_conformidad_original?.trim() || form.descripcion_no_conformidad_original.trim().length < 10) {
@@ -400,22 +403,41 @@ export default function AccionesWizard({
                 </select>
               </div>
 
+              {form.origen === 'Indicador' ? (
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  Número de Auditoría {form.origen === 'Auditoría' && <span className="text-rose-500">*</span>}
+                  Indicador que no cumplió
+                </label>
+                <select
+                  name="origen_referencia"
+                  value={form.origen_referencia || ''}
+                  onChange={handleChange}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                >
+                  <option value="">-- Seleccionar indicador --</option>
+                  {INDICADORES.map(i => (
+                    <option key={i.id} value={String(i.id)}>#{i.id} · {i.area} · {String(i.nombre).slice(0, 70)}</option>
+                  ))}
+                </select>
+              </div>
+              ) : (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                  Número de Auditoría {esAuditoria(form.origen) && <span className="text-rose-500">*</span>}
                 </label>
                 <input 
                   type="text" 
                   name="numero_auditoria" 
                   value={form.numero_auditoria} 
                   onChange={handleChange}
-                  placeholder={form.origen === 'Auditoría' ? 'Ej. AUD-INT-2026-01 (Obligatorio)' : 'Solo si proviene de auditoría'}
-                  disabled={form.origen !== 'Auditoría'} 
+                  placeholder={esAuditoria(form.origen) ? 'Ej. #9 (Obligatorio)' : 'Solo si proviene de auditoría'}
+                  disabled={!esAuditoria(form.origen)} 
                   className={`w-full p-2.5 bg-slate-50 border rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none ${
-                    form.origen === 'Auditoría' && !form.numero_auditoria ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
+                    esAuditoria(form.origen) && !form.numero_auditoria ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
                   }`}
                 />
               </div>
+              )}
             </div>
           </div>
 

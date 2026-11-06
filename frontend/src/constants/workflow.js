@@ -284,3 +284,20 @@ export const getVencimiento = (registro) => {
   return { nivel: 'en_tiempo', label: `En tiempo (${dias} d)`, color: 'bg-emerald-100 text-emerald-700 border-emerald-200', dias };
 };
 
+
+// "Auditoría Interna #9", "Auditoría Externa A2025-15985", "Indicador #39" o solo el origen.
+export const etiquetaOrigen = (r) => {
+  const origen = r?.origen || '';
+  if (!origen) return '-';
+  const num = String(r?.numero_auditoria || '').trim();
+  if (/^auditor/i.test(origen) && num) return `${origen} ${/^\d+$/.test(num) ? `#${num}` : num}`;
+  if (origen === 'Indicador' && r?.origen_referencia) return `Indicador #${r.origen_referencia}`;
+  return origen;
+};
+
+// Correos de responsables guardados como lista o como texto (las importaciones los traen como texto).
+export const correosDe = (r) => {
+  const c = r?.correos_responsables;
+  const texto = Array.isArray(c) ? c.join(',') : String(c || '');
+  return [...new Set(texto.match(/[^\s'",;[\]]+@[^\s'",;[\]]+/g) || [])];
+};
