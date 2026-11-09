@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-09T16:40Z · @claude-code · [FEATURE] · Subdirecciones dentro del catálogo de direcciones
+Decidido por @human: las subdirecciones viven en cada dirección (nombre, encargado, correo), editables en el modal de la dirección y listadas en la tabla de direcciones. El área elige su subdirección de la lista de su dirección (select en vez de texto libre); al cambiar la dirección del área se limpia la subdirección; si se renombra una subdirección, las áreas que la usaban toman el nombre nuevo.
+- Tareas STATE: C17
+- Deploy: SI
+
 ## 2026-11-09T16:00Z · @claude-code · [FEATURE] · Encargados del SGC por área y dirección + subdirecciones
 En Configuración, el modal de cada área y dirección tiene "Encargados del SGC": varios usuarios del portal por área (agregar existente o crear nuevo desde ahí), guardados como encargados_sgc (correos) en el catálogo. El usuario conserva su rol (una auditora puede ser encargada de su área). Al guardar el área, quien tiene alcance limitado y no tenía área toma esa, y "Usuario" pasa a "Encargado" (regla pura cambioEncargado con prueba). El área tiene campo opcional Subdirección. Los avisos "Por abrir" van al correo del área + sus encargados SGC.
 - Tareas STATE: C17

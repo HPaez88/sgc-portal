@@ -6,6 +6,7 @@ import { useToast } from '../common/Toast';
 import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import ContenedorModal from '../common/ContenedorModal';
 import EncargadosSGC from './EncargadosSGC';
+import SubdireccionesEditor from './SubdireccionesEditor';
 import { cambioEncargado } from '../../constants/workflow';
 import {
   Users,
@@ -341,12 +342,23 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     if (!nombre.trim()) return toast.warning('El nombre de la dirección es obligatorio.');
     if (!director.trim()) return toast.warning('El nombre del director en el puesto es obligatorio.');
     if (!correo.trim()) return toast.warning('El correo electrónico del director es obligatorio.');
+    const subs = (modalDireccion.data.subdirecciones || []).map(sd => ({ ...sd, nombre: sd.nombre.trim() }));
+    if (subs.some(sd => !sd.nombre)) return toast.warning('Cada subdirección necesita nombre (o quítala).');
+    const datos = { ...modalDireccion.data, subdirecciones: subs };
+    // Si se renombró una subdirección, las áreas que la usaban toman el nombre nuevo.
+    const previa = direccionesDetalle.find(d => d.id === datos.id);
+    const renombres = Object.fromEntries((previa?.subdirecciones || [])
+      .map(v => [v.nombre, subs.find(n => n.id === v.id)?.nombre])
+      .filter(([viejo, nuevo]) => nuevo && nuevo !== viejo));
+    if (Object.keys(renombres).length) {
+      setAreasDetalle(prev => prev.map(a => (a.direccion === nombre && renombres[a.subdireccion] ? { ...a, subdireccion: renombres[a.subdireccion] } : a)));
+    }
 
     if (modalDireccion.esEdicion) {
-      setDireccionesDetalle(prev => prev.map(d => d.id === modalDireccion.data.id ? modalDireccion.data : d));
+      setDireccionesDetalle(prev => prev.map(d => d.id === datos.id ? datos : d));
       notificar(`✓ Dirección "${nombre}" actualizada correctamente`);
     } else {
-      setDireccionesDetalle(prev => [...prev, modalDireccion.data]);
+      setDireccionesDetalle(prev => [...prev, datos]);
       notificar(`✓ Dirección "${nombre}" agregada al catálogo`);
     }
     setModalDireccion({ show: false, esEdicion: false, data: {} });
@@ -965,6 +977,11 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                         </td>
                         <td className="py-3 px-4 font-bold text-slate-900">
                           {d.nombre}
+                          {(d.subdirecciones || []).map(sd => (
+                            <p key={sd.id} className="text-[11px] font-medium text-slate-500 mt-0.5">
+                              {sd.nombre}{sd.encargado ? ` · ${sd.encargado}` : ''}
+                            </p>
+                          ))}
                         </td>
                         <td className="py-3 px-4 text-slate-800 font-semibold">
                           <div className="flex items-center gap-1.5">
@@ -1824,7 +1841,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                 </label>
                 <select
                   value={modalArea.data.direccion}
-                  onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, direccion: e.target.value } })}
+                  onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, direccion: e.target.value, subdireccion: '' } })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
                 >
                   {direcciones.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1834,17 +1851,21 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Subdirección (opcional)</label>
-              <input
-                type="text"
-                list="lista-subdirecciones"
-                value={modalArea.data.subdireccion || ''}
-                onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, subdireccion: e.target.value } })}
-                placeholder="Ej. Subdirección de Operación"
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
-              />
-              <datalist id="lista-subdirecciones">
-                {[...new Set(areasDetalle.map(a => a.subdireccion).filter(Boolean))].map(sd => <option key={sd} value={sd} />)}
-              </datalist>
+              {(() => {
+                const subs = direccionesDetalle.find(d => d.nombre === modalArea.data.direccion)?.subdirecciones || [];
+                const actual = modalArea.data.subdireccion || '';
+                return (
+                  <select
+                    value={actual}
+                    onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, subdireccion: e.target.value } })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                  >
+                    <option value="">{subs.length ? 'Sin subdirección (depende directo de la dirección)' : 'Esta dirección no tiene subdirecciones'}</option>
+                    {subs.map(sd => <option key={sd.id} value={sd.nombre}>{sd.nombre}{sd.encargado ? ` · ${sd.encargado}` : ''}</option>)}
+                    {actual && !subs.some(sd => sd.nombre === actual) && <option value={actual}>{actual} (no está en el catálogo)</option>}
+                  </select>
+                );
+              })()}
             </div>
 
             <EncargadosSGC
@@ -1955,6 +1976,11 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                 </div>
               </div>
             </div>
+
+            <SubdireccionesEditor
+              lista={modalDireccion.data.subdirecciones || []}
+              onChange={(l) => setModalDireccion({ ...modalDireccion, data: { ...modalDireccion.data, subdirecciones: l } })}
+            />
 
             <EncargadosSGC
               lista={modalDireccion.data.encargados_sgc || []}
