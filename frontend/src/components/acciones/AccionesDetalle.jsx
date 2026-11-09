@@ -10,6 +10,7 @@ import ContenedorModal from '../common/ContenedorModal';
 import ReplanteoFinal from '../common/ReplanteoFinal';
 
 export default function AccionesDetalle({
+  abrirDictamenNoEficaz,
   form,
   setForm,
   equipo,
@@ -406,7 +407,7 @@ export default function AccionesDetalle({
         </div>
       )}
 
-      <ReplanteoFinal registro={form} guardar={guardarBorrador} modulo="ACCIONES_CORRECTIVAS" folio={form.folio_codigo || form.folio || ''} />
+      <ReplanteoFinal registro={form} guardar={guardarBorrador} modulo="ACCIONES_CORRECTIVAS" folio={form.folio_codigo || form.folio || ''} onNoEficaz={abrirDictamenNoEficaz} />
 
       {/* ═══════════════ DATOS GENERALES ═══════════════ */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

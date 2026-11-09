@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-09T18:10Z · @claude-code · [FEATURE] · Sin replanteos y vencida → dictamen no eficaz y se rehace
+Decidido por @human: cuando una AC/PM agota sus 2 replanteos y vence, el SGC la dictamina NO EFICAZ y se rehace con nuevo enfoque y actividades. El panel "Fecha final" muestra a Admin/Super Admin el botón "Dictaminar no eficaz y rehacer", que abre el dictamen existente con NO EFECTIVA + nueva acción ya elegidos y conclusión sugerida (editable); al confirmar se cierra como no efectiva y se abre el borrador ligado (origen "Cierre no eficaz") para nuevo análisis y folio nuevo.
+- Tareas STATE: C18
+- Deploy: SI
+
 ## 2026-11-09T17:30Z · @claude-code · [FEATURE] · Replanteo de la fecha final (registros sin actividades)
 Los registros importados no tienen actividades, así que el replanteo por actividad no aplicaba y quedaban vencidos sin salida. En el detalle de AC y PM hay un panel "Fecha final" con el semáforo y los replanteos usados; un Admin/Super Admin registra el replanteo con nueva fecha (día hábil, posterior a hoy y a la fecha actual) y justificación ≥10. Límite 2 contando los del Control 6. Queda en historial_replanteos_final y en la bitácora. Con actividades capturadas el panel no aparece y el replanteo sigue por actividad. Lógica pura con pruebas (replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal).
 - Tareas STATE: C18

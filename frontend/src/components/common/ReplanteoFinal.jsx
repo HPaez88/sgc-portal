@@ -8,7 +8,7 @@ import {
   getFechaCompromiso, getVencimiento, replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal,
 } from '../../constants/workflow';
 
-export default function ReplanteoFinal({ registro, guardar, modulo, folio }) {
+export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoEficaz }) {
   const { usuarioLogueado, registrarMovimiento } = useSGC();
   const [abierto, setAbierto] = useState(false);
   const [fecha, setFecha] = useState('');
@@ -52,8 +52,15 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio }) {
             Replantear fecha final
           </button>
         )}
-        {!puede && usados >= MAX_REPLANTEOS && !esCerrado(normalizarEstado(registro.estado)) && (
-          <span className="text-[11px] font-semibold text-rose-700">Sin replanteos disponibles</span>
+        {usados >= MAX_REPLANTEOS && !esCerrado(normalizarEstado(registro.estado)) && (
+          venc.nivel === 'vencido' && esAdminSGC(usuarioLogueado) && onNoEficaz ? (
+            <button type="button" onClick={onNoEficaz}
+              className="px-3.5 py-1.5 text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 rounded-lg">
+              Dictaminar no eficaz y rehacer
+            </button>
+          ) : (
+            <span className="text-[11px] font-semibold text-rose-700">Sin replanteos: si vence, el SGC la dictamina no eficaz</span>
+          )
         )}
       </div>
 

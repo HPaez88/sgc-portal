@@ -391,6 +391,17 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     setTimeout(() => { setVista('lista'); }, 700);
   };
 
+  // Sin replanteos y vencida: el SGC la dictamina no eficaz y se rehace con nuevo enfoque y actividades.
+  const abrirDictamenNoEficaz = () => {
+    setModalDictamen({
+      show: true,
+      resultado: 'NO_EFECTIVA',
+      destino: 'NUEVA_ACCION',
+      conclusion: 'Se agotaron los 2 replanteos permitidos y la fecha final venció sin cumplirse. El SGC la dictamina NO EFICAZ; se rehace con nuevo enfoque y actividades.',
+      evidenciaVerificada: form.evidencia_objetiva_revisada || ''
+    });
+  };
+
   const abrirModalDictamen = () => {
     setModalDictamen({
       show: true,
@@ -939,6 +950,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
         {modalAuditor}
         {modalDictamenJSX}
         <AccionesDetalle 
+          abrirDictamenNoEficaz={abrirDictamenNoEficaz}
           form={form}
           setForm={setForm}
           equipo={equipo}
