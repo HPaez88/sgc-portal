@@ -2,6 +2,7 @@
 // Estas reglas gobiernan qué puede hacer cada rol y cuándo un registro está vencido.
 import { describe, it, expect } from 'vitest';
 import {
+  cambioEncargado,
   etiquetaOrigen,
   correosDe,
   TRANSICIONES,
@@ -224,5 +225,19 @@ describe('etiquetaOrigen y correosDe', () => {
     expect(correosDe({ correos_responsables: ['a@x.mx', 'a@x.mx'] })).toEqual(['a@x.mx']);
     expect(correosDe({ correos_responsables: "['mmendoza@oomapasc.gob.mx', 'b@y.mx']" })).toEqual(['mmendoza@oomapasc.gob.mx', 'b@y.mx']);
     expect(correosDe({})).toEqual([]);
+  });
+});
+
+describe('cambioEncargado', () => {
+  it('no toca a quien ve todas las áreas (auditor, admin)', () => {
+    expect(cambioEncargado({ rol: 'Auditor', area: 'Por asignar' }, 'Control y Servicios')).toBeNull();
+  });
+  it('asigna el área si no tenía y sube Usuario a Encargado', () => {
+    expect(cambioEncargado({ rol: 'Usuario', area: 'Por asignar' }, 'Plantas')).toEqual({ area: 'Plantas', rol: 'Encargado' });
+    expect(cambioEncargado({ rol: 'Encargado', area: '' }, 'Plantas')).toEqual({ area: 'Plantas', rol: 'Encargado' });
+    expect(cambioEncargado({ rol: 'Usuario', area: 'Redes' }, 'Plantas')).toEqual({ area: 'Redes', rol: 'Encargado' });
+  });
+  it('no cambia a un encargado que ya tiene área', () => {
+    expect(cambioEncargado({ rol: 'Encargado', area: 'Redes' }, 'Plantas')).toBeNull();
   });
 });

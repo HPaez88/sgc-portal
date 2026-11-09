@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-09T16:00Z · @claude-code · [FEATURE] · Encargados del SGC por área y dirección + subdirecciones
+En Configuración, el modal de cada área y dirección tiene "Encargados del SGC": varios usuarios del portal por área (agregar existente o crear nuevo desde ahí), guardados como encargados_sgc (correos) en el catálogo. El usuario conserva su rol (una auditora puede ser encargada de su área). Al guardar el área, quien tiene alcance limitado y no tenía área toma esa, y "Usuario" pasa a "Encargado" (regla pura cambioEncargado con prueba). El área tiene campo opcional Subdirección. Los avisos "Por abrir" van al correo del área + sus encargados SGC.
+- Tareas STATE: C17
+- Deploy: SI
+
 ## 2026-11-06T15:40Z · @claude-code · [FEATURE] · Lista AC con no conformidad, AC/RC en el cuadro de indicadores, correo para admins
 Lista de AC: la columna Proceso se cambió por No conformidad; el origen muestra el número ("Auditoría Interna #9", "Indicador #39"). Con origen Indicador el formato pide elegir el indicador (origen_referencia) y el cuadro de control muestra junto a cada indicador los folios de AC y RC abiertas. Botón de correo libre solo para Admin/Super Admin (sale por Resend cuando esté configurado; mientras, abre Outlook). Corregido el botón RC de Evaluación trimestral (llamaba a una función inexistente). Datos: AC#2,3,4,5/2026 → indicadores 39,38,40,37; AC#22/2026 → 35; AC#6/2026 → 26 (respaldo sgc-20261106-1537.dump). Sin ligar por ambigüedad: AC#14/2025, AC#17/2025, AC#1/2026, AC#10/2026.
 - Tareas STATE: C16

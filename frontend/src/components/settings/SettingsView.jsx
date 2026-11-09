@@ -5,6 +5,8 @@ import { api } from '../../services/apiClient';
 import { useToast } from '../common/Toast';
 import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import ContenedorModal from '../common/ContenedorModal';
+import EncargadosSGC from './EncargadosSGC';
+import { cambioEncargado } from '../../constants/workflow';
 import {
   Users,
   Building,
@@ -73,6 +75,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   const [claveTemporal, setClaveTemporal] = useState(null); // { nombre, email, password } se muestra una sola vez
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
   const [mensajeExito, setMensajeExito] = useState('');
+  // Al crear un usuario desde el modal de área/dirección, se agrega como encargado de ahí.
+  const [destinoNuevoUsuario, setDestinoNuevoUsuario] = useState(null); // 'area' | 'direccion'
 
   const usuariosList = Array.isArray(usuarios) ? usuarios : [];
   const safeSetUsuarios = typeof setUsuarios === 'function' ? setUsuarios : () => {};
@@ -244,7 +248,32 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     });
   };
 
-  const guardarArea = () => {
+  // Un encargado del SGC con alcance limitado necesita ver su área y poder enviar al SGC:
+  // si no tenía área (o "Por asignar") toma esta, y si era "Usuario" pasa a "Encargado".
+  const ajustarEncargados = async (correos, area) => {
+    const cambios = usuariosList.filter((u) => correos.includes(String(u.email).toLowerCase()))
+      .map((u) => ({ u, ...cambioEncargado(u, area) })).filter((c) => c.rol);
+    for (const { u, area: nuevaArea, rol } of cambios) {
+      const r = await api.put(`/api/v1/auth/usuarios/${u.id}`, {
+        nombre: u.nombre, email: u.email, telefono: u.telefono || null, area: nuevaArea,
+        direccion: u.direccion || null, rol, activo: u.activo ?? true,
+      });
+      if (!r.ok) toast.error(`No se pudo actualizar a ${u.nombre}: ${r.error?.message || r.error?.detail || 'error'}`);
+    }
+    if (cambios.length) await recargarUsuarios();
+  };
+
+  const crearEncargado = (tipo) => {
+    const area = tipo === 'area' ? modalArea.data.nombre : (areas[0] || '');
+    const direccion = tipo === 'area' ? modalArea.data.direccion : modalDireccion.data.nombre;
+    setDestinoNuevoUsuario(tipo);
+    setModalUsuario({
+      show: true, esEdicion: false,
+      data: { id: Date.now(), nombre: '', email: '', telefono: '', area, direccion, rol: 'Encargado', password: '' },
+    });
+  };
+
+  const guardarArea = async () => {
     const { nombre, encargado, correo, direccion, telefono } = modalArea.data;
     if (!nombre.trim()) return toast.warning('El nombre del área es obligatorio.');
     if (!encargado.trim()) return toast.warning('El nombre del encargado actual es obligatorio.');
@@ -258,6 +287,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       notificar(`✓ Área "${nombre}" agregada al catálogo`);
     }
     setModalArea({ show: false, esEdicion: false, data: {} });
+    await ajustarEncargados(modalArea.data.encargados_sgc || [], nombre.trim());
   };
 
   // Control de permisos estrictos: Solo Super Admin (Lic. Héctor Páez / Super Admin) puede eliminar datos de los catálogos
@@ -469,6 +499,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   // MANEJADORES DE USUARIOS
   // ==========================================
   const abrirNuevoUsuario = () => {
+    setDestinoNuevoUsuario(null);
     const defaultArea = areas[0] || '';
     const areaInfo = areasDetalle.find(a => a.nombre === defaultArea);
     setModalUsuario({
@@ -516,6 +547,10 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       notificar(`✓ Usuario "${nombre}" actualizado correctamente`);
     } else {
       setClaveTemporal({ nombre, email: cuerpo.email, password: r.data.password_temporal });
+      const agregar = (m) => ({ ...m, data: { ...m.data, encargados_sgc: [...(m.data.encargados_sgc || []), cuerpo.email] } });
+      if (destinoNuevoUsuario === 'area') setModalArea(agregar);
+      if (destinoNuevoUsuario === 'direccion') setModalDireccion(agregar);
+      setDestinoNuevoUsuario(null);
       notificar(`✓ Usuario "${nombre}" creado con área "${area}"`);
     }
   };
@@ -564,7 +599,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     a.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
     a.encargado?.toLowerCase().includes(busqueda.toLowerCase()) ||
     a.correo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    a.direccion?.toLowerCase().includes(busqueda.toLowerCase())
+    a.direccion?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    a.subdireccion?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const direccionesFiltradas = direccionesDetalle.filter(d => 
@@ -801,6 +837,11 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                           <UserCheck size={13} className="text-sky-600 shrink-0" />
                           <span>{a.encargado || 'Sin asignar'}</span>
                         </div>
+                        {(a.encargados_sgc || []).length > 0 && (
+                          <p className="text-[11px] text-sky-700 mt-0.5" title={(a.encargados_sgc || []).map(c => usuariosList.find(u => String(u.email).toLowerCase() === c)?.nombre || c).join(', ')}>
+                            SGC: {(a.encargados_sgc || []).map(c => usuariosList.find(u => String(u.email).toLowerCase() === c)?.nombre || c).join(', ')}
+                          </p>
+                        )}
                       </td>
                       <td className="py-3 px-4 font-mono text-[11px] text-slate-600">
                         {a.correo ? (
@@ -815,6 +856,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                         <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                           {a.direccion || 'Sin dirección'}
                         </span>
+                        {a.subdireccion && <p className="text-[11px] text-slate-500 mt-1">{a.subdireccion}</p>}
                       </td>
                       <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
                         {a.telefono ? (
@@ -1790,6 +1832,29 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               </div>
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Subdirección (opcional)</label>
+              <input
+                type="text"
+                list="lista-subdirecciones"
+                value={modalArea.data.subdireccion || ''}
+                onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, subdireccion: e.target.value } })}
+                placeholder="Ej. Subdirección de Operación"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+              />
+              <datalist id="lista-subdirecciones">
+                {[...new Set(areasDetalle.map(a => a.subdireccion).filter(Boolean))].map(sd => <option key={sd} value={sd} />)}
+              </datalist>
+            </div>
+
+            <EncargadosSGC
+              lista={modalArea.data.encargados_sgc || []}
+              onChange={(l) => setModalArea({ ...modalArea, data: { ...modalArea.data, encargados_sgc: l } })}
+              usuarios={usuariosList}
+              area={modalArea.data.nombre}
+              onCrear={() => crearEncargado('area')}
+            />
+
             <div className="flex gap-2.5 justify-end pt-3 border-t border-slate-100">
               <button
                 onClick={() => setModalArea({ show: false, esEdicion: false, data: {} })}
@@ -1890,6 +1955,13 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                 </div>
               </div>
             </div>
+
+            <EncargadosSGC
+              lista={modalDireccion.data.encargados_sgc || []}
+              onChange={(l) => setModalDireccion({ ...modalDireccion, data: { ...modalDireccion.data, encargados_sgc: l } })}
+              usuarios={usuariosList}
+              onCrear={() => crearEncargado('direccion')}
+            />
 
             <div className="flex gap-2.5 justify-end pt-3 border-t border-slate-100">
               <button

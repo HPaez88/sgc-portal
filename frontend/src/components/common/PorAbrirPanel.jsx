@@ -30,7 +30,8 @@ export default function PorAbrirPanel({ tipo, registros, onVer, setRegistros }) 
 
   const correoDe = (r) => {
     if (Array.isArray(r.correos_responsables) && r.correos_responsables.length) return r.correos_responsables.join(',');
-    return areasDetalle.find((a) => a.nombre === r.area)?.correo || '';
+    const area = areasDetalle.find((a) => a.nombre === r.area);
+    return [...new Set([area?.correo, ...(area?.encargados_sgc || [])].filter(Boolean))].join(',');
   };
 
   const registrarAviso = (r, para, via) => {

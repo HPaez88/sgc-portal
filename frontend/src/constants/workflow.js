@@ -301,3 +301,12 @@ export const correosDe = (r) => {
   const texto = Array.isArray(c) ? c.join(',') : String(c || '');
   return [...new Set(texto.match(/[^\s'",;[\]]+@[^\s'",;[\]]+/g) || [])];
 };
+
+// Al nombrar a alguien encargado del SGC de un área: si su alcance es limitado y no tenía área,
+// toma esta; si era "Usuario" pasa a "Encargado" (puede enviar al SGC). Null = no cambia nada.
+export const cambioEncargado = (usuario, area) => {
+  if (!usuario || puedeVerTodasAreas(usuario)) return null;
+  const sinArea = !usuario.area || usuario.area === 'Por asignar';
+  if (!sinArea && usuario.rol !== 'Usuario') return null;
+  return { area: sinArea ? area : usuario.area, rol: usuario.rol === 'Usuario' ? 'Encargado' : usuario.rol };
+};
