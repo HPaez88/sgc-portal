@@ -2,6 +2,7 @@
 // Estas reglas gobiernan qué puede hacer cada rol y cuándo un registro está vencido.
 import { describe, it, expect } from 'vitest';
 import {
+  replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal,
   cambioEncargado,
   etiquetaOrigen,
   correosDe,
@@ -239,5 +240,30 @@ describe('cambioEncargado', () => {
   });
   it('no cambia a un encargado que ya tiene área', () => {
     expect(cambioEncargado({ rol: 'Encargado', area: 'Redes' }, 'Plantas')).toBeNull();
+  });
+});
+
+describe('replanteo de fecha final', () => {
+  const hoy = new Date(2026, 10, 9); // lunes 9 nov 2026
+  const ac30 = { estado: 'EN_SEGUIMIENTO', fecha_limite: '2026-10-30', replanteos_control6: "[{'numero': 1, 'fecha': '2026-10-30'}]", actividades_json: '[]' };
+  it('cuenta los replanteos del Control 6', () => {
+    expect(replanteosFinales(ac30).usados).toBe(1);
+    expect(replanteosFinales({ replanteos_control6: '[]' }).usados).toBe(0);
+  });
+  it('valida fecha hábil, futura, motivo y límite', () => {
+    expect(validarReplanteoFinal(ac30, '2026-12-05', 'motivo suficiente', hoy)).toMatch(/hábil/); // sábado
+    expect(validarReplanteoFinal(ac30, '2026-11-06', 'motivo suficiente', hoy)).toMatch(/posterior a hoy/);
+    expect(validarReplanteoFinal(ac30, '2026-12-04', 'corto', hoy)).toMatch(/justificación/);
+    expect(validarReplanteoFinal(ac30, '2026-12-04', 'motivo suficiente', hoy)).toBeNull();
+    const lleno = aplicarReplanteoFinal(ac30, { nuevaFecha: '2026-12-04', motivo: 'motivo suficiente', por: 'H' });
+    expect(validarReplanteoFinal(lleno, '2026-12-11', 'motivo suficiente', hoy)).toMatch(/2 replanteos/);
+    expect(validarReplanteoFinal({ ...ac30, actividades_json: '[{"fecha_termino_sugerida":"2026-12-01"}]' }, '2026-12-04', 'motivo suficiente', hoy)).toMatch(/por actividad/);
+  });
+  it('aplica sin mutar y deja la fecha nueva como fecha final', () => {
+    const nuevo = aplicarReplanteoFinal(ac30, { nuevaFecha: '2026-12-04', motivo: 'motivo suficiente', por: 'H', ahora: 'x' });
+    expect(ac30.fecha_limite).toBe('2026-10-30');
+    expect(getFechaCompromiso(nuevo).getDate()).toBe(4);
+    expect(nuevo.historial_replanteos_final[0]).toMatchObject({ numero: 2, fecha_anterior: '2026-10-30', fecha: '2026-12-04' });
+    expect(getVencimiento(nuevo).nivel).not.toBe('vencido');
   });
 });

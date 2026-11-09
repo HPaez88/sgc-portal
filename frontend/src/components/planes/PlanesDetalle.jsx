@@ -7,6 +7,7 @@ import { processEvidenceFile } from '../../utils/fileSecurity';
 import { useToast } from '../common/Toast';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import ContenedorModal from '../common/ContenedorModal';
+import ReplanteoFinal from '../common/ReplanteoFinal';
 
 export default function PlanesDetalle({
   form,
@@ -399,6 +400,8 @@ export default function PlanesDetalle({
           </div>
         </div>
       )}
+
+      <ReplanteoFinal registro={form} guardar={guardarBorrador} modulo="PLANES_MEJORA" folio={form.folio_codigo || form.folio || ''} />
 
       {/* Datos Generales - Tarjetas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-09T17:30Z · @claude-code · [FEATURE] · Replanteo de la fecha final (registros sin actividades)
+Los registros importados no tienen actividades, así que el replanteo por actividad no aplicaba y quedaban vencidos sin salida. En el detalle de AC y PM hay un panel "Fecha final" con el semáforo y los replanteos usados; un Admin/Super Admin registra el replanteo con nueva fecha (día hábil, posterior a hoy y a la fecha actual) y justificación ≥10. Límite 2 contando los del Control 6. Queda en historial_replanteos_final y en la bitácora. Con actividades capturadas el panel no aparece y el replanteo sigue por actividad. Lógica pura con pruebas (replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal).
+- Tareas STATE: C18
+- Deploy: SI
+
 ## 2026-11-09T16:40Z · @claude-code · [FEATURE] · Subdirecciones dentro del catálogo de direcciones
 Decidido por @human: las subdirecciones viven en cada dirección (nombre, encargado, correo), editables en el modal de la dirección y listadas en la tabla de direcciones. El área elige su subdirección de la lista de su dirección (select en vez de texto libre); al cambiar la dirección del área se limpia la subdirección; si se renombra una subdirección, las áreas que la usaban toman el nombre nuevo.
 - Tareas STATE: C17

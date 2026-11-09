@@ -67,6 +67,7 @@
 - [x] C15 — Decidido por @human (2026-11-06): 2 replanteos por actividad; el seguimiento y semáforo van por la fecha final, no actividad por actividad. Sin cambios de código.
 - [x] C16 — Lista AC: No conformidad + origen con número; AC/RC por indicador en el cuadro de control; correo libre para admins. Falta ligar AC#14/2025, AC#17/2025, AC#1/2026, AC#10/2026 a su indicador.
 - [x] C17 — Encargados del SGC (varios) por área y dirección desde Configuración; subdirecciones en el catálogo de direcciones (nombre, encargado, correo) y el área elige la suya. Pendiente: un mismo encargado de alcance limitado en 2+ áreas solo ve su área principal.
+- [x] C18 — Replanteo de fecha final para registros sin actividades (Admin, máx 2 incl. Control 6). Pendiente decisión @human: qué hacer cuando un registro agota sus 2 replanteos y vence (AC#15/2025, AC#20/2025 ya en 2/2).
 - [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
 - [ ] C5 — Revisar en Control 6: AC#20/2026 replanteo #3 con fecha anterior; AC#24/2026 sin fecha de cierre; responsable de AC#1/2026; proceso de Jurídico (OM#5, OM#9)
 

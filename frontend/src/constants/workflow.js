@@ -228,7 +228,7 @@ export const calcularFechaFinal = (actividades) => {
   return f;
 };
 
-const leerActividades = (registro) => {
+export const leerActividades = (registro) => {
   if (Array.isArray(registro.actividades)) return registro.actividades;
   try {
     const lista = JSON.parse(registro.actividades_json || '[]');
@@ -309,4 +309,52 @@ export const cambioEncargado = (usuario, area) => {
   const sinArea = !usuario.area || usuario.area === 'Por asignar';
   if (!sinArea && usuario.rol !== 'Usuario') return null;
   return { area: sinArea ? area : usuario.area, rol: usuario.rol === 'Usuario' ? 'Encargado' : usuario.rol };
+};
+
+// ── Replanteo de la FECHA FINAL (registros sin actividades capturadas, p. ej. importados del Control 6).
+// Con actividades, la fecha final se calcula de ellas y se replantea por actividad.
+export const MAX_REPLANTEOS = 2;
+export const esAdminSGC = (usuario) => ['Super Admin', 'Admin'].includes(usuario?.rol);
+
+const leerLista = (valor) => {
+  if (Array.isArray(valor)) return valor;
+  if (typeof valor !== 'string' || !valor.trim()) return [];
+  try { return JSON.parse(valor.replace(/'/g, '"')); } catch { return []; } // ponytail: el Control 6 se importó como repr de Python
+};
+
+// Replanteos ya usados: los del Control 6 cuentan para el límite de 2.
+export const replanteosFinales = (registro) => {
+  const control6 = leerLista(registro?.replanteos_control6).map((r) => ({ fecha: r.fecha, origen: 'Control 6' }));
+  const portal = leerLista(registro?.historial_replanteos_final);
+  return { lista: [...control6, ...portal], usados: control6.length + portal.length };
+};
+
+export const validarReplanteoFinal = (registro, nuevaFecha, motivo, hoy = new Date()) => {
+  if (leerActividades(registro).length > 0) return 'Este registro ya tiene actividades: el replanteo se hace por actividad.';
+  if (replanteosFinales(registro).usados >= MAX_REPLANTEOS) return `Ya se usaron los ${MAX_REPLANTEOS} replanteos permitidos.`;
+  const f = parseFecha(nuevaFecha);
+  if (!f) return 'Indica la nueva fecha final.';
+  if (f.getDay() === 0 || f.getDay() === 6) return 'La fecha final debe caer en día hábil (lunes a viernes).';
+  const base = new Date(hoy); base.setHours(0, 0, 0, 0);
+  if (f <= base) return 'La nueva fecha debe ser posterior a hoy.';
+  const actual = getFechaCompromiso(registro);
+  if (actual && f <= actual) return 'La nueva fecha debe ser posterior a la fecha final actual.';
+  if (!motivo || motivo.trim().length < 10) return 'Escribe la justificación (mínimo 10 caracteres).';
+  return null;
+};
+
+export const aplicarReplanteoFinal = (registro, { nuevaFecha, motivo, por, ahora = new Date().toISOString() }) => {
+  const anterior = getFechaCompromiso(registro);
+  const { usados } = replanteosFinales(registro);
+  const entrada = {
+    numero: usados + 1, fecha_anterior: anterior ? anterior.toISOString().slice(0, 10) : null,
+    fecha: nuevaFecha, justificacion: motivo.trim(), registrado_por: por, fecha_registro: ahora, origen: 'Portal',
+  };
+  return {
+    ...registro,
+    fecha_limite: nuevaFecha,
+    fecha_cierre_programada: nuevaFecha,
+    ...(registro.fecha_cierre_estimada ? { fecha_cierre_estimada: nuevaFecha } : {}),
+    historial_replanteos_final: [...leerLista(registro.historial_replanteos_final), entrada],
+  };
 };
