@@ -11,7 +11,7 @@ import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { ESTADOS_SGC, getEstadoColor, getEstadoLabel, can, getDireccionDeArea, puedeVerArea } from '../constants';
 import { asignarFolio } from '../services/folioService';
-import { motivoBloqueoCierre } from '../constants/workflow';
+import { motivoBloqueoCierre, fechaSeguimientoInicial } from '../constants/workflow';
 import BarraRegreso from './common/BarraRegreso';
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
@@ -308,7 +308,8 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     const cambios = {
       estado: 'EN_SEGUIMIENTO', folio_numero: folioNumero, folio_codigo: folioCodigo,
       anio_folio: anio, fecha_aprobacion_sgc: new Date().toISOString(), fecha_apertura: new Date().toISOString(),
-      aprobado_por_sgc: usuarioLogueado?.nombre || 'Admin SGC'
+      aprobado_por_sgc: usuarioLogueado?.nombre || 'Admin SGC',
+      ...(fechaSeguimientoInicial({ actividades_json: JSON.stringify(actividades) }) ? { fecha_seguimiento: fechaSeguimientoInicial({ actividades_json: JSON.stringify(actividades) }) } : {}),
     };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);

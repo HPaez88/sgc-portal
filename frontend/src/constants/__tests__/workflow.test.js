@@ -2,7 +2,7 @@
 // Estas reglas gobiernan qué puede hacer cada rol y cuándo un registro está vencido.
 import { describe, it, expect } from 'vitest';
 import {
-  replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal,
+  replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal, fechaSeguimientoInicial, fechaISO,
   cambioEncargado,
   etiquetaOrigen,
   correosDe,
@@ -257,7 +257,6 @@ describe('replanteo de fecha final', () => {
     expect(validarReplanteoFinal(ac30, '2026-12-04', 'motivo suficiente', hoy)).toBeNull();
     const lleno = aplicarReplanteoFinal(ac30, { nuevaFecha: '2026-12-04', motivo: 'motivo suficiente', por: 'H' });
     expect(validarReplanteoFinal(lleno, '2026-12-11', 'motivo suficiente', hoy)).toMatch(/2 replanteos/);
-    expect(validarReplanteoFinal({ ...ac30, actividades_json: '[{"fecha_termino_sugerida":"2026-12-01"}]' }, '2026-12-04', 'motivo suficiente', hoy)).toMatch(/por actividad/);
   });
   it('aplica sin mutar y deja la fecha nueva como fecha final', () => {
     const nuevo = aplicarReplanteoFinal(ac30, { nuevaFecha: '2026-12-04', motivo: 'motivo suficiente', por: 'H', ahora: 'x' });
@@ -266,4 +265,26 @@ describe('replanteo de fecha final', () => {
     expect(nuevo.historial_replanteos_final[0]).toMatchObject({ numero: 2, fecha_anterior: '2026-10-30', fecha: '2026-12-04' });
     expect(getVencimiento(nuevo).nivel).not.toBe('vencido');
   });
+});
+
+describe('fecha de seguimiento fija', () => {
+  const acts = (f) => JSON.stringify([{ fecha_termino_sugerida: '2026-11-20' }, { fecha_termino_sugerida: f }]);
+  it('se fija al aprobar con la actividad más tardía + 2 semanas en día hábil', () => {
+    expect(fechaSeguimientoInicial({ actividades_json: acts('2026-12-01') })).toBe('2026-12-15');
+    expect(fechaSeguimientoInicial({ actividades_json: '[]' })).toBeNull();
+  });
+  it('no se mueve aunque el responsable cambie sus actividades', () => {
+    const r = { estado: 'EN_SEGUIMIENTO', fecha_seguimiento: '2026-12-15', actividades_json: acts('2027-02-01') };
+    expect(fechaISO(getFechaCompromiso(r))).toBe('2026-12-15');
+  });
+  it('el replanteo de fecha final la cambia', () => {
+    const r = { estado: 'EN_SEGUIMIENTO', fecha_seguimiento: '2026-12-15', actividades_json: acts('2027-02-01') };
+    const n = aplicarReplanteoFinal(r, { nuevaFecha: '2027-02-15', motivo: 'replantearon actividades', por: 'H' });
+    expect(fechaISO(getFechaCompromiso(n))).toBe('2027-02-15');
+    expect(n.historial_replanteos_final[0].fecha_anterior).toBe('2026-12-15');
+  });
+});
+
+it('lee actividades de PM guardadas como texto', () => {
+  expect(fechaSeguimientoInicial({ actividades: JSON.stringify([{ fecha_termino_sugerida: '2026-12-01' }]) })).toBe('2026-12-15');
 });

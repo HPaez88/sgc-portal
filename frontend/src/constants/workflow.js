@@ -231,7 +231,9 @@ export const calcularFechaFinal = (actividades) => {
 export const leerActividades = (registro) => {
   if (Array.isArray(registro.actividades)) return registro.actividades;
   try {
-    const lista = JSON.parse(registro.actividades_json || '[]');
+    // AC guarda actividades_json; PM guarda "actividades" como texto JSON.
+    const texto = typeof registro.actividades === 'string' ? registro.actividades : registro.actividades_json;
+    const lista = JSON.parse(texto || '[]');
     return Array.isArray(lista) ? lista : [];
   } catch {
     return [];
@@ -242,6 +244,9 @@ export const leerActividades = (registro) => {
 // actividades con fecha (p. ej. importadas del Control 6), la primera fecha disponible.
 export const getFechaCompromiso = (registro) => {
   if (!registro) return null;
+  // La fecha de seguimiento del SGC se fija al aprobar y solo cambia con un replanteo de fecha final.
+  if (registro.fecha_seguimiento) return parseFecha(registro.fecha_seguimiento);
+  // Mientras no se fija (borrador), se muestra la que resultaría de las actividades.
   const calculada = calcularFechaFinal(leerActividades(registro));
   if (calculada) return calculada;
   const candidatos = [
@@ -311,8 +316,11 @@ export const cambioEncargado = (usuario, area) => {
   return { area: sinArea ? area : usuario.area, rol: usuario.rol === 'Usuario' ? 'Encargado' : usuario.rol };
 };
 
-// ── Replanteo de la FECHA FINAL (registros sin actividades capturadas, p. ej. importados del Control 6).
-// Con actividades, la fecha final se calcula de ellas y se replantea por actividad.
+// ── FECHA DE SEGUIMIENTO (decidido 2026-11-09): al aprobar se fija = actividad más tardía + 2 semanas, en día hábil.
+// Aunque el responsable mueva sus actividades, el SGC sigue esa fecha; al vencer pide replantear actividades
+// y registra un replanteo de la fecha final (máx. 2, contando los del Control 6).
+export const fechaISO = (d) => (d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : null);
+export const fechaSeguimientoInicial = (registro) => fechaISO(calcularFechaFinal(leerActividades(registro)));
 export const MAX_REPLANTEOS = 2;
 export const esAdminSGC = (usuario) => ['Super Admin', 'Admin'].includes(usuario?.rol);
 
@@ -330,7 +338,6 @@ export const replanteosFinales = (registro) => {
 };
 
 export const validarReplanteoFinal = (registro, nuevaFecha, motivo, hoy = new Date()) => {
-  if (leerActividades(registro).length > 0) return 'Este registro ya tiene actividades: el replanteo se hace por actividad.';
   if (replanteosFinales(registro).usados >= MAX_REPLANTEOS) return `Ya se usaron los ${MAX_REPLANTEOS} replanteos permitidos.`;
   const f = parseFecha(nuevaFecha);
   if (!f) return 'Indica la nueva fecha final.';
@@ -347,11 +354,12 @@ export const aplicarReplanteoFinal = (registro, { nuevaFecha, motivo, por, ahora
   const anterior = getFechaCompromiso(registro);
   const { usados } = replanteosFinales(registro);
   const entrada = {
-    numero: usados + 1, fecha_anterior: anterior ? anterior.toISOString().slice(0, 10) : null,
+    numero: usados + 1, fecha_anterior: fechaISO(anterior),
     fecha: nuevaFecha, justificacion: motivo.trim(), registrado_por: por, fecha_registro: ahora, origen: 'Portal',
   };
   return {
     ...registro,
+    fecha_seguimiento: nuevaFecha,
     fecha_limite: nuevaFecha,
     fecha_cierre_programada: nuevaFecha,
     ...(registro.fecha_cierre_estimada ? { fecha_cierre_estimada: nuevaFecha } : {}),

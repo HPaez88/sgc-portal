@@ -1,11 +1,14 @@
-// Fecha final del registro y su replanteo (máx. 2, contando los del Control 6).
-// Solo para registros sin actividades; lo registra un administrador del SGC con justificación.
+// Fecha de seguimiento del SGC (la "fecha grande"): se fija al aprobar y no se mueve aunque el responsable
+// cambie sus actividades. Al vencer, el SGC pide replantear actividades y registra el replanteo de la fecha
+// final (máx. 2, contando los del Control 6). Agotados y vencida → dictamen no eficaz.
 import React, { useState } from 'react';
 import { CalendarClock } from 'lucide-react';
+import ModalCorreo from './ModalCorreo';
 import { useSGC } from '../../SGCContext';
 import {
   MAX_REPLANTEOS, esAdminSGC, esCerrado, normalizarEstado, leerActividades, formatearFecha,
   getFechaCompromiso, getVencimiento, replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal,
+  calcularFechaFinal, fechaISO, correosDe,
 } from '../../constants/workflow';
 
 export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoEficaz }) {
@@ -14,8 +17,12 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
   const [fecha, setFecha] = useState('');
   const [motivo, setMotivo] = useState('');
   const [error, setError] = useState('');
+  const [correoAbierto, setCorreoAbierto] = useState(false);
 
-  if (!registro || leerActividades(registro).length > 0) return null;
+  // Solo registros ya aprobados (con fecha de seguimiento); en borrador la fecha aún se está armando.
+  if (!registro || !(registro.fecha_aprobacion_sgc || registro.folio_numero)) return null;
+  const actividades = leerActividades(registro);
+  const sugerida = fechaISO(calcularFechaFinal(actividades)); // actividad más tardía + 2 semanas
   const { lista, usados } = replanteosFinales(registro);
   const venc = getVencimiento(registro);
   const puede = esAdminSGC(usuarioLogueado) && !esCerrado(normalizarEstado(registro.estado)) && usados < MAX_REPLANTEOS;
@@ -43,13 +50,26 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
               Fecha final: <span className="font-mono">{formatearFecha(getFechaCompromiso(registro))}</span>
               <span className={`ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold border ${venc.color}`}>{venc.label}</span>
             </p>
-            <p className="text-[11px] text-slate-500">Replanteos usados: {usados} de {MAX_REPLANTEOS}</p>
+            <p className="text-[11px] text-slate-500">
+              Seguimiento del SGC · replanteos usados: {usados} de {MAX_REPLANTEOS}
+              {sugerida && <> · por actividades hoy daría <span className="font-mono">{formatearFecha(sugerida)}</span></>}
+            </p>
           </div>
         </div>
         {puede && !abierto && (
-          <button type="button" onClick={() => setAbierto(true)}
+          <button type="button" onClick={() => {
+            const actual = getFechaCompromiso(registro);
+            setFecha(sugerida && actual && sugerida > fechaISO(actual) ? sugerida : '');
+            setAbierto(true);
+          }}
             className="px-3.5 py-1.5 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 rounded-lg">
             Replantear fecha final
+          </button>
+        )}
+        {puede && venc.nivel === 'vencido' && actividades.length > 0 && (
+          <button type="button" onClick={() => setCorreoAbierto(true)}
+            className="px-3.5 py-1.5 text-xs font-bold text-sky-800 bg-white border border-sky-200 hover:bg-sky-50 rounded-lg">
+            Solicitar replanteo de actividades
           </button>
         )}
         {usados >= MAX_REPLANTEOS && !esCerrado(normalizarEstado(registro.estado)) && (
@@ -97,6 +117,20 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
           </div>
         </div>
       )}
+      <ModalCorreo
+        abierto={correoAbierto}
+        onClose={() => setCorreoAbierto(false)}
+        folio={folio}
+        inicial={{
+          para: correosDe(registro).join(', '),
+          asunto: `${folio || 'Registro'}: replanteo de actividades`,
+          mensaje: `Buen día,
+
+La fecha de seguimiento de ${folio || 'este registro'} (${formatearFecha(getFechaCompromiso(registro))}) venció sin concluirse. Le solicitamos replantear las fechas de las actividades pendientes en el Portal SGC, con su justificación, para registrar el replanteo ${usados + 1} de ${MAX_REPLANTEOS}.
+
+`,
+        }}
+      />
     </div>
   );
 }

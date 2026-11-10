@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, X, Eye } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { getEstadoColor, getEstadoLabel, getVencimiento, can } from '../../constants';
+import { fechaSeguimientoInicial } from '../../constants/workflow';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import { asignarFolio } from '../../services/folioService';
 
@@ -208,7 +209,8 @@ export default function GestorAprobacionesView({
         anio_folio: anio,
         fecha_aprobacion_sgc: new Date().toISOString(),
         fecha_apertura: new Date().toISOString(),
-        aprobado_por_sgc: usuarioLogueado?.nombre || 'SGC'
+        aprobado_por_sgc: usuarioLogueado?.nombre || 'SGC',
+        ...(fechaSeguimientoInicial(app.objeto_original) ? { fecha_seguimiento: fechaSeguimientoInicial(app.objeto_original) } : {})
       };
 
       setAccionesCorrectivas(accionesCorrectivas.map(a => a.id === app.id_original ? nuevoObj : a));
@@ -234,7 +236,8 @@ export default function GestorAprobacionesView({
         anio_folio: anio,
         fecha_aprobacion_sgc: new Date().toISOString(),
         fecha_apertura: new Date().toISOString(),
-        aprobado_por_sgc: usuarioLogueado?.nombre || 'SGC'
+        aprobado_por_sgc: usuarioLogueado?.nombre || 'SGC',
+        ...(fechaSeguimientoInicial(app.objeto_original) ? { fecha_seguimiento: fechaSeguimientoInicial(app.objeto_original) } : {})
       };
 
       setPlanesMejora(planesMejora.map(p => p.id === app.id_original ? nuevoObj : p));

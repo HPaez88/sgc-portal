@@ -11,7 +11,7 @@ import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
 import { asignarFolio } from '../services/folioService';
-import { motivoBloqueoCierre } from '../constants/workflow';
+import { motivoBloqueoCierre, fechaSeguimientoInicial } from '../constants/workflow';
 import BarraRegreso from './common/BarraRegreso';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
@@ -296,7 +296,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       anio_folio: anio,
       fecha_aprobacion_sgc: new Date().toISOString(),
       fecha_apertura: new Date().toISOString(),
-      aprobado_por_sgc: usuarioLogueado?.nombre || 'Admin SGC'
+      aprobado_por_sgc: usuarioLogueado?.nombre || 'Admin SGC',
+      ...(fechaSeguimientoInicial({ actividades }) ? { fecha_seguimiento: fechaSeguimientoInicial({ actividades }) } : {}),
     };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
