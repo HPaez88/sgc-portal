@@ -10,6 +10,7 @@ import { pmDesdeRiesgo, movimientoVinculo } from '../../services/flujoService';
 import { aplicarAprobacion, anioDeRiesgo, ESTADOS_MATRIZ_AREA } from '../../services/vigilanciaRiesgosService';
 import CampoPlanAccion from './CampoPlanAccion';
 import DashboardRiesgos from './DashboardRiesgos';
+import CampoFecha from '../common/CampoFecha';
 
 export default function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasAreas, areaUsuario }) {
   const { areas, procesos, setPlanesMejora, registrarMovimiento, usuarioLogueado } = useSGC();
@@ -421,8 +422,7 @@ export default function RiesgosView({ riesgos, setRiesgos, usuarios, puedeTodasA
                       />
                     </td>
                     <td className="p-3 align-top">
-                      <input
-                        type="date"
+                      <CampoFecha
                         value={r.fecha_termino || ''}
                         onChange={(e) => actualizarRiesgo(r.id, { fecha_termino: e.target.value })}
                         aria-label={`Fecha límite de ${r.riesgo}`}

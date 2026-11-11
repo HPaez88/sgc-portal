@@ -30,6 +30,7 @@ import {
 import { useSGC } from '../../SGCContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import CampoFecha from '../common/CampoFecha';
 
 const REGISTROS_POR_PAGINA = 30;
 
@@ -502,8 +503,7 @@ export default function BitacoraView() {
 
           {/* Fecha Desde */}
           <div>
-            <input
-              type="date"
+            <CampoFecha
               value={fechaDesde}
               onChange={(e) => setFechaDesde(e.target.value)}
               className="w-full px-2.5 py-2 text-xs border border-slate-200 rounded-xl focus:border-sky-500 outline-none bg-slate-50 focus:bg-white font-mono text-slate-700"
@@ -513,8 +513,7 @@ export default function BitacoraView() {
 
           {/* Fecha Hasta */}
           <div>
-            <input
-              type="date"
+            <CampoFecha
               value={fechaHasta}
               onChange={(e) => setFechaHasta(e.target.value)}
               className="w-full px-2.5 py-2 text-xs border border-slate-200 rounded-xl focus:border-sky-500 outline-none bg-slate-50 focus:bg-white font-mono text-slate-700"

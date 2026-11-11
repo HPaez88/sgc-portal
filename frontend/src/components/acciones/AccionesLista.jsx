@@ -6,6 +6,7 @@ import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import PorAbrirPanel from '../common/PorAbrirPanel';
 import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
+import CampoFecha from '../common/CampoFecha';
 
 const noConformidadDe = (ac) => ac.descripcion_no_conformidad_final || ac.descripcion_no_conformidad_original || ac.descripcion_problema || '';
 
@@ -429,7 +430,7 @@ export default function AccionesLista({
                       <td className="p-3 text-slate-500 font-medium whitespace-nowrap">
                         {fechaEdit?.id === ac.id ? (
                           <span className="inline-flex items-center gap-1">
-                            <input type="date" value={fechaEdit.fecha} autoFocus aria-label="Nueva fecha de cierre"
+                            <CampoFecha envoltura="w-36" value={fechaEdit.fecha} autoFocus aria-label="Nueva fecha de cierre"
                               onChange={(e) => setFechaEdit({ id: ac.id, fecha: e.target.value })}
                               onKeyDown={(e) => { if (e.key === 'Enter') guardarFecha(ac); if (e.key === 'Escape') setFechaEdit(null); }}
                               className="p-1 border border-sky-300 rounded text-xs" />

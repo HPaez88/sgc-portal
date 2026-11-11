@@ -203,9 +203,26 @@ export const parseFecha = (valor) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
+// Formato institucional: siempre dd/mm/aaaa (con ceros), independiente del idioma del navegador.
 export const formatearFecha = (valor) => {
   const d = parseFecha(valor);
-  return d ? d.toLocaleDateString('es-MX') : '-';
+  return d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` : '-';
+};
+
+// Captura dd/mm/aaaa: pone las diagonales mientras se escribe.
+export const mascaraFecha = (texto) => {
+  const n = String(texto || '').replace(/\D/g, '').slice(0, 8);
+  return [n.slice(0, 2), n.slice(2, 4), n.slice(4)].filter(Boolean).join('/');
+};
+
+// "dd/mm/aaaa" → "aaaa-mm-dd" (lo que se guarda); null si la fecha no existe (p. ej. 31/02/2026).
+export const dmyAISO = (texto) => {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(texto || '').trim());
+  if (!m) return null;
+  const [, dd, mm, aaaa] = m;
+  const d = new Date(Number(aaaa), Number(mm) - 1, Number(dd));
+  if (d.getFullYear() !== Number(aaaa) || d.getMonth() !== Number(mm) - 1 || d.getDate() !== Number(dd)) return null;
+  return `${aaaa}-${mm}-${dd}`;
 };
 
 // Regla SGC: la fecha final de una AC/PM es la actividad más tardía + 2 semanas, en día hábil

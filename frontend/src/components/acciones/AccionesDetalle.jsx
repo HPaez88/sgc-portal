@@ -8,6 +8,7 @@ import { useToast } from '../common/Toast';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import ContenedorModal from '../common/ContenedorModal';
 import ReplanteoFinal from '../common/ReplanteoFinal';
+import CampoFecha from '../common/CampoFecha';
 
 export default function AccionesDetalle({
   abrirDictamenNoEficaz,
@@ -973,8 +974,7 @@ export default function AccionesDetalle({
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Nueva Fecha Compromiso Propuesta <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  type="date"
+                <CampoFecha 
                   value={modalReplanteo.nuevaFecha}
                   onChange={(e) => setModalReplanteo(m => ({ ...m, nuevaFecha: e.target.value }))}
                   className="w-full p-2.5 border-2 border-slate-200 rounded-lg text-sm font-medium focus:border-[#002855] outline-none"

@@ -19,6 +19,7 @@ import {
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
 import { useSGC } from '../../SGCContext';
+import CampoFecha from '../common/CampoFecha';
 
 export default function ModalGestionarRC({
   isOpen,
@@ -264,8 +265,7 @@ export default function ModalGestionarRC({
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Fecha Compromiso
                 </label>
-                <input
-                  type="date"
+                <CampoFecha
                   value={fechaCompromiso}
                   onChange={(e) => setFechaCompromiso(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none font-mono"
@@ -306,8 +306,7 @@ export default function ModalGestionarRC({
               </div>
               <div>
                 <label className="block font-bold text-slate-600 mb-1">Fecha de Verificación:</label>
-                <input
-                  type="date"
+                <CampoFecha
                   value={fechaVerificacion}
                   onChange={(e) => setFechaVerificacion(e.target.value)}
                   className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono"

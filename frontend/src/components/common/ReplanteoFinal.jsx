@@ -10,6 +10,7 @@ import {
   getFechaCompromiso, getVencimiento, replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal,
   calcularFechaFinal, fechaISO, correosDe, ajustarFechaSeguimiento, parseFecha, puedeMoverFechas, FECHAS_SOLO_AJUSTE,
 } from '../../constants/workflow';
+import CampoFecha from './CampoFecha';
 
 export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoEficaz }) {
   const { usuarioLogueado, registrarMovimiento } = useSGC();
@@ -121,7 +122,7 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
       {abierto && (
         <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-3 border-t border-slate-100 pt-3">
           <label className="text-xs font-bold text-slate-700">Nueva fecha final
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
+            <CampoFecha value={fecha} onChange={(e) => setFecha(e.target.value)}
               className="mt-1 w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
           </label>
           <label className="text-xs font-bold text-slate-700">{modo === 'ajuste' ? 'Nota (opcional)' : 'Justificación'}

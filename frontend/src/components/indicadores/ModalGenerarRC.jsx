@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
+import CampoFecha from '../common/CampoFecha';
 
 export default function ModalGenerarRC({
   isOpen,
@@ -192,8 +193,7 @@ export default function ModalGenerarRC({
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 Fecha Límite de Corrección:
               </label>
-              <input
-                type="date"
+              <CampoFecha
                 value={fechaCompromiso}
                 onChange={(e) => setFechaCompromiso(e.target.value)}
                 required

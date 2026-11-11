@@ -26,6 +26,7 @@ import {
   ClipboardCheck,
   AlertTriangle
 } from 'lucide-react';
+import CampoFecha from '../common/CampoFecha';
 
 export default function AuditoriasView({ auditorias, setAuditorias, puedeTodasAreas, areaUsuario }) {
   const {
@@ -601,8 +602,7 @@ export default function AuditoriasView({ auditorias, setAuditorias, puedeTodasAr
                   <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
                     Fecha de Inicio <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="date"
+                  <CampoFecha
                     value={fechaInicio}
                     onChange={(e) => setFechaInicio(e.target.value)}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none"
@@ -612,8 +612,7 @@ export default function AuditoriasView({ auditorias, setAuditorias, puedeTodasAr
                   <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
                     Fecha de Cierre
                   </label>
-                  <input
-                    type="date"
+                  <CampoFecha
                     value={fechaFin}
                     onChange={(e) => setFechaFin(e.target.value)}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none"

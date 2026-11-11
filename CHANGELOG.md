@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-11T22:40Z · @claude-code · [FEATURE] · Fechas siempre dd/mm/aaaa (captura y vista)
+Decidido por @human: la captura y la vista de fechas siempre es dd/mm/aaaa. El <input type="date"> del navegador usa el idioma de Windows (mm/dd/aaaa en equipos en inglés), así que los 15 campos de fecha del portal se reemplazaron por CampoFecha (texto con máscara dd/mm/aaaa + botón de calendario; guarda aaaa-mm-dd, mismo onChange). formatearFecha ahora rellena con ceros (13/01/2027). Lógica pura con pruebas (mascaraFecha, dmyAISO; rechaza fechas inexistentes como 31/02).
+- Deploy: SI
+
 ## 2026-11-11T22:00Z · @claude-code · [FIX] · Tablero por dirección y permisos al recargar
 Desempeño por Dirección comparaba "Técnica" contra "Dir. Técnica" del catálogo: todos los indicadores salían en 0 (igual el filtro "Área / Dir"). Ahora usa las 7 direcciones oficiales (antes faltaba Jurídica) con normalizarDireccion; AC abiertas excluye cerradas (antes contaba CERRADO_EFECTIVO como abierta) y se asignan por su dirección o la de su área (direccionDeRegistro, con prueba); "Rojos" → "Riesgos" (riesgos del registro o de sus áreas). Al recargar, el portal refresca los datos y permisos del usuario desde /auth/me (la sesión guardada no traía puede_restablecer y no aparecía el cambio rápido de fecha).
 - Deploy: SI

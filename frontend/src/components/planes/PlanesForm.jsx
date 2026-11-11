@@ -16,6 +16,7 @@ import {
   Award,
   Lock
 } from 'lucide-react';
+import CampoFecha from '../common/CampoFecha';
 
 export default function PlanesForm({
   step, setStep, form, setForm, error, setError, mensaje, setMensaje,
@@ -661,8 +662,7 @@ export default function PlanesForm({
                         />
                       </td>
                       <td className="p-2">
-                        <input 
-                          type="date" 
+                        <CampoFecha 
                           value={act.fecha_termino_sugerida} 
                           onChange={(e) => {
                             const nuevo = [...actividades]; 

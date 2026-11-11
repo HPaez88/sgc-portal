@@ -18,6 +18,7 @@ import {
   FileCheck2,
   Lock
 } from 'lucide-react';
+import CampoFecha from '../common/CampoFecha';
 
 export default function AccionesWizard({
   step, setStep, form, setForm, error, setError, mensaje, setMensaje,
@@ -732,8 +733,7 @@ export default function AccionesWizard({
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Fecha de Ejecución <span className="text-rose-500">*</span>
                 </label>
-                <input 
-                  type="date" 
+                <CampoFecha 
                   name="fecha_actividad_inmediata" 
                   value={form.fecha_actividad_inmediata} 
                   onChange={handleChange}
@@ -888,8 +888,7 @@ export default function AccionesWizard({
                         />
                       </td>
                       <td className="p-2">
-                        <input 
-                          type="date" 
+                        <CampoFecha 
                           value={act.fecha_termino_sugerida} 
                           onChange={(e) => {
                             const nuevo = [...actividades]; 

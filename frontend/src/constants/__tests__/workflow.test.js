@@ -2,6 +2,8 @@
 // Estas reglas gobiernan qué puede hacer cada rol y cuándo un registro está vencido.
 import { describe, it, expect } from 'vitest';
 import {
+  formatearFecha,
+  mascaraFecha, dmyAISO,
   ajustarFechaSeguimiento,
   replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal, fechaSeguimientoInicial, fechaISO,
   cambioEncargado,
@@ -19,7 +21,6 @@ import {
   parseFecha,
   motivoBloqueoCierre,
   esPorAbrir,
-  diasRestantes,
   diasRestantes,
   getFechaCompromiso,
   calcularFechaFinal,
@@ -297,4 +298,18 @@ it('el ajuste administrativo mueve la fecha sin contar como replanteo', () => {
   expect(replanteosFinales(n).usados).toBe(0);
   expect(n.historial_ajustes_fecha[0].fecha_anterior).toBe('2026-10-30');
   expect(r.fecha_seguimiento).toBe('2026-10-30');
+});
+
+describe('fechas dd/mm/aaaa', () => {
+  it('muestra siempre con ceros', () => {
+    expect(formatearFecha('2027-01-13')).toBe('13/01/2027');
+    expect(formatearFecha('')).toBe('-');
+  });
+  it('captura con máscara y valida', () => {
+    expect(mascaraFecha('13012027')).toBe('13/01/2027');
+    expect(mascaraFecha('130')).toBe('13/0');
+    expect(dmyAISO('13/01/2027')).toBe('2027-01-13');
+    expect(dmyAISO('31/02/2026')).toBeNull();
+    expect(dmyAISO('01/13/2026')).toBeNull();
+  });
 });
