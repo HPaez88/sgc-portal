@@ -23,6 +23,13 @@ from backend.database import get_session
 TOKEN_HORAS = 8
 ROLES = ("Super Admin", "Admin", "Director", "Auditor", "Encargado", "Usuario")
 ROLES_ADMIN = ("Super Admin", "Admin")
+# Restablecer contraseñas: el Super Admin y solo estas cuentas (decidido por @human 2026-11-11).
+# ponytail: lista fija; pasar a configuración por organismo si otro organismo lo necesita.
+CORREOS_RESTABLECEN = frozenset({"gescobar@oomapasc.gob.mx"})
+
+
+def puede_restablecer(usuario) -> bool:
+    return bool(usuario) and (usuario.rol == "Super Admin" or str(usuario.email).lower() in CORREOS_RESTABLECEN)
 PASSWORD_MIN = 8
 
 

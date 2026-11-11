@@ -113,3 +113,29 @@ def test_cookie_sirve_solo_para_lectura(cliente):
     cliente.post("/api/v1/auth/logout")
     cliente.cookies.clear()
     assert cliente.get("/api/v1/organismos").status_code == 401
+
+
+def test_solo_super_admin_y_gescobar_restablecen_password(cliente):
+    cab = {"Authorization": f"Bearer {_token(cliente)}"}
+    crear = lambda email, rol: cliente.post("/api/v1/auth/usuarios", headers=cab, json={
+        "nombre": "Prueba " + rol, "email": email, "area": "SGC", "rol": rol}).json()
+    otro = crear("otro.admin@oomapasc.gob.mx", "Admin")
+    gladys = crear("gescobar@oomapasc.gob.mx", "Admin")
+    sa_id = cliente.get("/api/v1/auth/me", headers=cab).json()["id"]
+    assert cliente.get("/api/v1/auth/me", headers=cab).json()["puede_restablecer"] is True
+    # un Admin cualquiera ya no puede
+    t_otro = _token(cliente, "otro.admin@oomapasc.gob.mx", otro["password_temporal"])
+    r = cliente.post(f"/api/v1/auth/usuarios/{gladys['usuario']['id']}/restablecer-password", headers={"Authorization": f"Bearer {t_otro}"})
+    assert r.status_code == 403
+    # gescobar sí, incluso al Super Admin
+    t_g = _token(cliente, "gescobar@oomapasc.gob.mx", gladys["password_temporal"])
+    cab_g = {"Authorization": f"Bearer {t_g}"}
+    assert cliente.get("/api/v1/auth/me", headers=cab_g).json()["puede_restablecer"] is True
+    r = cliente.post(f"/api/v1/auth/usuarios/{sa_id}/restablecer-password", headers=cab_g)
+    assert r.status_code == 200 and len(r.json()["password_temporal"]) >= 12
+    # devolver al Super Admin su clave de prueba para las demás pruebas
+    temporal = r.json()["password_temporal"]
+    t_sa = _token(cliente, ADMIN, temporal)
+    r = cliente.post("/api/v1/auth/cambiar-password", headers={"Authorization": f"Bearer {t_sa}"},
+                     json={"password_actual": temporal, "password_nueva": "ClaveInicial2026"})
+    assert r.status_code == 200, r.text

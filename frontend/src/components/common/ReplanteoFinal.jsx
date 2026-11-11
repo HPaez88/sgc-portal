@@ -8,7 +8,7 @@ import { useSGC } from '../../SGCContext';
 import {
   MAX_REPLANTEOS, esAdminSGC, esCerrado, normalizarEstado, leerActividades, formatearFecha,
   getFechaCompromiso, getVencimiento, replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal,
-  calcularFechaFinal, fechaISO, correosDe,
+  calcularFechaFinal, fechaISO, correosDe, ajustarFechaSeguimiento, parseFecha,
 } from '../../constants/workflow';
 
 export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoEficaz }) {
@@ -18,6 +18,7 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
   const [motivo, setMotivo] = useState('');
   const [error, setError] = useState('');
   const [correoAbierto, setCorreoAbierto] = useState(false);
+  const [modo, setModo] = useState('replanteo'); // 'replanteo' | 'ajuste'
 
   // Solo registros ya aprobados (con fecha de seguimiento); en borrador la fecha aún se está armando.
   if (!registro || !(registro.fecha_aprobacion_sgc || registro.folio_numero)) return null;
@@ -27,7 +28,21 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
   const venc = getVencimiento(registro);
   const puede = esAdminSGC(usuarioLogueado) && !esCerrado(normalizarEstado(registro.estado)) && usados < MAX_REPLANTEOS;
 
+  const confirmarAjuste = async () => {
+    const f = parseFecha(fecha);
+    if (!f) { setError('Indica la nueva fecha.'); return; }
+    if (f.getDay() === 0 || f.getDay() === 6) { setError('La fecha debe caer en día hábil (lunes a viernes).'); return; }
+    await guardar(ajustarFechaSeguimiento(registro, { nuevaFecha: fecha, nota: motivo, por: usuarioLogueado?.nombre || 'SGC' }));
+    registrarMovimiento?.({
+      modulo, accion: 'AJUSTE_FECHA_SEGUIMIENTO',
+      descripcion: `Ajuste administrativo de la fecha de ${folio || 'registro'}: ${formatearFecha(getFechaCompromiso(registro))} → ${formatearFecha(fecha)} (no cuenta como replanteo)`,
+      detalles: motivo.trim() ? `Nota: ${motivo.trim()}` : '', folio: folio || '',
+    });
+    setAbierto(false); setFecha(''); setMotivo(''); setError('');
+  };
+
   const confirmar = async () => {
+    if (modo === 'ajuste') { await confirmarAjuste(); return; }
     const e = validarReplanteoFinal(registro, fecha, motivo);
     if (e) { setError(e); return; }
     const nuevo = aplicarReplanteoFinal(registro, { nuevaFecha: fecha, motivo, por: usuarioLogueado?.nombre || 'SGC' });
@@ -60,10 +75,18 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
           <button type="button" onClick={() => {
             const actual = getFechaCompromiso(registro);
             setFecha(sugerida && actual && sugerida > fechaISO(actual) ? sugerida : '');
+            setModo('replanteo');
             setAbierto(true);
           }}
             className="px-3.5 py-1.5 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 rounded-lg">
             Replantear fecha final
+          </button>
+        )}
+        {esAdminSGC(usuarioLogueado) && !esCerrado(normalizarEstado(registro.estado)) && !abierto && (
+          <button type="button" onClick={() => { setFecha(fechaISO(getFechaCompromiso(registro)) || ''); setModo('ajuste'); setAbierto(true); }}
+            title="Mover la fecha sin contar como replanteo (mientras se carga la información)"
+            className="px-3.5 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg">
+            Ajustar fecha
           </button>
         )}
         {puede && venc.nivel === 'vencido' && actividades.length > 0 && (
@@ -101,7 +124,7 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
               className="mt-1 w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
           </label>
-          <label className="text-xs font-bold text-slate-700">Justificación
+          <label className="text-xs font-bold text-slate-700">{modo === 'ajuste' ? 'Nota (opcional)' : 'Justificación'}
             <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} maxLength={1000}
               placeholder="Motivo del replanteo (queda en la bitácora)"
               className="mt-1 w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
@@ -112,7 +135,7 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
               className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
             <button type="button" onClick={confirmar}
               className="px-3.5 py-1.5 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 rounded-lg">
-              Guardar replanteo {usados + 1}/{MAX_REPLANTEOS}
+              {modo === 'ajuste' ? 'Guardar fecha' : `Guardar replanteo ${usados + 1}/${MAX_REPLANTEOS}`}
             </button>
           </div>
         </div>

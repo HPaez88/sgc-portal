@@ -2,6 +2,7 @@
 // Estas reglas gobiernan qué puede hacer cada rol y cuándo un registro está vencido.
 import { describe, it, expect } from 'vitest';
 import {
+  ajustarFechaSeguimiento,
   replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal, fechaSeguimientoInicial, fechaISO,
   cambioEncargado,
   etiquetaOrigen,
@@ -287,4 +288,13 @@ describe('fecha de seguimiento fija', () => {
 
 it('lee actividades de PM guardadas como texto', () => {
   expect(fechaSeguimientoInicial({ actividades: JSON.stringify([{ fecha_termino_sugerida: '2026-12-01' }]) })).toBe('2026-12-15');
+});
+
+it('el ajuste administrativo mueve la fecha sin contar como replanteo', () => {
+  const r = { estado: 'EN_SEGUIMIENTO', fecha_seguimiento: '2026-10-30', replanteos_control6: '[]' };
+  const n = ajustarFechaSeguimiento(r, { nuevaFecha: '2026-12-18', por: 'H' });
+  expect(fechaISO(getFechaCompromiso(n))).toBe('2026-12-18');
+  expect(replanteosFinales(n).usados).toBe(0);
+  expect(n.historial_ajustes_fecha[0].fecha_anterior).toBe('2026-10-30');
+  expect(r.fecha_seguimiento).toBe('2026-10-30');
 });

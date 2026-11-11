@@ -39,7 +39,9 @@ class UsuarioInput(BaseModel):
 
 
 def _publico(u: Usuario) -> UsuarioPublico:
-    return UsuarioPublico.model_validate(u, from_attributes=True)
+    pub = UsuarioPublico.model_validate(u, from_attributes=True)
+    pub.puede_restablecer = auth.puede_restablecer(u)
+    return pub
 
 
 # ───────────── Sesión ─────────────
@@ -170,14 +172,14 @@ def actualizar_usuario(
 @router.post("/usuarios/{usuario_id}/restablecer-password")
 def restablecer_password(
     usuario_id: int,
-    actor: Usuario = Depends(auth.requiere_rol(*auth.ROLES_ADMIN)),
+    actor: Usuario = Depends(auth.usuario_actual),
     session: Session = Depends(get_session),
 ):
+    if not auth.puede_restablecer(actor):
+        raise HTTPException(status_code=403, detail="No tienes permiso para restablecer contraseñas.")
     u = session.get(Usuario, usuario_id)
     if not u or u.organismo_id != actor.organismo_id:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    if u.rol == "Super Admin" and actor.rol != "Super Admin":
-        raise HTTPException(status_code=403, detail="Solo un Super Admin puede restablecer a otro Super Admin.")
     temporal = auth.password_temporal()
     u.password_hash = auth.hashear_password(temporal)
     u.debe_cambiar_password = True

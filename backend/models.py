@@ -270,6 +270,7 @@ class UsuarioPublico(SQLModel):
     debe_cambiar_password: bool
     ultimo_acceso: Optional[datetime] = None
     fecha_alta: datetime
+    puede_restablecer: bool = False
 
 
 class Usuario(SQLModel, table=True):

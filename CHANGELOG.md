@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-11T17:00Z · @claude-code · [SECURITY+FEATURE] · Restablecer contraseñas solo Super Admin y gescobar; ajuste libre de fecha para Admin
+Decidido por @human: solo el Super Admin y gescobar@oomapasc.gob.mx restablecen contraseñas (ella también la del Super Admin); los demás Admin ya no (backend 403 + botón oculto, campo puede_restablecer en /me; prueba en test_auth). Mientras se carga la información, Admin/Super Admin pueden "Ajustar fecha" de seguimiento en el panel Fecha final sin contar como replanteo (día hábil; nota opcional; historial_ajustes_fecha + bitácora); el semáforo recalcula los días.
+- Deploy: SI
+
 ## 2026-11-11T16:00Z · @claude-code · [FEATURE] · Planes de Mejora "En construcción" para no administradores
 A petición de @human (visita de auditores): el módulo Planes de Mejora muestra solo la leyenda "En construcción" a todos menos Admin/Super Admin, que siguen capturando. Interruptor PM_EN_CONSTRUCCION en PlanMejoraView.jsx (poner false para abrirlo).
 - Deploy: SI

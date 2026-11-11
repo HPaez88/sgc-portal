@@ -350,6 +350,18 @@ export const validarReplanteoFinal = (registro, nuevaFecha, motivo, hoy = new Da
   return null;
 };
 
+// Ajuste administrativo de la fecha de seguimiento (decidido 2026-11-11): mientras se carga la información,
+// el Admin la mueve libremente; no cuenta como replanteo pero queda en el historial y la bitácora.
+export const ajustarFechaSeguimiento = (registro, { nuevaFecha, nota = '', por, ahora = new Date().toISOString() }) => ({
+  ...registro,
+  fecha_seguimiento: nuevaFecha,
+  fecha_limite: nuevaFecha,
+  fecha_cierre_programada: nuevaFecha,
+  ...(registro.fecha_cierre_estimada ? { fecha_cierre_estimada: nuevaFecha } : {}),
+  historial_ajustes_fecha: [...leerLista(registro.historial_ajustes_fecha),
+    { fecha_anterior: fechaISO(getFechaCompromiso(registro)), fecha: nuevaFecha, nota: nota.trim(), por, fecha_registro: ahora }],
+});
+
 export const aplicarReplanteoFinal = (registro, { nuevaFecha, motivo, por, ahora = new Date().toISOString() }) => {
   const anterior = getFechaCompromiso(registro);
   const { usados } = replanteosFinales(registro);

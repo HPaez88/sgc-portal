@@ -1287,13 +1287,13 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                             >
                               <Edit size={14} />
                             </button>
-                            <button
+                            {usuarioLogueado?.puede_restablecer && <button
                               onClick={() => restablecerPassword(u)}
                               className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                               title="Restablecer contraseña (genera una temporal)"
                             >
                               <KeyRound size={14} />
-                            </button>
+                            </button>}
                             {puedeEliminarCatalogo && !esSuperAdmin ? (
                               <button
                                 onClick={() => eliminarUsuario(u)}
