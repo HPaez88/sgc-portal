@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-11T16:00Z · @claude-code · [FEATURE] · Planes de Mejora "En construcción" para no administradores
+A petición de @human (visita de auditores): el módulo Planes de Mejora muestra solo la leyenda "En construcción" a todos menos Admin/Super Admin, que siguen capturando. Interruptor PM_EN_CONSTRUCCION en PlanMejoraView.jsx (poner false para abrirlo).
+- Deploy: SI
+
 ## 2026-11-10T00:15Z · @claude-code · [FEATURE] · Fecha de seguimiento fija del SGC
 Decidido por @human: el SGC solo sigue la "fecha grande". Al aprobar (folio) se fija fecha_seguimiento = actividad más tardía + 2 semanas en día hábil; aunque el responsable cambie fechas de actividades (que siguen visibles para su control), el semáforo y las listas usan la fecha fija. Al vencer, el Admin pide replantear actividades (botón que abre el correo a responsables) y registra el replanteo de la fecha final, sugerido con las actividades nuevas (máx. 2 incl. Control 6); agotados y vencida → dictamen no eficaz. El panel ahora aparece en todo registro aprobado, con o sin actividades. Fix: leerActividades no leía las actividades de PM (texto JSON). Datos: fecha_seguimiento fijada a 23 AC y 6 PM con su fecha actual (respaldo sgc-20261110-0011.dump).
 - Tareas STATE: C18

@@ -11,7 +11,11 @@ import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
 import { asignarFolio } from '../services/folioService';
-import { motivoBloqueoCierre, fechaSeguimientoInicial } from '../constants/workflow';
+import { motivoBloqueoCierre, fechaSeguimientoInicial, esAdminSGC } from '../constants/workflow';
+import { Construction } from 'lucide-react';
+
+// ponytail: interruptor temporal mientras se captura la información; poner en false para abrir el módulo a todos.
+const PM_EN_CONSTRUCCION = true;
 import BarraRegreso from './common/BarraRegreso';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
@@ -724,6 +728,17 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       loading={loading}
     />
   );
+
+  // Solo Admin/Super Admin ven el módulo mientras está en construcción.
+  if (PM_EN_CONSTRUCCION && !esAdminSGC(usuarioLogueado)) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center py-24 px-6 bg-white rounded-xl border border-slate-200">
+        <Construction size={44} className="text-amber-500 mb-4" />
+        <h2 className="text-xl font-extrabold text-slate-900">Planes de Mejora · En construcción</h2>
+        <p className="text-sm text-slate-500 mt-2 max-w-md">Estamos cargando la información de este módulo. Estará disponible próximamente.</p>
+      </div>
+    );
+  }
 
   if (vista === 'lista') {
     return (
