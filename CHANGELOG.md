@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-11T20:20Z · @claude-code · [DATA] · Alta de AC#27/2026 desde formato Excel del área; baja de cuentas de prueba
+AC#27/2026 (Control y Servicios, Auditoría Interna #9, apertura 09/11/2026): registro OOMRCS-19 usado en rev. 1 con rev. 2 en Master Web. Cargada completa desde el OOMRSC-20 del área: equipo (5, Luis Manuel Raya responsable, invitada externa de Atención Ciudadana), 4 causas por lluvia de ideas (principal: no se dio la orden de usar los registros modificados, 16 pts), acción contenedora, 3 actividades (30/10, 30/10, 20/11) y cambio en el SGC = SI. El Excel trae folio 26 pero @human decidió que es AC nueva → AC#27. Fecha de seguimiento 04/12/2026 (actividad más tardía + 2 semanas); el formato decía cierre 25/11/2026 (guardado en fecha_cierre_formato_area). Contador AC 2026 → 27. Desactivadas las cuentas Admin de prueba jlopez@ y csanchez@ (sin accesos registrados). Respaldo sgc-20261111-2013.dump.
+- Deploy: NO (datos)
+
 ## 2026-11-11T18:00Z · @claude-code · [FEATURE] · PM solo para Super Admin; mover fechas solo Super Admin y gescobar
 Decidido por @human: Planes de Mejora en construcción para todos menos el Super Admin. Mientras se carga la información solo existe "Ajustar fecha" (FECHAS_SOLO_AJUSTE=true) y solo para Super Admin y gescobar@ (puedeMoverFechas = puede_restablecer del backend); el replanteo formal de fecha final y la solicitud de replanteo de actividades quedan apagados hasta que arranque la operación con actividades.
 - Deploy: SI
