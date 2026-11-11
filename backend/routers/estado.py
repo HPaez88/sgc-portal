@@ -3,7 +3,8 @@ estado.py — Estado operativo del organismo (capturas del portal) persistido en
 
 Sustituye al localStorage como fuente de verdad: lo que se captura en una computadora se ve en todas.
 Cada clave (acciones correctivas, planes, indicadores, riesgos, catálogos…) guarda un JSON completo.
-Último en escribir gana; se registra quién y cuándo. Migración a tablas propias por módulo: ver spec.
+Al guardar se fusiona a 3 vías con lo que hay en el servidor (services/fusion_estado.py): solo se
+aplica lo que cambió ese navegador; se registra quién y cuándo. Migración a tablas propias por módulo: ver spec.
 """
 import json
 from datetime import datetime
@@ -16,6 +17,7 @@ from sqlmodel import Session, select
 from backend.auth import usuario_actual
 from backend.database import get_session
 from backend.models import EstadoPortal, Usuario
+from backend.services.fusion_estado import fusionar, fusionar_sin_base
 from backend.tenant import get_organismo_id
 
 router = APIRouter(prefix="/api/v1/estado", tags=["Estado del portal"])
@@ -25,6 +27,8 @@ MAX_BYTES_VALOR = 8 * 1024 * 1024  # 8 MB por clave: suficiente para años de ca
 
 class ValorInput(BaseModel):
     valor: Any
+    base: Any = None          # lo que el navegador cargó; None = navegador con versión anterior
+    tiene_base: bool = False  # distingue "base vacía" de "no mandó base"
 
 
 def _clave_valida(clave: str) -> str:
@@ -59,13 +63,18 @@ def guardar(
     usuario: Usuario = Depends(usuario_actual),
 ):
     clave = _clave_valida(clave)
-    texto = json.dumps(datos.valor, ensure_ascii=False)
+    f = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == organismo_id, EstadoPortal.clave == clave)
+                     .with_for_update()).first()
+    if not f:
+        valor = datos.valor
+        f = EstadoPortal(organismo_id=organismo_id, clave=clave)
+    else:
+        actual = json.loads(f.valor)
+        valor = fusionar(datos.base, datos.valor, actual) if datos.tiene_base else fusionar_sin_base(datos.valor, actual)
+    texto = json.dumps(valor, ensure_ascii=False)
     if len(texto.encode("utf-8")) > MAX_BYTES_VALOR:
         raise HTTPException(status_code=413, detail="El valor excede 8 MB; usa archivos para contenido pesado.")
-    f = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == organismo_id, EstadoPortal.clave == clave)).first()
-    if not f:
-        f = EstadoPortal(organismo_id=organismo_id, clave=clave)
     f.valor, f.actualizado, f.actualizado_por = texto, datetime.utcnow(), usuario.nombre
     session.add(f)
     session.commit()
-    return {"clave": f.clave, "actualizado": f.actualizado, "actualizado_por": f.actualizado_por}
+    return {"clave": f.clave, "valor": valor, "actualizado": f.actualizado, "actualizado_por": f.actualizado_por}

@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-11T21:00Z · @claude-code · [FIX+FEATURE] · Fusión a 3 vías del estado (no más pérdidas por pestañas viejas); cerradas ocultas; cambio rápido de fecha
+Incidente: a las 20:15Z un cierre de AC#17 hecho desde una pestaña cargada antes guardó la lista completa y borró AC#27 (restaurada). Causa raíz: PUT /api/v1/estado era "último en escribir gana" sobre la lista entera. Ahora el navegador manda su base y el servidor fusiona a 3 vías (backend/services/fusion_estado.py): solo aplica lo que cambió ese navegador, registro por registro y campo por campo; navegadores con la versión anterior (sin base) ya no pueden borrar registros ajenos. El servidor devuelve el valor fusionado y el navegador lo refleja. Pruebas: test_fusion_estado.py (caso AC#27) y test_estado. Listas de AC y PM arrancan en "Abiertos" (cerradas por filtro). Botón rápido de calendario en "Fecha de cierre" de la lista de AC para Super Admin y gescobar@ (ajuste que no cuenta como replanteo, bitácora).
+- Deploy: SI
+
 ## 2026-11-11T20:20Z · @claude-code · [DATA] · Alta de AC#27/2026 desde formato Excel del área; baja de cuentas de prueba
 AC#27/2026 (Control y Servicios, Auditoría Interna #9, apertura 09/11/2026): registro OOMRCS-19 usado en rev. 1 con rev. 2 en Master Web. Cargada completa desde el OOMRSC-20 del área: equipo (5, Luis Manuel Raya responsable, invitada externa de Atención Ciudadana), 4 causas por lluvia de ideas (principal: no se dio la orden de usar los registros modificados, 16 pts), acción contenedora, 3 actividades (30/10, 30/10, 20/11) y cambio en el SGC = SI. El Excel trae folio 26 pero @human decidió que es AC nueva → AC#27. Fecha de seguimiento 04/12/2026 (actividad más tardía + 2 semanas); el formato decía cierre 25/11/2026 (guardado en fecha_cierre_formato_area). Contador AC 2026 → 27. Desactivadas las cuentas Admin de prueba jlopez@ y csanchez@ (sin accesos registrados). Respaldo sgc-20261111-2013.dump.
 - Deploy: NO (datos)

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye, Mail } from 'lucide-react';
+import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye, Mail, CalendarClock, Check, X } from 'lucide-react';
 import { ORIGENES_AC, FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
-import { getFechaCompromiso, formatearFecha, esPorAbrir, etiquetaOrigen, correosDe } from '../../constants/workflow';
+import { getFechaCompromiso, formatearFecha, esPorAbrir, etiquetaOrigen, correosDe, puedeMoverFechas, ajustarFechaSeguimiento, fechaISO, parseFecha, esCerrado, normalizarEstado } from '../../constants/workflow';
+import { useSGC } from '../../SGCContext';
+import { useToast } from '../common/Toast';
 import PorAbrirPanel from '../common/PorAbrirPanel';
 import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
 
@@ -34,12 +36,33 @@ export default function AccionesLista({
   getEstadoLabel
 }) {
   const [filtroAnio, setFiltroAnio] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
+  // Por defecto solo abiertas; las cerradas se consultan con el filtro de estado.
+  const [filtroEstado, setFiltroEstado] = useState('GRUPO_ABIERTOS');
   const [filtroOrigen, setFiltroOrigen] = useState('');
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroVencimiento, setFiltroVencimiento] = useState('');
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
   const [correoPara, setCorreoPara] = useState(null);
+  // Cambio rápido de la fecha de seguimiento (Super Admin y gescobar@); no cuenta como replanteo.
+  const { registrarMovimiento } = useSGC();
+  const toast = useToast();
+  const [fechaEdit, setFechaEdit] = useState(null); // { id, fecha }
+  const moverFechas = puedeMoverFechas(usuarioLogueado);
+  const guardarFecha = (ac) => {
+    const f = parseFecha(fechaEdit?.fecha);
+    if (!f) return;
+    if (f.getDay() === 0 || f.getDay() === 6) { toast.warning('La fecha debe caer en día hábil (lunes a viernes).'); return; }
+    const anterior = formatearFecha(getFechaCompromiso(ac));
+    setAccionesCorrectivas((prev) => prev.map((r) => (r.id === ac.id
+      ? ajustarFechaSeguimiento(r, { nuevaFecha: fechaEdit.fecha, nota: 'Cambio rápido desde la lista', por: usuarioLogueado?.nombre || 'SGC' })
+      : r)));
+    registrarMovimiento?.({
+      modulo: 'ACCIONES_CORRECTIVAS', accion: 'AJUSTE_FECHA_SEGUIMIENTO',
+      descripcion: `Ajuste de fecha de ${ac.folio_codigo}: ${anterior} → ${formatearFecha(fechaEdit.fecha)} (cambio rápido, no cuenta como replanteo)`,
+      folio: ac.folio_codigo || '',
+    });
+    setFechaEdit(null);
+  };
   const esAdmin = puedeMandarCorreo(usuarioLogueado);
 
   // Obtener años únicos de las acciones
@@ -126,7 +149,7 @@ export default function AccionesLista({
     setStep(1);
   };
 
-  const filtrosActivosCount = [filtroAnio, filtroEstado, filtroOrigen, filtroVencimiento].filter(Boolean).length;
+  const filtrosActivosCount = [filtroAnio, filtroEstado !== 'GRUPO_ABIERTOS' && filtroEstado, filtroOrigen, filtroVencimiento].filter(Boolean).length;
 
   return (
     <div className="space-y-3 animate-fade-in-up">
@@ -234,7 +257,7 @@ export default function AccionesLista({
             {filtrosActivosCount > 0 && (
               <div className="col-span-2 pt-1 flex justify-end">
                 <button
-                  onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroOrigen(''); setFiltroTexto(''); setFiltroVencimiento(''); }}
+                  onClick={() => { setFiltroAnio(''); setFiltroEstado('GRUPO_ABIERTOS'); setFiltroOrigen(''); setFiltroTexto(''); setFiltroVencimiento(''); }}
                   className="text-[11px] font-bold text-rose-600 flex items-center gap-1 hover:underline"
                 >
                   <RotateCcw size={11} /> Limpiar todos los filtros
@@ -294,7 +317,7 @@ export default function AccionesLista({
           </div>
           {filtrosActivosCount > 0 && (
             <div>
-              <button onClick={() => { setFiltroAnio(''); setFiltroEstado(''); setFiltroOrigen(''); setFiltroTexto(''); setFiltroVencimiento(''); }}
+              <button onClick={() => { setFiltroAnio(''); setFiltroEstado('GRUPO_ABIERTOS'); setFiltroOrigen(''); setFiltroTexto(''); setFiltroVencimiento(''); }}
                 className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
                 Limpiar
               </button>
@@ -403,10 +426,29 @@ export default function AccionesLista({
                           {getVencimiento(ac).label}
                         </span>
                       </td>
-                      <td className="p-3 text-slate-500 font-medium">
-                        <span title={`Apertura: ${formatearFecha(ac.fecha_apertura || ac.fecha_creacion_borrador)}`}>
-                          {formatearFecha(ac.fecha_cierre || getFechaCompromiso(ac))}
-                        </span>
+                      <td className="p-3 text-slate-500 font-medium whitespace-nowrap">
+                        {fechaEdit?.id === ac.id ? (
+                          <span className="inline-flex items-center gap-1">
+                            <input type="date" value={fechaEdit.fecha} autoFocus aria-label="Nueva fecha de cierre"
+                              onChange={(e) => setFechaEdit({ id: ac.id, fecha: e.target.value })}
+                              onKeyDown={(e) => { if (e.key === 'Enter') guardarFecha(ac); if (e.key === 'Escape') setFechaEdit(null); }}
+                              className="p-1 border border-sky-300 rounded text-xs" />
+                            <button onClick={() => guardarFecha(ac)} title="Guardar" className="p-1 text-emerald-700 hover:bg-emerald-50 rounded"><Check size={14} /></button>
+                            <button onClick={() => setFechaEdit(null)} title="Cancelar" className="p-1 text-slate-500 hover:bg-slate-100 rounded"><X size={14} /></button>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span title={`Apertura: ${formatearFecha(ac.fecha_apertura || ac.fecha_creacion_borrador)}`}>
+                              {formatearFecha(ac.fecha_cierre || getFechaCompromiso(ac))}
+                            </span>
+                            {moverFechas && !esCerrado(normalizarEstado(ac.estado)) && (
+                              <button onClick={() => setFechaEdit({ id: ac.id, fecha: fechaISO(getFechaCompromiso(ac)) || '' })}
+                                title="Cambiar fecha de cierre" className="p-1 text-slate-400 hover:text-sky-700 hover:bg-sky-50 rounded">
+                                <CalendarClock size={13} />
+                              </button>
+                            )}
+                          </span>
+                        )}
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-1.5 justify-center">

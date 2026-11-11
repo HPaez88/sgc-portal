@@ -50,3 +50,17 @@ def test_clave_invalida_y_valor_string(cliente, cab):
     assert cliente.put("/api/v1/estado/sgc-dia-limite-captura", headers=cab, json={"valor": "10"}).status_code == 200
     assert cliente.get("/api/v1/estado/sgc-dia-limite-captura", headers=cab).json()["valor"] == "10"
     assert cliente.get("/api/v1/estado/sgc-no-existe", headers=cab).status_code == 404
+
+
+def test_pestana_vieja_no_borra_lo_que_otro_agrego(cliente, cab):
+    url = "/api/v1/estado/sgc-planes-mejora"
+    base = [{"id": 1, "estado": "EN_SEGUIMIENTO"}]
+    cliente.put(url, headers=cab, json={"valor": base})
+    # otra persona agrega un registro
+    cliente.put(url, headers=cab, json={"valor": base + [{"id": 2}], "base": base, "tiene_base": True})
+    # una pestaña que solo conocía "base" cierra el registro 1
+    r = cliente.put(url, headers=cab, json={"valor": [{"id": 1, "estado": "CERRADO"}], "base": base, "tiene_base": True})
+    assert r.json()["valor"] == [{"id": 1, "estado": "CERRADO"}, {"id": 2}]
+    # y un navegador con la versión anterior (sin base) tampoco borra
+    r = cliente.put(url, headers=cab, json={"valor": [{"id": 1, "estado": "CERRADO"}]})
+    assert len(r.json()["valor"]) == 2

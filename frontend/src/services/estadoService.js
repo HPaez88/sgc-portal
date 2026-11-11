@@ -67,10 +67,23 @@ export function guardar(clave, valor) {
 async function enviar(clave) {
   if (!pendientes.has(clave) || !getToken()) return;
   const valor = pendientes.get(clave);
-  const r = await api.put(`/api/v1/estado/${clave}`, { valor }, { timeoutMs: 30000 });
+  // Se manda la base (lo último que este navegador conoce del servidor): el servidor solo aplica lo que
+  // cambió aquí y conserva lo que otros guardaron mientras tanto (fusión a 3 vías, ver backend/services/fusion_estado.py).
+  const tieneBase = Boolean(servidor?.has(clave));
+  const cuerpo = { valor, base: tieneBase ? servidor.get(clave) : null, tiene_base: tieneBase };
+  const r = await api.put(`/api/v1/estado/${clave}`, cuerpo, { timeoutMs: 30000 });
   if (r.ok) {
-    if (pendientes.get(clave) === valor) pendientes.delete(clave); // si cambió mientras tanto, se reenviará
-    servidor?.set(clave, valor);
+    const fusionado = r.data && 'valor' in r.data ? r.data.valor : valor;
+    if (pendientes.get(clave) === valor) {
+      pendientes.delete(clave);
+      servidor?.set(clave, fusionado);
+      // Si el servidor trajo cambios de otros, se reflejan en pantalla.
+      if (JSON.stringify(fusionado) !== JSON.stringify(valor)) {
+        escribirCache(clave, fusionado);
+        setters.get(clave)?.forEach((fn) => fn(fusionado));
+      }
+    }
+    // ponytail: si hubo otro cambio local en vuelo, la base se queda como estaba y el próximo envío vuelve a fusionar.
     actualizarEstado({ pendientes: pendientes.size, ultimoError: null, ultimaSync: new Date().toISOString() });
   } else {
     actualizarEstado({ pendientes: pendientes.size, ultimoError: r.error?.message || r.error?.detail || 'Sin conexión con el servidor' });

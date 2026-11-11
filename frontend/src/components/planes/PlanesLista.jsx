@@ -17,7 +17,8 @@ export default function PlanesLista({
   getEstadoLabel
 }) {
   const [filtroArea, setFiltroArea] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
+  // Por defecto solo abiertas; las cerradas se consultan con el filtro de estado.
+  const [filtroEstado, setFiltroEstado] = useState('GRUPO_ABIERTOS');
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroVencimiento, setFiltroVencimiento] = useState('');
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
@@ -56,7 +57,7 @@ export default function PlanesLista({
     return true;
   });
 
-  const filtrosActivosCount = [filtroArea, filtroEstado, filtroVencimiento].filter(Boolean).length;
+  const filtrosActivosCount = [filtroArea, filtroEstado !== 'GRUPO_ABIERTOS' && filtroEstado, filtroVencimiento].filter(Boolean).length;
 
   return (
     <div className="space-y-3 animate-fade-in-up">
@@ -156,7 +157,7 @@ export default function PlanesLista({
             {filtrosActivosCount > 0 && (
               <div className="col-span-2 pt-1 flex justify-end">
                 <button
-                  onClick={() => { setFiltroArea(''); setFiltroEstado(''); setFiltroTexto(''); setFiltroVencimiento(''); }}
+                  onClick={() => { setFiltroArea(''); setFiltroEstado('GRUPO_ABIERTOS'); setFiltroTexto(''); setFiltroVencimiento(''); }}
                   className="text-[11px] font-bold text-rose-600 flex items-center gap-1 hover:underline"
                 >
                   <RotateCcw size={11} /> Limpiar todos los filtros
@@ -208,7 +209,7 @@ export default function PlanesLista({
           </div>
           {filtrosActivosCount > 0 && (
             <div>
-              <button onClick={() => { setFiltroArea(''); setFiltroEstado(''); setFiltroTexto(''); setFiltroVencimiento(''); }}
+              <button onClick={() => { setFiltroArea(''); setFiltroEstado('GRUPO_ABIERTOS'); setFiltroTexto(''); setFiltroVencimiento(''); }}
                 className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
                 Limpiar
               </button>
