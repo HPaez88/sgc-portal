@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-11T22:00Z · @claude-code · [FIX] · Tablero por dirección y permisos al recargar
+Desempeño por Dirección comparaba "Técnica" contra "Dir. Técnica" del catálogo: todos los indicadores salían en 0 (igual el filtro "Área / Dir"). Ahora usa las 7 direcciones oficiales (antes faltaba Jurídica) con normalizarDireccion; AC abiertas excluye cerradas (antes contaba CERRADO_EFECTIVO como abierta) y se asignan por su dirección o la de su área (direccionDeRegistro, con prueba); "Rojos" → "Riesgos" (riesgos del registro o de sus áreas). Al recargar, el portal refresca los datos y permisos del usuario desde /auth/me (la sesión guardada no traía puede_restablecer y no aparecía el cambio rápido de fecha).
+- Deploy: SI
+
 ## 2026-11-11T21:00Z · @claude-code · [FIX+FEATURE] · Fusión a 3 vías del estado (no más pérdidas por pestañas viejas); cerradas ocultas; cambio rápido de fecha
 Incidente: a las 20:15Z un cierre de AC#17 hecho desde una pestaña cargada antes guardó la lista completa y borró AC#27 (restaurada). Causa raíz: PUT /api/v1/estado era "último en escribir gana" sobre la lista entera. Ahora el navegador manda su base y el servidor fusiona a 3 vías (backend/services/fusion_estado.py): solo aplica lo que cambió ese navegador, registro por registro y campo por campo; navegadores con la versión anterior (sin base) ya no pueden borrar registros ajenos. El servidor devuelve el valor fusionado y el navegador lo refleja. Pruebas: test_fusion_estado.py (caso AC#27) y test_estado. Listas de AC y PM arrancan en "Abiertos" (cerradas por filtro). Botón rápido de calendario en "Fecha de cierre" de la lista de AC para Super Admin y gescobar@ (ajuste que no cuenta como replanteo, bitácora).
 - Deploy: SI

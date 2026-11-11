@@ -155,3 +155,14 @@ export function obtenerDireccionDeArea(areaNombre) {
   const found = AREAS_DETALLE_INICIALES.find(ad => ad.nombre === normArea);
   return found ? found.direccion : 'Dir. General';
 }
+/**
+ * Dirección oficial de un registro (AC, PM, riesgo): la suya si la trae; si no, la de su área
+ * según el catálogo vivo (areasDetalle) o el catálogo base.
+ */
+export function direccionDeRegistro(registro, areasDetalle = []) {
+  if (registro?.direccion) return normalizarDireccion(registro.direccion);
+  const area = registro?.area || registro?.gerencia_coordinacion || '';
+  if (!area) return null;
+  const vivo = areasDetalle.find((a) => a.nombre === area);
+  return vivo?.direccion ? normalizarDireccion(vivo.direccion) : obtenerDireccionDeArea(area);
+}

@@ -600,7 +600,17 @@ export const SGCProvider = ({ children }) => {
   // Al recargar la página con sesión vigente, recuperar la lista de usuarios del organismo.
   useEffect(() => {
     if (sesionActiva && getToken() && usuarioSesion) { recargarUsuarios(); cargarDesdeServidor(); }
-  }, [sesionActiva, usuarioSesion, recargarUsuarios]);
+    // Solo cuando cambia la persona (no cada vez que se refrescan sus datos).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesionActiva, usuarioSesion?.id, recargarUsuarios]);
+
+  // Al recargar, refrescar los datos y permisos de la persona desde el servidor (la copia guardada
+  // en el navegador puede ser de antes de un cambio de rol o de permisos).
+  useEffect(() => {
+    if (!sesionActiva || !getToken()) return;
+    api.get('/api/v1/auth/me').then((r) => { if (r.ok && r.data?.id) setUsuarioSesion(r.data); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesionActiva]);
 
   const value = {
     isLoaded,

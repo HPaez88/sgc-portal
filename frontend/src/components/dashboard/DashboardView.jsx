@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { INDICADORES } from '../../constants';
+import { DIRECCIONES, normalizarDireccion, direccionDeRegistro } from '../../constants/areas';
+import { esCerrado, normalizarEstado } from '../../constants/workflow';
 import StatCard from '../ui/StatCard';
 import StatusBadge from '../ui/StatusBadge';
 import ContenedorModal from '../common/ContenedorModal';
@@ -56,14 +58,7 @@ const PERIODOS = [
 
 const EJERCICIOS = [2025, 2026, 2027];
 
-const DIRECCIONES_BASE = [
-  'General',
-  'Técnica',
-  'Comercial',
-  'Administrativa',
-  'Programas Sociales y Cultura del Agua',
-  'Órganos de Control Interno'
-];
+
 
 function parseMeta(meta) {
   const text = String(meta ?? '').trim();
@@ -186,7 +181,7 @@ export default function DashboardView({
   // Filtrar indicadores por Dirección
   const indicadoresFiltrados = useMemo(() => {
     return evaluacionIndicadores.filter((ind) => {
-      if (direccionFiltro !== 'TODAS' && ind.direccion !== direccionFiltro) {
+      if (direccionFiltro !== 'TODAS' && normalizarDireccion(ind.direccion) !== direccionFiltro) {
         return false;
       }
       if (filtroSemaforo !== 'TODOS') {
@@ -208,7 +203,7 @@ export default function DashboardView({
   const indicadoresStats = useMemo(() => {
     const subset = direccionFiltro === 'TODAS' 
       ? evaluacionIndicadores 
-      : evaluacionIndicadores.filter((i) => i.direccion === direccionFiltro);
+      : evaluacionIndicadores.filter((i) => normalizarDireccion(i.direccion) === direccionFiltro);
 
     const total = subset.length;
     const medidos = subset.filter((i) => i.semaforo !== 'sinDato');
@@ -241,8 +236,7 @@ export default function DashboardView({
   const riesgosStats = useMemo(() => {
     const subset = safeRiesgos.filter((r) => {
       if (direccionFiltro === 'TODAS') return true;
-      const dirR = r.direccion || '';
-      return dirR.toLowerCase().includes(direccionFiltro.toLowerCase());
+      return direccionDeRegistro(r, context.areasDetalle || []) === direccionFiltro;
     });
 
     let extremos = 0;
@@ -281,8 +275,7 @@ export default function DashboardView({
   const acStats = useMemo(() => {
     const subset = safeAC.filter((ac) => {
       if (direccionFiltro === 'TODAS') return true;
-      const dir = ac.direccion || ac.area || '';
-      return dir.toLowerCase().includes(direccionFiltro.toLowerCase());
+      return direccionDeRegistro(ac, context.areasDetalle || []) === direccionFiltro;
     });
 
     const abiertas = subset.filter((ac) => ac.estado !== 'CERRADO' && ac.estado !== 'RECHAZADO').length;
@@ -304,8 +297,7 @@ export default function DashboardView({
   const pmStats = useMemo(() => {
     const subset = safePM.filter((pm) => {
       if (direccionFiltro === 'TODAS') return true;
-      const dir = pm.direccion || pm.area || '';
-      return dir.toLowerCase().includes(direccionFiltro.toLowerCase());
+      return direccionDeRegistro(pm, context.areasDetalle || []) === direccionFiltro;
     });
 
     const activos = subset.filter((pm) => pm.estado !== 'CERRADO' && pm.estado !== 'RECHAZADO').length;
@@ -344,29 +336,30 @@ export default function DashboardView({
   }, [safeAuditorias]);
 
   // Radar de Desempeño por Dirección
+  // Por dirección: indicadores del catálogo, AC abiertas y riesgos (del registro o de sus áreas).
   const radarDirecciones = useMemo(() => {
-    return DIRECCIONES_BASE.map((dir) => {
-      const indsDir = evaluacionIndicadores.filter((i) => i.direccion === dir);
+    const areasDetalle = context.areasDetalle || [];
+    const dirs = (context.direcciones?.length ? context.direcciones : DIRECCIONES).map(normalizarDireccion);
+    return [...new Set(dirs)].map((dir) => {
+      const indsDir = evaluacionIndicadores.filter((i) => normalizarDireccion(i.direccion) === dir);
       const medidos = indsDir.filter((i) => i.semaforo !== 'sinDato');
       const cumps = medidos.map((i) => i.cumplimiento || 0);
       const avgCumplimiento = cumps.length > 0 ? Math.round(cumps.reduce((a, b) => a + b, 0) / cumps.length) : 0;
       const criticos = indsDir.filter((i) => i.semaforo === 'rojo').length;
-      
-      const acsDir = safeAC.filter((ac) => (ac.direccion || ac.area || '').toLowerCase().includes(dir.toLowerCase()));
-      const acAbiertas = acsDir.filter((ac) => ac.estado !== 'CERRADO' && ac.estado !== 'RECHAZADO').length;
-
-      const riesgosDir = safeRiesgos.filter((r) => (r.direccion || r.area || '').toLowerCase().includes(dir.toLowerCase())).length;
-
+      const acAbiertas = safeAC.filter((ac) => !esCerrado(normalizarEstado(ac.estado)) && ac.estado !== 'RECHAZADO'
+        && direccionDeRegistro(ac, areasDetalle) === dir).length;
+      const riesgosDir = safeRiesgos.filter((r) => direccionDeRegistro(r, areasDetalle) === dir).length;
       return {
-        direccion: dir,
+        direccion: dir.replace(/^Dir\.\s*/, ''),
         totalIndicadores: indsDir.length,
+        medidos: medidos.length,
         cumplimiento: avgCumplimiento,
         criticos,
         acAbiertas,
         riesgos: riesgosDir
       };
     });
-  }, [evaluacionIndicadores, safeAC, safeRiesgos]);
+  }, [evaluacionIndicadores, safeAC, safeRiesgos, context.areasDetalle, context.direcciones]);
 
   // Índice Global de Salud del SGC (Ponderación 0-100)
   const healthScore = useMemo(() => {
@@ -672,8 +665,8 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
                 className="w-full sm:w-auto bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <option value="TODAS">Todas las Direcciones</option>
-                {DIRECCIONES_BASE.map((dir) => (
-                  <option key={dir} value={dir}>{dir}</option>
+                {DIRECCIONES.map((dir) => (
+                  <option key={dir} value={dir}>{dir.replace(/^Dir\.\s*/, '')}</option>
                 ))}
               </select>
             </div>
@@ -850,8 +843,8 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
                           <strong className="text-slate-700">{dir.totalIndicadores}</strong>
                         </div>
                         <div>
-                          <span className="block text-[10px] text-slate-400">Rojos</span>
-                          <strong className={dir.criticos > 0 ? 'text-rose-600 font-bold' : 'text-slate-700'}>{dir.criticos}</strong>
+                          <span className="block text-[10px] text-slate-400">Riesgos</span>
+                          <strong className={dir.riesgos > 0 ? 'text-rose-600 font-bold' : 'text-slate-700'}>{dir.riesgos}</strong>
                         </div>
                         <div>
                           <span className="block text-[10px] text-slate-400">AC Abiertas</span>
