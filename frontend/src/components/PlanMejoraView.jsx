@@ -11,7 +11,7 @@ import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
 import { asignarFolio } from '../services/folioService';
-import { motivoBloqueoCierre, fechaSeguimientoInicial, esAdminSGC } from '../constants/workflow';
+import { motivoBloqueoCierre, fechaSeguimientoInicial } from '../constants/workflow';
 import { Construction } from 'lucide-react';
 
 // ponytail: interruptor temporal mientras se captura la información; poner en false para abrir el módulo a todos.
@@ -729,8 +729,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     />
   );
 
-  // Solo Admin/Super Admin ven el módulo mientras está en construcción.
-  if (PM_EN_CONSTRUCCION && !esAdminSGC(usuarioLogueado)) {
+  // Solo el Super Admin ve el módulo mientras está en construcción (decidido 2026-11-11).
+  if (PM_EN_CONSTRUCCION && usuarioLogueado?.rol !== 'Super Admin') {
     return (
       <div className="flex flex-col items-center justify-center text-center py-24 px-6 bg-white rounded-xl border border-slate-200">
         <Construction size={44} className="text-amber-500 mb-4" />

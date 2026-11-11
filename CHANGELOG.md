@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-11T18:00Z · @claude-code · [FEATURE] · PM solo para Super Admin; mover fechas solo Super Admin y gescobar
+Decidido por @human: Planes de Mejora en construcción para todos menos el Super Admin. Mientras se carga la información solo existe "Ajustar fecha" (FECHAS_SOLO_AJUSTE=true) y solo para Super Admin y gescobar@ (puedeMoverFechas = puede_restablecer del backend); el replanteo formal de fecha final y la solicitud de replanteo de actividades quedan apagados hasta que arranque la operación con actividades.
+- Deploy: SI
+
 ## 2026-11-11T17:00Z · @claude-code · [SECURITY+FEATURE] · Restablecer contraseñas solo Super Admin y gescobar; ajuste libre de fecha para Admin
 Decidido por @human: solo el Super Admin y gescobar@oomapasc.gob.mx restablecen contraseñas (ella también la del Super Admin); los demás Admin ya no (backend 403 + botón oculto, campo puede_restablecer en /me; prueba en test_auth). Mientras se carga la información, Admin/Super Admin pueden "Ajustar fecha" de seguimiento en el panel Fecha final sin contar como replanteo (día hábil; nota opcional; historial_ajustes_fecha + bitácora); el semáforo recalcula los días.
 - Deploy: SI

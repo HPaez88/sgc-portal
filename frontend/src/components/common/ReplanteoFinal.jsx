@@ -8,7 +8,7 @@ import { useSGC } from '../../SGCContext';
 import {
   MAX_REPLANTEOS, esAdminSGC, esCerrado, normalizarEstado, leerActividades, formatearFecha,
   getFechaCompromiso, getVencimiento, replanteosFinales, validarReplanteoFinal, aplicarReplanteoFinal,
-  calcularFechaFinal, fechaISO, correosDe, ajustarFechaSeguimiento, parseFecha,
+  calcularFechaFinal, fechaISO, correosDe, ajustarFechaSeguimiento, parseFecha, puedeMoverFechas, FECHAS_SOLO_AJUSTE,
 } from '../../constants/workflow';
 
 export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoEficaz }) {
@@ -26,7 +26,7 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
   const sugerida = fechaISO(calcularFechaFinal(actividades)); // actividad más tardía + 2 semanas
   const { lista, usados } = replanteosFinales(registro);
   const venc = getVencimiento(registro);
-  const puede = esAdminSGC(usuarioLogueado) && !esCerrado(normalizarEstado(registro.estado)) && usados < MAX_REPLANTEOS;
+  const puede = !FECHAS_SOLO_AJUSTE && puedeMoverFechas(usuarioLogueado) && !esCerrado(normalizarEstado(registro.estado)) && usados < MAX_REPLANTEOS;
 
   const confirmarAjuste = async () => {
     const f = parseFecha(fecha);
@@ -82,7 +82,7 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
             Replantear fecha final
           </button>
         )}
-        {esAdminSGC(usuarioLogueado) && !esCerrado(normalizarEstado(registro.estado)) && !abierto && (
+        {puedeMoverFechas(usuarioLogueado) && !esCerrado(normalizarEstado(registro.estado)) && !abierto && (
           <button type="button" onClick={() => { setFecha(fechaISO(getFechaCompromiso(registro)) || ''); setModo('ajuste'); setAbierto(true); }}
             title="Mover la fecha sin contar como replanteo (mientras se carga la información)"
             className="px-3.5 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg">

@@ -323,6 +323,11 @@ export const fechaISO = (d) => (d ? `${d.getFullYear()}-${String(d.getMonth() + 
 export const fechaSeguimientoInicial = (registro) => fechaISO(calcularFechaFinal(leerActividades(registro)));
 export const MAX_REPLANTEOS = 2;
 export const esAdminSGC = (usuario) => ['Super Admin', 'Admin'].includes(usuario?.rol);
+// Mover fechas de seguimiento: las mismas cuentas con permiso especial del backend (Super Admin y gescobar@).
+export const puedeMoverFechas = (usuario) => Boolean(usuario?.puede_restablecer);
+// ponytail: mientras se carga la información solo se "ajusta" la fecha; en false se activan replanteo
+// formal de fecha final y la solicitud de replanteo de actividades.
+export const FECHAS_SOLO_AJUSTE = true;
 
 const leerLista = (valor) => {
   if (Array.isArray(valor)) return valor;
