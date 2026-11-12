@@ -98,7 +98,6 @@ function generarAccionOffline(form, equipo) {
 
   const plantillas = {
     potabilizacion: {
-      descMejorada: `Desviación en parámetros de control de potabilización respecto a especificaciones normativas. Evidencia: ${form.descripcion_no_conformidad_original}. Requisito ISO 9001:2015 §8.5.1 (Control de la producción y provisión del servicio).`,
       accionContenedora: 'Ajuste inmediato de dosificación y verificación física de reactivos en estación de bombeo con toma de muestra testigo.',
       actInmediata: 'Calibración emergente de equipos de medición y monitoreo analítico en línea.',
       causas: [
@@ -114,7 +113,6 @@ function generarAccionOffline(form, equipo) {
       ]
     },
     redes: {
-      descMejorada: `Incumplimiento en tiempo de respuesta y atención a reportes de fugas en red de distribución. Hallazgo: ${form.descripcion_no_conformidad_original}. Requisito ISO 9001:2015 §8.2.1 y §8.5.1.`,
       accionContenedora: 'Despacho de cuadrilla de guardia para contención y seccionamiento de válvula para mitigar el derrame de agua.',
       actInmediata: 'Reparación emergente de la línea afectada y restablecimiento del suministro en el sector.',
       causas: [
@@ -130,7 +128,6 @@ function generarAccionOffline(form, equipo) {
       ]
     },
     comercial: {
-      descMejorada: `Discrepancia en proceso de lectura, facturación o atención a aclaraciones comerciales. Hallazgo: ${form.descripcion_no_conformidad_original}. Requisito ISO 9001:2015 §8.2.3.`,
       accionContenedora: 'Revisión y refacturación del caso en ventanilla de atención personalizada al usuario.',
       actInmediata: 'Inspección técnica física del medidor y verificación de lectura real en predio.',
       causas: [
@@ -146,7 +143,6 @@ function generarAccionOffline(form, equipo) {
       ]
     },
     procedimiento: {
-      descMejorada: `Incumplimiento documentado en controles operativos y registros de calidad del proceso de ${proceso}. Evidencia: ${form.descripcion_no_conformidad_original}. Requisito ISO 9001:2015 §7.5 (Información documentada) y §10.2 (No conformidad y acción correctiva).`,
       accionContenedora: 'Revisión y rescate de la información faltante con validación del titular del área.',
       actInmediata: 'Establecer formato provisional validado para asegurar la continuidad del control del proceso.',
       causas: [
@@ -167,7 +163,8 @@ function generarAccionOffline(form, equipo) {
 
   return {
     registro: {
-      descripcion_no_conformidad_mejorada: seleccion.descMejorada,
+      // Sin IA no se toca la redacción del usuario (regla SGC 2026-11-12).
+      descripcion_no_conformidad_mejorada: form.descripcion_no_conformidad_original,
       impacta_otros_procesos: form.impacta_otros_procesos || 'NO',
       otros_procesos_afectados: form.otros_procesos_afectados || ''
     },
@@ -256,6 +253,10 @@ Genera una propuesta de Acción Correctiva conforme al formato oficial OOMRSC-20
 Proceso: ${form.proceso}
 Origen: ${form.origen}
 Descripción de no conformidad: ${form.descripcion_no_conformidad_original}
+
+REGLA para "descripcion_no_conformidad_mejorada": devuelve EXACTAMENTE el texto de la descripción con solo
+correcciones de ortografía, acentos, mayúsculas y puntuación. NO cambies, quites, agregues ni reordenes palabras,
+NO mejores la redacción y NO agregues requisitos de la norma ni comentarios.
 Equipo: ${JSON.stringify(equipo.filter(e => e.nombre?.trim()).map(e => ({nombre: e.nombre, puesto: e.puesto, rol: e.rol})))}
 
 Responde ESTRICTAMENTE con JSON válido con esta estructura:

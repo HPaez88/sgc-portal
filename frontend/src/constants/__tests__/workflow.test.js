@@ -2,6 +2,7 @@
 // Estas reglas gobiernan qué puede hacer cada rol y cuándo un registro está vencido.
 import { describe, it, expect } from 'vitest';
 import {
+  soloOrtografia,
   formatearFecha,
   mascaraFecha, dmyAISO,
   ajustarFechaSeguimiento,
@@ -311,5 +312,20 @@ describe('fechas dd/mm/aaaa', () => {
     expect(dmyAISO('13/01/2027')).toBe('2027-01-13');
     expect(dmyAISO('31/02/2026')).toBeNull();
     expect(dmyAISO('01/13/2026')).toBeNull();
+  });
+});
+
+describe('soloOrtografia (no se cambia la redacción del usuario)', () => {
+  const original = 'durante la auditoria se encontro que el registro no esta actualizado';
+  it('acepta correcciones de acentos y ortografía', () => {
+    expect(soloOrtografia(original, 'Durante la auditoría se encontró que el registro no está actualizado.'))
+      .toBe('Durante la auditoría se encontró que el registro no está actualizado.');
+  });
+  it('rechaza una redacción nueva o con texto agregado', () => {
+    expect(soloOrtografia(original, 'Desviación en el control documental del registro. Evidencia: ' + original + '. Requisito ISO 9001 §7.5')).toBe(original);
+    expect(soloOrtografia(original, 'El registro está desactualizado.')).toBe(original);
+  });
+  it('sin propuesta deja el original', () => {
+    expect(soloOrtografia(original, '')).toBe(original);
   });
 });

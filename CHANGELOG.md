@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-12T16:00Z · @claude-code · [FEATURE] · La no conformidad se respeta tal cual (IA solo corrige ortografía)
+Decidido por @human: no se modifica ni mejora la redacción de la no conformidad. El prompt de la IA ahora pide devolver el mismo texto solo con correcciones de ortografía, acentos, mayúsculas y puntuación; además soloOrtografia() descarta la propuesta si cambia el número de palabras (>1) o el largo (>10%) y conserva el original (umbrales en constantes, con pruebas). Sin IA ya no se agrega texto de plantilla ("Requisito ISO…"); se quitaron esas plantillas. En PM, el título del usuario ya no se reemplaza por el que propone la IA.
+- Deploy: SI
+
 ## 2026-11-11T22:40Z · @claude-code · [FEATURE] · Fechas siempre dd/mm/aaaa (captura y vista)
 Decidido por @human: la captura y la vista de fechas siempre es dd/mm/aaaa. El <input type="date"> del navegador usa el idioma de Windows (mm/dd/aaaa en equipos en inglés), así que los 15 campos de fecha del portal se reemplazaron por CampoFecha (texto con máscara dd/mm/aaaa + botón de calendario; guarda aaaa-mm-dd, mismo onChange). formatearFecha ahora rellena con ceros (13/01/2027). Lógica pura con pruebas (mascaraFecha, dmyAISO; rechaza fechas inexistentes como 31/02).
 - Deploy: SI

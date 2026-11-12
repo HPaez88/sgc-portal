@@ -4,6 +4,7 @@ import { useSGC } from '../../SGCContext';
 import { generarPropuestaIA } from './AccionesAI';
 import BarraActividades from '../common/BarraActividades';
 import { INDICADORES } from '../../constants/indicadores';
+import { soloOrtografia } from '../../constants/workflow';
 
 const esAuditoria = (origen) => /^auditor/i.test(origen || '');
 import { 
@@ -173,8 +174,9 @@ export default function AccionesWizard({
       
       setForm(f => ({
         ...f,
-        descripcion_no_conformidad_ia: iaData.registro?.descripcion_no_conformidad_mejorada || form.descripcion_no_conformidad_original,
-        descripcion_no_conformidad_final: iaData.registro?.descripcion_no_conformidad_mejorada || form.descripcion_no_conformidad_original,
+        // Solo ortografía: si la IA cambió la redacción, se queda el texto del usuario.
+        descripcion_no_conformidad_ia: soloOrtografia(form.descripcion_no_conformidad_original, iaData.registro?.descripcion_no_conformidad_mejorada),
+        descripcion_no_conformidad_final: soloOrtografia(form.descripcion_no_conformidad_original, iaData.registro?.descripcion_no_conformidad_mejorada),
         impacta_otros_procesos: iaData.registro?.impacta_otros_procesos || 'NO',
         otros_procesos_afectados: iaData.registro?.otros_procesos_afectados || '',
         accion_contenedora: iaData.analisis?.accion_contenedora || 'Contención inmediata de la desviación en campo.',

@@ -134,7 +134,8 @@ export default function PlanesForm({
       
       setForm(f => ({
         ...f,
-        titulo_mejora: iaData.titulo_mejora || f.titulo_mejora || 'Plan de Mejora Continua',
+        // El título que escribió el usuario se respeta; la IA solo propone si está vacío.
+        titulo_mejora: f.titulo_mejora?.trim() || iaData.titulo_mejora || 'Plan de Mejora Continua',
         categoria_mejora: iaData.categoria_mejora || f.categoria_mejora || 'Eficiencia Operativa',
         descripcion_situacion_actual: descFinal,
         situacion_deseada: iaData.situacion_deseada || 'Lograr un estándar operativo de excelencia con indicadores medibles.',

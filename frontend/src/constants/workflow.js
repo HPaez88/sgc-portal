@@ -400,3 +400,19 @@ export const aplicarReplanteoFinal = (registro, { nuevaFecha, motivo, por, ahora
     historial_replanteos_final: [...leerLista(registro.historial_replanteos_final), entrada],
   };
 };
+
+// Regla SGC (decidido 2026-11-12): la no conformidad se respeta tal cual la escribe el usuario;
+// la IA solo puede corregir ortografía, acentos y puntuación. Si la propuesta cambia la redacción
+// (otras palabras o largo distinto), se conserva el texto original.
+// ponytail: heurística por número de palabras y largo; afinar umbrales con casos reales.
+export const MAX_DIF_PALABRAS = 1;
+export const MAX_DIF_LARGO = 0.1;
+export const soloOrtografia = (original, propuesta) => {
+  const o = String(original || '').trim();
+  const p = String(propuesta || '').trim();
+  if (!o || !p) return o;
+  const palabras = (t) => t.split(/\s+/).filter(Boolean).length;
+  if (Math.abs(palabras(o) - palabras(p)) > MAX_DIF_PALABRAS) return o;
+  if (Math.abs(p.length - o.length) / o.length > MAX_DIF_LARGO) return o;
+  return p;
+};
