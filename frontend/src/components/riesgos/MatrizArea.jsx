@@ -9,7 +9,7 @@ import { useToast } from '../common/Toast';
 import { formatearFecha } from '../../constants/workflow';
 import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, faltante, nuevoRiesgo, idMatriz, llevaPM } from '../../constants/riesgos';
 
-export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos, matriz, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, puedeEditar = false, puedeEnviar: permisoEnviar = false }) {
+export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos, matriz, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, puedeEditar = false, puedeEnviar: permisoEnviar = false, onVerPM }) {
   const toast = useToast();
   const { confirmar: pedirConfirmacion, props: propsDialogos } = useDialogos();
   const [abierto, setAbierto] = useState(null);
@@ -121,8 +121,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
                   </button>
                   {abiertoEste && (
                     <div className="border-t border-slate-100 p-4 space-y-3">
-                      <FormRiesgo valor={r} onChange={actualizar} procesos={procesos} soloLectura={!editableRegistro(r)} />
-                      {r.pm_id && <p className="text-[11px] text-sky-800 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5">Ya tiene plan de mejora {r.pm_folio}: se da seguimiento ahí y no se edita en la matriz.</p>}
+                      <FormRiesgo valor={r} onChange={actualizar} procesos={procesos} soloLectura={!editableRegistro(r)} onVerPM={onVerPM} />
                       {editableRegistro(r) && (
                         <div className="flex justify-end">
                           <button type="button" onClick={() => quitar(r)} className="text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1"><Trash2 size={13} /> Quitar</button>

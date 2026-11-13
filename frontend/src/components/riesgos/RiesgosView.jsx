@@ -115,7 +115,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
       {tab === 'matriz' && (area ? (
         <MatrizArea area={area} direccion={direccion} anio={anio} riesgos={lista} setRiesgos={setRiesgos} matriz={matriz}
           guardarMatriz={guardarMatriz} procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento}
-          puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} />
+          puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} onVerPM={verPM} />
       ) : <p className="text-sm text-slate-600">Tu usuario no tiene un área asignada. Pide al SGC que te la asigne.</p>)}
 
       {tab === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} enCaptura={enCaptura} />}

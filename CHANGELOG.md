@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T06:00Z · @claude-code · [UX] · Formulario de riesgo/oportunidad más claro
+A petición de @human (era confuso de llenar): 4 secciones numeradas con encabezado y estado "Completo / Por llenar" (Identificación, Descripción, Evaluación, Tratamiento y plan de acción); etiquetas legibles (no en mayúsculas pequeñas) con asterisco rojo en lo obligatorio y ayuda debajo; lo que falta se marca en ámbar; los campos de texto crecen solos conforme se escribe; el plan de acción es una tabla con encabezados (#, Actividad, Responsable, Fecha de término, Evidencia esperada) que se desplaza en pantallas angostas; colores institucionales. Se explica que, al aceptar la matriz, las actividades se convierten en el Plan de Mejora ya aprobado (no se recaptura) y, cuando existe, botón "Ir al plan de mejora" que abre el PM directo.
+- Deploy: SI
+
 ## 2026-11-14T05:30Z · @claude-code · [FIX] · El logo no se veía en producción
 El servidor solo entrega una lista fija de archivos de la raíz (manifest, sw.js, favicon); se agrega logo-oomapasc.png. Antes se mostraba la imagen rota en el menú y en el inicio de sesión.
 - Deploy: SI
