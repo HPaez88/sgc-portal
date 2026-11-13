@@ -2365,13 +2365,17 @@ const RAW_INDICADORES = [
 ];
 
 // Indicadores oficiales normalizados conforme a la estructura orgánica OOMAPASC
+// Algunos indicadores son de una DIRECCIÓN, no de un área (p. ej. #41 ingresos, #42-43 eficiencia comercial):
+// conservan como "área" el nombre de su dirección en lugar de mapearse a un área operativa.
 export const INDICADORES = RAW_INDICADORES.map(ind => {
+  const esDeDireccion = /^direcci[oó]n\s/i.test(String(ind.area || '').trim());
   const normArea = normalizarArea(ind.area);
-  const normDir = normalizarDireccion(ind.direccion || obtenerDireccionDeArea(normArea));
+  const normDir = normalizarDireccion(esDeDireccion ? ind.area : (ind.direccion || obtenerDireccionDeArea(normArea)));
   return {
     ...ind,
-    area: normArea,
-    direccion: normDir
+    area: esDeDireccion ? normDir.replace(/^Dir\.\s*/, 'Dirección ') : normArea,
+    direccion: normDir,
+    es_de_direccion: esDeDireccion
   };
 });
 

@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-13T16:00Z · @claude-code · [FIX+DATA] · Indicadores de dirección conservan su dirección; ligas AC-indicador
+El catálogo trae 7 indicadores de DIRECCIÓN (no de área): #1 y #2 Dirección General, #41 ingresos, #42 y #43 eficiencia comercial (Dirección Comercial), #77 y #78 Dirección Administrativa. normalizarArea los convertía en "Sistema de Gestión de Calidad", "Control y Servicios" y "Contabilidad". Ahora conservan como área el nombre de su dirección (es_de_direccion=true; prueba en areas.test.js). Datos: AC#14/2025 → indicador #24 y AC#1/2026 → #41 (confirmado por @human que es de la Dirección Comercial).
+- Deploy: SI
+
 ## 2026-11-12T16:00Z · @claude-code · [FEATURE] · La no conformidad se respeta tal cual (IA solo corrige ortografía)
 Decidido por @human: no se modifica ni mejora la redacción de la no conformidad. El prompt de la IA ahora pide devolver el mismo texto solo con correcciones de ortografía, acentos, mayúsculas y puntuación; además soloOrtografia() descarta la propuesta si cambia el número de palabras (>1) o el largo (>10%) y conserva el original (umbrales en constantes, con pruebas). Sin IA ya no se agrega texto de plantilla ("Requisito ISO…"); se quitaron esas plantillas. En PM, el título del usuario ya no se reemplaza por el que propone la IA.
 - Deploy: SI
