@@ -53,12 +53,11 @@ export default function PanelSugerenciasIA({ area, direccion, anio, riesgos, set
   });
 
   const agregar = () => {
-    const nuevos = [...elegidas].map((i) => ({
+    const nuevos = [...elegidas].map((i) => ({ // id único lo pone nuevoRiesgo
       ...nuevoRiesgo({ tipo: sugerencias[i].tipo, area, direccion, anio, por: usuarioLogueado?.nombre }),
       ...sugerencias[i],
       riesgo: sugerencias[i].descripcion,
       sugerido_ia: true,
-      id: Date.now() + i,
     }));
     setRiesgos((prev) => [...prev, ...nuevos]);
     registrarMovimiento?.({

@@ -39,7 +39,7 @@ function Cifra({ valor, etiqueta, nota, tono = 'text-slate-900' }) {
   );
 }
 
-export default function InformeRiesgos({ lista, planesMejora, areasDetalle, matrices, anio, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
+export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, areasDetalle, matrices, anio, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
   const toast = useToast();
   const direcciones = useMemo(() => [...new Set(areasDetalle.map((a) => normalizarDireccion(a.direccion)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')), [areasDetalle]);
   const areas = useMemo(() => areasDetalle.map((a) => a.nombre).sort((a, b) => a.localeCompare(b, 'es')), [areasDetalle]);
@@ -99,6 +99,8 @@ export default function InformeRiesgos({ lista, planesMejora, areasDetalle, matr
           <button type="button" onClick={descargar} disabled={!items.length} className="px-4 py-2 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-40 inline-flex items-center gap-1"><FileDown size={14} /> Descargar PDF</button>
         </div>
       </div>
+
+      {enCaptura > 0 && <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">El informe solo incluye lo aceptado por el SGC. {enCaptura} registro(s) de {anio} siguen en captura o revisión.</p>}
 
       <Seccion n={1} titulo="Resumen" nota={`${actual.total} registro(s) en ${anio}`}>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">

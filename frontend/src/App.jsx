@@ -174,6 +174,7 @@ function App() {
             usuarios={usuarios}
             puedeTodasAreas={puedeTodasAreas}
             areaUsuario={areaUsuario}
+            setActiveTab={setActiveTab}
           />
         );
       case 'gestor':

@@ -95,11 +95,20 @@ export const ESTADOS_RIESGO = {
   MONITOREO: { label: 'En monitoreo', color: 'bg-slate-100 text-slate-700 border-slate-200' },
   EN_TRATAMIENTO: { label: 'En tratamiento', color: 'bg-sky-100 text-sky-800 border-sky-200' },
   PENDIENTE_DICTAMEN: { label: 'Por dictaminar SGC', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+  PM_NO_ENCONTRADO: { label: 'Plan de mejora no encontrado', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   CERRADO_EFICAZ: { label: 'Eficaz', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   CERRADO_NO_EFICAZ: { label: 'No eficaz', color: 'bg-rose-100 text-rose-800 border-rose-200' },
 };
 
 export const idMatriz = (area, anio) => `${area}|${anio}`;
+
+// Id numérico único aun creando varios registros en el mismo milisegundo (al aceptar una matriz).
+// ponytail: único por navegador; dos navegadores en el mismo ms podrían chocar (poco probable).
+let ultimoId = 0;
+export const idUnico = () => {
+  ultimoId = Math.max(Date.now() * 1000, ultimoId + 1);
+  return ultimoId;
+};
 
 const pmDe = (r, planes = []) => planes.find((p) => String(p.id) === String(r?.pm_id));
 
@@ -108,13 +117,15 @@ export const estadoRiesgo = (r, planes = []) => {
   if (!r) return 'IDENTIFICADO';
   if (r.estado === 'EN_TRATAMIENTO') {
     const pm = pmDe(r, planes);
-    if (pm && String(pm.estado || '').startsWith('CERRADO')) return 'PENDIENTE_DICTAMEN';
+    // Si borraron el PM ligado, el SGC debe saberlo y poder dictaminar o replantear.
+    if (!pm && r.pm_id && planes.length) return 'PM_NO_ENCONTRADO';
+    if (pm && /^(CERRADO|RECHAZADO|CANCELADO)/.test(String(pm.estado || ''))) return 'PENDIENTE_DICTAMEN';
   }
   return r.estado || 'IDENTIFICADO';
 };
 
 // Plan de Mejora que nace del riesgo con sus actividades (no queda vacío).
-export const pmDesdeRiesgo = (r, { folio, por, ahora = new Date().toISOString() }) => {
+export const pmDesdeRiesgo = (r, { folio, por, correos = [], ahora = new Date().toISOString() }) => {
   const actividades = (r.plan || []).map((a, i) => ({
     id: i + 1,
     actividad: a.actividad,
@@ -128,11 +139,14 @@ export const pmDesdeRiesgo = (r, { folio, por, ahora = new Date().toISOString() 
   }));
   const fechas = actividades.map((a) => a.fecha_termino_sugerida).filter(Boolean).sort();
   return {
-    id: Date.now() + Math.floor(Math.random() * 1000),
+    id: idUnico(),
     folio: folio.codigo, folio_codigo: folio.codigo, folio_numero: folio.numero, anio_folio: folio.anio,
     estado: 'EN_SEGUIMIENTO',
     titulo_mejora: r.descripcion,
-    area: r.area, gerencia_coordinacion: r.area, direccion: r.direccion || '', proceso: r.proceso || '',
+    area: r.area, gerencia_coordinacion: r.area,
+    // Responsable y correos para que los recordatorios del PM le lleguen al área.
+    responsable: actividades.find((a) => a.responsable)?.responsable || '',
+    correos_responsables: correos, direccion: r.direccion || '', proceso: r.proceso || '',
     categoria_mejora: '', periodo_mejora: String(r.anio || ''),
     origen: ORIGEN_PM_RIESGOS, origen_referencia: String(r.id), riesgo_id: r.id, riesgo_tipo: r.tipo,
     descripcion_situacion_actual: [
@@ -164,7 +178,7 @@ export const sugerirEficacia = (r, residual) => {
 };
 
 export const nuevoRiesgo = ({ tipo = 'Riesgo', area, direccion, anio, por }) => ({
-  id: Date.now() + Math.floor(Math.random() * 1000),
+  id: idUnico(),
   tipo, area, direccion: direccion || '', anio, proceso: '',
   contexto: '', contexto_resultado: '',
   descripcion: '', causa: '', consecuencia: '', controles: '',
@@ -180,15 +194,30 @@ export const faltante = (r) => {
   if (!r.probabilidad || !r.impacto) return 'falta evaluarlo';
   if (requierePlan(r)) {
     if (!r.tratamiento) return 'falta el tratamiento';
-    if (r.tratamiento !== 'Aceptar' && r.tratamiento !== 'Posponer') {
-      if (!(r.plan || []).length) return 'falta el plan de acción';
-      if ((r.plan || []).some((a) => !a.actividad?.trim() || !a.responsable?.trim() || !a.fecha_termino_sugerida)) {
-        return 'el plan tiene actividades incompletas';
-      }
-    }
+    if (!['Aceptar', 'Posponer'].includes(r.tratamiento) && !(r.plan || []).length) return 'falta el plan de acción';
+  }
+  // Todo plan que generará un Plan de Mejora debe tener actividad, responsable y fecha (aunque el nivel sea bajo).
+  if (llevaPM(r) && (r.plan || []).some((a) => !a.actividad?.trim() || !a.responsable?.trim() || !a.fecha_termino_sugerida)) {
+    return 'el plan tiene actividades incompletas';
   }
   return null;
 };
 
 // Lleva plan de mejora: tiene actividades y el tratamiento no es aceptar/posponer.
 export const llevaPM = (r) => (r.plan || []).length > 0 && !['Aceptar', 'Posponer'].includes(r.tratamiento);
+
+// Para tablero e informes solo cuenta lo validado: matriz aceptada por el SGC, o registros que ya
+// tienen plan de mejora o dictamen. Lo que está en captura o revisión se informa aparte.
+export const esOficial = (r, matrices = []) => Boolean(
+  r.pm_id || r.dictamen || matrices.find((m) => m.id === idMatriz(r.area, r.anio))?.estado === 'ACEPTADA',
+);
+
+// El área (o sus encargados del SGC) puede capturar su matriz; el SGC puede todas.
+export const puedeCapturarArea = (usuario, area, areasDetalle = [], esAdmin = false) => {
+  if (esAdmin) return true;
+  if (!usuario || !area) return false;
+  const ficha = areasDetalle.find((a) => a.nombre === area);
+  const correo = String(usuario.email || '').toLowerCase();
+  return usuario.area === area || (correo && (String(ficha?.correo || '').toLowerCase() === correo
+    || (ficha?.encargados_sgc || []).map((c) => String(c).toLowerCase()).includes(correo)));
+};

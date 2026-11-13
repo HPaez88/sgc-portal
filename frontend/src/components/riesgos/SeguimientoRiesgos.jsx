@@ -1,7 +1,8 @@
 // Seguimiento de riesgos y oportunidades: su plan de mejora ligado, vencimiento y estado.
 // Cuando el auditor cierra el PM, el SGC dictamina la eficacia reevaluando el riesgo (segunda confirmación).
 import React, { useState } from 'react';
-import { Gavel } from 'lucide-react';
+import { Gavel, RotateCcw } from 'lucide-react';
+import Dialogos, { useDialogos } from '../common/Dialogos';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
 import { useToast } from '../common/Toast';
 import { getVencimiento, formatearFecha, esAdminSGC } from '../../constants/workflow';
@@ -22,8 +23,16 @@ function Chips({ titulo, opciones, valor, onElegir }) {
   );
 }
 
-export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, usuarioLogueado, registrarMovimiento, onVerPM }) {
+export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, usuarioLogueado, registrarMovimiento, onVerPM, onReplantear }) {
   const toast = useToast();
+  const { solicitar, props: propsDialogos } = useDialogos();
+  const pedirReplanteo = async (r) => {
+    const { ok, valor } = await solicitar({ titulo: 'Replantear con un nuevo plan', etiqueta: 'Motivo (le llega al área como observación)', textoAceptar: 'Regresar al área' });
+    if (!ok) return;
+    if (String(valor).trim().length < 10) { toast.warning('Escribe el motivo (mínimo 10 caracteres).'); return; }
+    onReplantear?.(r, String(valor).trim());
+    toast.success('El registro regresó al área para definir un nuevo plan.');
+  };
   const [filtroEstado, setFiltroEstado] = useState('ACTIVOS');
   const [dictamen, setDictamen] = useState(null); // { r, probabilidad, impacto, resultado, nota }
   const [confirmar, setConfirmar] = useState(false);
@@ -33,7 +42,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
     const pm = planesMejora.find((p) => String(p.id) === String(r.pm_id));
     return { r, pm, estado: estadoRiesgo(r, planesMejora), venc: pm ? getVencimiento(pm) : null };
   }).filter((f) => {
-    if (filtroEstado === 'ACTIVOS') return !String(f.estado).startsWith('CERRADO') && f.estado !== 'IDENTIFICADO';
+    if (filtroEstado === 'ACTIVOS') return !String(f.estado).startsWith('CERRADO') && !['IDENTIFICADO', 'MONITOREO'].includes(f.estado);
     if (filtroEstado === 'TODOS') return true;
     return f.estado === filtroEstado;
   }).sort((a, b) => (a.estado === 'PENDIENTE_DICTAMEN' ? -1 : 0) - (b.estado === 'PENDIENTE_DICTAMEN' ? -1 : 0) || puntaje(b.r) - puntaje(a.r));
@@ -63,7 +72,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Mostrar</span>
-        {[['ACTIVOS', 'En curso'], ['PENDIENTE_DICTAMEN', 'Por dictaminar'], ['MONITOREO', 'En monitoreo'], ['CERRADO_EFICAZ', 'Eficaces'], ['CERRADO_NO_EFICAZ', 'No eficaces'], ['TODOS', 'Todos']].map(([v, l]) => (
+        {[['ACTIVOS', 'En curso'], ['PENDIENTE_DICTAMEN', 'Por dictaminar'], ['PM_NO_ENCONTRADO', 'Sin plan de mejora'], ['MONITOREO', 'En monitoreo'], ['CERRADO_EFICAZ', 'Eficaces'], ['CERRADO_NO_EFICAZ', 'No eficaces'], ['TODOS', 'Todos']].map(([v, l]) => (
           <button key={v} type="button" onClick={() => setFiltroEstado(v)}
             className={`px-3 py-1 rounded-full border text-xs font-semibold ${filtroEstado === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}>{l}</button>
         ))}
@@ -72,15 +81,15 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-slate-50 text-slate-700 text-left border-b border-slate-200">
-            <tr><th className="p-3">Nivel</th><th className="p-3">Riesgo / oportunidad</th><th className="p-3">Área</th><th className="p-3">Plan de mejora</th><th className="p-3">Vencimiento</th><th className="p-3">Estado</th><th className="p-3 text-right">Acción</th></tr>
+            <tr><th scope="col" className="p-3">Nivel</th><th scope="col" className="p-3">Riesgo / oportunidad</th><th scope="col" className="p-3">Área</th><th scope="col" className="p-3">Plan de mejora</th><th scope="col" className="p-3">Vencimiento</th><th scope="col" className="p-3">Estado</th><th scope="col" className="p-3 text-right">Acción</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filas.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-slate-500">No hay registros con este filtro.</td></tr>}
             {filas.map(({ r, pm, estado, venc }) => (
               <tr key={r.id} className={estado === 'PENDIENTE_DICTAMEN' ? 'bg-violet-50/50' : ''}>
-                <td className="p-3"><span className={`inline-block w-10 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(r)?.suave || ''}`}>{puntaje(r)}</span></td>
+                <td className="p-3"><span className={`inline-block w-14 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(r)?.suave || ''}`}>{puntaje(r)}<span className="block text-[9px] font-bold">{nivelDe(r)?.nivel || ''}</span></span></td>
                 <td className="p-3 max-w-md"><span className="text-[10px] font-bold uppercase text-slate-500">{r.tipo}</span><br /><span className="text-slate-900 font-medium">{r.descripcion}</span></td>
-                <td className="p-3 text-slate-700">{r.area}</td>
+                <td className="p-3 text-slate-700">{r.area}<span className="block text-[11px] text-slate-500">{r.anio}</span></td>
                 <td className="p-3">
                   {pm ? (
                     <button type="button" onClick={() => onVerPM?.(pm)} className="font-mono font-bold text-sky-700 hover:underline text-left">
@@ -93,7 +102,10 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
                   {r.dictamen && <span className="block text-[10px] text-slate-500 mt-0.5">{formatearFecha(r.dictamen.fecha)} · nivel {puntaje(r)} → {puntaje(r.residual)}</span>}
                 </td>
                 <td className="p-3 text-right">
-                  {estado === 'PENDIENTE_DICTAMEN' && esAdmin && (
+                  {estado === 'CERRADO_NO_EFICAZ' && esAdmin && onReplantear && (
+                    <button type="button" onClick={() => pedirReplanteo(r)} className="px-2.5 py-1 rounded-md font-bold text-rose-800 bg-rose-50 border border-rose-200 hover:bg-rose-100 inline-flex items-center gap-1"><RotateCcw size={12} /> Replantear</button>
+                  )}
+                  {['PENDIENTE_DICTAMEN', 'PM_NO_ENCONTRADO'].includes(estado) && esAdmin && (
                     <button type="button" onClick={() => abrirDictamen(r)} className="px-2.5 py-1 rounded-md font-bold text-white bg-violet-700 hover:bg-violet-800 inline-flex items-center gap-1"><Gavel size={12} /> Dictaminar</button>
                   )}
                 </td>
@@ -127,6 +139,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
         </section>
       )}
 
+      <Dialogos {...propsDialogos} />
       {dictamen && (
         <ModalConfirmacionResponsabilidadHumana
           isOpen={confirmar}
@@ -136,6 +149,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
           registro={{ folio: dictamen.r.pm_folio || '', area: dictamen.r.area, proceso: 'Dictamen de eficacia (segunda confirmación)', titulo_mejora: `${dictamen.r.descripcion} · ${(dictamen.resultado || sugerido) === 'EFICAZ' ? 'EFICAZ' : 'NO EFICAZ'} · nivel ${puntaje(dictamen.r)} → ${dictamen.probabilidad * dictamen.impacto}` }}
           usuarioLogueado={usuarioLogueado}
           textoBoton="Confirmar dictamen"
+          declaracion="como responsable del Sistema de Gestión de la Calidad, declaro que revisé el cierre del plan de mejora y la evidencia presentada, y que el dictamen de eficacia que registro refleja la reevaluación real del riesgo u oportunidad."
         />
       )}
     </div>

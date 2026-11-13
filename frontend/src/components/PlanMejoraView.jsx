@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { isSupabaseConfigured, supabase } from '../supabase';
 import { useSGC } from '../SGCContext';
 import PlanesLista from './planes/PlanesLista';
@@ -129,6 +129,15 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     setVista('ver');
     setStep(1);
   };
+  // Abrir un PM directo desde otro módulo (p. ej. el folio en Seguimiento de riesgos).
+  useEffect(() => {
+    let id = null;
+    try { id = sessionStorage.getItem('sgc-abrir-pm'); sessionStorage.removeItem('sgc-abrir-pm'); } catch { /* sin almacenamiento */ }
+    const pm = id && planesMejora.find((p) => String(p.id) === id);
+    if (pm) handleVer(pm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const guardarBorrador = async (overrideData = null) => {
     setLoading(true);

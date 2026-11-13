@@ -16,7 +16,7 @@ function Cifra({ valor, etiqueta, nota, tono = 'text-slate-900' }) {
   );
 }
 
-export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio, itemsAnioAnterior = [] }) {
+export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio, itemsAnioAnterior = [], enCaptura = 0 }) {
   const [celda, setCelda] = useState(null); // { tipo, p, i }
   const riesgos = items.filter((r) => r.tipo === 'Riesgo');
   const oportunidades = items.filter((r) => r.tipo === 'Oportunidad');
@@ -29,7 +29,9 @@ export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio
   const dictaminados = items.filter((r) => r.dictamen);
   const eficaces = dictaminados.filter((r) => r.dictamen.resultado === 'EFICAZ');
   const altosAntes = itemsAnioAnterior.filter((r) => r.tipo === 'Riesgo' && nivelDe(r)?.nivel === 'Alto').length;
-  const promedio = riesgos.length ? (riesgos.reduce((n, r) => n + puntaje(r), 0) / riesgos.length).toFixed(1) : '—';
+  const evaluados = riesgos.map(puntaje).filter(Boolean);
+  const promedio = evaluados.length ? (evaluados.reduce((n, v) => n + v, 0) / evaluados.length).toFixed(1) : '—';
+  const eficacia = dictaminados.length ? Math.round((eficaces.length / dictaminados.length) * 100) : null;
 
   const porDireccion = useMemo(() => {
     const m = new Map();
@@ -47,17 +49,18 @@ export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio
   const enCelda = celda ? items.filter((r) => r.tipo === celda.tipo && Number(r.probabilidad) === celda.p && Number(r.impacto) === celda.i) : [];
 
   if (!items.length) {
-    return <div className="bg-white rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Aún no hay riesgos ni oportunidades registrados para {anio}.</div>;
+    return <div className="bg-white rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Aún no hay riesgos ni oportunidades aceptados por el SGC para {anio}.{enCaptura ? ` Hay ${enCaptura} registro(s) en captura o revisión.` : ''}</div>;
   }
 
   return (
     <div className="space-y-4">
+      {enCaptura > 0 && <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">Solo cuenta lo aceptado por el SGC. {enCaptura} registro(s) de {anio} siguen en captura o revisión y no se incluyen.</p>}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Cifra valor={riesgos.length} etiqueta="Riesgos" nota={`${oportunidades.length} oportunidades`} />
         <Cifra valor={altos.length} etiqueta="Riesgos altos" tono="text-rose-700" nota={itemsAnioAnterior.length ? `${altosAntes} en ${anio - 1}` : `nivel promedio ${promedio}`} />
         <Cifra valor={conPM.length} etiqueta="Con plan de mejora" nota={`${items.length ? Math.round((conPM.length / items.length) * 100) : 0}% del total`} />
         <Cifra valor={vencidos.length} etiqueta="Planes vencidos" tono={vencidos.length ? 'text-rose-700' : 'text-slate-900'} />
-        <Cifra valor={dictaminados.length ? `${Math.round((eficaces.length / dictaminados.length) * 100)}%` : '—'} etiqueta="Eficacia" nota={`${eficaces.length} de ${dictaminados.length} dictaminados`} tono="text-emerald-700" />
+        <Cifra valor={eficacia != null ? `${eficacia}%` : '—'} etiqueta="Eficacia" nota={`${eficaces.length} de ${dictaminados.length} dictaminados`} tono={eficacia == null ? 'text-slate-900' : eficacia >= 80 ? 'text-emerald-700' : 'text-rose-700'} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">

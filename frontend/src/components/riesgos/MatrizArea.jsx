@@ -4,17 +4,21 @@ import { Plus, Send, ChevronDown, ChevronUp, Trash2, MessageSquareWarning } from
 import FormRiesgo from './FormRiesgo';
 import PanelSugerenciasIA from './PanelSugerenciasIA';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
+import Dialogos, { useDialogos } from '../common/Dialogos';
 import { useToast } from '../common/Toast';
 import { formatearFecha } from '../../constants/workflow';
-import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, faltante, nuevoRiesgo, idMatriz } from '../../constants/riesgos';
+import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, faltante, nuevoRiesgo, idMatriz, llevaPM } from '../../constants/riesgos';
 
-export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos, matriz, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento }) {
+export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos, matriz, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, puedeEditar = false, puedeEnviar: permisoEnviar = false }) {
   const toast = useToast();
+  const { confirmar: pedirConfirmacion, props: propsDialogos } = useDialogos();
   const [abierto, setAbierto] = useState(null);
   const [confirmar, setConfirmar] = useState(false);
   const items = riesgos.filter((r) => r.area === area && Number(r.anio) === Number(anio));
   const estado = matriz?.estado || 'BORRADOR';
-  const editable = estado === 'BORRADOR' || estado === 'OBSERVADA';
+  // Solo el área (o sus encargados SGC) y el SGC capturan; los registros que ya tienen plan de mejora no se tocan.
+  const editable = puedeEditar && (estado === 'BORRADOR' || estado === 'OBSERVADA');
+  const editableRegistro = (r) => editable && !r.pm_id;
 
   const agregar = (tipo) => {
     const r = nuevoRiesgo({ tipo, area, direccion, anio, por: usuarioLogueado?.nombre });
@@ -22,10 +26,15 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
     setAbierto(r.id);
   };
   const actualizar = (r) => setRiesgos((prev) => prev.map((x) => (x.id === r.id ? r : x)));
-  const quitar = (r) => setRiesgos((prev) => prev.filter((x) => x.id !== r.id));
+  const quitar = async (r) => {
+    const { ok } = await pedirConfirmacion({ titulo: `Quitar ${r.tipo.toLowerCase()}`, mensaje: `¿Quitar "${r.descripcion || 'sin descripción'}" de la matriz ${anio}?`, textoAceptar: 'Quitar', peligro: true });
+    if (!ok) return;
+    setRiesgos((prev) => prev.filter((x) => x.id !== r.id));
+    registrarMovimiento?.({ modulo: 'RIESGOS', accion: 'QUITAR_REGISTRO', descripcion: `${r.tipo} "${r.descripcion || 'sin descripción'}" quitado de la matriz ${anio} de ${area}`, folio: `${CLAVE_MATRIZ}-${anio}` });
+  };
 
   const pendientes = items.map((r) => ({ r, falta: faltante(r) })).filter((x) => x.falta);
-  const puedeEnviar = editable && items.length > 0 && pendientes.length === 0;
+  const puedeEnviar = editable && permisoEnviar && items.length > 0 && pendientes.length === 0;
 
   const enviar = (ratificacion) => {
     guardarMatriz({
@@ -58,7 +67,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
             <button type="button" onClick={() => agregar('Riesgo')} className="px-3 py-2 text-xs font-bold text-rose-800 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 inline-flex items-center gap-1"><Plus size={14} /> Riesgo</button>
             <button type="button" onClick={() => agregar('Oportunidad')} className="px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 inline-flex items-center gap-1"><Plus size={14} /> Oportunidad</button>
             <button type="button" disabled={!puedeEnviar} onClick={() => setConfirmar(true)}
-              title={puedeEnviar ? '' : 'Completa todos los registros para enviar'}
+              title={puedeEnviar ? '' : (permisoEnviar ? 'Completa todos los registros para enviar' : 'Solo el encargado del área o el SGC envían la matriz')}
               className="px-4 py-2 text-xs font-bold text-white bg-sky-700 rounded-lg hover:bg-sky-800 disabled:opacity-40 inline-flex items-center gap-1"><Send size={14} /> Enviar al SGC</button>
           </div>
         )}
@@ -67,8 +76,14 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
       {estado === 'OBSERVADA' && (matriz?.observaciones || []).length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
           <p className="text-xs font-bold text-amber-900 flex items-center gap-1.5"><MessageSquareWarning size={15} /> Observaciones del SGC</p>
-          <p className="text-sm text-amber-900 mt-1 whitespace-pre-wrap">{matriz.observaciones[matriz.observaciones.length - 1].texto}</p>
-          <p className="text-[11px] text-amber-800 mt-1">{matriz.observaciones[matriz.observaciones.length - 1].por} · {formatearFecha(matriz.observaciones[matriz.observaciones.length - 1].fecha)}</p>
+          <ol className="mt-1 space-y-2">
+            {[...matriz.observaciones].reverse().map((o, i) => (
+              <li key={i} className={i ? 'opacity-70' : ''}>
+                <p className="text-sm text-amber-900 whitespace-pre-wrap">{o.texto}</p>
+                <p className="text-[11px] text-amber-800">{o.por} · {formatearFecha(o.fecha)}{i === 0 ? ' · la más reciente' : ''}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 
@@ -101,13 +116,14 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
                       <span className="block text-sm font-semibold text-slate-900 truncate">{r.descripcion || 'Sin descripción'}</span>
                       <span className="block text-[11px] text-slate-500">{[r.proceso, r.tratamiento, (r.plan || []).length ? `${r.plan.length} actividad(es)` : ''].filter(Boolean).join(' · ') || 'Por completar'}</span>
                     </span>
-                    {faltante(r) && editable && <span className="text-[11px] font-semibold text-amber-700 hidden sm:inline">{faltante(r)}</span>}
+                    {faltante(r) && editableRegistro(r) && <span className="text-[11px] font-semibold text-amber-700 hidden sm:inline">{faltante(r)}</span>}
                     {abiertoEste ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
                   </button>
                   {abiertoEste && (
                     <div className="border-t border-slate-100 p-4 space-y-3">
-                      <FormRiesgo valor={r} onChange={actualizar} procesos={procesos} soloLectura={!editable} />
-                      {editable && (
+                      <FormRiesgo valor={r} onChange={actualizar} procesos={procesos} soloLectura={!editableRegistro(r)} />
+                      {r.pm_id && <p className="text-[11px] text-sky-800 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5">Ya tiene plan de mejora {r.pm_folio}: se da seguimiento ahí y no se edita en la matriz.</p>}
+                      {editableRegistro(r) && (
                         <div className="flex justify-end">
                           <button type="button" onClick={() => quitar(r)} className="text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1"><Trash2 size={13} /> Quitar</button>
                         </div>
@@ -121,13 +137,14 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
         );
       })}
 
+      <Dialogos {...propsDialogos} />
       <ModalConfirmacionResponsabilidadHumana
         isOpen={confirmar}
         onClose={() => setConfirmar(false)}
         onConfirmar={enviar}
         tipo="MATRIZ_RIESGOS"
-        registro={{ folio: `${CLAVE_MATRIZ} ${anio}`, area, proceso: 'Riesgos y oportunidades (§ 6.1)', titulo_mejora: `${items.filter((r) => r.tipo === 'Riesgo').length} riesgo(s) y ${items.filter((r) => r.tipo === 'Oportunidad').length} oportunidad(es) con ${items.reduce((n, r) => n + (r.plan || []).length, 0)} actividad(es) de plan` }}
-        actividades={items.flatMap((r) => r.plan || [])}
+        registro={{ folio: `${CLAVE_MATRIZ} ${anio}`, area, proceso: 'Riesgos y oportunidades (§ 6.1)', titulo_mejora: `${items.filter((r) => r.tipo === 'Riesgo').length} riesgo(s) y ${items.filter((r) => r.tipo === 'Oportunidad').length} oportunidad(es) con ${items.filter(llevaPM).reduce((n, r) => n + r.plan.length, 0)} actividad(es) de plan` }}
+        actividades={items.filter(llevaPM).flatMap((r) => r.plan || [])}
         usuarioLogueado={usuarioLogueado}
       />
     </div>

@@ -34,6 +34,8 @@ export default function ModalConfirmacionResponsabilidadHumana({
   usuarioLogueado = {},
   loading = false,
   textoBoton = 'Confirmar y Enviar al SGC para Aprobación',
+  // Texto propio cuando firma el SGC (aceptación, dictamen) y no el área responsable.
+  declaracion = null,
 }) {
   const [textoConfirmacion, setTextoConfirmacion] = useState('');
   const [checkboxAcepto, setCheckboxAcepto] = useState(false);
@@ -211,7 +213,7 @@ export default function ModalConfirmacionResponsabilidadHumana({
                 </div>
 
                 <p className="text-xs text-slate-800 leading-relaxed italic bg-white/90 p-3.5 rounded-lg border border-amber-200">
-                  "Yo, <strong>{nombreUsuario}</strong>, adscrito(a) a <strong>{areaUsuario}</strong>, declaro formalmente que he revisado en su totalidad la información técnica contenida en este formato {claveFormato}, validando que las causas identificadas y el plan de actividades son viables, veraces y corresponden a la realidad operativa. Asumo el compromiso de dar seguimiento oportuno a las fechas límite, ejecutar las acciones preventivas/correctivas y recopilar las evidencias documentales requeridas para las auditorías del SGC."
+                  {declaracion ? <>"Yo, <strong>{nombreUsuario}</strong>, {declaracion}"</> : <>"Yo, <strong>{nombreUsuario}</strong>, adscrito(a) a <strong>{areaUsuario}</strong>, declaro formalmente que he revisado en su totalidad la información técnica contenida en este formato {claveFormato}, validando que las causas identificadas y el plan de actividades son viables, veraces y corresponden a la realidad operativa. Asumo el compromiso de dar seguimiento oportuno a las fechas límite, ejecutar las acciones preventivas/correctivas y recopilar las evidencias documentales requeridas para las auditorías del SGC."</>}
                 </p>
 
                 {/* Checkbox de aceptación explícita */}
