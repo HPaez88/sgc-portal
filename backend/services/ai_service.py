@@ -67,7 +67,7 @@ def _extraer_json(raw: str) -> dict:
         )
 
 
-def _call_ai(prompt: str, context: str, model: Optional[str] = None) -> str:
+def _call_ai(prompt: str, context: str, model: Optional[str] = None, json_mode: bool = False) -> str:
     """
     Hace una llamada a Groq y devuelve el texto.
     Por defecto usa el modelo de análisis profundo (70B) para documentos técnicos.
@@ -78,14 +78,17 @@ def _call_ai(prompt: str, context: str, model: Optional[str] = None) -> str:
     fallback_model = get_chat_model()
 
     try:
-        response = client.chat.completions.create(
-            model=target_model,
-            messages=[
-                {"role": "system", "content": context},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.3,
-        )
+        mensajes = [{"role": "system", "content": context}, {"role": "user", "content": prompt}]
+        if json_mode:
+            # JSON estricto: evita respuestas largas con comas faltantes (visto 2026-11-13 en sugerencias de riesgos).
+            try:
+                response = client.chat.completions.create(model=target_model, messages=mensajes, temperature=0.3,
+                                                          response_format={"type": "json_object"})
+                return response.choices[0].message.content.strip()
+            except Exception as exc_json:  # el modelo no soporta json_object: se intenta sin él
+                if "response_format" not in str(exc_json) and "json" not in str(exc_json).lower():
+                    raise
+        response = client.chat.completions.create(model=target_model, messages=mensajes, temperature=0.3)
         return response.choices[0].message.content.strip()
     except Exception as exc:
         err_msg = str(exc)
@@ -115,7 +118,7 @@ def _call_ai(prompt: str, context: str, model: Optional[str] = None) -> str:
 
 def generar_json_desde_prompt(prompt: str, context: str, model: Optional[str] = None) -> dict:
     """Genera y valida una respuesta JSON usando Groq sin exponer la clave al frontend."""
-    raw = _call_ai(prompt, context, model=model)
+    raw = _call_ai(prompt, context, model=model, json_mode=True)
     return _extraer_json(raw)
 
 

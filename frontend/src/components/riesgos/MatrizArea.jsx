@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Plus, Send, ChevronDown, ChevronUp, Trash2, MessageSquareWarning } from 'lucide-react';
 import FormRiesgo from './FormRiesgo';
+import PanelSugerenciasIA from './PanelSugerenciasIA';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
 import { useToast } from '../common/Toast';
 import { formatearFecha } from '../../constants/workflow';
@@ -51,7 +52,9 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
           {matriz?.fecha_envio && <span className="ml-2 text-[11px] text-slate-500">Enviada {formatearFecha(matriz.fecha_envio)}</span>}
         </div>
         {editable && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <PanelSugerenciasIA area={area} direccion={direccion} anio={anio} riesgos={riesgos} setRiesgos={setRiesgos}
+              procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />
             <button type="button" onClick={() => agregar('Riesgo')} className="px-3 py-2 text-xs font-bold text-rose-800 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 inline-flex items-center gap-1"><Plus size={14} /> Riesgo</button>
             <button type="button" onClick={() => agregar('Oportunidad')} className="px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 inline-flex items-center gap-1"><Plus size={14} /> Oportunidad</button>
             <button type="button" disabled={!puedeEnviar} onClick={() => setConfirmar(true)}
