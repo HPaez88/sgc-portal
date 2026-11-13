@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import MatrizArea from './MatrizArea';
 import { ESTADOS_MATRIZ, nivelDe, faltante, idMatriz } from '../../constants/riesgos';
+import { TIPOS_UNIDAD } from '../../constants/unidades';
 
 const FILTROS = [
   ['TODAS', 'Todas'], ['CON_REGISTROS', 'Con registros'], ['ENVIADA', 'Por revisar'], ['OBSERVADA', 'Con observaciones'],
@@ -71,7 +72,10 @@ export default function MatrizPorArea({ areas, anio, riesgos, matrices, areaInic
                 {abiertaEsta ? <ChevronDown size={18} className="text-marca-azul-oscuro shrink-0" /> : <ChevronRight size={18} className="text-slate-400 shrink-0" />}
                 <span className="flex-1 min-w-[12rem]">
                   <span className="block text-sm font-extrabold text-slate-900">{f.area.nombre}</span>
-                  <span className="block text-[11px] text-slate-500">{String(f.area.direccion || '').replace(/^Dir\.\s*/, 'Dirección ')}</span>
+                  <span className="block text-[11px] text-slate-500">
+                    <span className="font-bold text-marca-azul-oscuro">{TIPOS_UNIDAD[f.area.tipo] || 'Área'}</span>
+                    {f.area.tipo !== 'direccion' && ` · ${String(f.area.direccion || '').replace(/^Dir\.\s*/, 'Dirección ')}`}
+                  </span>
                 </span>
                 <span className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
                   <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200">{f.riesgos} riesgo(s)</span>

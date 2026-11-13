@@ -64,3 +64,19 @@ def test_pestana_vieja_no_borra_lo_que_otro_agrego(cliente, cab):
     # y un navegador con la versión anterior (sin base) tampoco borra
     r = cliente.put(url, headers=cab, json={"valor": [{"id": 1, "estado": "CERRADO"}]})
     assert len(r.json()["valor"]) == 2
+
+
+
+def test_bitacora_del_servidor_registra_cambios(cliente, cab):
+    url = "/api/v1/estado/sgc-prueba-bitacora"
+    assert cliente.put(url, headers=cab, json={"valor": [{"id": 1, "folio_codigo": "AC#1/2026", "estado": "BORRADOR"}]}).status_code == 200
+    base = [{"id": 1, "folio_codigo": "AC#1/2026", "estado": "BORRADOR"}]
+    nuevo = [{"id": 1, "folio_codigo": "AC#1/2026", "estado": "EN_SEGUIMIENTO"}]
+    assert cliente.put(url, headers=cab, json={"valor": nuevo, "base": base, "tiene_base": True}).status_code == 200
+    # guardar lo mismo no ensucia la bitácora
+    cliente.put(url, headers=cab, json={"valor": nuevo, "base": nuevo, "tiene_base": True})
+    filas = cliente.get("/api/v1/estado/bitacora/servidor?clave=sgc-prueba-bitacora", headers=cab).json()
+    assert len(filas) == 2
+    assert filas[0]["modificados"] == 1 and filas[0]["detalle"][0]["campos"] == ["estado"]
+    assert filas[1]["agregados"] == 1
+    assert cliente.get("/api/v1/estado/bitacora/servidor", headers={"Authorization": "Bearer x"}).status_code == 401

@@ -24,3 +24,16 @@ describe('PDF del informe de riesgos', () => {
     expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('PDF con síntesis', () => {
+  it('incluye FODA, prioridades y plan sin fallar', () => {
+    const doc = construirInformeRiesgosPDF({ ...datosDePrueba(), sintesis: {
+      estado: 'borrador', conclusion: 'Atender mantenimiento',
+      foda: { fortalezas: ['Personal'], oportunidades: ['Convenios'], debilidades: ['Equipo viejo'], amenazas: ['Sequía'] },
+      riesgos: [{ nivel: 'Alto', descripcion: 'Falla de bombas', unidades: ['Plantas'], razon: 'Suspende el servicio' }],
+      oportunidades: [{ descripcion: 'Telemetría', unidades: [], razon: 'Ahorro' }],
+      plan: [{ tema: 'Mantenimiento', objetivo: 'Reducir fallas', acciones: ['Programa anual'], responsable: 'Dir. Técnica', plazo: 'T1', atiende: 'Falla de bombas' }],
+    } });
+    expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(2);
+  });
+});

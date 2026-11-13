@@ -33,7 +33,7 @@ function mapa(doc, x, y, tipo, items) {
   doc.text('Prob.', x, y - 2 + 5 * celda + 10);
 }
 
-export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario }) {
+export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario, sintesis = null, fodaAlcance = null }) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -91,6 +91,33 @@ export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, compar
     altos.length ? altos.map(({ r, pm, estado, venc }) => [puntaje(r), r.descripcion, r.area, r.tratamiento || '-', pm ? `${pm.folio_codigo}${venc ? `\n${venc.label}` : ''}` : '-', ESTADOS_RIESGO[estado]?.label || estado])
       : [['-', `Sin riesgos altos en ${anio}.`, '', '', '', '']],
     { columnStyles: { 0: { cellWidth: 11, halign: 'center', fontStyle: 'bold' }, 1: { cellWidth: 70 } } });
+
+  // 6. FODA (del área) o síntesis de la dirección / organismo con prioridades y plan
+  const foda = sintesis?.foda || fodaAlcance;
+  const tieneFoda = foda && ['fortalezas', 'oportunidades', 'debilidades', 'amenazas'].some((k) => (foda[k] || []).length);
+  if (tieneFoda) {
+    const lista = (k) => (foda[k] || []).map((x) => `• ${x}`).join('\n') || '-';
+    tabla(`6. Análisis FODA${sintesis && sintesis.estado !== 'revisado' ? ' (preliminar)' : ''}`, ['Fortalezas (internas)', 'Oportunidades (externas)'],
+      [[lista('fortalezas'), lista('oportunidades')], [{ content: 'Debilidades (internas)', styles: { fontStyle: 'bold', fillColor: MARCA.azulOscuro, textColor: 255 } }, { content: 'Amenazas (externas)', styles: { fontStyle: 'bold', fillColor: MARCA.azulOscuro, textColor: 255 } }], [lista('debilidades'), lista('amenazas')]],
+      { columnStyles: { 0: { cellWidth: (W - 2 * m) / 2 }, 1: { cellWidth: (W - 2 * m) / 2 } } });
+  }
+  if (sintesis?.riesgos?.length) {
+    tabla('7. Riesgos prioritarios', ['Nivel', 'Riesgo', 'Involucra', 'Por qué importa'],
+      sintesis.riesgos.map((r) => [r.nivel, r.descripcion, (r.unidades || []).join(', '), r.razon]),
+      { columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' } } });
+  }
+  if (sintesis?.oportunidades?.length) {
+    tabla('8. Oportunidades prioritarias', ['Oportunidad', 'Involucra', 'Por qué importa'],
+      sintesis.oportunidades.map((o) => [o.descripcion, (o.unidades || []).join(', '), o.razon]));
+  }
+  if (sintesis?.plan?.length) {
+    tabla('9. Plan de acción', ['#', 'Tema y objetivo', 'Acciones', 'Responsable', 'Plazo', 'Atiende'],
+      sintesis.plan.map((l, i) => [i + 1, `${l.tema}\n${l.objetivo}`, (l.acciones || []).filter(Boolean).map((a) => `• ${a}`).join('\n'), l.responsable, l.plazo, l.atiende]),
+      { columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 4: { cellWidth: 14 } } });
+  }
+  if (sintesis?.conclusion) {
+    tabla('Conclusión', ['Para la toma de decisiones'], [[sintesis.conclusion]]);
+  }
 
   piePDF(doc, `OOMAPAS de Cajeme · Informe ${CLAVE_MATRIZ} ${anio} · ${nombreAlcance}`);
   return doc;

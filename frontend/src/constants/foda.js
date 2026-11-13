@@ -1,10 +1,10 @@
 // Análisis FODA por área (2026-11-14): se guarda en la ficha del área del catálogo (areasDetalle[].foda)
 // y la IA lo usa como referencia para sugerir riesgos y oportunidades. El SGC lo revisa con cada área.
 export const CUADRANTES = [
-  { id: 'fortalezas', titulo: 'Fortalezas', ayuda: 'Internas · lo que el área hace bien', color: 'border-emerald-300 bg-emerald-50/60', texto: 'text-emerald-900' },
-  { id: 'oportunidades', titulo: 'Oportunidades', ayuda: 'Externas · lo que puede aprovechar', color: 'border-sky-300 bg-sky-50/60', texto: 'text-sky-900' },
-  { id: 'debilidades', titulo: 'Debilidades', ayuda: 'Internas · lo que limita al área', color: 'border-amber-300 bg-amber-50/60', texto: 'text-amber-900' },
-  { id: 'amenazas', titulo: 'Amenazas', ayuda: 'Externas · lo que puede afectarla', color: 'border-rose-300 bg-rose-50/60', texto: 'text-rose-900' },
+  { id: 'fortalezas', titulo: 'Fortalezas', singular: 'fortaleza', ayuda: 'Internas · lo que el área hace bien', color: 'border-emerald-300 bg-emerald-50/60', texto: 'text-emerald-900' },
+  { id: 'oportunidades', titulo: 'Oportunidades', singular: 'oportunidad', ayuda: 'Externas · lo que puede aprovechar', color: 'border-sky-300 bg-sky-50/60', texto: 'text-sky-900' },
+  { id: 'debilidades', titulo: 'Debilidades', singular: 'debilidad', ayuda: 'Internas · lo que limita al área', color: 'border-amber-300 bg-amber-50/60', texto: 'text-amber-900' },
+  { id: 'amenazas', titulo: 'Amenazas', singular: 'amenaza', ayuda: 'Externas · lo que puede afectarla', color: 'border-rose-300 bg-rose-50/60', texto: 'text-rose-900' },
 ];
 
 export const FODA_VACIO = { fortalezas: [], oportunidades: [], debilidades: [], amenazas: [] };

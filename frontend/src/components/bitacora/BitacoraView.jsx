@@ -1,3 +1,4 @@
+import BitacoraServidor from './BitacoraServidor';
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
@@ -322,8 +323,10 @@ export default function BitacoraView() {
 
   const hayFiltrosActivos = filtroUsuario || filtroModulo || filtroAccion || busqueda || fechaDesde || fechaHasta || filtroSoloOnline;
 
+  const esAdminBitacora = ['Super Admin', 'Admin'].includes(usuarioLogueado?.rol);
   return (
     <div className="space-y-5">
+      {esAdminBitacora && <BitacoraServidor />}
       {/* Encabezado Principal */}
       <div className="bg-gradient-to-r from-[#0A1424] to-[#1E3E62] text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />

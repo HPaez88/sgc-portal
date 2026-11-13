@@ -416,6 +416,23 @@ class DatosArea(SQLModel, table=True):
 # ═══════════════════════════════════════════════════════════════════════════════
 # MODELO: HISTORIAL DE CAMBIOS (Audit Trail extendido)
 # ═══════════════════════════════════════════════════════════════════���═══════════
+class BitacoraServidor(SQLModel, table=True):
+    """Cada cambio de datos que llega al servidor: quién, cuándo, qué sección y qué registros (no se edita ni se borra)."""
+    __tablename__ = "bitacora_servidor"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
+    fecha: datetime = Field(default_factory=datetime.utcnow, index=True)
+    usuario_id: Optional[int] = None
+    usuario: str = ""
+    rol: str = ""
+    clave: str = Field(index=True)
+    agregados: int = 0
+    modificados: int = 0
+    eliminados: int = 0
+    detalle: str = Field(default="[]", sa_column=Column(Text))
+
+
 class HistorialCambio(SQLModel, table=True):
     __tablename__ = "historial_cambios"
     

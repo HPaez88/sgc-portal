@@ -14,9 +14,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from backend import auth
 from backend.auth import usuario_actual
 from backend.database import get_session
-from backend.models import EstadoPortal, Usuario
+from backend.models import BitacoraServidor, EstadoPortal, Usuario
+from backend.services import auditoria
 from backend.services.fusion_estado import fusionar, fusionar_sin_base
 from backend.tenant import get_organismo_id
 
@@ -45,6 +47,21 @@ def obtener_todo(session: Session = Depends(get_session), organismo_id: int = De
     return {f.clave: {"valor": json.loads(f.valor), "actualizado": f.actualizado, "actualizado_por": f.actualizado_por} for f in filas}
 
 
+@router.get("/bitacora/servidor")
+def bitacora_servidor(
+    clave: str = "",
+    limite: int = 300,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(auth.requiere_rol(*auth.ROLES_ADMIN)),
+):
+    """Registro de cambios de datos (solo administradores del SGC)."""
+    q = select(BitacoraServidor).where(BitacoraServidor.organismo_id == usuario.organismo_id)
+    if clave:
+        q = q.where(BitacoraServidor.clave == clave)
+    filas = session.exec(q.order_by(BitacoraServidor.fecha.desc()).limit(max(1, min(limite, 1000)))).all()
+    return [{**f.model_dump(exclude={"detalle"}), "detalle": json.loads(f.detalle or "[]")} for f in filas]
+
+
 @router.get("/{clave}")
 def obtener(clave: str, session: Session = Depends(get_session), organismo_id: int = Depends(get_organismo_id)):
     clave = _clave_valida(clave)
@@ -65,6 +82,7 @@ def guardar(
     clave = _clave_valida(clave)
     f = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == organismo_id, EstadoPortal.clave == clave)
                      .with_for_update()).first()
+    actual = None
     if not f:
         valor = datos.valor
         f = EstadoPortal(organismo_id=organismo_id, clave=clave)
@@ -76,5 +94,12 @@ def guardar(
         raise HTTPException(status_code=413, detail="El valor excede 8 MB; usa archivos para contenido pesado.")
     f.valor, f.actualizado, f.actualizado_por = texto, datetime.utcnow(), usuario.nombre
     session.add(f)
+    # Bitácora del servidor: todo cambio queda registrado aunque la pantalla no lo anote.
+    if clave not in auditoria.CLAVES_SIN_AUDITAR:
+        r = auditoria.resumen_cambio(actual, valor)
+        if auditoria.hay_cambio(r):
+            session.add(BitacoraServidor(organismo_id=organismo_id, usuario_id=usuario.id, usuario=usuario.nombre, rol=usuario.rol,
+                                         clave=clave, agregados=r["agregados"], modificados=r["modificados"],
+                                         eliminados=r["eliminados"], detalle=json.dumps(r["detalle"], ensure_ascii=False)))
     session.commit()
     return {"clave": f.clave, "valor": valor, "actualizado": f.actualizado, "actualizado_por": f.actualizado_por}

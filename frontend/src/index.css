@@ -44,6 +44,15 @@
 /* Texto largo en celdas: se parte en renglones en vez de empujar la tabla fuera de la pantalla. */
 td { overflow-wrap: break-word; }
 
+/* Regla del portal: los cuadros de texto crecen con su contenido (no hay que agrandarlos a mano).
+   Navegadores nuevos lo hacen con CSS; utils/textoAutoCrece.js es el respaldo para los demás. */
+textarea:not([data-tamano-fijo]) {
+  field-sizing: content;
+  max-height: 70vh;
+  resize: vertical;
+}
+textarea:not([data-tamano-fijo]):not([rows="1"]) { min-height: 4.5rem; }
+
 /* Tabular figures for data, counters, and metrics */
 .font-tabular {
   font-variant-numeric: tabular-nums;

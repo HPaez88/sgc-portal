@@ -5,6 +5,10 @@ import './index.css'
 import { SGCProvider } from './SGCContext.jsx'
 import { ToastProvider } from './components/common/Toast.jsx'
 import AvisoActualizacion from './components/common/AvisoActualizacion.jsx'
+import { activarTextoAutoCrece } from './utils/textoAutoCrece'
+
+// Todos los cuadros de texto del portal crecen solos al escribir (regla de @human).
+activarTextoAutoCrece()
 
 // Instalable como app (PWA). Solo en producción para no interferir con el servidor de desarrollo.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

@@ -3,6 +3,12 @@
 import React, { useMemo, useState } from 'react';
 import { FileDown, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import MapaCalor from './MapaCalor';
+import { useSGC } from '../../SGCContext';
+import SintesisPanel from './SintesisPanel';
+import FodaEditor from './FodaEditor';
+import { insumosDireccion, insumosOrganismo } from '../../constants/sintesisIA';
+import { fodaVacio } from '../../constants/foda';
+import { TIPOS_UNIDAD } from '../../constants/unidades';
 import { useToast } from '../common/Toast';
 import { CLAVE_MATRIZ, ESTADOS_RIESGO, nivelDe, puntaje, estadoRiesgo, idMatriz } from '../../constants/riesgos';
 import { resumenRiesgos, desgloseRiesgos, comparativoAnual, hallazgosRiesgos } from '../../constants/riesgosInforme';
@@ -39,9 +45,11 @@ function Cifra({ valor, etiqueta, nota, tono = 'text-slate-900' }) {
   );
 }
 
-export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, areasDetalle, matrices, anio, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
+export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, areasDetalle, matrices, anio, puedeTodasAreas, areaUsuario, usuarioLogueado,
+  unidades = [], direccionesDetalle = [], setDireccionesDetalle, esAdmin = false, sintesisOrganismo = {}, setSintesisOrganismo, todosLosRiesgos = [] }) {
   const toast = useToast();
-  const direcciones = useMemo(() => [...new Set(areasDetalle.map((a) => normalizarDireccion(a.direccion)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')), [areasDetalle]);
+  const { registrarMovimiento } = useSGC();
+  const direcciones = useMemo(() => [...new Set([...areasDetalle.map((a) => normalizarDireccion(a.direccion)), ...direccionesDetalle.map((d) => normalizarDireccion(d.nombre))].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')), [areasDetalle, direccionesDetalle]);
   const areas = useMemo(() => areasDetalle.map((a) => a.nombre).sort((a, b) => a.localeCompare(b, 'es')), [areasDetalle]);
   const [alcance, setAlcance] = useState(puedeTodasAreas ? 'ORG' : `A:${areaUsuario}`);
 
@@ -71,10 +79,26 @@ export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, are
   });
   const maxAnio = Math.max(1, ...comparativo.map((c) => c.riesgos));
 
+  // FODA y síntesis del alcance: área → su FODA; dirección/organismo → síntesis armada con IA y revisada por el SGC.
+  const dirSel = direccionesDetalle.find((d) => normalizarDireccion(d.nombre) === valorAlc);
+  const sintesisDe = (dir) => direccionesDetalle.find((d) => normalizarDireccion(d.nombre) === dir)?.sintesis?.[anio] || null;
+  const unidadSel = unidades.find((u) => u.nombre === valorAlc) || areasDetalle.find((a) => a.nombre === valorAlc);
+  const fodaAlcance = tipoAlc === 'A' ? unidadSel?.foda : null;
+  const sintesis = tipoAlc === 'D' ? sintesisDe(valorAlc) : tipoAlc === 'ORG' ? (sintesisOrganismo?.[anio] || null) : null;
+  const guardarSintesis = (val) => {
+    registrarMovimiento?.({ modulo: 'RIESGOS', accion: 'SINTESIS_INFORME', descripcion: `Síntesis ${anio} de ${tipoAlc === 'ORG' ? 'OOMAPAS de Cajeme' : valorAlc} guardada (${val.estado})`, folio: 'OOMRSC-37' });
+    if (tipoAlc === 'D') setDireccionesDetalle?.((prev) => prev.map((d) => (normalizarDireccion(d.nombre) === valorAlc ? { ...d, sintesis: { ...(d.sintesis || {}), [anio]: val } } : d)));
+    else setSintesisOrganismo?.((prev) => ({ ...(prev || {}), [anio]: val }));
+  };
+  const insumos = tipoAlc === 'D'
+    ? insumosDireccion({ areas: unidades.filter((u) => u.direccion === valorAlc), riesgos: todosLosRiesgos, anio })
+    : tipoAlc === 'ORG' ? insumosOrganismo({ direcciones, unidades, riesgos: todosLosRiesgos, anio, sintesisDe }) : [];
+
   const descargar = () => {
     try {
-      const archivo = exportarInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario: usuarioLogueado?.nombre });
+      const archivo = exportarInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario: usuarioLogueado?.nombre, sintesis, fodaAlcance });
       toast.success(`Informe descargado: ${archivo}`);
+      registrarMovimiento?.({ modulo: 'RIESGOS', accion: 'CONSULTA_INFORME', descripcion: `Descarga del informe de riesgos ${anio} · ${nombreAlcance}`, folio: 'OOMRSC-37' });
     } catch (e) {
       console.error('Informe de riesgos PDF', e);
       toast.error('No se pudo generar el PDF. Intenta de nuevo.');
@@ -93,7 +117,11 @@ export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, are
             <select value={alcance} onChange={(e) => setAlcance(e.target.value)} aria-label="Alcance del informe" className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold max-w-xs">
               <option value="ORG">Todo el organismo</option>
               <optgroup label="Por dirección">{direcciones.map((d) => <option key={d} value={`D:${d}`}>{d}</option>)}</optgroup>
-              <optgroup label="Por área">{areas.map((a) => <option key={a} value={`A:${a}`}>{a}</option>)}</optgroup>
+              {unidades.length ? Object.entries(TIPOS_UNIDAD).map(([tipo, etq]) => (
+                <optgroup key={tipo} label={`Por ${etq.toLowerCase()} (su propia matriz)`}>
+                  {unidades.filter((u) => u.tipo === tipo).map((u) => <option key={u.nombre} value={`A:${u.nombre}`}>{u.nombre}</option>)}
+                </optgroup>
+              )) : <optgroup label="Por área">{areas.map((a) => <option key={a} value={`A:${a}`}>{a}</option>)}</optgroup>}
             </select>
           )}
           <button type="button" onClick={descargar} disabled={!items.length} className="px-4 py-2 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-40 inline-flex items-center gap-1"><FileDown size={14} /> Descargar PDF</button>
@@ -207,6 +235,18 @@ export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, are
             </tbody>
           </table>
         </div>
+      </Seccion>
+
+      <Seccion n={7} titulo={tipoAlc === 'A' ? 'Análisis FODA' : 'FODA consolidado, prioridades y plan'}
+        nota={tipoAlc === 'A' ? (unidadSel?.tipo && unidadSel.tipo !== 'area' ? 'El FODA es solo de las áreas' : '') : (sintesis ? (sintesis.estado === 'revisado' ? 'Revisada por el SGC' : 'Preliminar (borrador)') : 'Aún sin armar')}>
+        {tipoAlc === 'A' ? (
+          fodaVacio(fodaAlcance)
+            ? <p className="text-sm text-slate-500">{unidadSel?.tipo && unidadSel.tipo !== 'area' ? 'Las direcciones y subdirecciones se consolidan en el informe de su dirección.' : 'Esta área aún no tiene FODA capturado (Riesgos → FODA y propósito).'}</p>
+            : <FodaEditor foda={fodaAlcance} soloLectura />
+        ) : (
+          <SintesisPanel nivel={tipoAlc === 'ORG' ? 'organismo' : 'direccion'} nombre={tipoAlc === 'ORG' ? 'OOMAPAS de Cajeme' : (dirSel?.nombre || valorAlc)}
+            anio={anio} unidades={insumos} valor={sintesis} onGuardar={guardarSintesis} puedeEditar={esAdmin} usuarioLogueado={usuarioLogueado} />
+        )}
       </Seccion>
     </div>
   );

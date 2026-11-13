@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from 'react';
 import { ShieldAlert, ListChecks, Grid3x3, LayoutDashboard, FileBarChart2, ClipboardCheck, Plus, Sparkles, Compass } from 'lucide-react';
 import FodaArea from './FodaArea';
+import { unidadesDeRiesgo, TIPOS_UNIDAD } from '../../constants/unidades';
 import { useSGC } from '../../SGCContext';
 import { useLocalStorage } from '../../hooks';
 import { esAdminSGC, can } from '../../constants/workflow';
@@ -24,8 +25,10 @@ const PRIMER_ANIO = Math.min(2025, ANIO_ACTUAL - 1);
 const ANIOS = Array.from({ length: ANIO_ACTUAL + 2 - PRIMER_ANIO }, (_, i) => PRIMER_ANIO + i);
 
 export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas, areaUsuario, setActiveTab }) {
-  const { areasDetalle = [], setAreasDetalle, procesos = [], planesMejora = [], setPlanesMejora, registrarMovimiento, usuarioLogueado } = useSGC();
+  const { areasDetalle = [], setAreasDetalle, direccionesDetalle = [], setDireccionesDetalle, procesos = [], planesMejora = [], setPlanesMejora, registrarMovimiento, usuarioLogueado } = useSGC();
   const [matrices, setMatrices] = useLocalStorage('sgc-matrices-riesgos', []);
+  // Síntesis del organismo por año (informes): { [anio]: { foda, riesgos, oportunidades, plan, ... } }
+  const [sintesisOrganismo, setSintesisOrganismo] = useLocalStorage('sgc-sintesis-organismo', {});
   const esAdmin = esAdminSGC(usuarioLogueado);
   const [tab, setTab] = useState('seguimiento'); // Seguimiento siempre es la primera pestaña
   const [accionAlta, setAccionAlta] = useState(null); // 'Riesgo' | 'Oportunidad' | 'IA' pedida desde Seguimiento
@@ -36,16 +39,18 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
   const anio = anioDeMatriz ? anioMatriz : anioSeguimiento;
   const setAnio = anioDeMatriz ? setAnioMatriz : setAnioSeguimiento;
   const areasCatalogo = useMemo(() => [...areasDetalle].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')), [areasDetalle]);
+  // Unidades con matriz: direcciones, subdirecciones y áreas (el FODA es solo de áreas).
+  const unidades = useMemo(() => unidadesDeRiesgo(areasDetalle, direccionesDetalle), [areasDetalle, direccionesDetalle]);
   const [areaSel, setAreaSel] = useState(areaUsuario && areasDetalle.some((a) => a.nombre === areaUsuario) ? areaUsuario : (areasCatalogo[0]?.nombre || ''));
   // Si el catálogo llega después del primer render, se toma la primera área.
   const area = puedeTodasAreas ? (areaSel || areasCatalogo[0]?.nombre || '') : areaUsuario;
   const permisosDe = (nombreArea) => {
-    const editar = puedeCapturarArea(usuarioLogueado, nombreArea, areasDetalle, esAdmin) && (esAdmin || can(usuarioLogueado, 'editar'));
-    const enviar = esAdmin || (editar && (can(usuarioLogueado, 'enviar') || (areasDetalle.find((a) => a.nombre === nombreArea)?.encargados_sgc || []).includes(String(usuarioLogueado?.email || '').toLowerCase())));
+    const editar = puedeCapturarArea(usuarioLogueado, nombreArea, unidades, esAdmin) && (esAdmin || can(usuarioLogueado, 'editar'));
+    const enviar = esAdmin || (editar && (can(usuarioLogueado, 'enviar') || (unidades.find((a) => a.nombre === nombreArea)?.encargados_sgc || []).includes(String(usuarioLogueado?.email || '').toLowerCase())));
     return { puedeEditar: editar, puedeEnviar: enviar };
   };
   const { puedeEditar, puedeEnviar } = permisosDe(area);
-  const direccion = normalizarDireccion(areasDetalle.find((a) => a.nombre === area)?.direccion || '');
+  const direccion = unidades.find((u) => u.nombre === area)?.direccion || normalizarDireccion(areasDetalle.find((a) => a.nombre === area)?.direccion || '');
 
   // Solo registros del modelo nuevo (con año); los de prueba anteriores no se muestran.
   const lista = (Array.isArray(riesgos) ? riesgos : []).filter((r) => r.anio);
@@ -140,11 +145,11 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
       </div>
 
       {actual.id === 'matriz' && puedeTodasAreas && (
-        <MatrizPorArea areas={areasCatalogo} anio={anio} riesgos={lista} matrices={listaMatrices}
+        <MatrizPorArea areas={unidades} anio={anio} riesgos={lista} matrices={listaMatrices}
           areaInicial={accionAlta ? area : null} accionInicial={accionAlta} onAccionHecha={() => setAccionAlta(null)}
           propsMatriz={(a) => ({
             riesgos: lista, setRiesgos, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, onVerPM: verPM,
-            direccion: normalizarDireccion(a.direccion || ''), ...permisosDe(a.nombre),
+            direccion: a.direccion || '', ...permisosDe(a.nombre),
           })} />
       )}
 
@@ -163,8 +168,12 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
           {puedeTodasAreas && (
             <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
               de
-              <select value={area} onChange={(e) => setAreaSel(e.target.value)} className="p-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
-                {areasCatalogo.map((a) => <option key={a.nombre} value={a.nombre}>{a.nombre}</option>)}
+              <select value={area} onChange={(e) => setAreaSel(e.target.value)} className="p-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold max-w-xs">
+                {Object.entries(TIPOS_UNIDAD).map(([tipo, etiqueta]) => (
+                  <optgroup key={tipo} label={`${etiqueta === 'Área' ? 'Áreas' : `${etiqueta === 'Dirección' ? 'Direcciones' : 'Subdirecciones'}`}`}>
+                    {unidades.filter((u) => u.tipo === tipo).map((u) => <option key={u.nombre} value={u.nombre}>{u.nombre}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </label>
           )}
@@ -185,11 +194,13 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
 
       {actual.id === 'informes' && (
         <InformeRiesgos lista={oficiales} enCaptura={enCaptura} planesMejora={planesMejora} areasDetalle={areasDetalle} matrices={listaMatrices}
+          unidades={unidades} direccionesDetalle={direccionesDetalle} setDireccionesDetalle={setDireccionesDetalle} esAdmin={esAdmin}
+          sintesisOrganismo={sintesisOrganismo || {}} setSintesisOrganismo={setSintesisOrganismo} todosLosRiesgos={lista}
           anio={anio} puedeTodasAreas={puedeTodasAreas} areaUsuario={areaUsuario} usuarioLogueado={usuarioLogueado} />
       )}
 
       {actual.id === 'revision' && esAdmin && (
-        <RevisionMatrices anio={anio} areas={areasCatalogo} riesgos={lista} setRiesgos={setRiesgos} matrices={listaMatrices}
+        <RevisionMatrices anio={anio} areas={unidades} riesgos={lista} setRiesgos={setRiesgos} matrices={listaMatrices}
           guardarMatriz={guardarMatriz} planesMejora={planesMejora} setPlanesMejora={setPlanesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />
       )}
     </div>
