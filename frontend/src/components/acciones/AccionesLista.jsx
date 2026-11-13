@@ -6,6 +6,8 @@ import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import PorAbrirPanel from '../common/PorAbrirPanel';
 import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
+import ReportesCorreccionPanel from './ReportesCorreccionPanel';
+import { leerEstadoTexto } from '../../services/estadoService';
 import CampoFecha from '../common/CampoFecha';
 
 const noConformidadDe = (ac) => ac.descripcion_no_conformidad_final || ac.descripcion_no_conformidad_original || ac.descripcion_problema || '';
@@ -72,6 +74,7 @@ export default function AccionesLista({
   
   // Filtrar acciones (estado canónico + búsqueda + vencimiento)
   const [pestana, setPestana] = useState('control');
+  const totalRC = (() => { try { return (JSON.parse(leerEstadoTexto('sgc-reportes-correccion') || '[]') || []).length; } catch { return null; } })();
   const porAbrir = accionesCorrectivas.filter(esPorAbrir);
   const enControl = accionesCorrectivas.filter((r) => !esPorAbrir(r));
   const accionesFiltradas = enControl.filter(ac => {
@@ -177,15 +180,22 @@ export default function AccionesLista({
       
       {/* Pestañas: control oficial vs detectadas por abrir */}
       <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-full sm:w-fit">
-        {[['control', 'En control', enControl.length], ['por_abrir', 'Por abrir', porAbrir.length]].map(([id, texto, n]) => (
+        {[['control', 'En control', enControl.length], ['por_abrir', 'Por abrir', porAbrir.length], ['rc', 'Reportes de corrección', totalRC]].map(([id, texto, n]) => (
           <button key={id} onClick={() => setPestana(id)}
             className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${pestana === id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
-            {texto} <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] ${id === 'por_abrir' && n > 0 ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-700'}`}>{n}</span>
+            {texto} {n != null && <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] ${id === 'por_abrir' && n > 0 ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-700'}`}>{n}</span>}
           </button>
         ))}
       </div>
 
-      {pestana === 'por_abrir' ? (
+      {pestana === 'rc' ? (
+        <div className="space-y-3">
+          <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            Reportes de corrección (RC) de los indicadores de bajo impacto fuera de meta. Las acciones correctivas generadas por indicadores están en <strong>En control</strong> con origen "Indicador".
+          </p>
+          <ReportesCorreccionPanel usuarioLogueado={usuarioLogueado} />
+        </div>
+      ) : pestana === 'por_abrir' ? (
         <PorAbrirPanel tipo="AC" registros={porAbrir} onVer={handleVer} setRegistros={setAccionesCorrectivas} />
       ) : (<>
       {/* ── FILTROS MÓVILES COMPACTOS (< md) ── */}
