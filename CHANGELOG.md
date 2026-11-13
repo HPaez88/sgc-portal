@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T05:30Z · @claude-code · [FIX] · El logo no se veía en producción
+El servidor solo entrega una lista fija de archivos de la raíz (manifest, sw.js, favicon); se agrega logo-oomapasc.png. Antes se mostraba la imagen rota en el menú y en el inicio de sesión.
+- Deploy: SI
+
 ## 2026-11-14T05:00Z · @claude-code · [FIX] · Catálogos en orden alfabético y búsqueda sin acentos
 @human no encontraba en Usuarios del Sistema a los encargados creados desde la ficha del área (Ada Liz Badillo, Arturo Valenzuela). Se verificó que sí existen en el servidor y que la API los devuelve. Cambios: la pestaña Usuarios recarga la lista del servidor al abrirse; búsqueda sin acentos ni mayúsculas y por varias palabras ("supervision" encuentra "Supervisión", "hector paez" encuentra "Héctor Manuel Páez"), también por dirección; catálogos de áreas, direcciones, procesos y usuarios en orden alfabético, igual que las listas para elegir área, dirección, subdirección y encargado.
 - Deploy: SI

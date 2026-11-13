@@ -216,7 +216,10 @@ def health():
 
 
 _DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
-_RAIZ_PWA = {"manifest.webmanifest": "application/manifest+json", "sw.js": "application/javascript", "favicon.svg": "image/svg+xml"}
+_RAIZ_PWA = {
+    "manifest.webmanifest": "application/manifest+json", "sw.js": "application/javascript", "favicon.svg": "image/svg+xml",
+    "logo-oomapasc.png": "image/png",  # logo institucional (menú e inicio de sesión)
+}
 
 
 @app.get("/{archivo}", include_in_schema=False)
