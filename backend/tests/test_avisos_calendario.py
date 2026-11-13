@@ -9,8 +9,8 @@ def test_ejemplo_indicadores_cuando_el_10_es_sabado():
     assert date(2026, 10, 10).weekday() == 5
     etapas = dict(cal.etapas_indicadores(2026, 10))
     assert etapas["ULTIMO_RECORDATORIO"] == date(2026, 10, 9)
-    assert etapas["EXHORTO"] == date(2026, 10, 12)
-    assert etapas["OFICIO"] == date(2026, 10, 16)
+    assert etapas["AVISO_INCUMPLIMIENTO"] == date(2026, 10, 12)
+    assert etapas["OFICIO_EXHORTO"] == date(2026, 10, 16)
     assert etapas["AVISO"] == date(2026, 10, 1)  # jueves
 
 
@@ -26,12 +26,12 @@ def test_vencimiento_de_accion():
     assert e["RECORDATORIO_10"] == date(2026, 11, 20)          # viernes
     assert e["RECORDATORIO_5"] == date(2026, 11, 25)           # miércoles
     assert e["VENCE_HOY"] == date(2026, 11, 30)                # el mismo día también se recuerda
-    assert e["EXHORTO"] == date(2026, 12, 1)
-    assert e["OFICIO"] == date(2026, 12, 7)
+    assert e["AVISO_INCUMPLIMIENTO"] == date(2026, 12, 1)
+    assert e["OFICIO_EXHORTO"] == date(2026, 12, 7)
     # recordatorio que cae en domingo se adelanta al viernes
     assert dict(cal.etapas_vencimiento(date(2026, 12, 7)))["RECORDATORIO_15"] == date(2026, 11, 20)
     # vencimiento en sábado se recorre al lunes
-    assert dict(cal.etapas_vencimiento(date(2026, 11, 28)))["EXHORTO"] == date(2026, 12, 1)
+    assert dict(cal.etapas_vencimiento(date(2026, 11, 28)))["AVISO_INCUMPLIMIENTO"] == date(2026, 12, 1)
 
 
 def test_etapa_de_hoy_no_repite_ni_manda_atrasadas():
@@ -43,4 +43,4 @@ def test_etapa_de_hoy_no_repite_ni_manda_atrasadas():
     assert cal.etapa_de_hoy(etapas, date(2026, 11, 23)) == "RECORDATORIO_10"
     assert cal.etapa_de_hoy(etapas, date(2026, 11, 14)) is None  # sábado: no sale nada
     assert cal.etapa_de_hoy(etapas, date(2026, 11, 30), ["RECORDATORIO_5"]) == "VENCE_HOY"
-    assert cal.etapa_de_hoy(etapas, date(2026, 12, 1), ["VENCE_HOY"]) == "EXHORTO"
+    assert cal.etapa_de_hoy(etapas, date(2026, 12, 1), ["VENCE_HOY"]) == "AVISO_INCUMPLIMIENTO"

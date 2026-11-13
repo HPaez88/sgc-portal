@@ -5,11 +5,13 @@ Reglas acordadas con @human (2026-11-14):
 - Los correos salen solo de lunes a viernes.
 - Acciones correctivas / planes de mejora (incluye los planes que vienen de la matriz de riesgos):
   recordatorios 15, 10 y 5 días antes (si cae en fin de semana se ADELANTA al viernes anterior) y el
-  mismo día del vencimiento ("vence hoy"),
-  exhorto 1 día después del vencimiento y oficio 5 días después del exhorto (si cae en fin de semana,
-  al lunes siguiente). La fecha de vencimiento nunca debe caer en fin de semana (se recorre al lunes).
+  mismo día del vencimiento ("vence hoy"); al día siguiente, AVISO DE INCUMPLIMIENTO por correo (advierte que
+  Dirección General emitirá oficio de exhorto) y 5 días después el OFICIO DE EXHORTO impreso: lo emite y firma
+  el Director General en turno, dirigido al gerente del área (encargados) con copia al director del área
+  (fin de semana → lunes siguiente). La fecha de vencimiento nunca debe caer en fin de semana (se recorre al lunes).
 - Indicadores (mensual, fecha límite el día 10): aviso el 1, recordatorio el 5 (fin de semana → lunes
-  siguiente), último recordatorio el 10 (fin de semana → viernes anterior), exhorto el 11 y oficio el 16
+  siguiente), último recordatorio el 10 (fin de semana → viernes anterior), aviso de incumplimiento el 11
+  y oficio de exhorto el 16
   (fin de semana → lunes siguiente).
 """
 from datetime import date, timedelta
@@ -19,9 +21,9 @@ from typing import Iterable, Optional
 FERIADOS: frozenset = frozenset()
 
 RECORDATORIOS_ANTES = (15, 10, 5)
-DIAS_EXHORTO_DESPUES = 1
-DIAS_OFICIO_DESPUES_EXHORTO = 5
-INDICADORES_DIAS = {"AVISO": 1, "RECORDATORIO": 5, "ULTIMO_RECORDATORIO": 10, "EXHORTO": 11, "OFICIO": 16}
+DIAS_AVISO_DESPUES = 1
+DIAS_OFICIO_DESPUES_AVISO = 5
+INDICADORES_DIAS = {"AVISO": 1, "RECORDATORIO": 5, "ULTIMO_RECORDATORIO": 10, "AVISO_INCUMPLIMIENTO": 11, "OFICIO_EXHORTO": 16}
 
 
 def es_habil(d: date) -> bool:
@@ -49,10 +51,10 @@ def etapas_vencimiento(vence: date) -> list[tuple[str, date]]:
     """Etapas de una acción o plan con su fecha de envío (ordenadas)."""
     vence = vencimiento_habil(vence)
     etapas = [(f"RECORDATORIO_{n}", anterior_habil(vence - timedelta(days=n))) for n in RECORDATORIOS_ANTES]
-    exhorto = siguiente_habil(vence + timedelta(days=DIAS_EXHORTO_DESPUES))
-    oficio = siguiente_habil(exhorto + timedelta(days=DIAS_OFICIO_DESPUES_EXHORTO))
+    aviso = siguiente_habil(vence + timedelta(days=DIAS_AVISO_DESPUES))
+    oficio = siguiente_habil(aviso + timedelta(days=DIAS_OFICIO_DESPUES_AVISO))
     # El mismo día del vencimiento también se recuerda (último día para atender).
-    return etapas + [("VENCE_HOY", vence), ("EXHORTO", exhorto), ("OFICIO", oficio)]
+    return etapas + [("VENCE_HOY", vence), ("AVISO_INCUMPLIMIENTO", aviso), ("OFICIO_EXHORTO", oficio)]
 
 
 def etapas_indicadores(anio: int, mes: int) -> list[tuple[str, date]]:
