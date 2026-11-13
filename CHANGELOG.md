@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T10:30Z · @claude-code · [UX] · Destinatarios de correo con autollenado desde el directorio
+Pedido de @human para evitar errores al escribir correos. El campo "Para" de "Mandar correo" busca en el directorio del portal (usuarios activos, titulares de área y de dirección, encargados del SGC) por nombre, correo, área o cargo, sin acentos y por varias palabras; cada destinatario queda como etiqueta con su nombre, se navega con flechas/Enter, los correos mal escritos no entran y los que no están en el directorio se marcan en ámbar. Lógica pura en constants/directorio.js con pruebas. Se aplica a todos los lugares que usan el modal (acciones correctivas, replanteos, usuarios).
+- Deploy: SI
+
 ## 2026-11-14T09:40Z · @claude-code · [FEATURE] · Matriz por área en niveles y hoja de análisis del riesgo en el Plan de Mejora
 Propuesta de @human. (1) Matriz por área (quien ve todas las áreas): lista de las áreas con su resumen (riesgos, oportunidades, altos, por completar, estado de la matriz), búsqueda y filtros (con registros, por revisar, con observaciones, aceptadas, sin iniciar); al desplegar un área se ven Riesgos y Oportunidades por separado, cada registro y su desarrollo completo. "Dar de alta" desde Seguimiento abre directo el área elegida. (2) Los Planes de Mejora que nacen de la matriz tienen una hoja extra "Análisis del riesgo / de la oportunidad (OOMRSC-37)" con todo el formato de identificación (contexto, resultado, proceso, descripción, causa, consecuencia, controles, evaluación, tratamiento, plan aprobado, dictamen e historial). Verificado en copia local (matriz → Ir al plan de mejora → hoja de análisis).
 - Deploy: SI

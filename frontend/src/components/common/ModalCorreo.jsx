@@ -1,11 +1,13 @@
 // Correo libre para administradores: cualquier aviso que no tenga plantilla.
 // Si el servidor tiene correo (Resend) sale desde ahí; si no, abre el correo del usuario (mailto).
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Mail } from 'lucide-react';
 import ModalBase from './ModalBase';
 import { api } from '../../services/apiClient';
 import { useToast } from './Toast';
 import { useSGC } from '../../SGCContext';
+import CampoDestinatarios from './CampoDestinatarios';
+import { construirDirectorio } from '../../constants/directorio';
 
 export const ROLES_CORREO = ['Super Admin', 'Admin'];
 export const puedeMandarCorreo = (usuario) => ROLES_CORREO.includes(usuario?.rol);
@@ -13,9 +15,10 @@ export const puedeMandarCorreo = (usuario) => ROLES_CORREO.includes(usuario?.rol
 const campo = 'w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none';
 
 export default function ModalCorreo({ abierto, onClose, inicial = {}, folio = '' }) {
-  const { registrarMovimiento, usuarioLogueado } = useSGC();
+  const { registrarMovimiento, usuarioLogueado, usuarios = [], areasDetalle = [], direccionesDetalle = [] } = useSGC();
+  const directorio = useMemo(() => construirDirectorio({ usuarios, areasDetalle, direccionesDetalle }), [usuarios, areasDetalle, direccionesDetalle]);
   const toast = useToast();
-  const [para, setPara] = useState('');
+  const [para, setPara] = useState([]); // correos elegidos del directorio
   const [asunto, setAsunto] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -23,13 +26,13 @@ export default function ModalCorreo({ abierto, onClose, inicial = {}, folio = ''
 
   useEffect(() => {
     if (!abierto) return;
-    setPara(inicial.para || '');
+    setPara(String(inicial.para || '').split(/[,;\s]+/).map((c) => c.trim().toLowerCase()).filter(Boolean));
     setAsunto(inicial.asunto || '');
     setMensaje(inicial.mensaje || '');
     api.get('/api/v1/notificaciones/estado').then((r) => setServidor(r.ok && r.data?.activo ? r.data.remitente : null));
   }, [abierto]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const destinatarios = para.split(/[,;\s]+/).map((c) => c.trim()).filter(Boolean);
+  const destinatarios = para;
   const valido = destinatarios.length > 0 && asunto.trim().length >= 3 && mensaje.trim().length >= 3;
 
   const registrar = (via) => registrarMovimiento?.({
@@ -72,9 +75,10 @@ export default function ModalCorreo({ abierto, onClose, inicial = {}, folio = ''
       )}
     >
       <div className="space-y-4">
-        <label className="block text-xs font-bold text-slate-700">Para (separa varios con coma)
-          <input type="text" value={para} onChange={(e) => setPara(e.target.value)} className={`${campo} mt-1.5`} placeholder="correo@oomapasc.gob.mx" />
-        </label>
+        <div>
+          <label htmlFor="correo-para" className="block text-xs font-bold text-slate-700 mb-1.5">Para <span className="font-normal text-slate-500">· escribe un nombre, área o correo y elige de la lista</span></label>
+          <CampoDestinatarios id="correo-para" valor={para} onChange={setPara} directorio={directorio} />
+        </div>
         <label className="block text-xs font-bold text-slate-700">Asunto
           <input type="text" value={asunto} onChange={(e) => setAsunto(e.target.value)} maxLength={200} className={`${campo} mt-1.5`} />
         </label>
