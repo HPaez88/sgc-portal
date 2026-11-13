@@ -42,6 +42,87 @@ def limpiar_destinatarios(correos) -> list[str]:
     return out
 
 
+# ───────────── Diseño institucional (logo OOMAPAS, azul #005B86, franja verde #76BE44) ─────────────
+AZUL_OSCURO, VERDE, GRIS = "#005B86", "#76BE44", "#64748b"
+LEYENDA = "Organismo Operador Municipal de Agua Potable, Alcantarillado y Saneamiento de Cajeme · Sistema de Gestión de la Calidad"
+
+
+def url_portal(request=None) -> str:
+    """URL pública del portal: PORTAL_URL, o https://DOMAIN, o la del request."""
+    if os.getenv("PORTAL_URL"):
+        return os.environ["PORTAL_URL"].rstrip("/")
+    if os.getenv("DOMAIN"):
+        return f"https://{os.environ['DOMAIN']}"
+    return str(request.base_url).rstrip("/") if request is not None else ""
+
+
+def boton(texto: str, enlace: str) -> str:
+    e = html.escape
+    return (f'<p style="margin:22px 0"><a href="{e(enlace)}" style="background:{AZUL_OSCURO};color:#fff;padding:11px 18px;'
+            f'border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">{e(texto)}</a></p>')
+
+
+def marco(etiqueta: str, titulo: str, contenido_html: str, url: str) -> str:
+    """Envoltura común de todos los correos: logo, título, contenido y pie institucional."""
+    e = html.escape
+    if url:
+        logo = f'<img src="{e(url)}/logo-oomapasc.png" alt="OOMAPAS de Cajeme" height="44" style="display:block;border:0">'
+    else:
+        logo = f'<div style="font-size:20px;font-weight:bold;color:{AZUL_OSCURO}">OOMAPAS de Cajeme</div>'
+    return f"""<div style="background:#f1f5f9;padding:24px 12px">
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;color:#1e293b;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+  <div style="padding:18px 24px 14px">{logo}</div>
+  <div style="height:4px;background:{AZUL_OSCURO}"></div><div style="height:2px;background:{VERDE}"></div>
+  <div style="padding:22px 24px 8px">
+    <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:{VERDE};text-transform:uppercase">{e(etiqueta)}</div>
+    <div style="font-size:20px;font-weight:bold;color:{AZUL_OSCURO};margin-top:4px">{e(titulo)}</div>
+  </div>
+  <div style="padding:6px 24px 22px;font-size:14px;line-height:1.55">{contenido_html}</div>
+  <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;color:{GRIS}">{e(LEYENDA)}<br>Correo generado por el Portal SGC. Nunca compartas tu contraseña.</div>
+</div></div>"""
+
+
+def _fila(etiqueta: str, valor_html: str) -> str:
+    return (f'<tr><td style="padding:7px 10px;color:{GRIS};width:150px;border-bottom:1px solid #eef2f6">{html.escape(etiqueta)}</td>'
+            f'<td style="padding:7px 10px;border-bottom:1px solid #eef2f6">{valor_html}</td></tr>')
+
+
+def plantilla_acceso(nombre: str, email: str, password_temporal: str, url: str, motivo: str = "alta") -> tuple[str, str, str]:
+    """Datos de acceso con contraseña temporal. motivo: 'alta' (usuario nuevo) o 'restablecer'."""
+    e = html.escape
+    nuevo = motivo == "alta"
+    asunto = "Tu acceso al Portal SGC de OOMAPAS de Cajeme" if nuevo else "Nueva contraseña temporal — Portal SGC"
+    intro = ("Se creó tu cuenta en el Portal del Sistema de Gestión de la Calidad." if nuevo
+             else "Se generó una nueva contraseña temporal para tu cuenta del Portal SGC.")
+    texto = (f"Hola {nombre},\n\n{intro}\n\nPortal: {url}\nUsuario: {email}\nContraseña temporal: {password_temporal}\n\n"
+             "Al entrar, el portal te pedirá cambiarla por una personal. Si no solicitaste este acceso, avisa al SGC.\n\n"
+             "Sistema de Gestión de la Calidad\nOOMAPAS de Cajeme")
+    enlace = f'<a href="{e(url)}" style="color:{AZUL_OSCURO}">{e(url)}</a>'
+    clave = ('<span style="font-family:Consolas,monospace;font-size:16px;font-weight:bold;letter-spacing:1px;'
+             f'background:#f1f5f9;padding:3px 8px;border-radius:6px">{e(password_temporal)}</span>')
+    contenido = (f"<p>Hola <b>{e(nombre)}</b>,</p><p>{e(intro)}</p>"
+                 '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:14px">'
+                 f"{_fila('Portal', enlace)}{_fila('Usuario', f'<b>{e(email)}</b>')}{_fila('Contraseña temporal', clave)}"
+                 f"</table>{boton('Entrar al Portal SGC', url)}"
+                 '<p style="font-size:13px;color:#475569">Al entrar, el portal te pedirá cambiarla por una contraseña personal. '
+                 "Si después la olvidas, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio.</p>")
+    return asunto, marco("Accesos", "Tu acceso al portal" if nuevo else "Contraseña temporal", contenido, url), texto
+
+
+def plantilla_recuperacion(nombre: str, enlace: str, minutos: int, url: str) -> tuple[str, str, str]:
+    """Enlace de un solo uso para que el usuario ponga una contraseña nueva."""
+    e = html.escape
+    asunto = "Recupera tu contraseña — Portal SGC"
+    texto = (f"Hola {nombre},\n\nRecibimos una solicitud para recuperar tu contraseña del Portal SGC.\n"
+             f"Abre este enlace (vale {minutos} minutos y se usa una sola vez):\n{enlace}\n\n"
+             "Si no la solicitaste, ignora este correo: tu contraseña no cambia.\n\nSistema de Gestión de la Calidad\nOOMAPAS de Cajeme")
+    contenido = (f"<p>Hola <b>{e(nombre)}</b>,</p><p>Recibimos una solicitud para recuperar tu contraseña del Portal SGC.</p>"
+                 f"{boton('Poner una contraseña nueva', enlace)}"
+                 f'<p style="font-size:13px;color:#475569">El enlace vale <b>{minutos} minutos</b> y se usa una sola vez. '
+                 "Si no la solicitaste, ignora este correo: tu contraseña no cambia.</p>")
+    return asunto, marco("Seguridad", "Recuperar contraseña", contenido, url), texto
+
+
 def plantilla_apertura(tipo: str, area: str, origen: str, referencia: str, descripcion: str,
                        remitente_nombre: str, url_portal: str) -> tuple[str, str, str]:
     """(asunto, html, texto) del aviso de apertura de AC/PM."""
@@ -58,24 +139,14 @@ def plantilla_apertura(tipo: str, area: str, origen: str, referencia: str, descr
         f"Atentamente,\n{remitente_nombre}\nSistema de Gestión de Calidad"
     )
     e = html.escape
-    cuerpo = f"""<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;color:#1e293b">
-  <div style="background:#0b192c;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0">
-    <div style="font-size:12px;color:#7dd3fc;letter-spacing:1px">PORTAL SGC · {e(formato)}</div>
-    <div style="font-size:18px;font-weight:bold;margin-top:4px">Apertura requerida</div>
-  </div>
-  <div style="border:1px solid #e2e8f0;border-top:0;padding:20px;border-radius:0 0 12px 12px">
-    <p>Buen día,</p>
-    <p>Se detectó <b>{e(que)}</b> que requiere su apertura oficial en el Portal SGC.</p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0">
-      <tr><td style="padding:6px 0;color:#64748b;width:110px">Origen</td><td style="padding:6px 0"><b>{e(origen_txt)}</b></td></tr>
-      <tr><td style="padding:6px 0;color:#64748b">Área</td><td style="padding:6px 0">{e(area or '—')}</td></tr>
-      <tr><td style="padding:6px 0;color:#64748b;vertical-align:top">Descripción</td><td style="padding:6px 0">{e(descripcion[:1500])}</td></tr>
-    </table>
-    <p style="margin:20px 0"><a href="{e(url_portal)}" style="background:#0272c4;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Abrir el Portal SGC</a></p>
-    <p style="font-size:13px;color:#475569">Módulo <b>{e(modulo)}</b> → pestaña <b>"Por abrir"</b>: complete el análisis y envíelo al SGC.</p>
-    <p style="font-size:13px;color:#475569">Atentamente,<br>{e(remitente_nombre)}<br>Sistema de Gestión de Calidad</p>
-  </div>
-</div>"""
+    contenido = ("<p>Buen día,</p>"
+                 f"<p>Se detectó <b>{e(que)}</b> que requiere su apertura oficial en el Portal SGC.</p>"
+                 '<table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0">'
+                 f"{_fila('Origen', f'<b>{e(origen_txt)}</b>')}{_fila('Área', e(area or '—'))}{_fila('Descripción', e(descripcion[:1500]))}</table>"
+                 f"{boton('Abrir el Portal SGC', url_portal)}"
+                 f'<p style="font-size:13px;color:#475569">Módulo <b>{e(modulo)}</b> → pestaña <b>"Por abrir"</b>: complete el análisis y envíelo al SGC.</p>'
+                 f'<p style="font-size:13px;color:#475569">Atentamente,<br>{e(remitente_nombre)}<br>Sistema de Gestión de Calidad</p>')
+    cuerpo = marco(f"Portal SGC · {formato}", "Apertura requerida", contenido, url_portal)
     return asunto, cuerpo, texto
 
 
@@ -84,17 +155,9 @@ def plantilla_libre(asunto: str, mensaje: str, remitente_nombre: str, url_portal
     texto = f"{mensaje}\n\n--\n{remitente_nombre}\nSistema de Gestión de Calidad · {url_portal}"
     e = html.escape
     parrafos = "".join(f"<p>{e(p)}</p>" for p in mensaje.split("\n") if p.strip())
-    cuerpo = f"""<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;color:#1e293b">
-  <div style="background:#0b192c;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0">
-    <div style="font-size:12px;color:#7dd3fc;letter-spacing:1px">PORTAL SGC · AVISO</div>
-    <div style="font-size:18px;font-weight:bold;margin-top:4px">{e(asunto)}</div>
-  </div>
-  <div style="border:1px solid #e2e8f0;border-top:0;padding:20px;border-radius:0 0 12px 12px">
-    {parrafos}
-    <p style="margin:20px 0"><a href="{e(url_portal)}" style="background:#0272c4;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Abrir el Portal SGC</a></p>
-    <p style="font-size:13px;color:#475569">{e(remitente_nombre)}<br>Sistema de Gestión de Calidad</p>
-  </div>
-</div>"""
+    contenido = (f"{parrafos}{boton('Abrir el Portal SGC', url_portal)}"
+                 f'<p style="font-size:13px;color:#475569">{e(remitente_nombre)}<br>Sistema de Gestión de Calidad</p>')
+    cuerpo = marco("Portal SGC · Aviso", asunto, contenido, url_portal)
     return asunto, cuerpo, texto
 
 
@@ -113,5 +176,9 @@ def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, 
         raise HTTPException(status_code=502, detail="No se pudo contactar al servicio de correo.") from ex
     if r.status_code >= 300:
         log.error("Resend rechazó el envío (%s): %s", r.status_code, r.text[:300])
+        if r.status_code == 403:
+            # Dominio sin verificar o remitente de prueba: Resend solo entrega a la cuenta dueña.
+            raise HTTPException(status_code=502, detail="El dominio del correo institucional aún no está verificado en Resend; "
+                                                        "por ahora solo se puede enviar a la cuenta dueña.")
         raise HTTPException(status_code=502, detail="El servicio de correo rechazó el envío.")
     return r.json().get("id", "")

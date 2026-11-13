@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getRolColor } from '../../constants';
 import { useSGC } from '../../SGCContext';
 import { api } from '../../services/apiClient';
@@ -7,6 +7,8 @@ import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import ContenedorModal from '../common/ContenedorModal';
 import EncargadosSGC from './EncargadosSGC';
 import SubdireccionesEditor from './SubdireccionesEditor';
+import { ModalRestablecer, ModalAccesosMasivos, AvisoCorreoInactivo } from './AccesosCorreo';
+import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
 import { cambioEncargado } from '../../constants/workflow';
 import {
   Users,
@@ -73,7 +75,16 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   const [modalProceso, setModalProceso] = useState({ show: false, esEdicion: false, data: { id: null, clave: '', nombre: '', tipo: 'Operativo', areaResponsable: '', areasInvolucradas: [] } });
   const [busquedaAreaModal, setBusquedaAreaModal] = useState('');
   const [modalUsuario, setModalUsuario] = useState({ show: false, esEdicion: false, data: { id: null, nombre: '', email: '', telefono: '', area: '', direccion: '', rol: 'Usuario' } });
-  const [claveTemporal, setClaveTemporal] = useState(null); // { nombre, email, password } se muestra una sola vez
+  const [claveTemporal, setClaveTemporal] = useState(null); // { nombre, email, password, correo } se muestra una sola vez
+  // Accesos por correo
+  const [correoActivo, setCorreoActivo] = useState(false);
+  const [seleccion, setSeleccion] = useState(() => new Set());
+  const [usuarioRestablecer, setUsuarioRestablecer] = useState(null);
+  const [masivoAbierto, setMasivoAbierto] = useState(false);
+  const [correoPara, setCorreoPara] = useState(null);
+  useEffect(() => {
+    api.get('/api/v1/notificaciones/estado').then((r) => setCorreoActivo(Boolean(r.ok && r.data?.activo)));
+  }, []);
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: '', name: '', action: null });
   const [mensajeExito, setMensajeExito] = useState('');
   // Al crear un usuario desde el modal de área/dirección, se agrega como encargado de ahí.
@@ -548,6 +559,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     const cuerpo = {
       nombre: nombre.trim(), email: email.trim().toLowerCase(), telefono: modalUsuario.data.telefono || null,
       area: area.trim(), direccion: modalUsuario.data.direccion || null, rol, activo: modalUsuario.data.activo ?? true,
+      ...(modalUsuario.esEdicion ? {} : { enviar_correo: correoActivo && modalUsuario.data.enviar_correo !== false }),
     };
     const r = modalUsuario.esEdicion
       ? await api.put(`/api/v1/auth/usuarios/${modalUsuario.data.id}`, cuerpo)
@@ -558,7 +570,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     if (modalUsuario.esEdicion) {
       notificar(`✓ Usuario "${nombre}" actualizado correctamente`);
     } else {
-      setClaveTemporal({ nombre, email: cuerpo.email, password: r.data.password_temporal });
+      setClaveTemporal({ nombre, email: cuerpo.email, password: r.data.password_temporal, correo: cuerpo.enviar_correo ? { enviado: r.data.correo_enviado, error: r.data.correo_error } : null });
       const agregar = (m) => ({ ...m, data: { ...m.data, encargados_sgc: [...(m.data.encargados_sgc || []), cuerpo.email] } });
       if (destinoNuevoUsuario === 'area') setModalArea(agregar);
       if (destinoNuevoUsuario === 'direccion') setModalDireccion(agregar);
@@ -567,17 +579,25 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     }
   };
 
-  const restablecerPassword = async (user) => {
-    const r = await api.post(`/api/v1/auth/usuarios/${user.id}/restablecer-password`);
-    if (!r.ok) return toast.error(r.error?.message || r.error?.detail || 'No se pudo restablecer la contraseña.');
+  const restablecerPassword = (user) => setUsuarioRestablecer(user);
+
+  const alRestablecer = async (datos, porCorreo) => {
+    const user = usuarioRestablecer;
+    setUsuarioRestablecer(null);
     await recargarUsuarios();
-    setClaveTemporal({ nombre: user.nombre, email: user.email, password: r.data.password_temporal });
+    setClaveTemporal({ nombre: user.nombre, email: user.email, password: datos.password_temporal, correo: porCorreo ? { enviado: datos.correo_enviado, error: datos.correo_error } : null });
     registrarMovimiento({
       modulo: 'SEGURIDAD', accion: 'RESTABLECER_PASSWORD',
-      descripcion: `Contraseña restablecida para "${user.nombre}" (${user.email})`,
+      descripcion: `Contraseña restablecida para "${user.nombre}" (${user.email})${porCorreo && datos.correo_enviado ? ' y enviada por correo' : ''}`,
       detalles: 'Se generó una contraseña temporal; el usuario debe cambiarla al entrar.', folio: 'SEG-USER'
     });
   };
+
+  const alternarSeleccion = (id) => setSeleccion((prev) => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
 
   const eliminarUsuario = (user) => {
     if (!puedeEliminarCatalogo) {
@@ -1199,10 +1219,33 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
             </div>
           </div>
 
+          {usuarioLogueado?.puede_restablecer && (
+            <div className="px-4 sm:px-5 space-y-2">
+              {!correoActivo && <AvisoCorreoInactivo />}
+              <div className="flex flex-wrap items-center gap-3 bg-slate-50 border border-slate-200 border-l-4 border-l-marca-azul-oscuro rounded-xl px-4 py-2.5">
+                <p className="text-xs text-slate-700 flex-1 min-w-[14rem]">
+                  <strong className="text-slate-900">Accesos por correo:</strong> marca usuarios y envíales su acceso (contraseña temporal nueva) con el diseño institucional.
+                </p>
+                {seleccion.size > 0 && <button type="button" onClick={() => setSeleccion(new Set())} className="text-xs font-semibold text-slate-600 hover:underline">Quitar selección</button>}
+                <button type="button" disabled={!correoActivo || seleccion.size === 0} onClick={() => setMasivoAbierto(true)}
+                  className="px-3.5 py-1.5 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 disabled:opacity-40 inline-flex items-center gap-1.5">
+                  <Mail size={14} /> Enviar accesos ({seleccion.size})
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 border-y border-slate-200 text-slate-600 uppercase font-bold tracking-wider text-[10px]">
                 <tr>
+                  {usuarioLogueado?.puede_restablecer && (
+                    <th className="py-3 pl-4 w-8">
+                      <input type="checkbox" aria-label="Seleccionar todos los usuarios activos visibles"
+                        checked={usuariosFiltrados.some((u) => u.activo !== false && u.id !== usuarioLogueado?.id) && usuariosFiltrados.filter((u) => u.activo !== false && u.id !== usuarioLogueado?.id).every((u) => seleccion.has(u.id))}
+                        onChange={(e) => setSeleccion(e.target.checked ? new Set(usuariosFiltrados.filter((u) => u.activo !== false && u.id !== usuarioLogueado?.id).map((u) => u.id)) : new Set())} />
+                    </th>
+                  )}
                   <th className="py-3 px-4">Usuario</th>
                   <th className="py-3 px-4">Correo Institucional</th>
                   <th className="py-3 px-4">Teléfono</th>
@@ -1216,7 +1259,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               <tbody className="divide-y divide-slate-100">
                 {usuariosFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center text-slate-400">
+                    <td colSpan="9" className="py-8 text-center text-slate-400">
                       No se encontraron usuarios coincidentes.
                     </td>
                   </tr>
@@ -1226,7 +1269,14 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     const esEncargado = u.rol === 'Encargado';
                     const esAuditor = u.rol === 'Auditor';
                     return (
-                      <tr key={u.id} className={`hover:bg-slate-50/60 transition-colors ${esSuperAdmin ? 'bg-amber-50/20' : ''}`}>
+                      <tr key={u.id} className={`hover:bg-slate-50/60 transition-colors ${seleccion.has(u.id) ? 'bg-sky-50/60' : esSuperAdmin ? 'bg-amber-50/20' : ''}`}>
+                        {usuarioLogueado?.puede_restablecer && (
+                          <td className="py-3 pl-4">
+                            {u.activo !== false && u.id !== usuarioLogueado?.id && (
+                              <input type="checkbox" aria-label={`Seleccionar a ${u.nombre}`} checked={seleccion.has(u.id)} onChange={() => alternarSeleccion(u.id)} />
+                            )}
+                          </td>
+                        )}
                         <td className="py-3 px-4 font-bold text-slate-900">
                           <div className="flex items-center gap-1.5">
                             {esSuperAdmin && <Crown size={13} className="text-amber-500" title="Super Administrador" />}
@@ -1270,6 +1320,11 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                             >
                               <Edit size={14} />
                             </button>
+                            {puedeMandarCorreo(usuarioLogueado) && (
+                              <button onClick={() => setCorreoPara(u)} className="p-1.5 text-slate-500 hover:text-marca-azul-oscuro hover:bg-sky-50 rounded-lg transition-colors cursor-pointer" title="Enviar un correo a este usuario">
+                                <Mail size={14} />
+                              </button>
+                            )}
                             {usuarioLogueado?.puede_restablecer && <button
                               onClick={() => restablecerPassword(u)}
                               className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
@@ -2339,6 +2394,14 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     : 'Al crear el usuario se genera una contraseña temporal que verás una sola vez. El usuario deberá cambiarla al entrar.'}
                 </span>
               </div>
+              {!modalUsuario.esEdicion && (
+                <label className={`flex items-start gap-2 p-3 rounded-lg border text-xs ${correoActivo ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                  <input type="checkbox" className="mt-0.5" disabled={!correoActivo}
+                    checked={correoActivo && modalUsuario.data.enviar_correo !== false}
+                    onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, enviar_correo: e.target.checked } })} />
+                  <span><strong>Enviarle sus datos de acceso por correo</strong> (diseño institucional).{!correoActivo && ' Disponible cuando se active el envío de correos.'}</span>
+                </label>
+              )}
             </div>
 
             <div className="flex gap-2.5 justify-end pt-3 border-t border-slate-100">
@@ -2369,6 +2432,9 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               Entrega esta contraseña a <strong>{claveTemporal.nombre}</strong> ({claveTemporal.email}) por un medio seguro.
               Solo se muestra <strong>una vez</strong>; al entrar deberá definir la suya.
             </p>
+            {claveTemporal.correo && (claveTemporal.correo.enviado
+              ? <p className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">✓ También se le envió por correo a {claveTemporal.email}.</p>
+              : <p className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">No se pudo enviar el correo: {claveTemporal.correo.error || 'error desconocido'}. Entrégasela por un medio seguro.</p>)}
             <div className="flex items-center gap-2 p-3 bg-slate-900 text-white rounded-xl font-mono text-base tracking-wider">
               <span className="flex-1 select-all">{claveTemporal.password}</span>
               <button
@@ -2386,6 +2452,19 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
           </div>
         </ContenedorModal>
       )}
+
+      <ModalRestablecer usuario={usuarioRestablecer} correoActivo={correoActivo} onClose={() => setUsuarioRestablecer(null)} onHecho={alRestablecer} />
+      {masivoAbierto && (
+        <ModalAccesosMasivos usuarios={usuariosList.filter((u) => seleccion.has(u.id))}
+          onClose={() => setMasivoAbierto(false)}
+          onHecho={(d) => {
+            recargarUsuarios();
+            setSeleccion(new Set());
+            registrarMovimiento({ modulo: 'SEGURIDAD', accion: 'ACCESOS_MASIVOS', descripcion: `Accesos enviados por correo a ${d.enviados} de ${d.resultados.length} usuario(s)`, detalles: d.resultados.map((x) => `${x.nombre || x.id}: ${x.enviado ? 'enviado' : x.error}`).join('; '), folio: 'SEG-USER' });
+          }} />
+      )}
+      <ModalCorreo abierto={Boolean(correoPara)} onClose={() => setCorreoPara(null)}
+        inicial={correoPara ? { para: correoPara.email, asunto: 'Portal SGC', mensaje: `Hola ${correoPara.nombre},\n\n` } : {}} />
 
       <ModalConfirmacionEliminar
         isOpen={confirmDelete.show}

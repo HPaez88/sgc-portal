@@ -139,3 +139,64 @@ def test_solo_super_admin_y_gescobar_restablecen_password(cliente):
     r = cliente.post("/api/v1/auth/cambiar-password", headers={"Authorization": f"Bearer {t_sa}"},
                      json={"password_actual": temporal, "password_nueva": "ClaveInicial2026"})
     assert r.status_code == 200, r.text
+
+
+# ───────────── Accesos por correo y recuperación autónoma (2026-11-14) ─────────────
+from backend.routers import auth as rutas_auth  # noqa: E402
+from backend.services import correo_service as correo  # noqa: E402
+
+
+@pytest.fixture
+def buzon(monkeypatch):
+    """Correo configurado y envíos capturados (no sale nada a internet)."""
+    monkeypatch.setenv("RESEND_API_KEY", "re_prueba")
+    monkeypatch.setenv("MAIL_FROM", "Portal SGC <sgc@prueba.mx>")
+    monkeypatch.setenv("PORTAL_URL", "https://sgc.prueba.mx")
+    monkeypatch.setattr(rutas_auth, "PAUSA_ENVIO", 0)
+    enviados = []
+    monkeypatch.setattr(correo, "enviar", lambda para, asunto, cuerpo, texto, responder_a=None: enviados.append(
+        {"para": para, "asunto": asunto, "html": cuerpo, "texto": texto}) or "id")
+    return enviados
+
+
+def test_plantillas_de_acceso_y_recuperacion_escapan_y_llevan_datos():
+    asunto, cuerpo, texto = correo.plantilla_acceso("<b>Ana</b>", "ana@x.mx", "Clave123xyz", "https://sgc.mx", "alta")
+    assert "Clave123xyz" in cuerpo and "Clave123xyz" in texto and "&lt;b&gt;Ana" in cuerpo
+    assert "logo-oomapasc.png" in cuerpo and "#005B86" in cuerpo
+    _, cuerpo2, _ = correo.plantilla_recuperacion("Ana", "https://sgc.mx/?recuperar=abc", 30, "https://sgc.mx")
+    assert "https://sgc.mx/?recuperar=abc" in cuerpo2 and "30 minutos" in cuerpo2
+
+
+def test_alta_manda_correo_de_acceso(cliente, buzon):
+    t = _token(cliente)
+    r = cliente.post("/api/v1/auth/usuarios", headers={"Authorization": f"Bearer {t}"},
+                     json={"nombre": "Correo Prueba", "email": "correo.prueba@oomapasc.gob.mx", "area": "SGC", "rol": "Usuario"})
+    assert r.status_code == 201 and r.json()["correo_enviado"] is True
+    assert buzon[-1]["para"] == ["correo.prueba@oomapasc.gob.mx"] and r.json()["password_temporal"] in buzon[-1]["texto"]
+
+
+def test_recuperacion_de_un_solo_uso(cliente, buzon):
+    email = "correo.prueba@oomapasc.gob.mx"
+    assert cliente.post("/api/v1/auth/recuperar", json={"email": "nadie@oomapasc.gob.mx"}).json()["ok"] is True
+    assert cliente.post("/api/v1/auth/recuperar", json={"email": email}).status_code == 200
+    token = buzon[-1]["texto"].split("?recuperar=")[1].split()[0]
+    # el token de recuperación no sirve como sesión
+    assert cliente.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+    r = cliente.post("/api/v1/auth/recuperar/confirmar", json={"token": token, "password_nueva": "MiClaveNueva2026"})
+    assert r.status_code == 200
+    assert _token(cliente, email, "MiClaveNueva2026")
+    r = cliente.post("/api/v1/auth/recuperar/confirmar", json={"token": token, "password_nueva": "OtraClave2026"})
+    assert r.status_code == 400  # ya se usó
+
+
+def test_accesos_masivos_no_cambia_la_clave_si_falla_el_correo(cliente, buzon, monkeypatch):
+    t = _token(cliente)
+    h = {"Authorization": f"Bearer {t}"}
+    uid = next(u["id"] for u in cliente.get("/api/v1/auth/usuarios", headers=h).json() if u["email"] == "correo.prueba@oomapasc.gob.mx")
+
+    def falla(*a, **k):
+        raise HTTPException(status_code=502, detail="rechazado")
+    monkeypatch.setattr(correo, "enviar", falla)
+    r = cliente.post("/api/v1/auth/usuarios/accesos-masivos", headers=h, json={"ids": [uid]})
+    assert r.status_code == 200 and r.json()["enviados"] == 0
+    assert _token(cliente, "correo.prueba@oomapasc.gob.mx", "MiClaveNueva2026")  # sigue entrando con su clave

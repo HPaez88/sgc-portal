@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T08:00Z · @claude-code · [FEATURE] · Correos de accesos y recuperación autónoma de contraseña (Resend)
+Diseño institucional único para todos los correos (logo, azul #005B86, franja verde, pie del organismo): correo_service.marco(); también los avisos de apertura y libres. Nuevo: (1) al crear un usuario, sus datos de acceso le llegan por correo (casilla, activada por omisión); (2) restablecer contraseña ofrece "Enviarla por correo al usuario" o "Solo mostrármela"; (3) envío masivo de accesos a los usuarios marcados en el catálogo (solo Super Admin y gescobar@): se envía primero y solo si salió el correo cambia la contraseña; (4) "¿Olvidaste tu contraseña?" en el inicio de sesión: enlace de un solo uso por 30 min (firmado con otra llave, no sirve como sesión, deja de valer al cambiar la contraseña), respuesta igual exista o no la cuenta, límite de solicitudes por IP y por correo; (5) botón de correo libre por usuario. Llave de Resend (solo envío) guardada en el .env del servidor. Pendiente: verificar el dominio oomapasc.gob.mx en Resend para poder enviar a todos (hoy solo llega a la cuenta dueña). Pruebas: test_auth.py (alta con correo, recuperación de un solo uso, masivo que no cambia la clave si falla el correo), plantillas.
+- Deploy: SI (envío apagado hasta verificar el dominio)
+
 ## 2026-11-14T07:00Z · @claude-code · [UX] · Riesgos: dar de alta desde Seguimiento
 Barra "Dar de alta en la matriz {año}" en Seguimiento con "+ Riesgo", "+ Oportunidad" y "Sugerir con IA" (el SGC elige el área ahí mismo; las áreas ven solo la suya). Cada botón lleva a la pestaña de la matriz, agrega el registro y lo deja abierto a la vista, o arranca la IA. Si la matriz ya se envió o se aceptó, avisa que el SGC debe reabrirla. Protección para no duplicar el alta.
 - Deploy: SI

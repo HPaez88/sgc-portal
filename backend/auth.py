@@ -8,6 +8,7 @@ auth.py — Identidad mínima del portal (fase 0 de control-documental).
 AUTH_SECRET debe existir en producción (se valida al arrancar). En desarrollo se genera uno
 aleatorio por proceso: las sesiones caducan al reiniciar, lo cual es aceptable.
 """
+import hashlib
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -92,6 +93,45 @@ def decodificar_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="La sesión expiró. Vuelve a iniciar sesión.") from e
     except jwt.InvalidTokenError as e:
         raise HTTPException(status_code=401, detail="Sesión inválida.") from e
+
+
+# ───────────── Recuperación autónoma de contraseña ─────────────
+# Se firma con otra llave derivada (no sirve como token de sesión) y lleva una huella de la contraseña
+# actual: en cuanto la contraseña cambia, el enlace deja de valer (un solo uso).
+RECUPERAR_MINUTOS = 30
+
+
+def _secreto_recuperar() -> str:
+    return hashlib.sha256((_secreto() + "|recuperar-password").encode()).hexdigest()
+
+
+def _huella(usuario) -> str:
+    return hashlib.sha256((usuario.password_hash or "").encode()).hexdigest()[:20]
+
+
+def crear_token_recuperar(usuario) -> str:
+    ahora = datetime.now(timezone.utc)
+    datos = {"sub": str(usuario.id), "h": _huella(usuario), "uso": "recuperar",
+             "iat": int(ahora.timestamp()), "exp": int((ahora + timedelta(minutes=RECUPERAR_MINUTOS)).timestamp())}
+    return jwt.encode(datos, _secreto_recuperar(), algorithm="HS256")
+
+
+def validar_token_recuperar(token: str, session) -> "object":
+    """Devuelve el usuario si el enlace es válido, vigente, de un solo uso y la cuenta está activa."""
+    from backend.models import Usuario  # import local: models importa de este módulo indirectamente
+    invalido = HTTPException(status_code=400, detail="El enlace no es válido o ya se usó. Solicita uno nuevo.")
+    try:
+        datos = jwt.decode(token, _secreto_recuperar(), algorithms=["HS256"])
+    except jwt.ExpiredSignatureError as e:
+        raise HTTPException(status_code=400, detail="El enlace expiró. Solicita uno nuevo.") from e
+    except jwt.InvalidTokenError as e:
+        raise invalido from e
+    if datos.get("uso") != "recuperar":
+        raise invalido
+    u = session.get(Usuario, int(datos["sub"]))
+    if not u or not u.activo or datos.get("h") != _huella(u):
+        raise invalido
+    return u
 
 
 def _extraer_bearer(authorization: Optional[str]) -> Optional[str]:

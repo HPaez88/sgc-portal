@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
 import { Lock, Mail, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle, Clock, KeyRound } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
+import RecuperarPassword from './RecuperarPassword';
 
 const PASSWORD_MIN = 8;
+
+// Enlace de recuperación (?recuperar=<token>): se lee una sola vez al cargar y se quita de la barra de direcciones.
+const TOKEN_RECUPERAR = (() => {
+  try {
+    const t = new URLSearchParams(window.location.search).get('recuperar');
+    if (t) window.history.replaceState(null, '', window.location.pathname);
+    return t;
+  } catch { return null; }
+})();
 
 export default function LoginView() {
   const { iniciarSesion, cambiarPassword, usuarioLogueado, motivoCierreSesion } = useSGC();
@@ -12,6 +22,9 @@ export default function LoginView() {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  // Recuperación autónoma: el enlace del correo trae ?recuperar=<token>; se quita de la barra de direcciones.
+  const [recuperar, setRecuperar] = useState(TOKEN_RECUPERAR ? { token: TOKEN_RECUPERAR } : null);
 
   // Paso 2: contraseña temporal → el usuario debe definir la suya antes de entrar.
   const debeCambiar = Boolean(usuarioLogueado?.debe_cambiar_password);
@@ -73,7 +86,9 @@ export default function LoginView() {
           </div>
         )}
 
-        {debeCambiar ? (
+        {recuperar && !debeCambiar ? (
+          <RecuperarPassword token={recuperar.token} onVolver={() => setRecuperar(null)} />
+        ) : debeCambiar ? (
           <form onSubmit={handleCambio} className="p-7 space-y-4">
             <div className="flex items-start gap-3 p-3 bg-sky-50 border border-sky-200 rounded-xl">
               <KeyRound size={16} className="text-sky-700 shrink-0 mt-0.5" />
@@ -133,8 +148,10 @@ export default function LoginView() {
               className="w-full py-3.5 px-4 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white text-xs font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-60 cursor-pointer">
               {cargando ? <span>Validando credenciales...</span> : <><span>Ingresar a la Plataforma</span><ArrowRight size={15} /></>}
             </button>
-            <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-              ¿Sin contraseña o la olvidaste? Pide al administrador del SGC que te la restablezca desde Configuración.
+            <p className="text-center">
+              <button type="button" onClick={() => { setError(''); setRecuperar({ token: null }); }} className="text-[11px] font-bold text-marca-azul-oscuro hover:underline">
+                ¿Olvidaste tu contraseña?
+              </button>
             </p>
           </form>
         )}

@@ -2,18 +2,23 @@
 auth.py (router) — Login, sesión y gestión de usuarios.
 Las contraseñas temporales se devuelven UNA sola vez (al crear o restablecer) y nunca se listan.
 """
+import logging
+import os
+import time
+from collections import defaultdict, deque
 from datetime import datetime
 from typing import Optional
 
-import os
-
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlmodel import Session, select
 
 from backend import auth
 from backend.database import get_session
 from backend.models import Usuario, UsuarioPublico
+from backend.services import correo_service as correo
+
+log = logging.getLogger("sgc.auth")
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
 
@@ -36,6 +41,55 @@ class UsuarioInput(BaseModel):
     direccion: Optional[str] = Field(default=None, max_length=120)
     rol: str = "Usuario"
     activo: bool = True
+    enviar_correo: bool = True  # al crear: mandar los datos de acceso por correo
+
+
+class RestablecerInput(BaseModel):
+    enviar_correo: bool = False
+
+
+class AccesosMasivosInput(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=100)
+
+
+class RecuperarInput(BaseModel):
+    email: EmailStr
+
+
+class RecuperarConfirmarInput(BaseModel):
+    token: str = Field(min_length=20, max_length=2000)
+    password_nueva: str = Field(min_length=auth.PASSWORD_MIN, max_length=200)
+
+
+PAUSA_ENVIO = 0.6  # Resend admite ~2 correos por segundo
+_solicitudes: dict[str, deque] = defaultdict(deque)
+
+
+def _limitar(clave: str, maximo: int, ventana: int = 900) -> None:
+    # ponytail: en memoria por proceso; con varios workers mover a Postgres/Redis
+    ahora, cola = time.time(), _solicitudes[clave]
+    while cola and ahora - cola[0] > ventana:
+        cola.popleft()
+    if len(cola) >= maximo:
+        raise HTTPException(status_code=429, detail="Demasiadas solicitudes. Intenta en unos minutos.")
+    cola.append(ahora)
+
+
+def _ip(request: Request) -> str:
+    reenviada = request.headers.get("x-forwarded-for", "")
+    return reenviada.split(",")[0].strip() or (request.client.host if request.client else "?")
+
+
+def _enviar_acceso(u: Usuario, temporal: str, request: Request, motivo: str) -> tuple[bool, Optional[str]]:
+    """Manda los datos de acceso con diseño institucional. No lanza: regresa (enviado, error)."""
+    if not correo.configurado():
+        return False, "El envío de correos aún no está configurado."
+    try:
+        asunto, cuerpo, texto = correo.plantilla_acceso(u.nombre, u.email, temporal, correo.url_portal(request), motivo)
+        correo.enviar([u.email], asunto, cuerpo, texto)
+        return True, None
+    except HTTPException as ex:
+        return False, str(ex.detail)
 
 
 def _publico(u: Usuario) -> UsuarioPublico:
@@ -116,6 +170,7 @@ def _validar_rol(rol: str, actor: Usuario) -> None:
 @router.post("/usuarios", status_code=201)
 def crear_usuario(
     datos: UsuarioInput,
+    request: Request,
     actor: Usuario = Depends(auth.requiere_rol(*auth.ROLES_ADMIN)),
     session: Session = Depends(get_session),
 ):
@@ -139,7 +194,8 @@ def crear_usuario(
     session.add(nuevo)
     session.commit()
     session.refresh(nuevo)
-    return {"usuario": _publico(nuevo), "password_temporal": temporal}
+    enviado, error = _enviar_acceso(nuevo, temporal, request, "alta") if datos.enviar_correo else (False, None)
+    return {"usuario": _publico(nuevo), "password_temporal": temporal, "correo_enviado": enviado, "correo_error": error}
 
 
 @router.put("/usuarios/{usuario_id}", response_model=UsuarioPublico)
@@ -172,6 +228,8 @@ def actualizar_usuario(
 @router.post("/usuarios/{usuario_id}/restablecer-password")
 def restablecer_password(
     usuario_id: int,
+    request: Request,
+    datos: Optional[RestablecerInput] = None,
     actor: Usuario = Depends(auth.usuario_actual),
     session: Session = Depends(get_session),
 ):
@@ -185,7 +243,8 @@ def restablecer_password(
     u.debe_cambiar_password = True
     session.add(u)
     session.commit()
-    return {"usuario": _publico(u), "password_temporal": temporal}
+    enviado, error = _enviar_acceso(u, temporal, request, "restablecer") if datos and datos.enviar_correo else (False, None)
+    return {"usuario": _publico(u), "password_temporal": temporal, "correo_enviado": enviado, "correo_error": error}
 
 
 @router.delete("/usuarios/{usuario_id}", status_code=204)
@@ -204,3 +263,75 @@ def desactivar_usuario(
     session.add(u)
     session.commit()
     return None
+
+
+# ───────────── Accesos por correo (masivo) ─────────────
+@router.post("/usuarios/accesos-masivos")
+def accesos_masivos(
+    datos: AccesosMasivosInput,
+    request: Request,
+    actor: Usuario = Depends(auth.usuario_actual),
+    session: Session = Depends(get_session),
+):
+    """Genera una contraseña temporal nueva a cada usuario elegido y se la manda por correo.
+    Primero se envía y solo si salió el correo se cambia la contraseña (nadie se queda sin acceso)."""
+    if not auth.puede_restablecer(actor):
+        raise HTTPException(status_code=403, detail="No tienes permiso para enviar accesos.")
+    if not correo.configurado():
+        raise HTTPException(status_code=503, detail="El envío de correos aún no está configurado.")
+    url = correo.url_portal(request)
+    resultados = []
+    for uid in dict.fromkeys(datos.ids):
+        u = session.get(Usuario, uid)
+        if not u or u.organismo_id != actor.organismo_id or not u.activo:
+            resultados.append({"id": uid, "enviado": False, "error": "Usuario no encontrado o inactivo."})
+            continue
+        if u.id == actor.id:
+            resultados.append({"id": uid, "nombre": u.nombre, "enviado": False, "error": "Tu propia cuenta no se incluye."})
+            continue
+        temporal = auth.password_temporal()
+        try:
+            asunto, cuerpo, texto = correo.plantilla_acceso(u.nombre, u.email, temporal, url, "restablecer")
+            correo.enviar([u.email], asunto, cuerpo, texto)
+        except HTTPException as ex:
+            resultados.append({"id": uid, "nombre": u.nombre, "email": u.email, "enviado": False, "error": str(ex.detail)})
+            continue
+        u.password_hash = auth.hashear_password(temporal)
+        u.debe_cambiar_password = True
+        session.add(u)
+        session.commit()
+        resultados.append({"id": uid, "nombre": u.nombre, "email": u.email, "enviado": True})
+        time.sleep(PAUSA_ENVIO)
+    return {"enviados": sum(r["enviado"] for r in resultados), "resultados": resultados}
+
+
+# ───────────── Recuperación autónoma (sin sesión) ─────────────
+@router.post("/recuperar")
+def solicitar_recuperacion(datos: RecuperarInput, request: Request, session: Session = Depends(get_session)):
+    """Manda un enlace de un solo uso. La respuesta es igual exista o no el correo (no revela cuentas)."""
+    email = datos.email.lower().strip()
+    _limitar(f"ip:{_ip(request)}", 10)
+    _limitar(f"correo:{email}", 3)
+    if not correo.configurado():
+        return {"ok": True, "correo_activo": False}
+    u = session.exec(select(Usuario).where(Usuario.email == email)).first()
+    if u and u.activo:
+        url = correo.url_portal(request)
+        enlace = f"{url}/?recuperar={auth.crear_token_recuperar(u)}"
+        try:
+            asunto, cuerpo, texto = correo.plantilla_recuperacion(u.nombre, enlace, auth.RECUPERAR_MINUTOS, url)
+            correo.enviar([u.email], asunto, cuerpo, texto)
+        except HTTPException as ex:
+            log.error("No se pudo enviar la recuperación a %s: %s", u.id, ex.detail)
+    return {"ok": True, "correo_activo": True}
+
+
+@router.post("/recuperar/confirmar")
+def confirmar_recuperacion(datos: RecuperarConfirmarInput, request: Request, session: Session = Depends(get_session)):
+    _limitar(f"confirmar:{_ip(request)}", 20)
+    u = auth.validar_token_recuperar(datos.token, session)
+    u.password_hash = auth.hashear_password(datos.password_nueva)
+    u.debe_cambiar_password = False
+    session.add(u)
+    session.commit()
+    return {"ok": True}
