@@ -12,49 +12,57 @@ export const CLAVE_MATRIZ = 'OOMRSC-37';
 export const CLAVE_CONTROL = 'OOMRSC-51';
 export const ORIGEN_PM_RIESGOS = 'Matriz de riesgos y oportunidades';
 
+// Escala oficial OOMRSC-37 Rev. 06 (hoja "Criterios"): Impacto 2-10 × Probabilidad 1-5 = nivel 2 a 50.
+// Se ve como un mapa 5×5 y los niveles se comparan con los años anteriores.
 export const ESCALAS = {
   Riesgo: {
-    ejeX: 'Impacto', ejeY: 'Probabilidad', campoX: 'impacto', campoY: 'probabilidad',
+    ejeX: 'Impacto', ejeY: 'Probabilidad',
     probabilidad: [
-      [1, 'Rara vez', 'Casi imposible que pase en el año'],
-      [2, 'Improbable', 'Podría pasar, pero no se espera'],
-      [3, 'Posible', 'Puede pasar alguna vez en el año'],
-      [4, 'Probable', 'Pasa varias veces al año'],
-      [5, 'Casi seguro', 'Pasa con frecuencia (mensual o más)'],
+      [1, 'Baja', 'Casi no ocurre en el año'],
+      [2, 'Media-Baja', 'Podría ocurrir, pero no se espera'],
+      [3, 'Media', 'Puede ocurrir alguna vez en el año'],
+      [4, 'Media-Alta', 'Ocurre varias veces al año'],
+      [5, 'Alta', 'Ocurre con frecuencia (mensual o más)'],
     ],
     impacto: [
-      [1, 'Insignificante', 'No afecta el servicio ni los indicadores'],
-      [2, 'Menor', 'Retrabajo o retraso interno sin efecto en el usuario'],
-      [3, 'Moderado', 'Afecta parcialmente un indicador o un servicio'],
-      [4, 'Mayor', 'Incumple metas o afecta a usuarios'],
-      [5, 'Crítico', 'Salud, suspensión del servicio, sanción legal o financiera'],
+      [2, 'Marginal', 'No afecta el servicio ni los indicadores'],
+      [4, 'Débil', 'Retrabajo o retraso interno sin efecto en el usuario'],
+      [6, 'Importante', 'Afecta parcialmente un indicador o un servicio'],
+      [8, 'Crítico', 'Incumple metas u objetivos, o afecta a usuarios'],
+      [10, 'Catastrófico', 'Salud, suspensión del servicio, sanción legal o financiera'],
     ],
   },
   Oportunidad: {
-    ejeX: 'Beneficio', ejeY: 'Viabilidad', campoX: 'impacto', campoY: 'probabilidad',
+    ejeX: 'Impacto', ejeY: 'Probabilidad',
     probabilidad: [
-      [1, 'Muy difícil', 'Requiere recursos o autorizaciones que no se tienen'],
-      [2, 'Difícil', 'Requiere apoyo de otras áreas y presupuesto'],
-      [3, 'Factible', 'Se puede con gestión y algo de recurso'],
-      [4, 'Fácil', 'Depende casi solo del área'],
-      [5, 'Inmediata', 'Se puede hacer ya con lo que se tiene'],
+      [1, 'Baja', 'Requiere recursos o autorizaciones que no se tienen'],
+      [2, 'Media-Baja', 'Requiere apoyo de otras áreas y presupuesto'],
+      [3, 'Media', 'Se puede con gestión y algo de recurso'],
+      [4, 'Media-Alta', 'Depende casi solo del área'],
+      [5, 'Alta', 'Se puede hacer ya con lo que se tiene'],
     ],
     impacto: [
-      [1, 'Mínimo', 'Mejora apenas perceptible'],
-      [2, 'Bajo', 'Mejora interna del área'],
-      [3, 'Medio', 'Mejora un indicador o un proceso'],
-      [4, 'Alto', 'Mejora notable para el usuario o el organismo'],
-      [5, 'Muy alto', 'Cambio relevante en servicio, ingresos o cumplimiento'],
+      [2, 'Bajo', 'Mejora apenas perceptible'],
+      [4, 'Medio-Bajo', 'Mejora interna del área'],
+      [6, 'Medio', 'Mejora un indicador o un proceso'],
+      [8, 'Medio-Alto', 'Mejora notable para el usuario o el organismo'],
+      [10, 'Alto', 'Cambio relevante en servicio, ingresos o cumplimiento'],
     ],
   },
 };
 
-// Nivel = eje Y × eje X (1 a 25). ponytail: rangos clásicos 5×5; ajustar aquí si el SGC los cambia.
+// Rangos oficiales: Bajo 0-19 · Medio 20-29 · Alto 30-50, con la importancia que marca el formato.
 export const RANGOS_NIVEL = [
-  { nivel: 'Bajo', max: 7, color: 'bg-emerald-500', suave: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  { nivel: 'Medio', max: 14, color: 'bg-amber-400', suave: 'bg-amber-100 text-amber-800 border-amber-200' },
-  { nivel: 'Alto', max: 25, color: 'bg-rose-500', suave: 'bg-rose-100 text-rose-800 border-rose-200' },
+  { nivel: 'Bajo', max: 19, color: 'bg-emerald-500', suave: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    importancia: { Riesgo: 'Seguimiento por parte de los supervisores.', Oportunidad: 'Identificada; aún sin actividades para alcanzarla.' } },
+  { nivel: 'Medio', max: 29, color: 'bg-amber-400', suave: 'bg-amber-100 text-amber-800 border-amber-200',
+    importancia: { Riesgo: 'Seguimiento adecuado por parte de los niveles medios.', Oportunidad: 'El área lleva seguimiento para alcanzarla.' } },
+  { nivel: 'Alto', max: 50, color: 'bg-rose-500', suave: 'bg-rose-100 text-rose-800 border-rose-200',
+    importancia: { Riesgo: 'Se informa a los directores y lleva seguimiento permanente.', Oportunidad: 'Con seguimiento y resultados; por alcanzarse.' } },
 ];
+
+// Hoja "Identificación" del OOMRSC-37: de dónde sale cada riesgo u oportunidad.
+export const CONTEXTOS = ['Objetivos del área', 'Indicadores', 'Análisis interno y externo', 'Partes interesadas'];
 
 export const puntaje = (r) => (Number(r?.probabilidad) || 0) * (Number(r?.impacto) || 0);
 
@@ -129,6 +137,7 @@ export const pmDesdeRiesgo = (r, { folio, por, ahora = new Date().toISOString() 
     origen: ORIGEN_PM_RIESGOS, origen_referencia: String(r.id), riesgo_id: r.id, riesgo_tipo: r.tipo,
     descripcion_situacion_actual: [
       `${r.tipo} (${CLAVE_MATRIZ} ${r.anio}) · nivel ${puntaje(r)} ${nivelDe(r)?.nivel || ''} · tratamiento: ${r.tratamiento || '-'}`,
+      r.contexto ? `Contexto: ${r.contexto}${r.contexto_resultado ? ` — ${r.contexto_resultado}` : ''}` : '',
       r.causa ? `Causa: ${r.causa}` : '',
       r.consecuencia ? `${r.tipo === 'Oportunidad' ? 'Beneficio esperado' : 'Consecuencia'}: ${r.consecuencia}` : '',
     ].filter(Boolean).join('\n'),
@@ -157,6 +166,7 @@ export const sugerirEficacia = (r, residual) => {
 export const nuevoRiesgo = ({ tipo = 'Riesgo', area, direccion, anio, por }) => ({
   id: Date.now() + Math.floor(Math.random() * 1000),
   tipo, area, direccion: direccion || '', anio, proceso: '',
+  contexto: '', contexto_resultado: '',
   descripcion: '', causa: '', consecuencia: '', controles: '',
   probabilidad: 0, impacto: 0, tratamiento: '', plan: [],
   estado: 'IDENTIFICADO', creado_por: por || '', fecha_creacion: new Date().toISOString(),
@@ -164,6 +174,8 @@ export const nuevoRiesgo = ({ tipo = 'Riesgo', area, direccion, anio, por }) => 
 
 // Qué le falta a un riesgo para poder enviar la matriz (null = completo).
 export const faltante = (r) => {
+  if (!r.contexto) return 'falta el contexto (de dónde se identificó)';
+  if (!r.proceso) return 'falta el proceso';
   if (!r.descripcion?.trim()) return 'falta la descripción';
   if (!r.probabilidad || !r.impacto) return 'falta evaluarlo';
   if (requierePlan(r)) {

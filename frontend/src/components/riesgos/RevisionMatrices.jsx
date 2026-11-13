@@ -84,6 +84,7 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
                 <span className={`shrink-0 w-12 h-fit text-center px-2 py-1 rounded-lg text-xs font-black border ${nivelDe(r)?.suave || 'bg-white text-slate-600 border-slate-200'}`}>{puntaje(r) || '—'}</span>
                 <div className="min-w-0 text-xs">
                   <p className="font-semibold text-slate-900">{r.tipo}: {r.descripcion}</p>
+                  <p className="text-slate-600">{[r.proceso && `Proceso: ${r.proceso}`, r.contexto && `Contexto: ${r.contexto}${r.contexto_resultado ? ` — ${r.contexto_resultado}` : ''}`].filter(Boolean).join(' · ')}</p>
                   <p className="text-slate-600">{[r.causa && `Causa: ${r.causa}`, r.consecuencia && `${r.tipo === 'Riesgo' ? 'Consecuencia' : 'Beneficio'}: ${r.consecuencia}`].filter(Boolean).join(' · ')}</p>
                   <p className="text-slate-600">{r.tratamiento || 'Sin tratamiento'}{(r.plan || []).length ? ` · ${r.plan.map((a) => `${a.actividad} (${a.responsable}, ${formatearFecha(a.fecha_termino_sugerida)})`).join('; ')}` : ''}</p>
                   {r.pm_folio && <p className="text-sky-700 font-semibold">Plan de mejora {r.pm_folio}</p>}
@@ -108,7 +109,7 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-slate-50 text-slate-700 text-left border-b border-slate-200">
-            <tr><th className="p-3">Área</th><th className="p-3">Dirección</th><th className="p-3">Estado</th><th className="p-3 text-center">Riesgos</th><th className="p-3 text-center">Oportunidades</th><th className="p-3 text-center">Altos</th><th className="p-3">Enviada</th><th className="p-3" /></tr>
+            <tr><th className="p-3">Área</th><th className="p-3">Dirección</th><th className="p-3">Estado</th><th className="p-3 text-center">Riesgos</th><th className="p-3 text-center">Oportunidades</th><th className="p-3 text-center">Altos</th><th className="p-3">Enviada</th><th className="p-3 text-right">Acción</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filas.map((f) => (

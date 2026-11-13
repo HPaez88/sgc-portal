@@ -3,7 +3,7 @@
 import React from 'react';
 import { Plus, X } from 'lucide-react';
 import CampoFecha from '../common/CampoFecha';
-import { ESCALAS, TRATAMIENTOS, nivelDe, puntaje, requierePlan } from '../../constants/riesgos';
+import { ESCALAS, TRATAMIENTOS, CONTEXTOS, nivelDe, puntaje, requierePlan } from '../../constants/riesgos';
 
 const campo = 'w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none';
 
@@ -19,7 +19,7 @@ function Escala({ titulo, opciones, valor, onElegir, deshabilitado }) {
           </button>
         ))}
       </div>
-      {valor > 0 && <p className="text-[11px] text-slate-500 mt-1">{opciones[valor - 1][2]}</p>}
+      {valor > 0 && <p className="text-[11px] text-slate-500 mt-1">{opciones.find(([n]) => n === valor)?.[2]}</p>}
     </fieldset>
   );
 }
@@ -35,6 +35,21 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
 
   return (
     <div className="space-y-4">
+      <fieldset className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+        <legend className="px-1 text-[11px] font-extrabold text-slate-800 uppercase tracking-wider">Identificación</legend>
+        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+          Contexto (¿de dónde se identificó?) *
+          <select value={r.contexto || ''} disabled={soloLectura} onChange={(e) => set({ contexto: e.target.value })} className={`${campo} mt-1 normal-case font-normal tracking-normal`}>
+            <option value="">— Seleccionar —</option>
+            {CONTEXTOS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+          Resultado (qué se encontró en ese análisis)
+          <textarea rows={2} value={r.contexto_resultado || ''} disabled={soloLectura} onChange={(e) => set({ contexto_resultado: e.target.value })}
+            placeholder="Ej. El indicador #26 quedó en 70% en el segundo trimestre" className={`${campo} mt-1 normal-case font-normal tracking-normal`} />
+        </label>
+      </fieldset>
       <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-3">
         <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
           {esRiesgo ? 'Riesgo identificado' : 'Oportunidad identificada'}
@@ -42,7 +57,7 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
             placeholder={esRiesgo ? '¿Qué podría salir mal?' : '¿Qué se podría aprovechar o mejorar?'} className={`${campo} mt-1 normal-case font-normal tracking-normal`} />
         </label>
         <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-          Proceso
+          Proceso *
           <select value={r.proceso} disabled={soloLectura} onChange={(e) => set({ proceso: e.target.value })} className={`${campo} mt-1 normal-case font-normal tracking-normal`}>
             <option value="">— Seleccionar —</option>
             {procesos.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -69,6 +84,7 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
           <p className="text-[11px] font-bold uppercase tracking-wider">Nivel</p>
           <p className="text-3xl font-black">{puntaje(r) || '—'}</p>
           <p className="text-xs font-bold">{nivel?.nivel || 'Sin evaluar'}</p>
+          {nivel && <p className="text-[10px] leading-snug mt-1">{nivel.importancia[r.tipo]}</p>}
         </div>
       </div>
 

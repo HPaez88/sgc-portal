@@ -1,25 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { puntaje, nivelDe, requierePlan, estadoRiesgo, pmDesdeRiesgo, sugerirEficacia, faltante, llevaPM, ORIGEN_PM_RIESGOS } from '../riesgos';
 
-const base = { id: 7, tipo: 'Riesgo', area: 'Plantas Potabilizadoras', anio: 2027, descripcion: 'Falla en bombas', causa: 'Sin mantenimiento', probabilidad: 4, impacto: 4 };
+const base = { id: 7, tipo: 'Riesgo', area: 'Plantas Potabilizadoras', anio: 2027, contexto: 'Indicadores', proceso: 'Producción', descripcion: 'Falla en bombas', causa: 'Sin mantenimiento', probabilidad: 4, impacto: 8 };
 const plan = [{ actividad: 'Programa de mantenimiento', responsable: 'Gerente', fecha_termino_sugerida: '2027-03-31' }, { actividad: 'Bitácora', responsable: 'Supervisor', fecha_termino_sugerida: '2027-06-30', evidencia_esperada: 'Bitácora firmada' }];
 
-describe('nivel 5×5', () => {
-  it('clasifica bajo / medio / alto', () => {
-    expect(nivelDe({ probabilidad: 2, impacto: 3 }).nivel).toBe('Bajo');
-    expect(nivelDe({ probabilidad: 3, impacto: 4 }).nivel).toBe('Medio');
-    expect(nivelDe({ probabilidad: 4, impacto: 4 }).nivel).toBe('Alto');
+describe('nivel con la escala oficial OOMRSC-37 (impacto 2-10 × probabilidad 1-5)', () => {
+  it('clasifica bajo 0-19 / medio 20-29 / alto 30-50', () => {
+    expect(nivelDe({ probabilidad: 3, impacto: 6 }).nivel).toBe('Bajo'); // 18
+    expect(nivelDe({ probabilidad: 4, impacto: 6 }).nivel).toBe('Medio'); // 24
+    expect(nivelDe({ probabilidad: 5, impacto: 6 }).nivel).toBe('Alto'); // 30
+    expect(nivelDe({ probabilidad: 4, impacto: 8 }).nivel).toBe('Alto'); // 32
     expect(nivelDe({})).toBeNull();
-    expect(puntaje(base)).toBe(16);
+    expect(puntaje(base)).toBe(32);
   });
   it('medio y alto requieren plan', () => {
     expect(requierePlan(base)).toBe(true);
-    expect(requierePlan({ probabilidad: 1, impacto: 5 })).toBe(false);
+    expect(requierePlan({ probabilidad: 1, impacto: 10 })).toBe(false);
   });
 });
 
 describe('qué falta para enviar', () => {
   it('pide descripción, evaluación, tratamiento y plan completo', () => {
+    expect(faltante({ ...base, contexto: '' })).toMatch(/contexto/);
+    expect(faltante({ ...base, proceso: '' })).toMatch(/proceso/);
     expect(faltante({ ...base, descripcion: '' })).toMatch(/descripción/);
     expect(faltante({ ...base, probabilidad: 0 })).toMatch(/evaluarlo/);
     expect(faltante(base)).toMatch(/tratamiento/);
@@ -46,8 +49,8 @@ describe('plan de mejora ligado', () => {
 
 describe('eficacia', () => {
   it('riesgo eficaz si el nivel residual bajó; oportunidad la decide el SGC', () => {
-    expect(sugerirEficacia(base, { probabilidad: 2, impacto: 4 })).toBe('EFICAZ');
-    expect(sugerirEficacia(base, { probabilidad: 4, impacto: 4 })).toBe('NO_EFICAZ');
+    expect(sugerirEficacia(base, { probabilidad: 2, impacto: 8 })).toBe('EFICAZ');
+    expect(sugerirEficacia(base, { probabilidad: 4, impacto: 8 })).toBe('NO_EFICAZ');
     expect(sugerirEficacia({ ...base, tipo: 'Oportunidad' }, { probabilidad: 2, impacto: 2 })).toBeNull();
   });
 });

@@ -11,6 +11,7 @@ const COLOR = {
 
 export default function MapaCalor({ tipo = 'Riesgo', items = [], seleccion, onSeleccionar, titulo }) {
   const escala = ESCALAS[tipo];
+  const impactos = escala.impacto.map(([v]) => v); // 2, 4, 6, 8, 10 (OOMRSC-37)
   const cuenta = (p, i) => items.filter((r) => Number(r.probabilidad) === p && Number(r.impacto) === i).length;
 
   return (
@@ -30,7 +31,7 @@ export default function MapaCalor({ tipo = 'Riesgo', items = [], seleccion, onSe
                 <span className="text-[10px] text-slate-500 pr-1 flex items-center justify-end" title={escala.probabilidad[p - 1][2]}>
                   {p} · {escala.probabilidad[p - 1][1]}
                 </span>
-                {[1, 2, 3, 4, 5].map((i) => {
+                {impactos.map((i) => {
                   const n = cuenta(p, i);
                   const nivel = clasificar(p * i).nivel;
                   const activa = seleccion && seleccion.p === p && seleccion.i === i;
@@ -49,9 +50,9 @@ export default function MapaCalor({ tipo = 'Riesgo', items = [], seleccion, onSe
               </React.Fragment>
             ))}
             <span />
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span key={i} className="text-[10px] text-slate-500 text-center leading-tight pt-1" title={escala.impacto[i - 1][2]}>
-                {i}<br />{escala.impacto[i - 1][1]}
+            {escala.impacto.map(([i, nombre, ayuda]) => (
+              <span key={i} className="text-[10px] text-slate-500 text-center leading-tight pt-1" title={ayuda}>
+                {i}<br />{nombre}
               </span>
             ))}
           </div>

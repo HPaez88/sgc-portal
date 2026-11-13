@@ -72,7 +72,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-slate-50 text-slate-700 text-left border-b border-slate-200">
-            <tr><th className="p-3">Nivel</th><th className="p-3">Riesgo / oportunidad</th><th className="p-3">Área</th><th className="p-3">Plan de mejora</th><th className="p-3">Vencimiento</th><th className="p-3">Estado</th><th className="p-3" /></tr>
+            <tr><th className="p-3">Nivel</th><th className="p-3">Riesgo / oportunidad</th><th className="p-3">Área</th><th className="p-3">Plan de mejora</th><th className="p-3">Vencimiento</th><th className="p-3">Estado</th><th className="p-3 text-right">Acción</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filas.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-slate-500">No hay registros con este filtro.</td></tr>}
