@@ -840,7 +840,7 @@ export default function IndicadoresView({
           </div>
 
           {/* Selector de Mes/Año, Exportar & Nuevo Indicador */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 min-w-0">
             {/* Selector de Mes & Ejercicio */}
             <div className="flex items-center bg-slate-800/90 border border-slate-600/80 rounded-xl p-1 shadow-sm">
               <select

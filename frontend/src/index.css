@@ -21,15 +21,28 @@
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     line-height: 1.5;
+    font-size: calc(1rem * var(--escala-texto, 1));
   }
 }
 
-/* Tamaños mínimos legibles (px fijos, no escalan con el root; mínimo 11px) */
-.text-\[9px\]  { font-size: 11px !important; line-height: 1.25; }
-.text-\[10px\] { font-size: 11.5px !important; line-height: 1.3; }
-.text-\[11px\] { font-size: 12px !important; line-height: 1.35; }
-.text-\[12px\] { font-size: 12.5px !important; line-height: 1.4; }
-.text-\[13px\] { font-size: 13px !important; line-height: 1.4; }
+/* Tamaños mínimos legibles (mínimo 11px). Todo el texto escala con --escala-texto
+   (Configuración → Accesibilidad); los márgenes no cambian, así la pantalla no se desborda. */
+:root { --escala-texto: 1; }
+.text-\[9px\], .text-\[9\.5px\] { font-size: calc(11px * var(--escala-texto)) !important; line-height: 1.25; }
+.text-\[10px\], .text-\[10\.5px\] { font-size: calc(11.5px * var(--escala-texto)) !important; line-height: 1.3; }
+.text-\[11px\], .text-\[11\.5px\] { font-size: calc(12px * var(--escala-texto)) !important; line-height: 1.35; }
+.text-\[12px\], .text-\[12\.5px\] { font-size: calc(12.5px * var(--escala-texto)) !important; line-height: 1.4; }
+.text-\[13px\] { font-size: calc(13px * var(--escala-texto)) !important; line-height: 1.4; }
+
+/* Tablas marcadas (Accesibilidad): líneas visibles en filas y columnas, encabezado con borde fuerte. */
+.tablas-marcadas table { border-collapse: collapse; }
+.tablas-marcadas table th,
+.tablas-marcadas table td { border: 1px solid #94a3b8 !important; }
+.tablas-marcadas table thead th { border-bottom: 2px solid #475569 !important; background-color: #e2e8f0; color: #0f172a; }
+.tablas-marcadas table tbody tr:nth-child(even) td { background-color: rgba(241, 245, 249, 0.6); }
+
+/* Texto largo en celdas: se parte en renglones en vez de empujar la tabla fuera de la pantalla. */
+td { overflow-wrap: break-word; }
 
 /* Tabular figures for data, counters, and metrics */
 .font-tabular {

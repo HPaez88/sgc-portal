@@ -11,15 +11,17 @@ export default {
         display: ['Plus Jakarta Sans', 'sans-serif'],
         mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'monospace'],
       },
+      // Escalan con --escala-texto (Accesibilidad). Interlineado sin unidades para que crezca con la letra.
       fontSize: {
-        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
-        'xs': ['0.75rem', { lineHeight: '1.1rem' }],
-        'sm': ['0.875rem', { lineHeight: '1.3rem' }],
-        'base': ['1rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.125rem', { lineHeight: '1.6rem' }],
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.5rem', { lineHeight: '2rem' }],
-        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+        '2xs': ['calc(0.6875rem * var(--escala-texto, 1))', { lineHeight: '1.45' }],
+        'xs': ['calc(0.75rem * var(--escala-texto, 1))', { lineHeight: '1.45' }],
+        'sm': ['calc(0.875rem * var(--escala-texto, 1))', { lineHeight: '1.5' }],
+        'base': ['calc(1rem * var(--escala-texto, 1))', { lineHeight: '1.5' }],
+        'lg': ['calc(1.125rem * var(--escala-texto, 1))', { lineHeight: '1.45' }],
+        'xl': ['calc(1.25rem * var(--escala-texto, 1))', { lineHeight: '1.4' }],
+        '2xl': ['calc(1.5rem * var(--escala-texto, 1))', { lineHeight: '1.33' }],
+        '3xl': ['calc(1.875rem * var(--escala-texto, 1))', { lineHeight: '1.2' }],
+        '4xl': ['calc(2.25rem * var(--escala-texto, 1))', { lineHeight: '1.15' }],
       },
       colors: {
         // Línea de diseño institucional (logo OOMAPAS de Cajeme). El azul profundo de la plataforma (navy) se mantiene.

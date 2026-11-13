@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { leerPreferencias, aplicarPreferencias } from './constants/accesibilidad';
 import { useSGC } from './SGCContext';
 
 // Layout
@@ -34,7 +35,14 @@ import { useIsMobile } from './hooks';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Con poco ancho (pantalla chica o zoom) el menú se compacta solo para dejar espacio al contenido.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1280);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1279px)');
+    const alCambiar = (e) => setSidebarCollapsed(e.matches);
+    mq.addEventListener('change', alCambiar);
+    return () => mq.removeEventListener('change', alCambiar);
+  }, []);
   const [activeTabEstado, setActiveTabEstado] = useState('dashboard');
   const [navNonce, setNavNonce] = useState(0);
   const activeTab = activeTabEstado;
@@ -85,6 +93,9 @@ function App() {
     sesionActiva,
     estadoSync
   } = useSGC();
+
+  // Accesibilidad de cada usuario (tamaño de letra, tablas marcadas), guardada en este navegador.
+  useEffect(() => { aplicarPreferencias(leerPreferencias(usuarioLogueado?.email)); }, [usuarioLogueado?.email]);
 
   // Si la sesión no está activa (por logout o inactividad de 1 hora), mostrar pantalla de login
   if (!sesionActiva || !usuarioLogueado || usuarioLogueado.debe_cambiar_password) {
@@ -268,7 +279,7 @@ function App() {
         />
       )}
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+      <div className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden bg-slate-50">
         <Header
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}

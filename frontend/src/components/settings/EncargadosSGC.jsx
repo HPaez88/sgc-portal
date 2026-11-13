@@ -1,6 +1,7 @@
 // Encargados del SGC de un área o dirección: usuarios del portal que atienden los temas ISO ahí.
 // Se guardan como lista de correos (encargados_sgc) en el catálogo; el usuario conserva su rol
 // (p. ej. una auditora también puede ser encargada del SGC de su área).
+import { compararPorNombre } from '../../constants/titulos';
 import React, { useState } from 'react';
 import { UserPlus, X } from 'lucide-react';
 import { getRolColor } from '../../constants';
@@ -10,7 +11,7 @@ export default function EncargadosSGC({ lista = [], onChange, usuarios = [], onC
   const [sel, setSel] = useState('');
   const porCorreo = Object.fromEntries(usuarios.map((u) => [String(u.email).toLowerCase(), u]));
   const disponibles = usuarios.filter((u) => u.activo !== false && !lista.includes(String(u.email).toLowerCase()))
-    .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' }));
+    .sort(compararPorNombre);
 
   const agregar = () => {
     if (!sel) return;

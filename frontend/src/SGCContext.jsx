@@ -27,6 +27,7 @@ import {
 } from './services/syncService';
 import { suscribirEstadoSync, cargarDesdeServidor, limpiarSesionSync } from './services/estadoService';
 import { api, setOrganismoActivo, getToken, setToken, EVENTO_SESION_EXPIRADA } from './services/apiClient';
+import { compararPorNombre } from './constants/titulos';
 
 const SGCContext = createContext();
 
@@ -535,7 +536,7 @@ export const SGCProvider = ({ children }) => {
   // === AUTENTICACIÓN Y CONTROL DE ACCESO ===
   const recargarUsuarios = useCallback(async () => {
     const r = await api.get('/api/v1/auth/usuarios');
-    if (r.ok && Array.isArray(r.data)) setUsuarios(r.data);
+    if (r.ok && Array.isArray(r.data)) setUsuarios([...r.data].sort(compararPorNombre));
     return r;
   }, []);
 

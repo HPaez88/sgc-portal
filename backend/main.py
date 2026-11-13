@@ -218,7 +218,8 @@ def health():
 _DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 _RAIZ_PWA = {
     "manifest.webmanifest": "application/manifest+json", "sw.js": "application/javascript", "favicon.svg": "image/svg+xml",
-    "logo-oomapasc.png": "image/png",  # logo institucional (menú e inicio de sesión)
+    "logo-oomapasc.png": "image/png", "logo-oomapasc-blanco.png": "image/png",  # logos institucionales
+    "logo-oomapasc-icono.png": "image/png",
 }
 
 

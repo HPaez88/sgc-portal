@@ -6,12 +6,15 @@ import { useToast } from '../common/Toast';
 import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import ContenedorModal from '../common/ContenedorModal';
 import EncargadosSGC from './EncargadosSGC';
+import AccesibilidadPanel from './AccesibilidadPanel';
+import { TITULOS, separarTitulo, unirTitulo, compararPorNombre } from '../../constants/titulos';
 import SubdireccionesEditor from './SubdireccionesEditor';
 import { ModalRestablecer, ModalAccesosMasivos, AvisoCorreoInactivo } from './AccesosCorreo';
 import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
 import { cambioEncargado } from '../../constants/workflow';
 import {
   Users,
+  Type,
   Building,
   Building2,
   GitBranch,
@@ -57,7 +60,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   const toast = useToast();
 
   // Pestaña activa: 'areas' | 'direcciones' | 'procesos' | 'usuarios' | 'permisos' | 'documentales'
-  const [tabActiva, setTabActiva] = useState('areas');
+  // Accesibilidad es para todos; los administradores entran directo a los catálogos.
+  const [tabActiva, setTabActiva] = useState(['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) ? 'areas' : 'accesibilidad');
   const [busqueda, setBusqueda] = useState('');
 
   // Estados para catálogos documentales
@@ -545,15 +549,17 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     setModalUsuario({
       show: true,
       esEdicion: true,
-      data: { ...user, newPassword: '' }
+      data: { ...user, ...separarTitulo(user.nombre), newPassword: '' }
     });
   };
 
   const { recargarUsuarios } = useSGC();
 
   const guardarUsuario = async () => {
-    const { nombre, email, area, rol } = modalUsuario.data;
-    if (!nombre.trim()) return toast.warning('El nombre completo es obligatorio.');
+    const { email, area, rol } = modalUsuario.data;
+    // El título (Lic., Ing., …) se guarda delante del nombre; para ordenar se ignora.
+    const nombre = unirTitulo(modalUsuario.data.titulo, modalUsuario.data.nombre);
+    if (!String(modalUsuario.data.nombre || '').trim()) return toast.warning('El nombre completo es obligatorio.');
     if (!email.trim()) return toast.warning('El correo institucional es obligatorio.');
     if (!area.trim()) return toast.warning('Debe asignar un Área al usuario obligatoriamente.');
     const cuerpo = {
@@ -637,7 +643,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   const areasFiltradas = alfabetico(areasDetalle.filter((a) => coincide(a.nombre, a.encargado, a.correo, a.direccion, a.subdireccion)));
   const direccionesFiltradas = alfabetico(direccionesDetalle.filter((d) => coincide(d.nombre, d.director, d.correo, d.siglas)));
   const procesosFiltrados = alfabetico(procesosDetalle.filter((p) => coincide(p.nombre, p.clave, p.tipo, p.areaResponsable)));
-  const usuariosFiltrados = alfabetico(usuariosList.filter((u) => coincide(u.nombre, u.email, u.area, u.direccion, u.rol)));
+  const usuariosFiltrados = usuariosList.filter((u) => coincide(u.nombre, u.email, u.area, u.direccion, u.rol)).sort(compararPorNombre);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -709,6 +715,17 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
 
       {/* Tabs Selector */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setTabActiva('accesibilidad')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+            tabActiva === 'accesibilidad'
+              ? 'bg-[#0B192C] text-white shadow-sm'
+              : 'bg-white text-slate-600 hover:bg-slate-100/80 border border-slate-200/70'
+          }`}
+        >
+          <Type size={15} />
+          Accesibilidad
+        </button>
         <button
           onClick={() => { setTabActiva('areas'); setBusqueda(''); }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
@@ -785,6 +802,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* ============================================================ */}
       {/* PESTAÑA 1: CATÁLOGO DE ÁREAS */}
       {/* ============================================================ */}
+      {tabActiva === 'accesibilidad' && <AccesibilidadPanel />}
+
       {tabActiva === 'areas' && (
         <div className="bg-white rounded-2xl shadow-card-subtle border border-slate-200/80 overflow-hidden space-y-4">
           <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -2275,17 +2294,29 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
             </div>
 
             <div className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
-                  Nombre Completo <span className="text-rose-500">*</span>
+              <div className="grid grid-cols-[7.5rem_1fr] gap-3">
+                <label className="block">
+                  <span className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Título</span>
+                  <select
+                    value={modalUsuario.data.titulo || ''}
+                    onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, titulo: e.target.value } })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                  >
+                    <option value="">(Sin título)</option>
+                    {TITULOS.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
                 </label>
-                <input
-                  type="text"
-                  value={modalUsuario.data.nombre}
-                  onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, nombre: e.target.value } })}
-                  placeholder="Ej. Lic. Roberto Valdez"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
-                />
+                <label className="block">
+                  <span className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Nombre Completo <span className="text-rose-500">*</span></span>
+                  <input
+                    type="text"
+                    value={modalUsuario.data.nombre}
+                    onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, nombre: e.target.value } })}
+                    placeholder="Ej. Roberto Valdez Ruiz"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                  />
+                </label>
+                <p className="col-span-2 text-[11px] text-slate-500 -mt-1">Se muestra como «{unirTitulo(modalUsuario.data.titulo, modalUsuario.data.nombre) || '—'}»; las listas se ordenan por el nombre, no por el título.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

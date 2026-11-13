@@ -70,10 +70,10 @@ def marco(etiqueta: str, titulo: str, contenido_html: str, url: str) -> str:
     """Envoltura común de todos los correos: logo, título, contenido y pie institucional."""
     e = html.escape
     # El logo va incrustado en el correo (cid:), así se ve aunque el cliente bloquee imágenes externas.
-    logo = f'<img src="cid:{LOGO_CID}" alt="OOMAPAS de Cajeme" width="116" height="44" style="display:block;border:0">'
+    logo = f'<img src="cid:{LOGO_CID}" alt="OOMAPAS de Cajeme" width="116" height="44" style="display:block;margin:0 auto;border:0">'
     return f"""<div style="background:#f1f5f9;padding:24px 12px">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;color:#1e293b;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
-  <div style="padding:18px 24px 14px">{logo}</div>
+  <div style="padding:18px 24px 14px;text-align:center">{logo}</div>
   <div style="height:4px;background:{AZUL_OSCURO}"></div><div style="height:2px;background:{VERDE}"></div>
   <div style="padding:22px 24px 8px">
     <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:{VERDE};text-transform:uppercase">{e(etiqueta)}</div>

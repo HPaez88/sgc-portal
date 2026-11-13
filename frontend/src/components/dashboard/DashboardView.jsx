@@ -621,20 +621,20 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
 
       {/* 2. Executive Filter Bar (Ejercicio, Periodo, Dirección) */}
       <div className="bg-white rounded-xl shadow-card-subtle border border-slate-200/90 p-4 sm:p-5">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
             <Filter size={16} className="text-sky-600" />
             <span>Filtros de Período y Ámbito:</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full xl:w-auto">
             {/* Selector de Ejercicio */}
             <div className="flex items-center gap-2">
               <label className="text-xs font-bold text-slate-600 whitespace-nowrap">Ejercicio:</label>
               <select
                 value={ejercicio}
                 onChange={(e) => setEjercicio(Number(e.target.value))}
-                className="w-full sm:w-auto bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full min-w-0 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 {EJERCICIOS.map((yr) => (
                   <option key={yr} value={yr}>{yr}</option>
@@ -648,7 +648,7 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
               <select
                 value={periodoId}
                 onChange={(e) => setPeriodoId(e.target.value)}
-                className="w-full sm:w-auto bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full min-w-0 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 {PERIODOS.map((p) => (
                   <option key={p.id} value={p.id}>{p.label}</option>
@@ -662,7 +662,7 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
               <select
                 value={direccionFiltro}
                 onChange={(e) => setDireccionFiltro(e.target.value)}
-                className="w-full sm:w-auto bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full min-w-0 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <option value="TODAS">Todas las Direcciones</option>
                 {DIRECCIONES.map((dir) => (
@@ -751,8 +751,8 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
 
       {/* 4. Tab Navigation for In-Depth Executive Analysis */}
       <div className="bg-white rounded-xl shadow-card-subtle border border-slate-200/80 overflow-hidden">
-        <div className="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 flex items-center justify-between overflow-x-auto gap-2">
-          <div className="flex space-x-1 sm:space-x-2 py-3">
+        <div className="border-b border-slate-200 bg-slate-50/70 px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1 sm:gap-2 py-3">
             {[
               { id: 'resumen', label: 'Resumen & Radar', icon: PieChart },
               { id: 'indicadores', label: `Indicadores (${catalogoIndicadores.length})`, icon: Target, badge: indicadoresStats.rojos > 0 ? indicadoresStats.rojos : null },

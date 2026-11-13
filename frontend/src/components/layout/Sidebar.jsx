@@ -69,15 +69,11 @@ const Sidebar = ({
       <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
           {sidebarCollapsed ? (
-            <div className="w-9 h-9 rounded-xl bg-marca-azul flex items-center justify-center shrink-0 shadow-md">
-              <Droplet className="text-white fill-white/20" size={20} />
-            </div>
+            <img src="/logo-oomapasc-icono.png" alt="OOMAPAS de Cajeme" className="h-9 w-auto shrink-0" />
           ) : (
-            <div className="leading-tight truncate flex items-center gap-2.5">
-              <span className="bg-white rounded-lg px-2 py-1 shrink-0 shadow-sm">
-                <img src="/logo-oomapasc.png" alt="OOMAPAS de Cajeme" className="h-7 w-auto" />
-              </span>
-              <span className="text-[10px] font-bold text-marca-verde-claro tracking-wider uppercase">SGC<br /><span className="text-slate-400 font-mono font-normal">Portal de Calidad</span></span>
+            <div className="leading-tight flex items-center gap-3 min-w-0">
+              <img src="/logo-oomapasc-blanco.png" alt="OOMAPAS de Cajeme" className="h-10 w-auto shrink-0" />
+              <span className="border-l border-white/15 pl-3 text-[10px] font-bold text-marca-verde-claro tracking-wider uppercase leading-tight">SGC<br /><span className="text-slate-400 font-normal normal-case tracking-normal">Portal de Calidad</span></span>
             </div>
           )}
         </div>
