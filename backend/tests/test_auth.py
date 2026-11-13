@@ -243,3 +243,15 @@ def test_buzon_de_punta_a_punta(cliente, buzon, monkeypatch):
     assert r.status_code == 200 and buzon[-1]["para"] == ["correo.prueba@oomapasc.gob.mx"]
     assert cliente.post(f"/api/v1/buzon/{m['id']}/responder", headers=h, json={"texto": "otra vez"}).status_code == 409
     assert cliente.get("/api/v1/buzon", headers={"Authorization": "Bearer x"}).status_code == 401
+
+
+def test_recordatorios_manuales_por_unidad(cliente, buzon, monkeypatch):
+    from backend.routers import notificaciones as rutas_notif
+    monkeypatch.setattr(rutas_notif, "PAUSA_ENVIO", 0)
+    h = {"Authorization": f"Bearer {_token(cliente)}"}
+    r = cliente.post("/api/v1/notificaciones/recordatorios", headers=h, json={
+        "titulo": "Matriz de riesgos 2027", "mensaje": "Les recordamos capturar su matriz de riesgos 2027.",
+        "envios": [{"unidad": "Plantas Potabilizadoras", "destinatarios": ["plantas@oomapasc.gob.mx"]},
+                   {"unidad": "Sin correo", "destinatarios": ["malo"]}]})
+    assert r.status_code == 200 and r.json()["enviados"] == 1
+    assert buzon[-1]["asunto"] == "Matriz de riesgos 2027 — Plantas Potabilizadoras"

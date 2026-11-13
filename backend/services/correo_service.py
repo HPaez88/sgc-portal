@@ -142,6 +142,17 @@ def plantilla_aviso_buzon(m, url: str) -> tuple[str, str, str]:
     return asunto, marco("Buzón SGC", "Nuevo mensaje de un usuario", contenido, url), texto
 
 
+def plantilla_recordatorio(unidad: str, titulo: str, mensaje: str, remitente_nombre: str, url: str) -> tuple[str, str, str]:
+    """Recordatorio manual del SGC a una unidad (área, subdirección o dirección)."""
+    e = html.escape
+    asunto = f"{titulo} — {unidad}"
+    texto = f"{unidad}:\n\n{mensaje}\n\nIngresa al portal: {url}\n\n{remitente_nombre}\nSistema de Gestión de la Calidad"
+    parrafos = "".join(f"<p>{e(p)}</p>" for p in mensaje.split("\n") if p.strip())
+    contenido = (f"<p>Para: <b>{e(unidad)}</b></p>{parrafos}{boton('Entrar al Portal SGC', url)}"
+                 f'<p style="font-size:13px;color:#475569">{e(remitente_nombre)}<br>Sistema de Gestión de la Calidad</p>')
+    return asunto, marco("Recordatorio del SGC", titulo, contenido, url), texto
+
+
 def plantilla_recuperacion(nombre: str, enlace: str, minutos: int, url: str) -> tuple[str, str, str]:
     """Enlace de un solo uso para que el usuario ponga una contraseña nueva."""
     e = html.escape

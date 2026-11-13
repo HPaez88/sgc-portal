@@ -2,6 +2,7 @@
 notificaciones.py — Avisos por correo desde el servidor (Resend).
 Solo administradores y auditores; límite por usuario para que nadie dispare costos ni spam.
 """
+import os
 import time
 from collections import defaultdict, deque
 
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/api/v1/notificaciones", tags=["Notificaciones"])
 
 ROLES_AVISAN = ("Super Admin", "Admin", "Auditor")
 ROLES_CORREO_LIBRE = ("Super Admin", "Admin")
+PAUSA_ENVIO = 0.6  # Resend admite ~2 correos por segundo
 LIMITE_POR_HORA = 30  # ponytail: en memoria por proceso; con varios workers mover a Redis/Postgres
 _envios: dict[int, deque] = defaultdict(deque)
 
@@ -27,6 +29,17 @@ class AvisoApertura(BaseModel):
     referencia: str = Field(default="", max_length=80)
     descripcion: str = Field(default="", max_length=4000)
     destinatarios: list[str] = Field(min_length=1, max_length=correo.MAX_DESTINATARIOS)
+
+
+class EnvioUnidad(BaseModel):
+    unidad: str = Field(min_length=2, max_length=150)
+    destinatarios: list[str] = Field(min_length=1, max_length=correo.MAX_DESTINATARIOS)
+
+
+class Recordatorios(BaseModel):
+    titulo: str = Field(min_length=3, max_length=150)
+    mensaje: str = Field(min_length=10, max_length=4000)
+    envios: list[EnvioUnidad] = Field(min_length=1, max_length=80)
 
 
 class AvisoLibre(BaseModel):
@@ -69,3 +82,21 @@ def aviso_libre(datos: AvisoLibre, request: Request, usuario: Usuario = Depends(
                                                    str(request.base_url).rstrip("/"))
     id_correo = correo.enviar(para, asunto, cuerpo, texto, responder_a=usuario.email)
     return {"enviado": True, "id": id_correo, "destinatarios": para}
+
+
+@router.post("/recordatorios")
+def recordatorios(datos: Recordatorios, request: Request, usuario: Usuario = Depends(auth.requiere_rol(*ROLES_CORREO_LIBRE))):
+    """Recordatorio manual a varias unidades (p. ej. matrices sin entregar). Cuenta como una sola acción en el límite."""
+    _controlar_ritmo(usuario.id)
+    url = correo.url_portal(request)
+    resultados = []
+    for envio in datos.envios:
+        try:
+            para = correo.limpiar_destinatarios(envio.destinatarios)
+            asunto, cuerpo, texto = correo.plantilla_recordatorio(envio.unidad, datos.titulo.strip(), datos.mensaje.strip(), usuario.nombre, url)
+            correo.enviar(para, asunto, cuerpo, texto, responder_a=os.getenv("BUZON_CORREO") or usuario.email)
+            resultados.append({"unidad": envio.unidad, "enviado": True, "destinatarios": para})
+        except HTTPException as ex:
+            resultados.append({"unidad": envio.unidad, "enviado": False, "error": str(ex.detail)})
+        time.sleep(PAUSA_ENVIO)
+    return {"enviados": sum(r["enviado"] for r in resultados), "resultados": resultados}
