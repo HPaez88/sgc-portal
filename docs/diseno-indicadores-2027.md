@@ -1,6 +1,6 @@
 # Diseño: módulo de Indicadores 2027 (proyectos → fichas → PEMS → cuadro de control)
 
-Estado: **propuesta para aprobación de @human** (2026-11-14). No se programa hasta aprobarla.
+Estado: **en construcción** (2026-11-14). Hecho: pestaña "Proyectos y fichas" (setup anual, formatos oficiales, avance trimestral). Pendiente: catálogo del Cuadro de Control desde proyectos aprobados, validación SGC de resultados, informes.
 Arranque operativo: **enero 2027**; la captura de proyectos, fichas y metas 2027 se habilita desde ya.
 Ejemplo analizado: Informática 2027 (Formato de Presentación de Proyectos, 3 fichas técnicas, PEMS PEM-1/PEM-2).
 

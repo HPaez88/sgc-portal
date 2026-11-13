@@ -80,3 +80,26 @@ def test_bitacora_del_servidor_registra_cambios(cliente, cab):
     assert filas[0]["modificados"] == 1 and filas[0]["detalle"][0]["campos"] == ["estado"]
     assert filas[1]["agregados"] == 1
     assert cliente.get("/api/v1/estado/bitacora/servidor", headers={"Authorization": "Bearer x"}).status_code == 401
+
+
+def test_formatos_indicadores(cliente, cab):
+    import io
+    import docx
+    import openpyxl
+    proy = {"id": "p1", "anio": 2027, "area": "Informática", "nombre": "PROYECTO X", "objetivo": "OBJ",
+            "actividades": [{"actividad": "A", "indicador": "IND", "unidad": "Porcentaje", "meta": "95", "trimestres": ["24", "24", "24", "23"], "indicador_id": 7}],
+            "presupuesto": {"1000": ["1", "1", "1", "1"]}}
+    cliente.put("/api/v1/estado/sgc-proyectos-indicadores", headers=cab, json={"valor": [proy]})
+    cliente.put("/api/v1/estado/sgc-indicadores-data", headers=cab, json={"valor": {"resultados": {"7-Feb-2027": {"valor": 96}}}})
+    try:
+        r = cliente.get("/api/v1/indicadores/formatos/p1/proyecto", headers=cab)
+        assert r.status_code == 200 and "PROYECTO X" in docx.Document(io.BytesIO(r.content)).tables[2].rows[0].cells[-1].text
+        ficha = docx.Document(io.BytesIO(cliente.get("/api/v1/indicadores/formatos/p1/ficha?actividad=0", headers=cab).content))
+        from backend.services.formatos_indicadores import _celdas
+        assert [c.text for c in _celdas(ficha.tables[0].rows[19])][2] == "96"  # febrero, desde el Cuadro de Control
+        pems = openpyxl.load_workbook(io.BytesIO(cliente.get("/api/v1/indicadores/formatos/p1/pems", headers=cab).content))
+        assert pems.worksheets[0]["C17"].value == 0.95
+        assert cliente.get("/api/v1/indicadores/formatos/nada/proyecto", headers=cab).status_code == 404
+    finally:
+        cliente.put("/api/v1/estado/sgc-proyectos-indicadores", headers=cab, json={"valor": []})
+        cliente.put("/api/v1/estado/sgc-indicadores-data", headers=cab, json={"valor": {}})

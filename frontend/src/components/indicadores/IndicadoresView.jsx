@@ -56,8 +56,7 @@ import ModalGestionarRC from './ModalGestionarRC';
 import ReportesCorreccionPanel from '../acciones/ReportesCorreccionPanel';
 import ModalRecordatorioAtrasos from './ModalRecordatorioAtrasos';
 import FichasGubernamentalesTab from './FichasGubernamentalesTab';
-import ProyectosPresupuestoTab from './ProyectosPresupuestoTab';
-import ControlPresupuestalAreasTab from './ControlPresupuestalAreasTab';
+import ProyectosIndicadoresTab from './ProyectosIndicadoresTab';
 import EvaluacionTrimestralTab from './EvaluacionTrimestralTab';
 import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamentales';
 import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea, resolverResponsable } from '../../constants/areas';
@@ -165,9 +164,6 @@ export default function IndicadoresView({
   const [modalGestionarRCOpen, setModalGestionarRCOpen] = useState(false);
   const [filtroEstadoRC, setFiltroEstadoRC] = useState('TODOS');
   const [busquedaRC, setBusquedaRC] = useState('');
-
-  // Sub-pestaña para Presupuesto (Control por Áreas vs Fichas CONAC)
-  const [subTabPresupuesto, setSubTabPresupuesto] = useState('areas');
 
   // Modal de Recordatorios y Envío de Correos a Áreas
   const [modalRecordatoriosOpen, setModalRecordatoriosOpen] = useState(false);
@@ -921,7 +917,7 @@ export default function IndicadoresView({
             { id: 'cuadro', num: '1', label: 'Cuadro Mensual', sub: 'OOMRSC-05', icon: Target },
             { id: 'procesos', num: '2', label: 'Por Procesos', sub: 'Eficacia global', icon: Layers },
             { id: 'fichas', num: '3', label: 'Fichas PMD', sub: 'Ayuntamiento', icon: FileSpreadsheet },
-            { id: 'proyectos', num: '4', label: 'Presupuesto CONAC', sub: 'Capítulos por Área', icon: Building2 },
+            { id: 'proyectos', num: '4', label: 'Proyectos y fichas', sub: 'Setup anual · PEMS', icon: Building2 },
             { id: 'trimestral', num: '5', label: 'Evaluación Trimestral', sub: 'T1 a T4 / MIR', icon: BarChart3 },
             { id: 'correcciones', num: '6', label: 'Reportes RC', sub: `${reportesCorreccion.length} casos`, icon: FileWarning }
           ].map(tab => {
@@ -1654,50 +1650,8 @@ export default function IndicadoresView({
         />
       )}
 
-      {/* ==================================================================== */}
-      {/* TAB 4: CONTROL PRESUPUESTAL Y PROYECTOS (ARMONIZACIÓN CONAC)         */}
-      {/* ==================================================================== */}
-      {tabActiva === 'proyectos' && (
-        <div className="space-y-4">
-          <div className="bg-white p-1.5 rounded-xl border border-slate-200 inline-flex gap-1 shadow-xs">
-            <button
-              type="button"
-              onClick={() => setSubTabPresupuesto('areas')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                subTabPresupuesto === 'areas'
-                  ? 'bg-[#0B192C] text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <Building2 size={14} /> Control por Áreas y Capítulos (1000 - 6000)
-            </button>
-            <button
-              type="button"
-              onClick={() => setSubTabPresupuesto('fichas')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                subTabPresupuesto === 'fichas'
-                  ? 'bg-[#0B192C] text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <FileSpreadsheet size={14} /> Fichas Presupuestarias y Proyectos (PP-2026)
-            </button>
-          </div>
-
-          {subTabPresupuesto === 'areas' ? (
-            <ControlPresupuestalAreasTab
-              ejercicio={ejercicio}
-              esAdminOSGC={esAdminOSGC}
-            />
-          ) : (
-            <ProyectosPresupuestoTab
-              ejercicio={ejercicio}
-              esAdminOSGC={esAdminOSGC}
-            />
-          )}
-        </div>
-      )}
-
+      {/* TAB 4: SETUP ANUAL — PROYECTOS, FICHAS TÉCNICAS, PEMS Y AVANCE TRIMESTRAL */}
+      {tabActiva === 'proyectos' && <ProyectosIndicadoresTab indicadoresCatalogo={listaIndicadores} />}
 
       {/* ==================================================================== */}
       {/* TAB 5: EVALUACIÓN TRIMESTRAL & MIR (T1 A T4)                         */}
