@@ -115,13 +115,22 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
                     <td className="p-2 text-slate-700">{r.contexto || '—'}{r.contexto_resultado && <span className="block text-slate-500">{r.contexto_resultado}</span>}</td>
                     <td className="p-2 text-slate-700 min-w-[10rem]">{r.causa || '—'}{r.consecuencia && <span className="block text-slate-500">{r.tipo === 'Riesgo' ? 'Consecuencia' : 'Beneficio'}: {r.consecuencia}</span>}</td>
                     <td className="p-2 text-slate-700">{r.tratamiento || '—'}</td>
-                    <td className="p-2 text-slate-700 min-w-[12rem]">{(r.plan || []).length ? <ul className="list-disc pl-4">{r.plan.map((a, k) => <li key={k}>{a.actividad} ({a.responsable || 'sin responsable'}, {formatearFecha(a.fecha_termino_sugerida)})</li>)}</ul> : '—'}</td>
-                    <td className="p-2 font-mono font-bold text-sky-700">{r.pm_folio || '—'}</td>
+                    <td className="p-2 text-slate-700 min-w-[12rem]">{(r.plan || []).length ? <ul className="list-disc pl-4">{r.plan.map((a, k) => <li key={k}>{a.actividad} ({a.responsable || <span className="font-bold text-amber-700">sin responsable</span>}, {a.fecha_termino_sugerida ? formatearFecha(a.fecha_termino_sugerida) : <span className="font-bold text-amber-700">sin fecha</span>})</li>)}</ul> : '—'}</td>
+                    <td className="p-2">{r.pm_folio
+                      ? <span className="font-mono font-bold text-sky-700">{r.pm_folio}</span>
+                      : llevaPM(r)
+                        ? <span className="text-[11px] font-semibold text-slate-700">Se genera con folio al aceptar la matriz</span>
+                        : <span className="text-[11px] text-slate-500">No lleva (monitoreo)</span>}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {['BORRADOR', 'OBSERVADA'].includes(fila.estado) && (
+            <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+              Esta matriz sigue en captura del área: los planes son la propuesta. Cuando el área la envíe y el SGC la acepte, cada plan se convierte en un Plan de Mejora con folio para su seguimiento.
+            </p>
+          )}
           {fila.estado === 'ACEPTADA' && (
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
               <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Motivo para reabrir la matriz
