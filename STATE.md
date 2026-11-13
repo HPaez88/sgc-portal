@@ -65,7 +65,7 @@
 - [ ] C13b — Activar Resend: dominio propio verificado + RESEND_API_KEY y MAIL_FROM en el .env del VPS (@human)
 - [x] C14 — Fecha final de AC/PM calculada: actividad más tardía + 2 semanas, recorrida a día hábil; botones para agregar causas y actividades a mano (antes solo las llenaba la IA)
 - [x] C15 — Decidido por @human (2026-11-06): 2 replanteos por actividad; el seguimiento y semáforo van por la fecha final, no actividad por actividad. Sin cambios de código.
-- [x] C16 — Lista AC: No conformidad + origen con número; AC/RC por indicador en el cuadro de control; correo libre para admins. Falta ligar AC#14/2025, AC#17/2025, AC#1/2026, AC#10/2026 a su indicador.
+- [x] C16 — Lista AC: No conformidad + origen con número; AC/RC por indicador en el cuadro de control; correo libre para admins. Ligadas 2026-11-13: AC#14/2025→24, AC#1/2026→41. Pendiente confirmar AC#10/2026 (#51 o #29) y AC#17/2025 (cerrada; sin indicador "eficiencia física" en catálogo).
 - [x] C17 — Encargados del SGC (varios) por área y dirección desde Configuración; subdirecciones en el catálogo de direcciones (nombre, encargado, correo) y el área elige la suya. Pendiente: un mismo encargado de alcance limitado en 2+ áreas solo ve su área principal.
 - [x] C18 — Replanteo de fecha final para registros sin actividades (Admin, máx 2 incl. Control 6). Decidido @human: sin replanteos y vencida → dictamen no eficaz + nueva acción (botón en el panel). Fecha de seguimiento fija al aprobar (2026-11-10); el panel aplica con o sin actividades.
 - [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
