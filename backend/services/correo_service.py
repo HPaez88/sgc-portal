@@ -5,10 +5,12 @@ Activo solo si existen RESEND_API_KEY y MAIL_FROM (ej. "Portal SGC <notificacion
 Sin ellas el portal sigue funcionando y el frontend usa el correo del propio usuario (mailto).
 Plantillas puras (sin red) para poder probarlas.
 """
+import base64
 import html
 import logging
 import os
 import re
+from pathlib import Path
 
 import httpx
 from fastapi import HTTPException
@@ -16,6 +18,8 @@ from fastapi import HTTPException
 log = logging.getLogger("sgc.correo")
 
 RESEND_URL = "https://api.resend.com/emails"
+LOGO_CID = "logo-oomapasc"
+_LOGO = Path(__file__).resolve().parent.parent / "assets" / "logo-oomapasc.png"
 MAX_DESTINATARIOS = 10
 RE_CORREO = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -65,10 +69,8 @@ def boton(texto: str, enlace: str) -> str:
 def marco(etiqueta: str, titulo: str, contenido_html: str, url: str) -> str:
     """Envoltura común de todos los correos: logo, título, contenido y pie institucional."""
     e = html.escape
-    if url:
-        logo = f'<img src="{e(url)}/logo-oomapasc.png" alt="OOMAPAS de Cajeme" height="44" style="display:block;border:0">'
-    else:
-        logo = f'<div style="font-size:20px;font-weight:bold;color:{AZUL_OSCURO}">OOMAPAS de Cajeme</div>'
+    # El logo va incrustado en el correo (cid:), así se ve aunque el cliente bloquee imágenes externas.
+    logo = f'<img src="cid:{LOGO_CID}" alt="OOMAPAS de Cajeme" width="116" height="44" style="display:block;border:0">'
     return f"""<div style="background:#f1f5f9;padding:24px 12px">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;color:#1e293b;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
   <div style="padding:18px 24px 14px">{logo}</div>
@@ -94,15 +96,14 @@ def plantilla_acceso(nombre: str, email: str, password_temporal: str, url: str, 
     asunto = "Tu acceso al Portal SGC de OOMAPAS de Cajeme" if nuevo else "Nueva contraseña temporal — Portal SGC"
     intro = ("Se creó tu cuenta en el Portal del Sistema de Gestión de la Calidad." if nuevo
              else "Se generó una nueva contraseña temporal para tu cuenta del Portal SGC.")
-    texto = (f"Hola {nombre},\n\n{intro}\n\nPortal: {url}\nUsuario: {email}\nContraseña temporal: {password_temporal}\n\n"
+    texto = (f"Hola {nombre},\n\n{intro}\n\nEntra en: {url}\nUsuario: {email}\nContraseña temporal: {password_temporal}\n\n"
              "Al entrar, el portal te pedirá cambiarla por una personal. Si no solicitaste este acceso, avisa al SGC.\n\n"
              "Sistema de Gestión de la Calidad\nOOMAPAS de Cajeme")
-    enlace = f'<a href="{e(url)}" style="color:{AZUL_OSCURO}">{e(url)}</a>'
     clave = ('<span style="font-family:Consolas,monospace;font-size:16px;font-weight:bold;letter-spacing:1px;'
              f'background:#f1f5f9;padding:3px 8px;border-radius:6px">{e(password_temporal)}</span>')
     contenido = (f"<p>Hola <b>{e(nombre)}</b>,</p><p>{e(intro)}</p>"
                  '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:14px">'
-                 f"{_fila('Portal', enlace)}{_fila('Usuario', f'<b>{e(email)}</b>')}{_fila('Contraseña temporal', clave)}"
+                 f"{_fila('Usuario', f'<b>{e(email)}</b>')}{_fila('Contraseña temporal', clave)}"
                  f"</table>{boton('Entrar al Portal SGC', url)}"
                  '<p style="font-size:13px;color:#475569">Al entrar, el portal te pedirá cambiarla por una contraseña personal. '
                  "Si después la olvidas, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio.</p>")
@@ -168,6 +169,9 @@ def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, 
     datos = {"from": os.environ["MAIL_FROM"], "to": destinatarios, "subject": asunto, "html": cuerpo_html, "text": texto}
     if responder_a and RE_CORREO.match(responder_a):
         datos["reply_to"] = responder_a
+    if f"cid:{LOGO_CID}" in cuerpo_html and _LOGO.is_file():
+        datos["attachments"] = [{"filename": "logo-oomapasc.png", "content": base64.b64encode(_LOGO.read_bytes()).decode(),
+                                 "content_type": "image/png", "content_id": LOGO_CID}]
     try:
         r = httpx.post(RESEND_URL, json=datos, timeout=20,
                        headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"})

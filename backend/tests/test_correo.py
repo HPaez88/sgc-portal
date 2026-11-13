@@ -52,3 +52,20 @@ def test_envio_por_resend(monkeypatch):
     assert capturado["headers"]["Authorization"] == "Bearer re_prueba"
     assert capturado["json"]["from"].endswith("<notificaciones@portalsgc.mx>")
     assert capturado["json"]["reply_to"] == "hpaez@oomapasc.gob.mx"
+
+
+def test_logo_va_incrustado_cuando_el_correo_lo_usa(monkeypatch):
+    monkeypatch.setenv("RESEND_API_KEY", "re_prueba")
+    monkeypatch.setenv("MAIL_FROM", "Portal SGC <sgc@prueba.mx>")
+    capturado = {}
+
+    class Resp:
+        status_code = 200
+        def json(self):
+            return {"id": "x"}
+
+    monkeypatch.setattr(correo.httpx, "post", lambda url, json, timeout, headers: capturado.update(json=json) or Resp())
+    _, cuerpo, texto = correo.plantilla_libre("Aviso", "Hola", "SGC", "https://sgc.mx")
+    correo.enviar(["a@b.mx"], "Aviso", cuerpo, texto)
+    adj = capturado["json"]["attachments"][0]
+    assert adj["content_id"] == correo.LOGO_CID and adj["content"]

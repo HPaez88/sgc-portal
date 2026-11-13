@@ -162,7 +162,7 @@ def buzon(monkeypatch):
 def test_plantillas_de_acceso_y_recuperacion_escapan_y_llevan_datos():
     asunto, cuerpo, texto = correo.plantilla_acceso("<b>Ana</b>", "ana@x.mx", "Clave123xyz", "https://sgc.mx", "alta")
     assert "Clave123xyz" in cuerpo and "Clave123xyz" in texto and "&lt;b&gt;Ana" in cuerpo
-    assert "logo-oomapasc.png" in cuerpo and "#005B86" in cuerpo
+    assert "cid:logo-oomapasc" in cuerpo and "#005B86" in cuerpo
     _, cuerpo2, _ = correo.plantilla_recuperacion("Ana", "https://sgc.mx/?recuperar=abc", 30, "https://sgc.mx")
     assert "https://sgc.mx/?recuperar=abc" in cuerpo2 and "30 minutos" in cuerpo2
 
