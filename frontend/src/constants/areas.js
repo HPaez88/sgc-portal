@@ -166,3 +166,52 @@ export function direccionDeRegistro(registro, areasDetalle = []) {
   const vivo = areasDetalle.find((a) => a.nombre === area);
   return vivo?.direccion ? normalizarDireccion(vivo.direccion) : obtenerDireccionDeArea(area);
 }
+
+
+// ── Responsable de un indicador según el Cuadro de Control OOMRSC-05 ──
+// Puede ser un ÁREA del catálogo, una SUBDIRECCIÓN, una DIRECCIÓN o otra unidad (p. ej. Transparencia).
+// No se fuerza a un área: se respeta lo que dice el Cuadro (decidido por @human 2026-11-13).
+const sinAcentos = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const ALIAS_AREAS = {
+  'mtto. y servicios generales': 'Mantenimiento y Servicios Generales',
+  'supervision de obras': 'Supervisión y control de obras',
+  'coord. juridico': 'Jurídico',
+};
+export function resolverResponsable(area, direccion) {
+  const crudo = String(area || '').trim();
+  const llave = sinAcentos(crudo);
+  if (/^direccion\s/.test(llave)) {
+    const dir = normalizarDireccion(crudo);
+    return { area: dir.replace(/^Dir\.\s*/, 'Dirección '), direccion: dir, responsable_tipo: 'direccion' };
+  }
+  const dir = normalizarDireccion(direccion || '');
+  if (/^subdireccion\s/.test(llave)) return { area: crudo, direccion: direccion ? dir : 'Dir. Técnica', responsable_tipo: 'subdireccion' };
+  const exacta = AREAS.find((a) => sinAcentos(a) === llave) || ALIAS_AREAS[llave];
+  if (exacta) return { area: exacta, direccion: direccion ? dir : obtenerDireccionDeArea(exacta), responsable_tipo: 'area' };
+  if (!crudo) return { area: '', direccion: dir, responsable_tipo: 'area' };
+  return { area: crudo, direccion: dir, responsable_tipo: 'unidad' };
+}
+
+/**
+ * Contactos del responsable de un indicador (o de cualquier unidad): titular y correos a quienes avisar.
+ * Área → encargado del área + sus encargados del SGC; dirección → director + encargados SGC;
+ * subdirección → su encargado; otra unidad → los de su dirección.
+ */
+export function contactoResponsable(ind, areasDetalle = [], direccionesDetalle = []) {
+  const { area, direccion, responsable_tipo: tipo } = resolverResponsable(ind?.area, ind?.direccion);
+  const dir = direccionesDetalle.find((d) => normalizarDireccion(d.nombre) === direccion);
+  const conCorreos = (titular, correo, extra = []) => ({
+    nombre: area, tipo, titular: titular || '',
+    correos: [...new Set([correo, ...extra].map((c) => String(c || '').trim().toLowerCase()).filter((c) => c.includes('@')))],
+  });
+  if (tipo === 'area') {
+    const a = areasDetalle.find((x) => x.nombre === area);
+    if (a) return conCorreos(a.encargado, a.correo, a.encargados_sgc || []);
+  }
+  if (tipo === 'subdireccion') {
+    const sub = direccionesDetalle.flatMap((d) => d.subdirecciones || []).find((s) => s.nombre === area);
+    if (sub) return conCorreos(sub.encargado, sub.correo);
+  }
+  if (dir) return conCorreos(dir.director, dir.correo, dir.encargados_sgc || []);
+  return conCorreos('', '');
+}

@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-13T19:00Z · @claude-code · [FIX+FEATURE] · Responsable de indicadores según el Cuadro de Control; reasignación por admin; propósito de áreas
+El catálogo ya coincidía 100% con el Cuadro de Control OOMRSC-05 Rev. 37, pero el portal forzaba todo a un área (Transparencia → Órgano de Control Interno, subdirecciones → áreas, direcciones → áreas). resolverResponsable() respeta área / subdirección / dirección / otra unidad (prueba contra los 100 indicadores: fuera de las 33 áreas solo #1,2,41,42,43,71,72,77,78,85,86). La ventana de configuración del indicador permite a Admin/Super Admin reasignar el responsable (áreas, subdirecciones, direcciones, otras unidades) y queda en bitácora. contactoResponsable(): los recordatorios de atraso se agrupan por responsable y van a su titular + sus encargados del SGC (antes usaban una lista fija de áreas con nombres de prueba y un enlace viejo de onrender). Campo "Propósito del área" en el catálogo de áreas; se cargan 33 borradores (Manual OOMLSC-01 + Matriz OOMLSC-A21) marcados como borrador hasta que el SGC los confirme.
+- Deploy: SI
+
 ## 2026-11-13T16:00Z · @claude-code · [FIX+DATA] · Indicadores de dirección conservan su dirección; ligas AC-indicador
 El catálogo trae 7 indicadores de DIRECCIÓN (no de área): #1 y #2 Dirección General, #41 ingresos, #42 y #43 eficiencia comercial (Dirección Comercial), #77 y #78 Dirección Administrativa. normalizarArea los convertía en "Sistema de Gestión de Calidad", "Control y Servicios" y "Contabilidad". Ahora conservan como área el nombre de su dirección (es_de_direccion=true; prueba en areas.test.js). Datos: AC#14/2025 → indicador #24 y AC#1/2026 → #41 (confirmado por @human que es de la Dirección Comercial).
 - Deploy: SI

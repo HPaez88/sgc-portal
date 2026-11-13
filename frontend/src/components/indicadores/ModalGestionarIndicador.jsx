@@ -37,7 +37,10 @@ import {
   obtenerFichaTecnicaIndicador,
   CONFIG_AYUNTAMIENTO_CAJEME
 } from '../../constants/fichasGubernamentales';
-import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea } from '../../constants/areas';
+import { AREAS, DIRECCIONES, normalizarDireccion, resolverResponsable } from '../../constants/areas';
+import { INDICADORES } from '../../constants/indicadores';
+import { useSGC } from '../../SGCContext';
+import { esAdminSGC } from '../../constants/workflow';
 
 const PERIODICIDADES = ['Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
 const UNIDADES = [
@@ -137,6 +140,15 @@ export default function ModalGestionarIndicador({
   const areasCatalogo = useMemo(() => {
     return [...AREAS].sort((a, b) => a.localeCompare('es'));
   }, []);
+  // Responsable puede ser área, subdirección, dirección u otra unidad (Cuadro de Control OOMRSC-05).
+  const { direccionesDetalle = [], usuarioLogueado } = useSGC();
+  const puedeReasignar = esAdminSGC(usuarioLogueado);
+  const subdireccionesCatalogo = useMemo(() => {
+    const deCatalogo = direccionesDetalle.flatMap((d) => (d.subdirecciones || []).map((s) => s.nombre)).filter(Boolean);
+    const delCuadro = INDICADORES.filter((i) => i.responsable_tipo === 'subdireccion').map((i) => i.area);
+    return [...new Set([...deCatalogo, ...delCuadro])].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [direccionesDetalle]);
+  const otrasUnidades = useMemo(() => [...new Set(INDICADORES.filter((i) => i.responsable_tipo === 'unidad').map((i) => i.area))], []);
 
   const direccionesCatalogo = useMemo(() => {
     return [...DIRECCIONES];
@@ -225,10 +237,9 @@ export default function ModalGestionarIndicador({
 
     // 2. Datos Operativos SGC
     if (indBase) {
-      const areaNorm = normalizarArea(indBase.area);
-      const dirNorm = normalizarDireccion(indBase.direccion || obtenerDireccionDeArea(areaNorm));
-      setDireccion(dirNorm);
-      setArea(areaNorm);
+      const resp = resolverResponsable(indBase.area, indBase.direccion);
+      setDireccion(resp.direccion);
+      setArea(resp.area);
       setProceso(indBase.proceso || (procesosDisponibles.length > 0 ? procesosDisponibles[0] : 'Responsabilidad de la Dirección'));
       setMetaAnual(indBase.meta_anual || indBase.meta || 85);
       setMetasTrimestrales({
@@ -397,7 +408,7 @@ export default function ModalGestionarIndicador({
       numero: numFinal,
       nombre: nombre.trim(),
       direccion: normalizarDireccion(direccion),
-      area: normalizarArea(area),
+      area: area.trim(),
       proceso,
       periodicidad,
       unidad,
@@ -582,6 +593,7 @@ export default function ModalGestionarIndicador({
                 </label>
                 <select
                   value={direccion}
+                  disabled={!puedeReasignar}
                   onChange={(e) => setDireccion(e.target.value)}
                   className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
                 >
@@ -595,21 +607,41 @@ export default function ModalGestionarIndicador({
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1 flex items-center gap-1">
                   <Layers size={12} className="text-sky-600" />
-                  Área Operativa:
+                  Responsable (área, subdirección o dirección):
                 </label>
                 <select
                   value={area}
+                  disabled={!puedeReasignar}
+                  title={puedeReasignar ? '' : 'Solo los administradores pueden reasignar el indicador'}
                   onChange={(e) => {
-                    const nuevaArea = normalizarArea(e.target.value);
-                    setArea(nuevaArea);
-                    const dirAuto = obtenerDireccionDeArea(nuevaArea);
-                    if (dirAuto) setDireccion(dirAuto);
+                    const nueva = e.target.value;
+                    setArea(nueva);
+                    const sub = direccionesDetalle.find((d) => (d.subdirecciones || []).some((s) => s.nombre === nueva));
+                    const resp = resolverResponsable(nueva, sub ? sub.nombre : '');
+                    if (resp.responsable_tipo !== 'unidad' && resp.responsable_tipo !== 'subdireccion') setDireccion(resp.direccion);
+                    else if (sub) setDireccion(normalizarDireccion(sub.nombre));
                   }}
                   className="w-full px-3 py-2 text-xs font-bold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
                 >
-                  {areasCatalogo.map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
+                  <optgroup label="Áreas">
+                    {areasCatalogo.map(a => <option key={a} value={a}>{a}</option>)}
+                  </optgroup>
+                  {subdireccionesCatalogo.length > 0 && (
+                    <optgroup label="Subdirecciones">
+                      {subdireccionesCatalogo.map(a => <option key={a} value={a}>{a}</option>)}
+                    </optgroup>
+                  )}
+                  <optgroup label="Direcciones">
+                    {DIRECCIONES.map(d => { const n = d.replace(/^Dir\.\s*/, 'Dirección '); return <option key={n} value={n}>{n}</option>; })}
+                  </optgroup>
+                  {otrasUnidades.length > 0 && (
+                    <optgroup label="Otras unidades">
+                      {otrasUnidades.map(a => <option key={a} value={a}>{a}</option>)}
+                    </optgroup>
+                  )}
+                  {area && ![...areasCatalogo, ...subdireccionesCatalogo, ...otrasUnidades].includes(area) && !/^Direcci/.test(area) && (
+                    <option value={area}>{area}</option>
+                  )}
                 </select>
               </div>
 

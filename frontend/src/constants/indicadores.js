@@ -59,7 +59,7 @@ export function evalSemaforoOOMRSC05(valorReal, meta, esMenor = false) {
   }
 }
 
-import { normalizarArea, normalizarDireccion, obtenerDireccionDeArea } from './areas';
+import { resolverResponsable } from './areas';
 
 const RAW_INDICADORES = [
   {
@@ -2365,18 +2365,10 @@ const RAW_INDICADORES = [
 ];
 
 // Indicadores oficiales normalizados conforme a la estructura orgánica OOMAPASC
-// Algunos indicadores son de una DIRECCIÓN, no de un área (p. ej. #41 ingresos, #42-43 eficiencia comercial):
-// conservan como "área" el nombre de su dirección en lugar de mapearse a un área operativa.
+// Responsable tal cual el Cuadro de Control OOMRSC-05: área, subdirección, dirección u otra unidad.
 export const INDICADORES = RAW_INDICADORES.map(ind => {
-  const esDeDireccion = /^direcci[oó]n\s/i.test(String(ind.area || '').trim());
-  const normArea = normalizarArea(ind.area);
-  const normDir = normalizarDireccion(esDeDireccion ? ind.area : (ind.direccion || obtenerDireccionDeArea(normArea)));
-  return {
-    ...ind,
-    area: esDeDireccion ? normDir.replace(/^Dir\.\s*/, 'Dirección ') : normArea,
-    direccion: normDir,
-    es_de_direccion: esDeDireccion
-  };
+  const r = resolverResponsable(ind.area, ind.direccion);
+  return { ...ind, ...r, es_de_direccion: r.responsable_tipo === 'direccion' };
 });
 
 export const REPORTES_CORRECCION_INICIALES = [

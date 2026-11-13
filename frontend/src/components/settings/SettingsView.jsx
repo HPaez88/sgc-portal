@@ -1868,6 +1868,24 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               })()}
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Propósito del área</label>
+              <p className="text-[11px] text-slate-500 mb-1.5">Para qué existe el área, qué entrega y a quién. La IA lo usa para sugerir riesgos y oportunidades.</p>
+              <textarea
+                rows={4}
+                maxLength={1200}
+                value={modalArea.data.proposito || ''}
+                onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, proposito: e.target.value } })}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+              />
+              {modalArea.data.proposito_estado === 'borrador' && (
+                <label className="mt-1.5 flex items-center gap-2 text-[11px] text-amber-800">
+                  <input type="checkbox" onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, proposito_estado: e.target.checked ? 'confirmado' : 'borrador' } })} />
+                  Borrador redactado por el SGC con base en el Manual y la Matriz de Procesos. Marcar como confirmado.
+                </label>
+              )}
+            </div>
+
             <EncargadosSGC
               lista={modalArea.data.encargados_sgc || []}
               onChange={(l) => setModalArea({ ...modalArea, data: { ...modalArea.data, encargados_sgc: l } })}

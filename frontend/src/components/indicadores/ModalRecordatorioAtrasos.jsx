@@ -17,7 +17,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
-import { AREAS_DETALLE_INICIALES } from '../../constants/areas';
+import { contactoResponsable, resolverResponsable } from '../../constants/areas';
 import { useToast } from '../common/Toast';
 import { useSGC } from '../../SGCContext';
 
@@ -32,7 +32,7 @@ export default function ModalRecordatorioAtrasos({
   usuarioLogueado = null
 }) {
   const toast = useToast();
-  const { registrarMovimiento } = useSGC();
+  const { registrarMovimiento, areasDetalle = [], direccionesDetalle = [] } = useSGC();
 
   const [areaSeleccionada, setAreaSeleccionada] = useState(null);
   const [tipoNotificacion, setTipoNotificacion] = useState('atraso'); // 'atraso' | 'general'
@@ -41,36 +41,32 @@ export default function ModalRecordatorioAtrasos({
   const [copiaSGC, setCopiaSGC] = useState(true);
 
   // Análisis de atrasos por área
+  // Agrupado por RESPONSABLE del indicador (área, subdirección o dirección, según el Cuadro de Control);
+  // el aviso va a su titular y a sus encargados del SGC.
   const atrasosPorArea = useMemo(() => {
-    return AREAS_DETALLE_INICIALES.map(areaInfo => {
-      // Indicadores pertenecientes a esta área
-      const indicadoresArea = listaIndicadores.filter(ind => ind.area === areaInfo.nombre);
-
-      // Cuántos no tienen captura en el mes activo
-      const pendientesCaptura = indicadoresArea.filter(ind => {
-        const k = `${ind.id}-${mesActivo}-${ejercicio}`;
-        const res = resultados[k];
+    const grupos = new Map();
+    listaIndicadores.forEach((ind) => {
+      const r = resolverResponsable(ind.area, ind.direccion);
+      if (!grupos.has(r.area)) grupos.set(r.area, { r, indicadores: [], muestra: ind });
+      grupos.get(r.area).indicadores.push(ind);
+    });
+    return [...grupos.values()].map(({ r, indicadores, muestra }) => {
+      const contacto = contactoResponsable(muestra, areasDetalle, direccionesDetalle);
+      const pendientesCaptura = indicadores.filter(ind => {
+        const res = resultados[`${ind.id}-${mesActivo}-${ejercicio}`];
         return res === undefined || res?.valor === null || res?.valor === '';
       });
-
-      // Reportes de corrección abiertos para esta área
-      const rcsAbiertos = reportesCorreccion.filter(rc => 
-        (rc.area === areaInfo.nombre || rc.area?.toLowerCase().includes(areaInfo.nombre.toLowerCase())) &&
-        (rc.estado === 'ABIERTO' || rc.estado === 'EN_ATENCION' || rc.estado === 'ABIERTA')
+      const rcsAbiertos = reportesCorreccion.filter(rc =>
+        rc.area === r.area && (rc.estado === 'ABIERTO' || rc.estado === 'EN_ATENCION' || rc.estado === 'ABIERTA')
       );
-
       const totalAtrasos = pendientesCaptura.length + rcsAbiertos.length;
-
       return {
-        ...areaInfo,
-        totalIndicadores: indicadoresArea.length,
-        pendientesCaptura,
-        rcsAbiertos,
-        totalAtrasos,
-        tieneAtraso: totalAtrasos > 0
+        nombre: r.area, direccion: r.direccion, tipo: r.responsable_tipo,
+        encargado: contacto.titular || 'Responsable', correo: contacto.correos.join(','), correos: contacto.correos,
+        totalIndicadores: indicadores.length, pendientesCaptura, rcsAbiertos, totalAtrasos, tieneAtraso: totalAtrasos > 0,
       };
     }).sort((a, b) => b.totalAtrasos - a.totalAtrasos);
-  }, [listaIndicadores, resultados, reportesCorreccion, mesActivo, ejercicio]);
+  }, [listaIndicadores, resultados, reportesCorreccion, mesActivo, ejercicio, areasDetalle, direccionesDetalle]);
 
   const areasConAtraso = useMemo(() => {
     return atrasosPorArea.filter(a => a.tieneAtraso);
@@ -91,7 +87,7 @@ export default function ModalRecordatorioAtrasos({
     setAsuntoCustom(`[SGC OOMAPASC] Aviso Oficial: Atraso en Captura de Indicadores OOMRSC-05 - ${areaItem.nombre}`);
     setMensajeCustom(
 `Estimado(a) ${areaItem.encargado},
-Titular del área: ${areaItem.nombre} (${areaItem.direccion})
+Responsable: ${areaItem.nombre} (${areaItem.direccion})
 OOMAPASC de Cajeme
 
 Por medio del presente recordatorio del Sistema de Gestión de Calidad (ISO 9001:2015 § 9.1), le informamos que al corte del período ${mesActivo} de ${ejercicio}, se registran ${areaItem.pendientesCaptura.length} indicador(es) oficial(es) pendientes de captura en el formato OOMRSC-05:
@@ -102,7 +98,7 @@ ${textoRcs}
 Le recordamos que conforme a la directriz institucional, la captura y ratificación de mediciones debe completarse puntualmente para la integración de la Revisión por la Dirección y Fichas PMD del Ayuntamiento.
 
 Agradecemos ingresar a la brevedad a la plataforma para regularizar su información:
-https://sgc-portal-933s.onrender.com/#/indicadores
+${window.location.origin}
 
 Atentamente,
 Coordinación del Sistema de Gestión de la Calidad
@@ -276,7 +272,7 @@ OOMAPASC de Cajeme`
                 </h5>
               </div>
 
-              {areaSeleccionada && (
+              {areaSeleccionada?.telefono && (
                 <span className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
                   <Phone size={11} /> {areaSeleccionada.telefono}
                 </span>

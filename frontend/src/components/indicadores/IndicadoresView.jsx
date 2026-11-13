@@ -59,10 +59,10 @@ import ProyectosPresupuestoTab from './ProyectosPresupuestoTab';
 import ControlPresupuestalAreasTab from './ControlPresupuestalAreasTab';
 import EvaluacionTrimestralTab from './EvaluacionTrimestralTab';
 import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamentales';
-import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea } from '../../constants/areas';
+import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea, resolverResponsable } from '../../constants/areas';
 import { useIsMobile } from '../../hooks';
 import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
-import { esCerrado } from '../../constants/workflow';
+import { esCerrado, esAdminSGC } from '../../constants/workflow';
 
 const RC_CERRADOS = ['CERRADA', 'CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO', 'ESCALADO_A_AC'];
 
@@ -242,20 +242,15 @@ export default function IndicadoresView({
   // Catálogo dinámico unificado (Base Oficial + Personalizaciones / Creados por Admin)
   const catalogoCustom = indicadoresData?.catalogoPersonalizado || {};
   const listaIndicadores = useMemo(() => {
+    // El responsable se respeta como lo dice el Cuadro de Control o la reasignación del administrador.
     const mapa = new Map();
     INDICADORES.forEach(ind => {
       const custom = catalogoCustom[ind.id];
       const base = custom ? { ...ind, ...custom } : ind;
-      const areaNorm = normalizarArea(base.area);
-      const dirNorm = normalizarDireccion(base.direccion || obtenerDireccionDeArea(areaNorm));
-      mapa.set(ind.id, { ...base, area: areaNorm, direccion: dirNorm });
+      mapa.set(ind.id, { ...base, ...resolverResponsable(base.area, base.direccion) });
     });
     Object.values(catalogoCustom).forEach(ind => {
-      if (!mapa.has(ind.id)) {
-        const areaNorm = normalizarArea(ind.area);
-        const dirNorm = normalizarDireccion(ind.direccion || obtenerDireccionDeArea(areaNorm));
-        mapa.set(ind.id, { ...ind, area: areaNorm, direccion: dirNorm });
-      }
+      if (!mapa.has(ind.id)) mapa.set(ind.id, { ...ind, ...resolverResponsable(ind.area, ind.direccion) });
     });
     return Array.from(mapa.values()).sort((a, b) => (a.numero ?? a.id) - (b.numero ?? b.id));
   }, [catalogoCustom]);
@@ -310,6 +305,15 @@ export default function IndicadoresView({
   // Guardar creación o edición de ficha de indicador
   const handleGuardarIndicadorFicha = (indicadorPayload, esEdicion) => {
     const id = indicadorPayload.id;
+    const previo = listaIndicadores.find((i) => i.id === id);
+    if (previo && (previo.area !== indicadorPayload.area || previo.direccion !== indicadorPayload.direccion)) {
+      if (!esAdminSGC(usuarioLogueado)) { toast.error('Solo los administradores pueden reasignar un indicador.'); return; }
+      registrarMovimiento?.({
+        modulo: 'INDICADORES', accion: 'REASIGNACION_INDICADOR',
+        descripcion: `Indicador #${id} reasignado: ${previo.area} (${previo.direccion}) → ${indicadorPayload.area} (${indicadorPayload.direccion})`,
+        folio: `IND#${id}`,
+      });
+    }
     const nuevoCatalogo = {
       ...(indicadoresData.catalogoPersonalizado || {}),
       [id]: indicadorPayload
