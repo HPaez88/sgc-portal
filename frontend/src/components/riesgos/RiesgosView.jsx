@@ -1,15 +1,15 @@
 // ═══════════════════════════════════════════════════════════════
 // Riesgos y Oportunidades (ISO 9001:2015 § 6.1) — rediseño 2026-11-13.
-// Pestañas: Mi matriz (captura del área) · Tablero (mapas y cifras) · Seguimiento (planes de mejora
-// ligados y dictamen de eficacia) · Informes (por área/dirección, comparativo anual, PDF) · Revisión SGC (bandeja de matrices, solo administradores).
+// Pestañas (en este orden, según permisos): Seguimiento (todos; primera) · Mi matriz / Matriz por área ·
+// Tablero (quien ve todas las áreas) · Informes (todos; las áreas solo el suyo) · Revisión SGC (administradores).
 // ═══════════════════════════════════════════════════════════════
 import React, { useMemo, useState } from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, ListChecks, Grid3x3, LayoutDashboard, FileBarChart2, ClipboardCheck } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { useLocalStorage } from '../../hooks';
 import { esAdminSGC, can } from '../../constants/workflow';
 import { normalizarDireccion } from '../../constants/areas';
-import { CLAVE_MATRIZ, idMatriz, esOficial, estadoRiesgo, puedeCapturarArea } from '../../constants/riesgos';
+import { CLAVE_MATRIZ, ESTADOS_MATRIZ, idMatriz, esOficial, estadoRiesgo, puedeCapturarArea } from '../../constants/riesgos';
 import MatrizArea from './MatrizArea';
 import TableroRiesgos from './TableroRiesgos';
 import SeguimientoRiesgos from './SeguimientoRiesgos';
@@ -25,12 +25,13 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
   const { areasDetalle = [], procesos = [], planesMejora = [], setPlanesMejora, registrarMovimiento, usuarioLogueado } = useSGC();
   const [matrices, setMatrices] = useLocalStorage('sgc-matrices-riesgos', []);
   const esAdmin = esAdminSGC(usuarioLogueado);
-  const [tab, setTab] = useState(esAdmin ? 'tablero' : 'matriz');
+  const [tab, setTab] = useState('seguimiento'); // Seguimiento siempre es la primera pestaña
   // La matriz se captura desde noviembre para el año siguiente; el seguimiento e informes son del año en curso.
   const [anioSeguimiento, setAnioSeguimiento] = useState(ANIO_ACTUAL);
   const [anioMatriz, setAnioMatriz] = useState(new Date().getMonth() >= 10 ? ANIO_ACTUAL + 1 : ANIO_ACTUAL);
-  const anio = tab === 'matriz' || tab === 'revision' ? anioMatriz : anioSeguimiento;
-  const setAnio = tab === 'matriz' || tab === 'revision' ? setAnioMatriz : setAnioSeguimiento;
+  const anioDeMatriz = tab === 'matriz' || tab === 'revision';
+  const anio = anioDeMatriz ? anioMatriz : anioSeguimiento;
+  const setAnio = anioDeMatriz ? setAnioMatriz : setAnioSeguimiento;
   const areasCatalogo = useMemo(() => [...areasDetalle].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')), [areasDetalle]);
   const [areaSel, setAreaSel] = useState(areaUsuario && areasDetalle.some((a) => a.nombre === areaUsuario) ? areaUsuario : (areasCatalogo[0]?.nombre || ''));
   // Si el catálogo llega después del primer render, se toma la primera área.
@@ -78,13 +79,23 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
   });
   const matriz = listaMatrices.find((m) => m.id === idMatriz(area, anio));
 
+  // Contadores para que cada pestaña diga qué hay pendiente.
+  const enCurso = visibles.filter((r) => r.pm_id && !String(estadoRiesgo(r, planesMejora)).startsWith('CERRADO')).length;
+  const porDictaminar = visibles.filter((r) => ['PENDIENTE_DICTAMEN', 'PM_NO_ENCONTRADO'].includes(estadoRiesgo(r, planesMejora))).length;
+  const porRevisar = listaMatrices.filter((m) => m.estado === 'ENVIADA' && Number(m.anio) === Number(anioMatriz)).length;
+  const estadoMiMatriz = puedeTodasAreas ? null : ESTADOS_MATRIZ[listaMatrices.find((m) => m.id === idMatriz(areaUsuario, anioMatriz))?.estado || 'BORRADOR'].label;
+
   const pestanas = [
-    ['matriz', puedeTodasAreas ? 'Matriz por área' : 'Mi matriz'],
-    ['tablero', 'Tablero'],
-    ['seguimiento', 'Seguimiento'],
-    ['informes', 'Informes'],
-    ...(esAdmin ? [['revision', 'Revisión SGC']] : []),
+    { id: 'seguimiento', label: 'Seguimiento', Icono: ListChecks, cuenta: esAdmin && porDictaminar ? `${porDictaminar} por dictaminar` : (enCurso || null),
+      ayuda: 'Riesgos y oportunidades con plan de mejora: avance, vencimientos y dictamen de eficacia.' },
+    { id: 'matriz', label: puedeTodasAreas ? 'Matriz por área' : 'Mi matriz', Icono: Grid3x3, cuenta: estadoMiMatriz,
+      ayuda: `Captura anual ${CLAVE_MATRIZ}: identificar, evaluar y planear; se envía al SGC para su aceptación.` },
+    ...(puedeTodasAreas ? [{ id: 'tablero', label: 'Tablero', Icono: LayoutDashboard, ayuda: 'Cifras y mapas de calor de lo aceptado por el SGC.' }] : []),
+    { id: 'informes', label: 'Informes', Icono: FileBarChart2, ayuda: puedeTodasAreas ? 'Informe por área, dirección u organismo, comparativo anual y PDF.' : 'Informe de tu área, comparativo anual y PDF.' },
+    ...(esAdmin ? [{ id: 'revision', label: 'Revisión SGC', Icono: ClipboardCheck, cuenta: porRevisar ? `${porRevisar} por revisar` : null, alerta: porRevisar > 0,
+      ayuda: 'Bandeja del SGC: revisar, devolver con observaciones, aceptar o reabrir matrices.' }] : []),
   ];
+  const actual = pestanas.find((p) => p.id === tab) || pestanas[0];
 
   return (
     <div className="space-y-5">
@@ -94,40 +105,55 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
           <p className="text-sm text-slate-600">ISO 9001:2015 § 6.1 · matriz {CLAVE_MATRIZ} por área, seguimiento con planes de mejora</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {tab === 'matriz' && puedeTodasAreas && (
-            <select value={areaSel} onChange={(e) => setAreaSel(e.target.value)} aria-label="Área" className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
-              {areasCatalogo.map((a) => <option key={a.nombre} value={a.nombre}>{a.nombre}</option>)}
-            </select>
+          {actual.id === 'matriz' && puedeTodasAreas && (
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+              Área
+              <select value={area} onChange={(e) => setAreaSel(e.target.value)} aria-label="Área" className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
+                {areasCatalogo.map((a) => <option key={a.nombre} value={a.nombre}>{a.nombre}</option>)}
+              </select>
+            </label>
           )}
-          <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} aria-label="Año" className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
-            {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
+          <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+            {anioDeMatriz ? 'Año de la matriz' : 'Año'}
+            <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
+              {ANIOS.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </label>
         </div>
       </header>
 
-      <nav role="tablist" aria-label="Secciones de riesgos" className="flex gap-1 bg-slate-100 p-1 rounded-xl max-w-full w-fit overflow-x-auto">
-        {pestanas.map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-            className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${tab === id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>{label}</button>
-        ))}
-      </nav>
+      <div className="space-y-2">
+        <nav role="tablist" aria-label="Secciones de riesgos" className="flex gap-1 bg-slate-100 p-1 rounded-xl max-w-full w-fit overflow-x-auto">
+          {pestanas.map(({ id, label, Icono, cuenta, alerta }) => (
+            <button key={id} type="button" role="tab" aria-selected={actual.id === id} onClick={() => setTab(id)}
+              className={`shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-colors inline-flex items-center gap-2 ${actual.id === id ? 'bg-white text-marca-azul-oscuro shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'}`}>
+              <Icono size={16} aria-hidden="true" />
+              {label}
+              {cuenta != null && cuenta !== '' && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${alerta ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-700'}`}>{cuenta}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+        <p className="text-xs text-slate-600">{actual.ayuda}</p>
+      </div>
 
-      {tab === 'matriz' && (area ? (
+      {actual.id === 'matriz' && (area ? (
         <MatrizArea area={area} direccion={direccion} anio={anio} riesgos={lista} setRiesgos={setRiesgos} matriz={matriz}
           guardarMatriz={guardarMatriz} procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento}
           puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} onVerPM={verPM} />
       ) : <p className="text-sm text-slate-600">Tu usuario no tiene un área asignada. Pide al SGC que te la asigne.</p>)}
 
-      {tab === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} enCaptura={enCaptura} />}
+      {actual.id === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} enCaptura={enCaptura} />}
 
-      {tab === 'seguimiento' && <SeguimientoRiesgos items={enSeguimiento} setRiesgos={setRiesgos} planesMejora={planesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} onVerPM={verPM} onReplantear={replantear} />}
+      {actual.id === 'seguimiento' && <SeguimientoRiesgos items={enSeguimiento} setRiesgos={setRiesgos} planesMejora={planesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} onVerPM={verPM} onReplantear={replantear} />}
 
-      {tab === 'informes' && (
+      {actual.id === 'informes' && (
         <InformeRiesgos lista={oficiales} enCaptura={enCaptura} planesMejora={planesMejora} areasDetalle={areasDetalle} matrices={listaMatrices}
           anio={anio} puedeTodasAreas={puedeTodasAreas} areaUsuario={areaUsuario} usuarioLogueado={usuarioLogueado} />
       )}
 
-      {tab === 'revision' && esAdmin && (
+      {actual.id === 'revision' && esAdmin && (
         <RevisionMatrices anio={anio} areas={areasCatalogo} riesgos={lista} setRiesgos={setRiesgos} matrices={listaMatrices}
           guardarMatriz={guardarMatriz} planesMejora={planesMejora} setPlanesMejora={setPlanesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />
       )}
