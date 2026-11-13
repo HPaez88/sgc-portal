@@ -32,7 +32,8 @@ export default function ModalConfirmacionResponsabilidadHumana({
   actividades = [],
   causas = [],
   usuarioLogueado = {},
-  loading = false
+  loading = false,
+  textoBoton = 'Confirmar y Enviar al SGC para Aprobación',
 }) {
   const [textoConfirmacion, setTextoConfirmacion] = useState('');
   const [checkboxAcepto, setCheckboxAcepto] = useState(false);
@@ -48,11 +49,12 @@ export default function ModalConfirmacionResponsabilidadHumana({
   }, [isOpen]);
 
   const esAccionCorrectiva = tipo === 'ACCION_CORRECTIVA';
-  const claveFormato = esAccionCorrectiva ? 'OOMRSC-20' : 'OOMRSC-21';
+  const esMatrizRiesgos = tipo === 'MATRIZ_RIESGOS';
+  const claveFormato = esAccionCorrectiva ? 'OOMRSC-20' : esMatrizRiesgos ? 'OOMRSC-37' : 'OOMRSC-21';
   const nombreFormato = esAccionCorrectiva
     ? 'Acción Correctiva (No Conformidad)'
-    : 'Plan de Mejora Continua';
-  const clausulaISO = esAccionCorrectiva ? 'ISO 9001:2026 § 10.2' : 'ISO 9001:2026 § 10.3';
+    : esMatrizRiesgos ? 'Matriz de Riesgos y Oportunidades' : 'Plan de Mejora Continua';
+  const clausulaISO = esAccionCorrectiva ? 'ISO 9001:2015 § 10.2' : esMatrizRiesgos ? 'ISO 9001:2015 § 6.1' : 'ISO 9001:2015 § 10.3';
 
   const tieneContenidoIA = Boolean(
     registro.fecha_generacion_ia ||
@@ -171,7 +173,7 @@ export default function ModalConfirmacionResponsabilidadHumana({
                 {/* Resumen del hallazgo o mejora */}
                 <div className="pt-2 border-t border-slate-200/70 text-xs space-y-1.5">
                   <span className="text-slate-500 font-semibold block text-[11px]">
-                    {esAccionCorrectiva ? 'Descripción de la No Conformidad y Causa Raíz:' : 'Situación Actual y Título de la Mejora:'}
+                    {esAccionCorrectiva ? 'Descripción de la No Conformidad y Causa Raíz:' : esMatrizRiesgos ? 'Contenido de la matriz:' : 'Situación Actual y Título de la Mejora:'}
                   </span>
                   <p className="font-medium text-slate-800 bg-white p-3 rounded-lg border border-slate-200/80 leading-relaxed max-h-36 overflow-y-auto text-xs">
                     {esAccionCorrectiva
@@ -284,7 +286,7 @@ export default function ModalConfirmacionResponsabilidadHumana({
               className="px-7 py-3 text-xs font-black text-white bg-gradient-to-r from-[#002855] to-[#1E3E62] hover:from-[#001d40] hover:to-[#0B192C] rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Send size={15} />
-              <span>{loading ? 'Enviando al SGC...' : 'Confirmar y Enviar al SGC para Aprobación'}</span>
+              <span>{loading ? 'Enviando al SGC...' : textoBoton}</span>
             </button>
           </div>
         </form>

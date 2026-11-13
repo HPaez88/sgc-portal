@@ -33,7 +33,7 @@ describe('qué falta para enviar', () => {
 describe('plan de mejora ligado', () => {
   it('nace con las actividades del riesgo y su referencia', () => {
     const pm = pmDesdeRiesgo({ ...base, tratamiento: 'Mitigar', plan }, { folio: { codigo: 'OM#10/2027', numero: 10, anio: '2027' }, por: 'SGC', ahora: 'x' });
-    expect(pm).toMatchObject({ folio_codigo: 'OM#10/2027', estado: 'EN_SEGUIMIENTO', origen: ORIGEN_PM_RIESGOS, riesgo_id: 7, titulo_mejora: 'Falla en bombas', fecha_limite: '2027-06-30' });
+    expect(pm).toMatchObject({ folio_codigo: 'OM#10/2027', estado: 'EN_SEGUIMIENTO', origen: ORIGEN_PM_RIESGOS, riesgo_id: 7, titulo_mejora: 'Falla en bombas', fecha_limite: '2027-06-30', fecha_seguimiento: '2027-07-14' });
     expect(JSON.parse(pm.actividades)).toHaveLength(2);
     expect(llevaPM({ ...base, tratamiento: 'Aceptar', plan })).toBe(false);
   });

@@ -186,10 +186,7 @@ export const SGCProvider = ({ children }) => {
   const [sesionActiva, setSesionActiva] = useLocalStorage('sgc-sesion-activa', false);
   const usuarioActivoId = usuarioSesion?.id ?? null;
   const [motivoCierreSesion, setMotivoCierreSesion] = useState('');
-  const [riesgos, setRiesgos] = useLocalStorage('sgc-riesgos', [
-    { id: 1, riesgo: 'Contaminación del agua', causa: 'Fallas en proceso de potabilización', efecto: 'Problemas de salud', probabilidad: 3, impacto: 4, control: 'Cloración', tipo: 'Riesgo', area: 'Operación', direccion: 'Dir. Técnica', proceso: 'Producción', plan_accion: 'Mejorar monitoreo de cloro', fecha_termino: '2026-06-30', evaluacion: 'En proceso', estado_plan: 'EN_PROCESO' },
-    { id: 2, riesgo: 'Falla de bombas', causa: 'Falta de mantenimiento', efecto: 'Sin servicio', probabilidad: 2, impacto: 4, control: 'Mantenimiento preventivo', tipo: 'Riesgo', area: 'Mantenimiento de Redes', direccion: 'Dir. Técnica', proceso: 'Mantenimiento y Calibración', plan_accion: '', fecha_termino: '', evaluacion: '', estado_plan: 'SIN_PLAN' },
-  ]);
+  const [riesgos, setRiesgos] = useLocalStorage('sgc-riesgos', []);
   const [documentos, setDocumentos] = useLocalStorage('sgc-documentos', DOCUMENTOS_SGC_INICIALES);
   const [auditorias, setAuditorias] = useLocalStorage('sgc-auditorias', [
     { id: 1, numero: 'AUD-2026-001', tipo: 'Interna', area: 'Sistema de Gestión de Calidad', fecha_inicio: '2026-01-15', fecha_fin: '2026-01-17', estado: 'COMPLETADA', hallazgos: 3, no_conformidades: 1 },

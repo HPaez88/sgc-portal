@@ -6,6 +6,8 @@
 // reevaluando el riesgo (segunda confirmación).
 // ═══════════════════════════════════════════════════════════════
 
+import { fechaSeguimientoInicial } from './workflow';
+
 export const CLAVE_MATRIZ = 'OOMRSC-37';
 export const CLAVE_CONTROL = 'OOMRSC-51';
 export const ORIGEN_PM_RIESGOS = 'Matriz de riesgos y oportunidades';
@@ -134,6 +136,8 @@ export const pmDesdeRiesgo = (r, { folio, por, ahora = new Date().toISOString() 
     integrantes: '[]',
     actividades: JSON.stringify(actividades),
     ...(fechas.length ? { fecha_limite: fechas[fechas.length - 1] } : {}),
+    // Fecha de seguimiento fija (actividad más tardía + 2 semanas, día hábil), igual que al aprobar un PM.
+    ...(fechaSeguimientoInicial({ actividades }) ? { fecha_seguimiento: fechaSeguimientoInicial({ actividades }) } : {}),
     creado_por: por, fecha_creacion_borrador: ahora, created_at: ahora,
     fecha_envio_sgc: ahora, fecha_aprobacion_sgc: ahora, fecha_apertura: ahora,
     aprobado_por_sgc: `${por} (aceptación de ${CLAVE_MATRIZ})`,

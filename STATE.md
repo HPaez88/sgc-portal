@@ -68,6 +68,9 @@
 - [x] C16 — Lista AC: No conformidad + origen con número; AC/RC por indicador en el cuadro de control; correo libre para admins. Ligadas 2026-11-13: AC#14/2025→24, AC#1/2026→41. Pendiente confirmar AC#10/2026 (#51 o #29) y AC#17/2025 (cerrada; sin indicador "eficiencia física" en catálogo).
 - [x] C17 — Encargados del SGC (varios) por área y dirección desde Configuración; subdirecciones en el catálogo de direcciones (nombre, encargado, correo) y el área elige la suya. Pendiente: un mismo encargado de alcance limitado en 2+ áreas solo ve su área principal.
 - [x] C18 — Replanteo de fecha final para registros sin actividades (Admin, máx 2 incl. Control 6). Decidido @human: sin replanteos y vencida → dictamen no eficaz + nueva acción (botón en el panel). Fecha de seguimiento fija al aprobar (2026-11-10); el panel aplica con o sin actividades.
+- [x] C19 — Riesgos y oportunidades etapa 1 (matriz por área, tablero con mapas de calor, seguimiento con PM ligado, revisión SGC y dictamen de eficacia).
+- [ ] C20 — Riesgos etapa 2: IA que sugiere riesgos/oportunidades con el propósito del área.
+- [ ] C21 — Riesgos etapa 3: informes por área y por dirección, comparativo anual.
 - [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
 - [ ] C5 — Revisar en Control 6: AC#20/2026 replanteo #3 con fecha anterior; AC#24/2026 sin fecha de cierre; responsable de AC#1/2026; proceso de Jurídico (OM#5, OM#9)
 

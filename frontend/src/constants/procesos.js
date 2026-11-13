@@ -144,7 +144,8 @@ export const ORIGENES_AC = [
 
 export const ORIGENES_PM = [
   'Objetivo de Calidad',
-  'Auditoría interna'
+  'Auditoría interna',
+  'Matriz de riesgos y oportunidades'
 ];
 
 export const CATEGORIAS_MEJORA = [
