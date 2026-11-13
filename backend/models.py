@@ -416,6 +416,25 @@ class DatosArea(SQLModel, table=True):
 # ═══════════════════════════════════════════════════════════════════════════════
 # MODELO: HISTORIAL DE CAMBIOS (Audit Trail extendido)
 # ═══════════════════════════════════════════════════════════════════���═══════════
+class AvisoAutomatico(SQLModel, table=True):
+    """Cada recordatorio, aviso de incumplimiento u oficio que generó la tarea diaria (enviado o simulado)."""
+    __tablename__ = "avisos_automaticos"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
+    fecha: datetime = Field(default_factory=datetime.utcnow, index=True)
+    tipo: str = Field(index=True)              # AC | INDICADORES | MATRIZ
+    registro: str = ""                         # folio o unidad
+    registro_id: str = ""
+    etapa: str = ""
+    referencia: str = ""                       # vencimiento (aaaa-mm-dd) o periodo (Oct-2026)
+    destinatarios: str = Field(default="", sa_column=Column(Text))
+    mensaje: str = Field(default="", sa_column=Column(Text))
+    modo: str = "simulacion"
+    enviado: bool = False
+    error: str = ""
+
+
 class BitacoraServidor(SQLModel, table=True):
     """Cada cambio de datos que llega al servidor: quién, cuándo, qué sección y qué registros (no se edita ni se borra)."""
     __tablename__ = "bitacora_servidor"

@@ -255,3 +255,33 @@ def test_recordatorios_manuales_por_unidad(cliente, buzon, monkeypatch):
                    {"unidad": "Sin correo", "destinatarios": ["malo"]}]})
     assert r.status_code == 200 and r.json()["enviados"] == 1
     assert buzon[-1]["asunto"] == "Matriz de riesgos 2027 — Plantas Potabilizadoras"
+
+
+def test_tarea_diaria_de_avisos_en_simulacion(cliente, buzon, monkeypatch):
+    from datetime import date
+    from backend.tareas import avisos_diarios
+    monkeypatch.setenv("AVISOS_MODO", "simulacion")
+    monkeypatch.setenv("AVISOS_ARRANQUE", "2026-11-01")
+    h = {"Authorization": f"Bearer {_token(cliente)}"}
+    cliente.put("/api/v1/estado/sgc-acciones-correctivas", headers=h, json={"valor": [
+        {"id": 77, "folio_codigo": "AC#77/2026", "area": "SGC", "estado": "EN_SEGUIMIENTO", "fecha_seguimiento": "2026-11-30", "correos_responsables": ["resp@oomapasc.gob.mx"]}]})
+    antes = len(buzon)
+    r = avisos_diarios.ejecutar(date(2026, 11, 20))
+    assert r["avisos"] >= 1
+    # en simulación no se manda nada a los responsables, solo el resumen a los administradores
+    nuevos = buzon[antes:]
+    assert all("resp@oomapasc.gob.mx" not in c["para"] for c in nuevos)
+    assert any(c["asunto"].startswith("[Avisos SGC]") for c in nuevos)
+    # no se repite el mismo día
+    assert avisos_diarios.ejecutar(date(2026, 11, 20))["avisos"] == 0
+    filas = cliente.get("/api/v1/notificaciones/avisos-automaticos", headers=h).json()
+    assert any(a["registro"] == "AC#77/2026" and a["etapa"] == "RECORDATORIO_10" and not a["enviado"] for a in filas["avisos"])
+    # limpieza: no dejar la AC de prueba para otros módulos de pruebas que comparten la base
+    from sqlmodel import Session as _S, select as _sel
+    from backend.database import engine as _eng
+    from backend.models import EstadoPortal as _EP
+    with _S(_eng) as s:
+        f = s.exec(_sel(_EP).where(_EP.clave == "sgc-acciones-correctivas")).first()
+        if f:
+            s.delete(f)
+            s.commit()

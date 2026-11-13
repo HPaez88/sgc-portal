@@ -7,10 +7,12 @@ import time
 from collections import defaultdict, deque
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlmodel import Session, select
+from backend.database import get_session
 from pydantic import BaseModel, Field
 
 from backend import auth
-from backend.models import Usuario
+from backend.models import AvisoAutomatico, Usuario
 from backend.services import correo_service as correo
 
 router = APIRouter(prefix="/api/v1/notificaciones", tags=["Notificaciones"])
@@ -100,3 +102,11 @@ def recordatorios(datos: Recordatorios, request: Request, usuario: Usuario = Dep
             resultados.append({"unidad": envio.unidad, "enviado": False, "error": str(ex.detail)})
         time.sleep(PAUSA_ENVIO)
     return {"enviados": sum(r["enviado"] for r in resultados), "resultados": resultados}
+
+
+@router.get("/avisos-automaticos")
+def avisos_automaticos(limite: int = 300, usuario: Usuario = Depends(auth.requiere_rol(*ROLES_CORREO_LIBRE)),
+                       session: Session = Depends(get_session)):
+    """Lo que generó la tarea diaria (recordatorios, avisos de incumplimiento, oficios por emitir)."""
+    filas = session.exec(select(AvisoAutomatico).order_by(AvisoAutomatico.fecha.desc()).limit(max(1, min(limite, 1000)))).all()
+    return {"modo": os.getenv("AVISOS_MODO", "simulacion"), "arranque": os.getenv("AVISOS_ARRANQUE", ""), "avisos": [f.model_dump() for f in filas]}

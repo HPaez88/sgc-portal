@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T18:00Z · @claude-code · [FEATURE] · Avisos automáticos (recordatorios, incumplimientos, oficios) en simulación
+Tarea diaria lunes a viernes 8:00 (Cajeme) vía cron del servidor (backend/tareas/avisos_diarios.py). Acciones correctivas EN_SEGUIMIENTO sin auditor asignado, con vencimiento desde el arranque: recordatorios 15/10/5 días (fin de semana → viernes antes), vence hoy, aviso de incumplimiento al día siguiente (copia administradores; advierte oficio de exhorto de Dirección General) y oficio de exhorto por emitir 5 días después. Indicadores: en el mes se pide el resultado del mes anterior según periodicidad; aviso día 1, recordatorio 5, vence 10 (fin de semana → viernes), incumplimiento 11 y oficio 16. Planes de mejora todavía no. No repite avisos; si se salta una etapa manda solo la más reciente. Modo simulación (AVISOS_MODO): no sale nada a responsables; resumen diario a administradores; registro en tabla avisos_automaticos, visible en Buzón SGC → Avisos automáticos (filtros: oficios por emitir, incumplimientos, acciones, indicadores). Catálogo de indicadores para el servidor en backend/assets/indicadores_catalogo.json con prueba de sincronía. Pruebas: test_avisos_calendario, test_avisos_motor, prueba de la tarea en simulación.
+- Deploy: SI (simulación desde 16/11/2026)
+
 ## 2026-11-14T17:00Z · @claude-code · [FEATURE] · Buscador global del portal
 El buscador del encabezado no hacía nada. Ahora busca (sin acentos, varias palabras) en módulos, acciones correctivas, planes de mejora, reportes de corrección, riesgos y oportunidades, indicadores, documentos y, para administradores, áreas y usuarios; resultados agrupados con total; Ctrl+K desde cualquier pantalla, flechas y Enter; abre directo la AC o el PM (o la pestaña de RC) y lleva al módulo en los demás casos; respeta el alcance por área; la búsqueda queda en la bitácora. Lógica en constants/busquedaGlobal.js con pruebas. Verificado en copia local (Ctrl+K → "mantenimiento" → Enter abre PM#5/2025).
 - Deploy: SI

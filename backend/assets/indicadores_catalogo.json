@@ -1,0 +1,902 @@
+[
+ {
+  "id": 0,
+  "numero": 0,
+  "nombre": "Lograr el grado de eficacia del SGC determinado por auditorías e indicadores.",
+  "area": "Sistema de Gestión de Calidad",
+  "direccion": "Dir. General",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 1,
+  "numero": 1,
+  "nombre": "Cumplir con las metas establecidas por las direcciones adscritas a la Dirección General",
+  "area": "Dirección General",
+  "direccion": "Dir. General",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "direccion"
+ },
+ {
+  "id": 2,
+  "numero": 2,
+  "nombre": "Mantener una relación de comunicación con el Consejo Consultivo.",
+  "area": "Dirección General",
+  "direccion": "Dir. General",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "direccion"
+ },
+ {
+  "id": 3,
+  "numero": 3,
+  "nombre": "Remuneración del personal.",
+  "area": "Recursos Humanos",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 4,
+  "numero": 4,
+  "nombre": "Remuneración a jubilados y pensionados",
+  "area": "Recursos Humanos",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 5,
+  "numero": 5,
+  "nombre": "Cumplir con el programa  trimestral de capacitación.",
+  "area": "Recursos Humanos",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 6,
+  "numero": 6,
+  "nombre": "Evaluación del ambiente de trabajo.",
+  "area": "Recursos Humanos",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Anual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 7,
+  "numero": 7,
+  "nombre": "Evaluar el desempeño de proveedores de productos químicos críticos",
+  "area": "Recursos Materiales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 8,
+  "numero": 8,
+  "nombre": "Atender las solicitudes de compra en el tiempo establecido.",
+  "area": "Recursos Materiales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 9,
+  "numero": 9,
+  "nombre": "Cumplir con el programa de verificación de activos fijos",
+  "area": "Recursos Materiales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 10,
+  "numero": 10,
+  "nombre": "Cumplir con el calendario contable y presupuestal.",
+  "area": "Contabilidad",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 11,
+  "numero": 11,
+  "nombre": "Accidentes de trabajo",
+  "area": "Seguridad Industrial",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 12,
+  "numero": 12,
+  "nombre": "Cumplir con el proceso de licitación pública o simplificada",
+  "area": "Licitaciones",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 13,
+  "numero": 13,
+  "nombre": "Cumplir con el proceso de adjudicación directa.",
+  "area": "Licitaciones",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 14,
+  "numero": 14,
+  "nombre": "Índice de programas federales gestionados",
+  "area": "Trámites Técnicos",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Semestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 15,
+  "numero": 15,
+  "nombre": "Cumplir con el programa de mantenimiento preventivo de los equipos de cómputo.",
+  "area": "Informática",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 16,
+  "numero": 16,
+  "nombre": "Solucionar las solicitudes de servicio.",
+  "area": "Informática",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 17,
+  "numero": 17,
+  "nombre": "Asegurar la disponibilidad de los servicios críticos de informática.",
+  "area": "Informática",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 18,
+  "numero": 18,
+  "nombre": "Revisión de instalaciones",
+  "area": "Seguridad Industrial",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 19,
+  "numero": 19,
+  "nombre": "Cumplimiento al programa anual de mantenimiento preventivo a edificios.",
+  "area": "Mantenimiento y Servicios Generales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 20,
+  "numero": 20,
+  "nombre": "Cumplimiento al programa anual de mantenimiento preventivo para vehículos de transporte",
+  "area": "Mantenimiento y Servicios Generales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 21,
+  "numero": 21,
+  "nombre": "Cumplimiento al abastecimiento de las dotaciones de gasolina autorizadas.",
+  "area": "Mantenimiento y Servicios Generales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 22,
+  "numero": 22,
+  "nombre": "Cumplimiento a las solicitudes de mantenimiento correctivo para vehículos de transporte",
+  "area": "Mantenimiento y Servicios Generales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 23,
+  "numero": 23,
+  "nombre": "Cumplimiento al programa anual de intendencia",
+  "area": "Mantenimiento y Servicios Generales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 24,
+  "numero": 24,
+  "nombre": "Atender los reportes de los usuarios de la ciudad.",
+  "area": "Mantenimiento de Redes",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 25,
+  "numero": 25,
+  "nombre": "Cumplir con programa de calibración y verificación de equipos de medición.",
+  "area": "Control de Calidad",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 26,
+  "numero": 26,
+  "nombre": "Índice de cumplimiento de los programas de mantenimiento a instalaciones y mantenimiento electromecánico preventivo y correctivo",
+  "area": "Plantas Potabilizadoras",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 27,
+  "numero": 27,
+  "nombre": "Programa de mantenimiento de redes sanitaria",
+  "area": "Alcantarillado y Saneamiento",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 28,
+  "numero": 28,
+  "nombre": "Cumplir con el programa anual de mantenimiento preventivo a equipos de cloración y dosificación",
+  "area": "Suburbano Técnico",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Semestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 29,
+  "numero": 29,
+  "nombre": "Cumplir con el programa anual de mantenimiento preventivo y toma de parámetros eléctricos y mecánicos",
+  "area": "Suburbano Técnico",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 30,
+  "numero": 30,
+  "nombre": "Cumplir con el programa de mantenimiento anual de padrón de usuarios.",
+  "area": "Padrón de Usuarios",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 31,
+  "numero": 31,
+  "nombre": "Cobertura de Agua Potable",
+  "area": "Padrón de Usuarios",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 32,
+  "numero": 32,
+  "nombre": "Recaudación por visitas efectivas.",
+  "area": "Control y Servicios",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 33,
+  "numero": 33,
+  "nombre": "Recaudación por cobranza especial.",
+  "area": "Control y Servicios",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 34,
+  "numero": 34,
+  "nombre": "Cumplir con el calendario mensual de facturación.",
+  "area": "Verificación y Lectura",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 35,
+  "numero": 35,
+  "nombre": "Porcentaje de error en toma de lectura.",
+  "area": "Verificación y Lectura",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 36,
+  "numero": 36,
+  "nombre": "Cobertura de Micromedición en área urbana",
+  "area": "Verificación y Lectura",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 37,
+  "numero": 37,
+  "nombre": "Cumplir con el presupuesto de ingresos en la gerencia Providencia.",
+  "area": "Agencia Providencia",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 38,
+  "numero": 38,
+  "nombre": "Cumplir con el presupuesto de ingresos en la gerencia Esperanza",
+  "area": "Agencia Esperanza",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 39,
+  "numero": 39,
+  "nombre": "Cumplir con el presupuesto de ingresos en la gerencia Pueblo Yaqui.",
+  "area": "Agencia Pueblo Yaqui",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 40,
+  "numero": 40,
+  "nombre": "Cumplir con el presupuesto de ingresos en la gerencia Marte R. Gomez.",
+  "area": "Agencia Marte R. Gómez",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 41,
+  "numero": 41,
+  "nombre": "Cumplir con el presupuesto programado de ingresos.",
+  "area": "Dirección Comercial",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "direccion"
+ },
+ {
+  "id": 42,
+  "numero": 42,
+  "nombre": "Eficiencia comercial",
+  "area": "Dirección Comercial",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "direccion"
+ },
+ {
+  "id": 43,
+  "numero": 43,
+  "nombre": "Eficiencia comercial de rezago",
+  "area": "Dirección Comercial",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "direccion"
+ },
+ {
+  "id": 44,
+  "numero": 44,
+  "nombre": "Atender las órdenes de trabajo en un lapso de 7 días hábiles",
+  "area": "Trabajo Social",
+  "direccion": "Dir. Programas Sociales y Cultura del Agua",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 45,
+  "numero": 45,
+  "nombre": "Cumplimiento a NOM-127-SSA1-2021 aplicable a control de calidad.",
+  "area": "Control de Calidad",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 46,
+  "numero": 46,
+  "nombre": "Índice de cumplimiento en muestreos y análisis de agua potable.",
+  "area": "Control de Calidad",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 47,
+  "numero": 47,
+  "nombre": "Producción de agua en plantas potabilizadoras y pozos de área urbana",
+  "area": "Plantas Potabilizadoras",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 48,
+  "numero": 48,
+  "nombre": "Índice de cobertura de macromedición",
+  "area": "Plantas Potabilizadoras",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 49,
+  "numero": 49,
+  "nombre": "Índice de agua residual tratada.",
+  "area": "Alcantarillado y Saneamiento",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 50,
+  "numero": 50,
+  "nombre": "Programa de muestreo y análisis de aguas residuales",
+  "area": "Alcantarillado y Saneamiento",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 51,
+  "numero": 51,
+  "nombre": "Cumplir con el volumen de agua potabilizada.",
+  "area": "Suburbano Técnico",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 52,
+  "numero": 52,
+  "nombre": "Realizar en el ejercicio fiscal una auditoría programada mensual.",
+  "area": "Órgano de Control Interno",
+  "direccion": "Dir. Órgano de Control Interno",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 53,
+  "numero": 53,
+  "nombre": "Revisar el seguimiento y control del recurso federalizado en el ejercicio fiscal.",
+  "area": "Órgano de Control Interno",
+  "direccion": "Dir. Órgano de Control Interno",
+  "periodicidad": "Semestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 54,
+  "numero": 54,
+  "nombre": "Atender las solicitudes de intervención especiales y no programadas.",
+  "area": "Órgano de Control Interno",
+  "direccion": "Dir. Órgano de Control Interno",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 55,
+  "numero": 55,
+  "nombre": "Atender y dar seguimiento a las observaciones de los sujetos fiscalizadores.",
+  "area": "Órgano de Control Interno",
+  "direccion": "Dir. Órgano de Control Interno",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 56,
+  "numero": 56,
+  "nombre": "Atender al personal que acuda al OCI a asesorías.",
+  "area": "Órgano de Control Interno",
+  "direccion": "Dir. Órgano de Control Interno",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 57,
+  "numero": 57,
+  "nombre": "Atender a los usuarios que interpongan quejas y denuncias en contra del servicio o cualquier servidor público.",
+  "area": "Órgano de Control Interno",
+  "direccion": "Dir. Órgano de Control Interno",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 58,
+  "numero": 58,
+  "nombre": "Cumplir en los cierres de planes de acción de Matriz de Riesgos",
+  "area": "Sistema de Gestión de Calidad",
+  "direccion": "Dir. General",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 59,
+  "numero": 59,
+  "nombre": "Estado de acciones y mejoras.",
+  "area": "Sistema de Gestión de Calidad",
+  "direccion": "Dir. General",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 60,
+  "numero": 60,
+  "nombre": "Lograr el grado de eficacia derivado de las auditorías internas",
+  "area": "Sistema de Gestión de Calidad",
+  "direccion": "Dir. General",
+  "periodicidad": "Bimestral",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 61,
+  "numero": 61,
+  "nombre": "Atender las llamadas o mensajes de solicitud de usuarios.",
+  "area": "Línea OOMAPASC",
+  "direccion": "Dir. General",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 62,
+  "numero": 62,
+  "nombre": "Medir la satisfacción del cliente en atención recibida.",
+  "area": "Línea OOMAPASC",
+  "direccion": "Dir. General",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 63,
+  "numero": 63,
+  "nombre": "Cumplir con la satisfacción del cliente por la atención brindada.",
+  "area": "Contratos y Servicios",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 64,
+  "numero": 64,
+  "nombre": "Cumplir en las encuestas de satisfacción al usuario externo en los servicios proporcionados  por el supervisor.",
+  "area": "Verificación y Lectura",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 65,
+  "numero": 65,
+  "nombre": "Medir la eficiencia y el tiempo de respuesta establecido en 7 días hábiles a partir de la recepción del folio emitido por el H. Ayuntamiento de Cajeme.",
+  "area": "Atención Ciudadana",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 66,
+  "numero": 66,
+  "nombre": "Cumplir con la satisfacción del cliente por el servicio proporcionado",
+  "area": "Agencia Providencia",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 67,
+  "numero": 67,
+  "nombre": "Cumplir con la satisfacción del cliente por el servicio proporcionado",
+  "area": "Agencia Esperanza",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 68,
+  "numero": 68,
+  "nombre": "Cumplir con la satisfacción del cliente por el servicio proporcionado",
+  "area": "Agencia Pueblo Yaqui",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 69,
+  "numero": 69,
+  "nombre": "Cumplir con la satisfacción del cliente por el servicio proporcionado",
+  "area": "Agencia Marte R. Gómez",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 70,
+  "numero": 70,
+  "nombre": "Cumplir con la satisfacción de los usuarios por reconexiones",
+  "area": "Control y Servicios",
+  "direccion": "Dir. Comercial",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 71,
+  "numero": 71,
+  "nombre": "Atender en tiempo y forma las solicitudes de información aplicables al área.",
+  "area": "Transparencia",
+  "direccion": "Dir. Jurídica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "unidad"
+ },
+ {
+  "id": 72,
+  "numero": 72,
+  "nombre": "Indicador de cumplimiento página de transparencia.",
+  "area": "Transparencia",
+  "direccion": "Dir. Jurídica",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "unidad"
+ },
+ {
+  "id": 73,
+  "numero": 73,
+  "nombre": "Índice de atención por asesorías.",
+  "area": "Jurídico",
+  "direccion": "Dir. Jurídica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 74,
+  "numero": 74,
+  "nombre": "Notificar a todas las áreas las actualizaciones que se presenten mensualmente en los documentos externos declarados.",
+  "area": "Jurídico",
+  "direccion": "Dir. Jurídica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 75,
+  "numero": 75,
+  "nombre": "Cumplir con la elaboración de solicitudes de contrato solicitados por la gerencia de licitaciones de conformidad al procedimiento OOMPJU-07.",
+  "area": "Jurídico",
+  "direccion": "Dir. Jurídica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 76,
+  "numero": 76,
+  "nombre": "Índice de juntas de gobierno.",
+  "area": "Jurídico",
+  "direccion": "Dir. Jurídica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 77,
+  "numero": 77,
+  "nombre": "Índice de eficiencia administrativa.",
+  "area": "Dirección Administrativa",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "direccion"
+ },
+ {
+  "id": 78,
+  "numero": 78,
+  "nombre": "Sistema de gestión por comparación cuestionario único de información básica.",
+  "area": "Dirección Administrativa",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Anual",
+  "responsable_tipo": "direccion"
+ },
+ {
+  "id": 79,
+  "numero": 79,
+  "nombre": "Cumplimiento de la satisfacción del cliente.",
+  "area": "Mantenimiento y Servicios Generales",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 80,
+  "numero": 80,
+  "nombre": "Satisfacción del cliente",
+  "area": "Seguridad Industrial",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 81,
+  "numero": 81,
+  "nombre": "Cumplir con las auditorías para la acreditación de la NMX-EC-17025-IMNC-2018 y/o ISO/IEC 17025:2017.",
+  "area": "Control de Calidad",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Anual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 82,
+  "numero": 82,
+  "nombre": "Índice de cumplimiento de reportes atendidos",
+  "area": "Alcantarillado y Saneamiento",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 83,
+  "numero": 83,
+  "nombre": "Cumplimiento del programa de inspecciones",
+  "area": "Alcantarillado y Saneamiento",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 84,
+  "numero": 84,
+  "nombre": "Atención a reportes suburbanos",
+  "area": "Suburbano Técnico",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 85,
+  "numero": 85,
+  "nombre": "Índice de cumplimiento en los indicadores de las gerencias de la Subdirección de Operación y Mantenimiento.",
+  "area": "Subdirección de Operación y Mantenimiento",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "subdireccion"
+ },
+ {
+  "id": 86,
+  "numero": 86,
+  "nombre": "Índice de cumplimiento en los indicadores de las gerencias de la Subdirección de Proyectos e Infraestructura.",
+  "area": "Subdirección de Proyectos e Infraestructura",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Trimestral",
+  "responsable_tipo": "subdireccion"
+ },
+ {
+  "id": 87,
+  "numero": 87,
+  "nombre": "Cumplir con tiempo, costo y calidad definidos en la supervisión de obras según proyecto autorizado",
+  "area": "Supervisión y control de obras",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 88,
+  "numero": 88,
+  "nombre": "Elaboración de prefactibilidades",
+  "area": "Proyectos e Infraestructura",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 89,
+  "numero": 89,
+  "nombre": "Aprobación de proyectos de agua potable y/o alcantarillado sanitario",
+  "area": "Proyectos e Infraestructura",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 90,
+  "numero": 90,
+  "nombre": "Elaboración de proyectos de agua potable y/o alcantarillado sanitario",
+  "area": "Proyectos e Infraestructura",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 91,
+  "numero": 91,
+  "nombre": "Elaboración de viabilidad comercial e industrial",
+  "area": "Proyectos e Infraestructura",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 92,
+  "numero": 92,
+  "nombre": "Elaboración de proyectos para mejoramiento de la eficiencia",
+  "area": "Sectorización hidrométrica e innovación",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 93,
+  "numero": 93,
+  "nombre": "Detecciones de infraestructura subterránea.",
+  "area": "Sectorización hidrométrica e innovación",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 94,
+  "numero": 94,
+  "nombre": "Índice de cumplimiento de tiempo para cálculo de Derechos de Conexión.",
+  "area": "Trámites Técnicos",
+  "direccion": "Dir. Técnica",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 95,
+  "numero": 95,
+  "nombre": "Cumplir al 90% con los parámetros de comunicación interna.",
+  "area": "Sistema de Gestión de Calidad",
+  "direccion": "Dir. General",
+  "periodicidad": "Anual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 96,
+  "numero": 96,
+  "nombre": "Canalizar y dar seguimiento a los reportes que se publican en los medios de comunicación.",
+  "area": "Comunicación e Imagen Institucional",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 97,
+  "numero": 97,
+  "nombre": "Cumplir con los diseños requeridos por el OOMAPAS de Cajeme.",
+  "area": "Comunicación e Imagen Institucional",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 98,
+  "numero": 98,
+  "nombre": "Boletines oficiales elaborados.",
+  "area": "Comunicación e Imagen Institucional",
+  "direccion": "Dir. Administrativa",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ },
+ {
+  "id": 99,
+  "numero": 99,
+  "nombre": "Cumplir con el programa anual de pláticas y actividades de cultura del agua.",
+  "area": "Cultura del agua",
+  "direccion": "Dir. Programas Sociales y Cultura del Agua",
+  "periodicidad": "Mensual",
+  "responsable_tipo": "area"
+ }
+]

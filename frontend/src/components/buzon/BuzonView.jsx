@@ -5,6 +5,7 @@ import { Inbox, RefreshCw, Send, Archive, Sparkles, AlertTriangle, CheckCircle2,
 import { api } from '../../services/apiClient';
 import { useToast } from '../common/Toast';
 import { formatearFecha } from '../../constants/workflow';
+import AvisosAutomaticos from './AvisosAutomaticos';
 
 const FILTROS = [['PENDIENTE', 'Pendientes'], ['RESPONDIDO', 'Respondidos'], ['DESCARTADO', 'Descartados'], ['', 'Todos']];
 const CLASES = {
@@ -128,6 +129,8 @@ export default function BuzonView() {
           </tbody>
         </table>
       </div>
+
+      <AvisosAutomaticos />
     </div>
   );
 }
