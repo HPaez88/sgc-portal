@@ -38,3 +38,10 @@ def test_indicadores_por_periodicidad_y_entrega():
     assert {i["id"] for x in m.avisos_indicadores(cat, {}, date(2026, 10, 1), set()) for i in x["indicadores"]} == {1, 2, 3}
     # enero pide diciembre del año anterior
     assert m.mes_reportado(date(2027, 1, 4)) == (2026, 12)
+
+
+def test_indicadores_empiezan_el_primer_mes_despues_del_arranque():
+    cat = [{"id": 1, "nombre": "Mensual", "area": "Plantas", "periodicidad": "Mensual"}]
+    arranque = date(2026, 11, 16)
+    assert m.avisos_indicadores(cat, {}, date(2026, 11, 16), set(), arranque) == []   # ciclo de noviembre: no
+    assert m.avisos_indicadores(cat, {}, date(2026, 12, 1), set(), arranque)[0]["etapa"] == "AVISO"

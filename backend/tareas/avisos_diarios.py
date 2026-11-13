@@ -103,7 +103,7 @@ def ejecutar(hoy: date | None = None) -> dict:
             para = sorted(set(correo_l for correo_l in [*(a["ac"].get("correos_responsables") or []), *_contactos(a["area"], areas, direcciones)] if correo_l))
             pendientes.append({"tipo": "AC", "registro": a["folio"], "registro_id": str(a["id"]), "etapa": a["etapa"], "referencia": a["vence"].isoformat(),
                                "para": para, "cc": admins if a["etapa"] == "AVISO_INCUMPLIMIENTO" else [], "mensaje": _mensaje_ac(a), "unidad": a["area"]})
-        for x in motor.avisos_indicadores(catalogo, datos_ind.get("resultados") or {}, hoy, enviadas_ind):
+        for x in motor.avisos_indicadores(catalogo, datos_ind.get("resultados") or {}, hoy, enviadas_ind, arranque):
             pendientes.append({"tipo": "INDICADORES", "registro": x["unidad"], "registro_id": "", "etapa": x["etapa"], "referencia": x["periodo"],
                                "para": _contactos(x["unidad"], areas, direcciones), "cc": admins if x["etapa"] == "AVISO_INCUMPLIMIENTO" else [],
                                "mensaje": _mensaje_ind(x), "unidad": x["unidad"]})

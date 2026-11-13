@@ -77,8 +77,11 @@ def unidad_de_indicador(ind: dict) -> str:
     return ind.get("direccion") if ind.get("responsable_tipo") == "direccion" else (ind.get("area") or ind.get("direccion") or "")
 
 
-def avisos_indicadores(catalogo: list, resultados: dict, hoy: date, enviadas: set) -> list[dict]:
+def avisos_indicadores(catalogo: list, resultados: dict, hoy: date, enviadas: set, arranque: Optional[date] = None) -> list[dict]:
     """[{unidad, etapa, periodo, indicadores:[...]}] — una entrada por unidad. enviadas = {(unidad, periodo, etapa)}."""
+    # El primer ciclo es el primer mes que empieza después del arranque (no se exige lo de meses anteriores).
+    if arranque and cal.siguiente_habil(date(hoy.year, hoy.month, 1)) < arranque:
+        return []
     anio_r, mes_r = mes_reportado(hoy)
     periodo = f"{MESES[mes_r - 1]}-{anio_r}"
     etapas = cal.etapas_indicadores(hoy.year, hoy.month)
