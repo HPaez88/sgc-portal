@@ -62,7 +62,7 @@ import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamenta
 import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea, resolverResponsable } from '../../constants/areas';
 import { useIsMobile } from '../../hooks';
 import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
-import { esCerrado, esAdminSGC } from '../../constants/workflow';
+import { esCerrado, esAdminSGC, getVencimiento, getFechaCompromiso, formatearFecha } from '../../constants/workflow';
 
 const RC_CERRADOS = ['CERRADA', 'CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO', 'ESCALADO_A_AC'];
 
@@ -649,10 +649,10 @@ export default function IndicadoresView({
     const mapa = {};
     const agregar = (id, v) => { (mapa[String(id)] = mapa[String(id)] || []).push(v); };
     (accionesCorrectivas || []).forEach((ac) => {
-      if (ac.origen === 'Indicador' && ac.origen_referencia && ac.folio_codigo && !esCerrado(ac.estado)) agregar(ac.origen_referencia, { tipo: 'AC', folio: ac.folio_codigo });
+      if (ac.origen === 'Indicador' && ac.origen_referencia && ac.folio_codigo && !esCerrado(ac.estado)) agregar(ac.origen_referencia, { tipo: 'AC', folio: ac.folio_codigo, fecha: getFechaCompromiso(ac), venc: getVencimiento(ac) });
     });
     (reportesCorreccion || []).forEach((rc) => {
-      if (rc.indicadorId !== undefined && rc.indicadorId !== null && !RC_CERRADOS.includes(rc.estado)) agregar(rc.indicadorId, { tipo: 'RC', folio: rc.folio });
+      if (rc.indicadorId !== undefined && rc.indicadorId !== null && !RC_CERRADOS.includes(rc.estado)) agregar(rc.indicadorId, { tipo: 'RC', folio: rc.folio, fecha: getFechaCompromiso(rc), venc: getVencimiento(rc) });
     });
     return mapa;
   }, [accionesCorrectivas, reportesCorreccion]);
@@ -1376,7 +1376,7 @@ export default function IndicadoresView({
                                     <span>+ Crear RC</span>
                                   </button>
                                 )
-                              ) : (
+                              ) : (acc === 'NA' && (vinculosPorIndicador[String(ind.id)] || []).length) ? null : (
                                 <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
                                   acc !== 'NA' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'text-slate-400'
                                 }`}>
@@ -1389,6 +1389,12 @@ export default function IndicadoresView({
                                     v.tipo === 'AC' ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-amber-50 text-amber-900 border-amber-200'
                                   }`}>
                                   {v.folio}
+                                  {/* Fecha de cierre y su estado: el SGC ve si sigue vigente o ya venció */}
+                                  {v.fecha && (
+                                    <span className={`mt-0.5 block font-sans font-semibold text-[10px] px-1 py-0.5 rounded border ${v.venc?.color || 'bg-white text-slate-600 border-slate-200'}`}>
+                                      Cierre {formatearFecha(v.fecha)} · {v.venc?.label || ''}
+                                    </span>
+                                  )}
                                 </span>
                               ))}
                             </td>

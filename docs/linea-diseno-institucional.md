@@ -14,3 +14,9 @@ Regla acordada con @human (2026-11-14): todo reporte y pantalla nueva respeta lo
 - **Plataforma:** colores `marca-*` en `tailwind.config.js`; logo en `public/logo-oomapasc.png` (y en base64 en `src/assets/logoOomapasc.js` para los PDF).
 - Los colores con significado (rojo/ámbar/verde de niveles de riesgo, vencimientos) se conservan: son semánticos, no de marca.
 - Excepción: formatos del H. Ayuntamiento / Tesorería (ficha técnica, CONAC) conservan su formato municipal.
+
+## Visualización de datos y áreas de trabajo (regla general, 2026-11-14)
+- **Tablas:** encabezados distinguibles (fondo, negrita, línea inferior fuerte), filas separadas y alternadas, resaltado al pasar el cursor. Estilos globales en `src/index.css`.
+- **Captura de datos** (todo lo que se escribe o elige): borde visible, foco azul institucional, placeholder legible; los cuadros de texto crecen solos (`utils/textoAutoCrece.js`).
+- **Mucha información = filtros:** búsqueda y filtros por estado/dirección/tipo con su cantidad en cada filtro.
+- **Títulos con totales** cuando son listas o grupos (p. ej. "Fortalezas 4").

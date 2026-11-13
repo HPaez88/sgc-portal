@@ -53,6 +53,20 @@ textarea:not([data-tamano-fijo]) {
 }
 textarea:not([data-tamano-fijo]):not([rows="1"]) { min-height: 4.5rem; }
 
+/* ══ Regla general del portal (pedida por @human 2026-11-14): datos y captura bien definidos ══
+   Tablas: encabezados que se distinguen y filas separadas. Captura: campos con borde visible y foco claro.
+   Los selectores con atributos ganan a las clases sueltas de Tailwind, así aplica en todas las pantallas. */
+table thead th { background-color: #eaf0f6; color: #0f172a; font-weight: 800; border-bottom: 2px solid #94a3b8; }
+table tbody tr { border-bottom: 1px solid #e2e8f0; }
+table tbody tr:nth-child(even):not([class*="bg-"]) > td { background-color: #f8fafc; }
+table tbody tr:hover > td { background-color: #eef6fc; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not(.bg-transparent),
+select, textarea:not(.bg-transparent) { border-color: #a3b1c2; }
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
+  border-color: #005B86; box-shadow: 0 0 0 3px rgba(0, 131, 192, 0.18); outline: none;
+}
+input::placeholder, textarea::placeholder { color: #64748b; }
+
 /* Tabular figures for data, counters, and metrics */
 .font-tabular {
   font-variant-numeric: tabular-nums;
