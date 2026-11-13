@@ -154,7 +154,7 @@ def buzon(monkeypatch):
     monkeypatch.setenv("PORTAL_URL", "https://sgc.prueba.mx")
     monkeypatch.setattr(rutas_auth, "PAUSA_ENVIO", 0)
     enviados = []
-    monkeypatch.setattr(correo, "enviar", lambda para, asunto, cuerpo, texto, responder_a=None: enviados.append(
+    monkeypatch.setattr(correo, "enviar", lambda para, asunto, cuerpo, texto, responder_a=None, encabezados=None: enviados.append(
         {"para": para, "asunto": asunto, "html": cuerpo, "texto": texto}) or "id")
     return enviados
 
@@ -200,3 +200,46 @@ def test_accesos_masivos_no_cambia_la_clave_si_falla_el_correo(cliente, buzon, m
     r = cliente.post("/api/v1/auth/usuarios/accesos-masivos", headers=h, json={"ids": [uid]})
     assert r.status_code == 200 and r.json()["enviados"] == 0
     assert _token(cliente, "correo.prueba@oomapasc.gob.mx", "MiClaveNueva2026")  # sigue entrando con su clave
+
+
+# ───────────── Buzón SGC (2026-11-14) ─────────────
+def test_buzon_de_punta_a_punta(cliente, buzon, monkeypatch):
+    import base64 as b64
+    import hashlib as hl
+    import hmac as hm
+    import json as js
+    import time as tm
+    from backend.routers import buzon as rutas_buzon
+    from backend.services import ai_service
+
+    secreto = "whsec_" + b64.b64encode(b"secreto-buzon-pruebas").decode()
+    cuerpo = js.dumps({"type": "email.received", "data": {"email_id": "rcv_1"}}).encode()
+    ts = str(int(tm.time()))
+    firma = "v1," + b64.b64encode(hm.new(b"secreto-buzon-pruebas", f"msg_1.{ts}.".encode() + cuerpo, hl.sha256).digest()).decode()
+    cab = {"svix-id": "msg_1", "svix-timestamp": ts, "svix-signature": firma, "content-type": "application/json"}
+
+    monkeypatch.delenv("RESEND_WEBHOOK_SECRET", raising=False)
+    assert cliente.post("/api/v1/buzon/webhook", content=cuerpo, headers=cab).status_code == 503
+    monkeypatch.setenv("RESEND_WEBHOOK_SECRET", secreto)
+    assert cliente.post("/api/v1/buzon/webhook", content=cuerpo, headers={**cab, "svix-signature": "v1,falsa"}).status_code == 400
+
+    monkeypatch.setattr(rutas_buzon, "_traer_correo", lambda _id: {
+        "from": "Correo Prueba <correo.prueba@oomapasc.gob.mx>", "subject": "Re: Tu acceso", "message_id": "<abc@x>",
+        "text": "No me llega el enlace.\n\nEl jue escribió:\n> anterior", "headers": {}})
+    monkeypatch.setattr(ai_service, "generar_json_desde_prompt", lambda p, c, model=None: {
+        "puede_ayudar": True, "categoria": "acceso", "resumen": "No le llega el enlace",
+        "respuesta": "Revisa tu bandeja de correo no deseado y vuelve a pedir el enlace."})
+    r = cliente.post("/api/v1/buzon/webhook", content=cuerpo, headers=cab)
+    assert r.status_code == 200, r.text
+    assert cliente.post("/api/v1/buzon/webhook", content=cuerpo, headers=cab).json().get("duplicado")  # reintento
+    aviso = buzon[-1]
+    assert aviso["asunto"].startswith("[Buzón SGC]") and "No me llega el enlace" in aviso["texto"] and "anterior" not in aviso["texto"]
+
+    h = {"Authorization": f"Bearer {_token(cliente)}"}
+    lista = cliente.get("/api/v1/buzon", headers=h).json()
+    m = lista["mensajes"][0]
+    assert lista["modo"] == "aprobacion" and m["clasificacion"] == "PUEDE_AYUDAR" and m["estado"] == "PENDIENTE"
+    r = cliente.post(f"/api/v1/buzon/{m['id']}/responder", headers=h, json={"texto": m["respuesta_propuesta"]})
+    assert r.status_code == 200 and buzon[-1]["para"] == ["correo.prueba@oomapasc.gob.mx"]
+    assert cliente.post(f"/api/v1/buzon/{m['id']}/responder", headers=h, json={"texto": "otra vez"}).status_code == 409
+    assert cliente.get("/api/v1/buzon", headers={"Authorization": "Bearer x"}).status_code == 401

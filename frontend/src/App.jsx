@@ -14,6 +14,7 @@ import PlanMejoraViewExternal from './components/PlanMejoraView';
 import IndicadoresView from './components/indicadores';
 import GestorAprobacionesView from './components/aprobaciones';
 import SettingsView from './components/settings';
+import BuzonView from './components/buzon/BuzonView';
 
 // Módulos secundarios (para escalar)
 import RiesgosView from './components/riesgos';
@@ -223,6 +224,8 @@ function App() {
         return <AgenteISOView setActiveTab={setActiveTab} />;
       case 'manual':
         return <ManualCalidadView />;
+      case 'buzon':
+        return ['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) ? <BuzonView /> : null;
       case 'bitacora':
         return (
           <DocumentosView
@@ -256,6 +259,7 @@ function App() {
     { id: 'audits', label: 'Auditorías' },
     { id: 'agente_iso', label: 'Asesor Normativo ISO' },
     { id: 'settings', label: 'Configuración' },
+    { id: 'buzon', label: 'Buzón SGC' },
   ];
   const activeItem = navItems.find(item => item.id === activeTab);
 

@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Sparkles,
   Award
-, BookOpen } from 'lucide-react';
+, BookOpen, Inbox
+} from 'lucide-react';
 
 const Sidebar = ({ 
   activeTab, 
@@ -51,6 +52,7 @@ const Sidebar = ({
         { id: 'manual', icon: BookOpen, label: 'Manual de la Calidad', badge: 'OOMLSC-01' },
         { id: 'documents', icon: FileText, label: 'Control Documental', badge: 'Trazabilidad' },
         { id: 'agente_iso', icon: Sparkles, label: 'Asesor Normativo ISO', badge: 'IA ISO' },
+        { id: 'buzon', icon: Inbox, label: 'Buzón SGC', soloAdmin: true },
         { id: 'settings', icon: Settings, label: 'Configuración' },
       ]
     }
@@ -94,7 +96,7 @@ const Sidebar = ({
                 {section.title}
               </p>
             )}
-            {section.items.map((item) => {
+            {section.items.filter((item) => !item.soloAdmin || ['Super Admin', 'Admin'].includes(usuarioLogueado?.rol)).map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button

@@ -347,6 +347,33 @@ class EstadoPortal(SQLModel, table=True):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# MODELO: BUZÓN SGC (respuestas de los usuarios a los correos del portal; la IA propone, el SGC decide)
+# ═══════════════════════════════════════════════════════════════════════════════
+class MensajeBuzon(SQLModel, table=True):
+    __tablename__ = "buzon_mensajes"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organismo_id: int = Field(default=1, index=True)
+    resend_id: str = Field(index=True, unique=True)
+    recibido: datetime = Field(default_factory=datetime.utcnow, index=True)
+    de: str = Field(index=True)
+    de_nombre: Optional[str] = None
+    usuario_id: Optional[int] = None
+    asunto: str = ""
+    texto: str = Field(default="", sa_column=Column(Text))
+    message_id: Optional[str] = None
+    clasificacion: str = "REQUIERE_ADMIN"   # PUEDE_AYUDAR | REQUIERE_ADMIN | AUTOMATICO | DESCONOCIDO
+    categoria: str = "otro"
+    resumen: str = ""
+    motivo_escalar: str = ""
+    respuesta_propuesta: str = Field(default="", sa_column=Column(Text))
+    estado: str = Field(default="PENDIENTE", index=True)  # PENDIENTE | RESPONDIDO | DESCARTADO
+    respuesta_enviada: str = Field(default="", sa_column=Column(Text))
+    respondido_por: Optional[str] = None
+    respondido_en: Optional[datetime] = None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MODELO: ARCHIVOS (evidencias y documentos en Backblaze B2; binario fuera de la BD)
 # ═══════════════════════════════════════════════════════════════════════════════
 class Archivo(SQLModel, table=True):

@@ -110,6 +110,38 @@ def plantilla_acceso(nombre: str, email: str, password_temporal: str, url: str, 
     return asunto, marco("Accesos", "Tu acceso al portal" if nuevo else "Contraseña temporal", contenido, url), texto
 
 
+def plantilla_respuesta_buzon(nombre: str, respuesta: str, asunto_original: str, url: str) -> tuple[str, str, str]:
+    """Respuesta del SGC (escrita o aprobada por un administrador) a un mensaje del buzón."""
+    e = html.escape
+    asunto = asunto_original if asunto_original.lower().startswith("re:") else f"Re: {asunto_original}"
+    texto = f"Hola {nombre},\n\n{respuesta}\n\nSistema de Gestión de la Calidad\nOOMAPAS de Cajeme"
+    parrafos = "".join(f"<p>{e(p)}</p>" for p in respuesta.split("\n") if p.strip())
+    contenido = (f"<p>Hola <b>{e(nombre)}</b>,</p>{parrafos}{boton('Abrir el Portal SGC', url)}"
+                 '<p style="font-size:13px;color:#475569">Sistema de Gestión de la Calidad</p>')
+    return asunto, marco("Buzón SGC", "Respuesta a tu mensaje", contenido, url), texto
+
+
+def plantilla_aviso_buzon(m, url: str) -> tuple[str, str, str]:
+    """Aviso a los administradores: llegó un mensaje al buzón, con la clasificación y la propuesta de la IA."""
+    e = html.escape
+    escalar = m.clasificacion != "PUEDE_AYUDAR"
+    asunto = f"[Buzón SGC] {'Requiere intervención' if escalar else 'Respuesta propuesta'} — {m.de_nombre or m.de}"
+    estado = ("<b style=\"color:#be123c\">Se requiere intervención de un administrador</b>" if escalar
+              else "<b style=\"color:#047857\">La IA propone una respuesta; revísala y envíala desde el portal</b>")
+    texto = (f"Mensaje de {m.de_nombre or ''} <{m.de}>\nAsunto: {m.asunto}\n\n{m.texto[:2000]}\n\n"
+             f"Clasificación: {m.clasificacion} ({m.categoria})\nResumen: {m.resumen}\n"
+             + (f"Motivo: {m.motivo_escalar}\n" if escalar else f"Respuesta propuesta:\n{m.respuesta_propuesta}\n")
+             + f"\nAbrir el Buzón SGC: {url}")
+    filas = (f"{_fila('De', e(f'{m.de_nombre or ''} <{m.de}>'))}{_fila('Asunto', e(m.asunto))}"
+             f"{_fila('Resumen', e(m.resumen or '—'))}"
+             + (_fila('Motivo', e(m.motivo_escalar)) if escalar else _fila('Respuesta propuesta', e(m.respuesta_propuesta).replace(chr(10), '<br>'))))
+    contenido = (f"<p>{estado}</p>"
+                 f'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:13px;white-space:pre-wrap">{e(m.texto[:2000])}</div>'
+                 f'<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:14px">{filas}</table>'
+                 f"{boton('Abrir el Buzón SGC', url)}")
+    return asunto, marco("Buzón SGC", "Nuevo mensaje de un usuario", contenido, url), texto
+
+
 def plantilla_recuperacion(nombre: str, enlace: str, minutos: int, url: str) -> tuple[str, str, str]:
     """Enlace de un solo uso para que el usuario ponga una contraseña nueva."""
     e = html.escape
@@ -162,7 +194,8 @@ def plantilla_libre(asunto: str, mensaje: str, remitente_nombre: str, url_portal
     return asunto, cuerpo, texto
 
 
-def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, responder_a=None) -> str:
+def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, responder_a=None,
+           encabezados: dict | None = None) -> str:
     """Envía por Resend y devuelve el id del correo. 503 si no está configurado, 502 si Resend falla."""
     if not configurado():
         raise HTTPException(status_code=503, detail="El envío de correos no está configurado.")
@@ -171,6 +204,8 @@ def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, 
     respuestas = [c for c in ([responder_a] if isinstance(responder_a, str) else (responder_a or [])) if c and RE_CORREO.match(c)]
     if respuestas:
         datos["reply_to"] = respuestas[0] if len(respuestas) == 1 else respuestas[:10]
+    if encabezados:
+        datos["headers"] = {k: v for k, v in encabezados.items() if v}
     if f"cid:{LOGO_CID}" in cuerpo_html and _LOGO.is_file():
         datos["attachments"] = [{"filename": "logo-oomapasc.png", "content": base64.b64encode(_LOGO.read_bytes()).decode(),
                                  "content_type": "image/png", "content_id": LOGO_CID}]

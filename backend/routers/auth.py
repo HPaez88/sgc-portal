@@ -81,7 +81,9 @@ def _ip(request: Request) -> str:
 
 
 def _correos_admins(session: Session, organismo_id: int) -> list[str]:
-    """Correos de los administradores del SGC: a ellos llegan las respuestas de los correos automáticos."""
+    """A dónde llegan las respuestas de los correos automáticos: el Buzón SGC (si está configurado) o los administradores."""
+    if os.getenv("BUZON_CORREO"):
+        return [os.environ["BUZON_CORREO"]]
     filas = session.exec(select(Usuario).where(Usuario.organismo_id == organismo_id, Usuario.rol.in_(auth.ROLES_ADMIN))).all()
     return [u.email for u in filas if u.activo]
 
