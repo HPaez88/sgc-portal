@@ -11,6 +11,7 @@ import { esAdminSGC, can } from '../../constants/workflow';
 import { normalizarDireccion } from '../../constants/areas';
 import { CLAVE_MATRIZ, ESTADOS_MATRIZ, idMatriz, esOficial, estadoRiesgo, puedeCapturarArea } from '../../constants/riesgos';
 import MatrizArea from './MatrizArea';
+import MatrizPorArea from './MatrizPorArea';
 import TableroRiesgos from './TableroRiesgos';
 import SeguimientoRiesgos from './SeguimientoRiesgos';
 import RevisionMatrices from './RevisionMatrices';
@@ -37,8 +38,12 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
   const [areaSel, setAreaSel] = useState(areaUsuario && areasDetalle.some((a) => a.nombre === areaUsuario) ? areaUsuario : (areasCatalogo[0]?.nombre || ''));
   // Si el catálogo llega después del primer render, se toma la primera área.
   const area = puedeTodasAreas ? (areaSel || areasCatalogo[0]?.nombre || '') : areaUsuario;
-  const puedeEditar = puedeCapturarArea(usuarioLogueado, area, areasDetalle, esAdmin) && (esAdmin || can(usuarioLogueado, 'editar'));
-  const puedeEnviar = esAdmin || (puedeEditar && (can(usuarioLogueado, 'enviar') || (areasDetalle.find((a) => a.nombre === area)?.encargados_sgc || []).includes(String(usuarioLogueado?.email || '').toLowerCase())));
+  const permisosDe = (nombreArea) => {
+    const editar = puedeCapturarArea(usuarioLogueado, nombreArea, areasDetalle, esAdmin) && (esAdmin || can(usuarioLogueado, 'editar'));
+    const enviar = esAdmin || (editar && (can(usuarioLogueado, 'enviar') || (areasDetalle.find((a) => a.nombre === nombreArea)?.encargados_sgc || []).includes(String(usuarioLogueado?.email || '').toLowerCase())));
+    return { puedeEditar: editar, puedeEnviar: enviar };
+  };
+  const { puedeEditar, puedeEnviar } = permisosDe(area);
   const direccion = normalizarDireccion(areasDetalle.find((a) => a.nombre === area)?.direccion || '');
 
   // Solo registros del modelo nuevo (con año); los de prueba anteriores no se muestran.
@@ -106,14 +111,6 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
           <p className="text-sm text-slate-600">ISO 9001:2015 § 6.1 · matriz {CLAVE_MATRIZ} por área, seguimiento con planes de mejora</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {actual.id === 'matriz' && puedeTodasAreas && (
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
-              Área
-              <select value={area} onChange={(e) => setAreaSel(e.target.value)} aria-label="Área" className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
-                {areasCatalogo.map((a) => <option key={a.nombre} value={a.nombre}>{a.nombre}</option>)}
-              </select>
-            </label>
-          )}
           <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
             {anioDeMatriz ? 'Año de la matriz' : 'Año'}
             <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
@@ -139,7 +136,16 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
         <p className="text-xs text-slate-600">{actual.ayuda}</p>
       </div>
 
-      {actual.id === 'matriz' && (area ? (
+      {actual.id === 'matriz' && puedeTodasAreas && (
+        <MatrizPorArea areas={areasCatalogo} anio={anio} riesgos={lista} matrices={listaMatrices}
+          areaInicial={accionAlta ? area : null} accionInicial={accionAlta} onAccionHecha={() => setAccionAlta(null)}
+          propsMatriz={(a) => ({
+            riesgos: lista, setRiesgos, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, onVerPM: verPM,
+            direccion: normalizarDireccion(a.direccion || ''), ...permisosDe(a.nombre),
+          })} />
+      )}
+
+      {actual.id === 'matriz' && !puedeTodasAreas && (area ? (
         <MatrizArea area={area} direccion={direccion} anio={anio} riesgos={lista} setRiesgos={setRiesgos} matriz={matriz}
           guardarMatriz={guardarMatriz} procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento}
           puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} onVerPM={verPM}

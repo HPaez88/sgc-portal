@@ -125,7 +125,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
         if (!lista.length) return null;
         return (
           <section key={tipo} className="space-y-2">
-            <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">{titulo} ({lista.length})</h4>
+            <h4 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-extrabold border-l-4 ${tipo === 'Riesgo' ? 'bg-rose-50 text-rose-900 border-l-rose-500' : 'bg-emerald-50 text-emerald-900 border-l-emerald-500'}`}>{titulo}<span className="text-xs font-bold opacity-80">({lista.length})</span></h4>
             {lista.map((r) => {
               const nivel = nivelDe(r);
               const abiertoEste = abierto === r.id;

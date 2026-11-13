@@ -12,14 +12,17 @@ import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionRe
 import { getEstadoColor, getEstadoLabel } from '../constants';
 import { asignarFolio } from '../services/folioService';
 import { motivoBloqueoCierre, fechaSeguimientoInicial } from '../constants/workflow';
-import { Construction } from 'lucide-react';
+import { Construction, ClipboardList, ShieldAlert } from 'lucide-react';
+import HojaAnalisisRiesgo from './riesgos/HojaAnalisisRiesgo';
 
 // ponytail: interruptor temporal mientras se captura la información; poner en false para abrir el módulo a todos.
 const PM_EN_CONSTRUCCION = true;
 import BarraRegreso from './common/BarraRegreso';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
-  const { registrarMovimiento } = useSGC();
+  const { registrarMovimiento, riesgos = [] } = useSGC();
+  // PM que viene de la matriz de riesgos: hoja extra con el análisis del riesgo (OOMRSC-37).
+  const [hojaPM, setHojaPM] = useState('plan');
   const toast = useToast();
   const { confirmar, solicitar, props: propsDialogos } = useDialogos();
   const [vista, setVista] = useState('lista');
@@ -104,6 +107,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   const handleVer = (pm) => {
+    setHojaPM('plan');
     setForm(pm);
 
     // Cargar equipo
@@ -982,6 +986,19 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         {modalConfirmarEnvioJSX}
         {modalAuditor}
         {modalDictamenJSX}
+        {form.riesgo_id && (
+          <nav role="tablist" aria-label="Hojas del plan de mejora" className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit max-w-full overflow-x-auto mb-4">
+            {[['plan', 'Plan de mejora', ClipboardList], ['riesgo', `Análisis ${form.riesgo_tipo === 'Oportunidad' ? 'de la oportunidad' : 'del riesgo'} (OOMRSC-37)`, ShieldAlert]].map(([id, texto, Icono]) => (
+              <button key={id} type="button" role="tab" aria-selected={hojaPM === id} onClick={() => setHojaPM(id)}
+                className={`shrink-0 px-4 py-2 rounded-lg text-sm font-bold inline-flex items-center gap-2 ${hojaPM === id ? 'bg-white text-marca-azul-oscuro shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                <Icono size={16} aria-hidden="true" /> {texto}
+              </button>
+            ))}
+          </nav>
+        )}
+        {form.riesgo_id && hojaPM === 'riesgo' ? (
+          <HojaAnalisisRiesgo riesgo={riesgos.find((r) => String(r.id) === String(form.riesgo_id))} />
+        ) : (
         <PlanesDetalle 
           abrirDictamenNoEficaz={abrirDictamenNoEficaz}
           form={form}
@@ -1002,6 +1019,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
           aprobarReplanteoActividad={aprobarReplanteoActividad}
           rechazarReplanteoActividad={rechazarReplanteoActividad}
         />
+        )}
       </>
     );
   }
