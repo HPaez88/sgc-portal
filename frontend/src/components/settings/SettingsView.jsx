@@ -606,35 +606,18 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     });
   };
 
-  // Filtrado de búsquedas
-  const areasFiltradas = areasDetalle.filter(a => 
-    a.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    a.encargado?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    a.correo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    a.direccion?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    a.subdireccion?.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  // Filtrado de búsquedas: sin distinguir acentos ni mayúsculas ("supervision" encuentra "Supervisión").
+  // Todos los catálogos se muestran en orden alfabético.
+  const sinAcentos = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = sinAcentos(busqueda.trim());
+  // Cada palabra buscada debe aparecer en algún campo ("hector paez" encuentra "Héctor Manuel Páez").
+  const coincide = (...campos) => { const texto = campos.map(sinAcentos).join(' '); return q.split(/\s+/).every((w) => texto.includes(w)); };
+  const alfabetico = (lista) => [...lista].sort((x, y) => String(x.nombre || '').localeCompare(String(y.nombre || ''), 'es', { sensitivity: 'base' }));
 
-  const direccionesFiltradas = direccionesDetalle.filter(d => 
-    d.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    d.director?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    d.correo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    d.siglas?.toLowerCase().includes(busqueda.toLowerCase())
-  );
-
-  const procesosFiltrados = procesosDetalle.filter(p => 
-    p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.clave?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.tipo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.areaResponsable?.toLowerCase().includes(busqueda.toLowerCase())
-  );
-
-  const usuariosFiltrados = usuariosList.filter(u => 
-    u.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    u.email?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    u.area?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    u.rol?.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const areasFiltradas = alfabetico(areasDetalle.filter((a) => coincide(a.nombre, a.encargado, a.correo, a.direccion, a.subdireccion)));
+  const direccionesFiltradas = alfabetico(direccionesDetalle.filter((d) => coincide(d.nombre, d.director, d.correo, d.siglas)));
+  const procesosFiltrados = alfabetico(procesosDetalle.filter((p) => coincide(p.nombre, p.clave, p.tipo, p.areaResponsable)));
+  const usuariosFiltrados = alfabetico(usuariosList.filter((u) => coincide(u.nombre, u.email, u.area, u.direccion, u.rol)));
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -743,7 +726,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
         </button>
 
         <button
-          onClick={() => { setTabActiva('usuarios'); setBusqueda(''); }}
+          onClick={() => { setTabActiva('usuarios'); setBusqueda(''); recargarUsuarios(); }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
             tabActiva === 'usuarios'
               ? 'bg-[#0B192C] text-white shadow-sm'
@@ -1844,7 +1827,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, direccion: e.target.value, subdireccion: '' } })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
                 >
-                  {direcciones.map(d => <option key={d} value={d}>{d}</option>)}
+                  {[...direcciones].sort((x, y) => x.localeCompare(y, 'es')).map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
             </div>
@@ -1861,7 +1844,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
                   >
                     <option value="">{subs.length ? 'Sin subdirección (depende directo de la dirección)' : 'Esta dirección no tiene subdirecciones'}</option>
-                    {subs.map(sd => <option key={sd.id} value={sd.nombre}>{sd.nombre}{sd.encargado ? ` · ${sd.encargado}` : ''}</option>)}
+                    {[...subs].sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), 'es')).map(sd => <option key={sd.id} value={sd.nombre}>{sd.nombre}{sd.encargado ? ` · ${sd.encargado}` : ''}</option>)}
                     {actual && !subs.some(sd => sd.nombre === actual) && <option value={actual}>{actual} (no está en el catálogo)</option>}
                   </select>
                 );
@@ -2105,7 +2088,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     }}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                   >
-                    {areas.map(a => <option key={a} value={a}>{a}</option>)}
+                    {[...areas].sort((x, y) => x.localeCompare(y, 'es')).map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
               </div>
@@ -2300,7 +2283,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
                   >
                     <option value="">-- Seleccionar área --</option>
-                    {areas.map(a => <option key={a} value={a}>{a}</option>)}
+                    {[...areas].sort((x, y) => x.localeCompare(y, 'es')).map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
 
@@ -2314,7 +2297,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
                   >
                     <option value="">-- Seleccionar dirección --</option>
-                    {direcciones.map(d => <option key={d} value={d}>{d}</option>)}
+                    {[...direcciones].sort((x, y) => x.localeCompare(y, 'es')).map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
               </div>

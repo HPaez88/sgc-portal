@@ -9,7 +9,8 @@ import { puedeVerTodasAreas } from '../../constants/workflow';
 export default function EncargadosSGC({ lista = [], onChange, usuarios = [], onCrear, area }) {
   const [sel, setSel] = useState('');
   const porCorreo = Object.fromEntries(usuarios.map((u) => [String(u.email).toLowerCase(), u]));
-  const disponibles = usuarios.filter((u) => u.activo !== false && !lista.includes(String(u.email).toLowerCase()));
+  const disponibles = usuarios.filter((u) => u.activo !== false && !lista.includes(String(u.email).toLowerCase()))
+    .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' }));
 
   const agregar = () => {
     if (!sel) return;
