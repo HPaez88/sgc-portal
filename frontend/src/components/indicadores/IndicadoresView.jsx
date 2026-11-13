@@ -1433,7 +1433,7 @@ export default function IndicadoresView({
                   <thead>
                     <tr className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase font-mono">
                       <th className="py-3 px-3 w-10 text-center sticky left-0 bg-slate-100 z-10">#</th>
-                      <th className="py-3 px-3 min-w-[220px] sticky left-10 bg-slate-100 z-10 border-r border-slate-200">
+                      <th className="py-3 px-3 min-w-[320px] w-[34%] sticky left-10 bg-slate-100 z-10 border-r border-slate-200">
                         Indicador Oficial
                       </th>
                       <th className="py-3 px-2 text-center w-20">Meta</th>
@@ -1472,10 +1472,10 @@ export default function IndicadoresView({
 
                             {/* Indicador / Proceso */}
                             <td className="py-2.5 px-3 sticky left-10 bg-white group-hover:bg-slate-50 border-r border-slate-200">
-                              <div className="font-bold text-slate-900 leading-tight truncate max-w-[230px]" title={ind.nombre}>
+                              <div className="font-bold text-slate-900 leading-snug whitespace-normal break-words" title={ind.nombre}>
                                 {ind.nombre}
                               </div>
-                              <div className="text-[10px] text-slate-500 truncate max-w-[230px] mt-0.5">
+                              <div className="text-[10px] text-slate-500 whitespace-normal mt-0.5">
                                 {ind.area} · <span className="italic">{ind.proceso}</span>
                               </div>
                             </td>
