@@ -80,13 +80,19 @@ def _ip(request: Request) -> str:
     return reenviada.split(",")[0].strip() or (request.client.host if request.client else "?")
 
 
-def _enviar_acceso(u: Usuario, temporal: str, request: Request, motivo: str) -> tuple[bool, Optional[str]]:
+def _correos_admins(session: Session, organismo_id: int) -> list[str]:
+    """Correos de los administradores del SGC: a ellos llegan las respuestas de los correos automáticos."""
+    filas = session.exec(select(Usuario).where(Usuario.organismo_id == organismo_id, Usuario.rol.in_(auth.ROLES_ADMIN))).all()
+    return [u.email for u in filas if u.activo]
+
+
+def _enviar_acceso(u: Usuario, temporal: str, request: Request, motivo: str, responder_a=None) -> tuple[bool, Optional[str]]:
     """Manda los datos de acceso con diseño institucional. No lanza: regresa (enviado, error)."""
     if not correo.configurado():
         return False, "El envío de correos aún no está configurado."
     try:
         asunto, cuerpo, texto = correo.plantilla_acceso(u.nombre, u.email, temporal, correo.url_portal(request), motivo)
-        correo.enviar([u.email], asunto, cuerpo, texto)
+        correo.enviar([u.email], asunto, cuerpo, texto, responder_a=responder_a)
         return True, None
     except HTTPException as ex:
         return False, str(ex.detail)
@@ -194,7 +200,7 @@ def crear_usuario(
     session.add(nuevo)
     session.commit()
     session.refresh(nuevo)
-    enviado, error = _enviar_acceso(nuevo, temporal, request, "alta") if datos.enviar_correo else (False, None)
+    enviado, error = _enviar_acceso(nuevo, temporal, request, "alta", _correos_admins(session, actor.organismo_id)) if datos.enviar_correo else (False, None)
     return {"usuario": _publico(nuevo), "password_temporal": temporal, "correo_enviado": enviado, "correo_error": error}
 
 
@@ -243,7 +249,7 @@ def restablecer_password(
     u.debe_cambiar_password = True
     session.add(u)
     session.commit()
-    enviado, error = _enviar_acceso(u, temporal, request, "restablecer") if datos and datos.enviar_correo else (False, None)
+    enviado, error = _enviar_acceso(u, temporal, request, "restablecer", _correos_admins(session, actor.organismo_id)) if datos and datos.enviar_correo else (False, None)
     return {"usuario": _publico(u), "password_temporal": temporal, "correo_enviado": enviado, "correo_error": error}
 
 
@@ -280,6 +286,7 @@ def accesos_masivos(
     if not correo.configurado():
         raise HTTPException(status_code=503, detail="El envío de correos aún no está configurado.")
     url = correo.url_portal(request)
+    admins = _correos_admins(session, actor.organismo_id)
     resultados = []
     for uid in dict.fromkeys(datos.ids):
         u = session.get(Usuario, uid)
@@ -292,7 +299,7 @@ def accesos_masivos(
         temporal = auth.password_temporal()
         try:
             asunto, cuerpo, texto = correo.plantilla_acceso(u.nombre, u.email, temporal, url, "restablecer")
-            correo.enviar([u.email], asunto, cuerpo, texto)
+            correo.enviar([u.email], asunto, cuerpo, texto, responder_a=admins)
         except HTTPException as ex:
             resultados.append({"id": uid, "nombre": u.nombre, "email": u.email, "enviado": False, "error": str(ex.detail)})
             continue
@@ -320,7 +327,7 @@ def solicitar_recuperacion(datos: RecuperarInput, request: Request, session: Ses
         enlace = f"{url}/?recuperar={auth.crear_token_recuperar(u)}"
         try:
             asunto, cuerpo, texto = correo.plantilla_recuperacion(u.nombre, enlace, auth.RECUPERAR_MINUTOS, url)
-            correo.enviar([u.email], asunto, cuerpo, texto)
+            correo.enviar([u.email], asunto, cuerpo, texto, responder_a=_correos_admins(session, u.organismo_id))
         except HTTPException as ex:
             log.error("No se pudo enviar la recuperación a %s: %s", u.id, ex.detail)
     return {"ok": True, "correo_activo": True}

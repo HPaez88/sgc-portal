@@ -162,13 +162,15 @@ def plantilla_libre(asunto: str, mensaje: str, remitente_nombre: str, url_portal
     return asunto, cuerpo, texto
 
 
-def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, responder_a: str | None = None) -> str:
+def enviar(destinatarios: list[str], asunto: str, cuerpo_html: str, texto: str, responder_a=None) -> str:
     """Envía por Resend y devuelve el id del correo. 503 si no está configurado, 502 si Resend falla."""
     if not configurado():
         raise HTTPException(status_code=503, detail="El envío de correos no está configurado.")
     datos = {"from": os.environ["MAIL_FROM"], "to": destinatarios, "subject": asunto, "html": cuerpo_html, "text": texto}
-    if responder_a and RE_CORREO.match(responder_a):
-        datos["reply_to"] = responder_a
+    # "Responder a": uno o varios correos (p. ej. los administradores del SGC); se ignoran los inválidos.
+    respuestas = [c for c in ([responder_a] if isinstance(responder_a, str) else (responder_a or [])) if c and RE_CORREO.match(c)]
+    if respuestas:
+        datos["reply_to"] = respuestas[0] if len(respuestas) == 1 else respuestas[:10]
     if f"cid:{LOGO_CID}" in cuerpo_html and _LOGO.is_file():
         datos["attachments"] = [{"filename": "logo-oomapasc.png", "content": base64.b64encode(_LOGO.read_bytes()).decode(),
                                  "content_type": "image/png", "content_id": LOGO_CID}]
