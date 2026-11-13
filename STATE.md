@@ -70,7 +70,8 @@
 - [x] C18 — Replanteo de fecha final para registros sin actividades (Admin, máx 2 incl. Control 6). Decidido @human: sin replanteos y vencida → dictamen no eficaz + nueva acción (botón en el panel). Fecha de seguimiento fija al aprobar (2026-11-10); el panel aplica con o sin actividades.
 - [x] C19 — Riesgos y oportunidades etapa 1 (matriz por área, tablero con mapas de calor, seguimiento con PM ligado, revisión SGC y dictamen de eficacia).
 - [x] C20 — Riesgos etapa 2: IA que sugiere riesgos/oportunidades con el propósito del área (probado en real 2026-11-14).
-- [ ] C21 — Riesgos etapa 3: informes por área y por dirección, comparativo anual.
+- [x] C21 — Riesgos etapa 3: informes por área, dirección y organismo, comparativo anual, hallazgos y PDF (2026-11-14).
+- [ ] C22 — Riesgos: auditoría del módulo (visual y de seguimiento) y mejoras acordadas.
 - [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
 - [ ] C5 — Revisar en Control 6: AC#20/2026 replanteo #3 con fecha anterior; AC#24/2026 sin fecha de cierre; responsable de AC#1/2026; proceso de Jurídico (OM#5, OM#9)
 

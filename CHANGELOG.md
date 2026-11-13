@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T02:00Z · @claude-code · [FEATURE] · Riesgos etapa 3: informes por área, dirección y organismo
+Nueva pestaña "Informes" en Riesgos y Oportunidades. El SGC elige el alcance (todo el organismo, una dirección o un área); las áreas solo ven el informe de su área. Secciones numeradas con títulos y tablas con encabezados: 1) Resumen (riesgos, altos, nivel promedio, oportunidades, con plan, vencidos, por dictaminar, eficacia), 2) Hallazgos para la toma de decisiones (planes vencidos, pendientes de dictamen, riesgos altos aceptados sin plan, subida o baja contra el año anterior, dónde se concentran los altos, eficacia, matrices aceptadas), 3) Comparativo con hasta 3 años anteriores (barras por nivel y tabla), 4) Mapas de calor, 5) Desglose por dirección / área / proceso según el alcance, 6) Riesgos altos con su tratamiento, plan de mejora, vencimiento y estado. Botón "Descargar PDF" (carta, encabezado institucional, mismas secciones, numeración de páginas). Lógica pura en constants/riesgosInforme.js con pruebas; prueba de construcción del PDF. Verificado en copia local con datos de prueba de 2025 y 2026.
+- Tareas STATE: C21
+- Deploy: SI
+
 ## 2026-11-14T00:30Z · @claude-code · [FEATURE+FIX] · Riesgos etapa 2: la IA sugiere riesgos y oportunidades
 Botón "Sugerir con IA" en la matriz del área: arma el contexto con el propósito del área, sus procesos, sus indicadores del Cuadro de Control, sus no conformidades recientes, lo del año anterior y lo ya capturado (para no repetir). La respuesta se valida y corrige (constants/riesgosIA.js, con pruebas): contexto y proceso de las listas oficiales, impacto 2-10, probabilidad 1-5, tratamiento válido, máximo 8. El área elige cuáles agregar (nada se agrega solo); quedan marcadas sugerido_ia y se editan como cualquier registro; bitácora. Fix en el backend: las respuestas JSON de la IA se piden en modo json_object (la prueba real devolvió JSON con una coma faltante); si el modelo no lo soporta se reintenta sin él (test_ai_service.py). Prueba real en el servidor con Plantas Potabilizadoras: JSON válido en 6.8 s con sugerencias pertinentes; se reforzó el prompt para que siempre incluya oportunidades.
 - Tareas STATE: C20

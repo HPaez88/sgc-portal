@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // Riesgos y Oportunidades (ISO 9001:2015 § 6.1) — rediseño 2026-11-13.
 // Pestañas: Mi matriz (captura del área) · Tablero (mapas y cifras) · Seguimiento (planes de mejora
-// ligados y dictamen de eficacia) · Revisión SGC (bandeja de matrices, solo administradores).
+// ligados y dictamen de eficacia) · Informes (por área/dirección, comparativo anual, PDF) · Revisión SGC (bandeja de matrices, solo administradores).
 // ═══════════════════════════════════════════════════════════════
 import React, { useMemo, useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
@@ -14,6 +14,7 @@ import MatrizArea from './MatrizArea';
 import TableroRiesgos from './TableroRiesgos';
 import SeguimientoRiesgos from './SeguimientoRiesgos';
 import RevisionMatrices from './RevisionMatrices';
+import InformeRiesgos from './InformeRiesgos';
 
 const ANIO_ACTUAL = new Date().getFullYear();
 // Desde noviembre ya se captura la matriz del año siguiente.
@@ -46,6 +47,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
     ['matriz', puedeTodasAreas ? 'Matriz por área' : 'Mi matriz'],
     ['tablero', 'Tablero'],
     ['seguimiento', 'Seguimiento'],
+    ['informes', 'Informes'],
     ...(esAdmin ? [['revision', 'Revisión SGC']] : []),
   ];
 
@@ -83,6 +85,11 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
       {tab === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} />}
 
       {tab === 'seguimiento' && <SeguimientoRiesgos items={delAnio} setRiesgos={setRiesgos} planesMejora={planesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />}
+
+      {tab === 'informes' && (
+        <InformeRiesgos lista={visibles} planesMejora={planesMejora} areasDetalle={areasDetalle} matrices={Array.isArray(matrices) ? matrices : []}
+          anio={anio} puedeTodasAreas={puedeTodasAreas} areaUsuario={areaUsuario} usuarioLogueado={usuarioLogueado} />
+      )}
 
       {tab === 'revision' && esAdmin && (
         <RevisionMatrices anio={anio} areas={areasCatalogo} riesgos={lista} setRiesgos={setRiesgos} matrices={Array.isArray(matrices) ? matrices : []}
