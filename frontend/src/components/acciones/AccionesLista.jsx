@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye, Mail, CalendarClock, Check, X } from 'lucide-react';
 import { ORIGENES_AC, FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
 import { getFechaCompromiso, formatearFecha, esPorAbrir, etiquetaOrigen, correosDe, puedeMoverFechas, ajustarFechaSeguimiento, fechaISO, parseFecha, esCerrado, normalizarEstado } from '../../constants/workflow';
@@ -108,6 +108,18 @@ export default function AccionesLista({
 
     return true;
   });
+
+  // Desde el buscador global: abrir directo la AC elegida o la pestaña de reportes de corrección.
+  useEffect(() => {
+    let idAc = null; let idRc = null;
+    try {
+      idAc = sessionStorage.getItem('sgc-abrir-ac'); sessionStorage.removeItem('sgc-abrir-ac');
+      idRc = sessionStorage.getItem('sgc-abrir-rc'); sessionStorage.removeItem('sgc-abrir-rc');
+    } catch { /* sin almacenamiento */ }
+    if (idRc) setPestana('rc');
+    const ac = idAc && (accionesCorrectivas || []).find((a) => String(a.id) === idAc);
+    if (ac) handleVer(ac);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleVer = (ac) => {
     setForm(ac); 

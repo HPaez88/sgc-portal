@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, Search, HelpCircle, ShieldCheck, ChevronDown, History, LogOut, Sparkles } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
+import BuscadorGlobal from './BuscadorGlobal';
 import { useToast } from '../common/Toast';
 import { getRolColor, puedeVerTodasAreas } from '../../constants';
 
@@ -11,7 +12,8 @@ const Header = ({
   setActiveTab, 
   usuarios = [], 
   usuarioLogueado, 
-  setUsuarioActivoId 
+  setUsuarioActivoId,
+  modulos = []
 }) => {
   const { cerrarSesion, estadoSync } = useSGC();
   const toast = useToast();
@@ -68,18 +70,8 @@ const Header = ({
           <span>{syncInfo.label}</span>
         </div>
 
-        {/* Global Search Bar */}
-        <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 hover:bg-white rounded-lg w-72 border border-slate-200 focus-within:border-sky-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-sky-500/15 transition-all">
-          <Search size={15} className="text-slate-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar folios, auditorías, normas..."
-            className="bg-transparent border-none focus:outline-none text-xs w-full text-slate-700 placeholder-slate-400"
-          />
-          <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 bg-white border border-slate-200 rounded shadow-2xs">
-            Ctrl K
-          </kbd>
-        </div>
+        {/* Buscador global del portal */}
+        <BuscadorGlobal modulos={modulos} setActiveTab={setActiveTab} />
       </div>
 
       {/* Right section: User Pill & Actions */}

@@ -292,6 +292,7 @@ function App() {
           usuarios={usuarios}
           usuarioLogueado={usuarioLogueado}
           setUsuarioActivoId={setUsuarioActivoId}
+          modulos={navItems.filter((m) => m.id !== 'buzon' || ['Super Admin', 'Admin'].includes(usuarioLogueado?.rol))}
         />
 
         <main className={`flex-1 overflow-x-hidden overflow-y-auto p-3 pb-24 sm:p-5 sm:pb-6 lg:p-6 lg:pb-6 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'} relative`}>

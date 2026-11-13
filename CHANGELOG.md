@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T17:00Z · @claude-code · [FEATURE] · Buscador global del portal
+El buscador del encabezado no hacía nada. Ahora busca (sin acentos, varias palabras) en módulos, acciones correctivas, planes de mejora, reportes de corrección, riesgos y oportunidades, indicadores, documentos y, para administradores, áreas y usuarios; resultados agrupados con total; Ctrl+K desde cualquier pantalla, flechas y Enter; abre directo la AC o el PM (o la pestaña de RC) y lleva al módulo en los demás casos; respeta el alcance por área; la búsqueda queda en la bitácora. Lógica en constants/busquedaGlobal.js con pruebas. Verificado en copia local (Ctrl+K → "mantenimiento" → Enter abre PM#5/2025).
+- Deploy: SI
+
 ## 2026-11-14T16:30Z · @claude-code · [FEATURE] · Reportes de corrección en Acciones Correctivas, RC manual, recordatorios manuales y filtros
 Pedidos de @human. (1) Acciones Correctivas tiene la pestaña "Reportes de corrección" (componente compartido con Indicadores: misma información). (2) "Nuevo reporte de corrección" manual (Admin, Super Admin, Auditor) con origen: Indicador (opcional cuál), Auditoría interna/externa, Proceso o producto no conforme (§ 8.7) u Otra detección; referencia opcional; folio consecutivo RC#n/año; fecha compromiso en día hábil; bitácora. (3) Revisión SGC: tarjetas de estado que filtran, búsqueda, dirección y tipo de unidad; botón "Recordar a pendientes" con asunto y mensaje editables y selección de unidades (endpoint /notificaciones/recordatorios, diseño institucional, respuestas al buzón). (4) Indicadores: la AC/RC ligada muestra su fecha de cierre y estado (en tiempo, por vencer, vencida); ya no aparece "NA" junto a ella. (5) Regla general de tablas y campos de captura bien definidos (index.css) documentada en docs/linea-diseno-institucional.md.
 - Deploy: SI
