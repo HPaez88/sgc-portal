@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Mail, Eye, EyeOff, Droplet, ArrowRight, ShieldCheck, AlertCircle, Clock, KeyRound } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle, Clock, KeyRound } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 
 const PASSWORD_MIN = 8;
@@ -50,12 +50,12 @@ export default function LoginView() {
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative z-10 animate-scale-up">
-        <div className="bg-[#0A1424] text-white p-7 text-center relative border-b border-slate-800">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-700 flex items-center justify-center mx-auto shadow-lg shadow-sky-500/20 mb-3">
-            <Droplet className="text-white fill-white/20" size={30} />
+        <div className="bg-[#0A1424] text-white p-7 text-center relative border-b-4 border-marca-verde">
+          <div className="inline-block bg-white rounded-2xl px-5 py-3 mx-auto shadow-lg mb-3">
+            <img src="/logo-oomapasc.png" alt="OOMAPAS de Cajeme" className="h-14 w-auto" />
           </div>
           <div className="space-y-1">
-            <span className="inline-block px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-sky-500/20 text-sky-300 border border-sky-500/30">
+            <span className="inline-block px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-marca-verde/15 text-marca-verde-claro border border-marca-verde/40">
               ISO 9001:2015 • SGC OOMAPASC
             </span>
             <h1 className="text-xl font-black tracking-tight text-white">Portal de Calidad</h1>

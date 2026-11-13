@@ -22,6 +22,8 @@ export default {
         '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
       },
       colors: {
+        // Línea de diseño institucional (logo OOMAPAS de Cajeme). El azul profundo de la plataforma (navy) se mantiene.
+        marca: { azul: '#0083C0', 'azul-oscuro': '#005B86', verde: '#76BE44', 'verde-claro': '#B1D681' },
         oomapas: {
           50: '#f0f7ff',
           100: '#e0effe',

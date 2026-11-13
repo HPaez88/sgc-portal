@@ -4,6 +4,7 @@
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { MARCA, encabezadoPDF } from './pdfMarca';
 import { descargarBlob } from './apiClient';
 
 /**
@@ -105,31 +106,13 @@ export function exportarConsultaISOPDF({
 
   let y = 16;
 
-  // 1. Encabezado Institucional
-  doc.setFillColor(11, 25, 44); // #0B192C
-  doc.rect(14, y, pageWidth - 28, 24, 'F');
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('OOMAPASC — SISTEMA DE GESTIÓN DE LA CALIDAD', 18, y + 8);
-
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(186, 230, 253); // sky-200
-  doc.text('DICTAMEN TÉCNICO NORMATIVO Y AUDITORÍA IA (ISO 9001 / 14001 / 45001 / 19011)', 18, y + 14);
-  doc.text('ORGANISMO OPERADOR MUNICIPAL DE AGUA POTABLE DE CAJEME', 18, y + 19);
-
-  // Folio en encabezado derecho
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text(folio, pageWidth - 18, y + 9, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(203, 213, 225);
-  doc.text(`Emisión: ${fechaStr}`, pageWidth - 18, y + 15, { align: 'right' });
-
-  y += 30;
+  // 1. Encabezado institucional (línea de diseño OOMAPAS, services/pdfMarca.js)
+  y = encabezadoPDF(doc, {
+    titulo: 'DICTAMEN TÉCNICO NORMATIVO (ASESOR ISO)',
+    subtitulo: 'Sistema de Gestión de la Calidad · ISO 9001 / 14001 / 45001 / 19011',
+    derecha: [folio, `Emisión: ${fechaStr}`],
+    y: 10,
+  }) + 2;
 
   // 2. Metadatos de la Consulta
   const metaDatos = [
@@ -143,8 +126,8 @@ export function exportarConsultaISOPDF({
     theme: 'plain',
     styles: { fontSize: 8, cellPadding: 2, textColor: [30, 41, 59] },
     columnStyles: {
-      0: { fontStyle: 'bold', width: 42, textColor: [0, 40, 85] },
-      2: { fontStyle: 'bold', width: 38, textColor: [0, 40, 85] }
+      0: { fontStyle: 'bold', width: 42, textColor: MARCA.azulOscuro },
+      2: { fontStyle: 'bold', width: 38, textColor: MARCA.azulOscuro }
     }
   });
 
@@ -155,7 +138,7 @@ export function exportarConsultaISOPDF({
   doc.rect(14, y, pageWidth - 28, 18, 'F');
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 40, 85);
+  doc.setTextColor(...MARCA.azulOscuro);
   doc.text('PREGUNTA / REQUERIMIENTO AUDITABLE:', 18, y + 6);
 
   doc.setFont('helvetica', 'normal');
@@ -179,7 +162,7 @@ export function exportarConsultaISOPDF({
       head: [['Cláusula', 'Norma Oficial', 'Título del Requisito']],
       body: tablaClausulas,
       theme: 'grid',
-      headStyles: { fillColor: [0, 40, 85], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+      headStyles: { fillColor: MARCA.azulOscuro, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
       styles: { fontSize: 7.5, cellPadding: 2, textColor: [30, 41, 59] },
       columnStyles: { 0: { width: 22, fontStyle: 'bold' }, 1: { width: 40 } }
     });
@@ -190,7 +173,7 @@ export function exportarConsultaISOPDF({
   // 5. Dictamen y Respuesta Técnica del Asesor
   doc.setFontSize(9.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 40, 85);
+  doc.setTextColor(...MARCA.azulOscuro);
   doc.text('FUNDAMENTO TÉCNICO Y RESOLUCIÓN NORMATIVA:', 14, y);
   y += 5;
 
@@ -207,7 +190,7 @@ export function exportarConsultaISOPDF({
         head: [b.encabezados],
         body: b.filas,
         theme: 'striped',
-        headStyles: { fillColor: [30, 62, 98], textColor: [255, 255, 255], fontSize: 7.5, fontStyle: 'bold' },
+        headStyles: { fillColor: MARCA.azul, textColor: [255, 255, 255], fontSize: 7.5, fontStyle: 'bold' },
         styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
         alternateRowStyles: { fillColor: [248, 250, 252] }
       });
@@ -226,7 +209,7 @@ export function exportarConsultaISOPDF({
 
         if (esEncabezado) {
           doc.setFont('helvetica', 'bold');
-          doc.setTextColor(0, 40, 85);
+          doc.setTextColor(...MARCA.azulOscuro);
           y += 2;
         } else {
           doc.setFont('helvetica', 'normal');
@@ -317,23 +300,17 @@ export function exportarSesionCompletaISOPDF({ mensajes = [], usuario = null }) 
 
   let y = 16;
 
-  // Encabezado
-  doc.setFillColor(11, 25, 44);
-  doc.rect(14, y, pageWidth - 28, 22, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('OOMAPASC — SISTEMA DE GESTIÓN DE LA CALIDAD', 18, y + 8);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(186, 230, 253);
-  doc.text('MINUTA Y BITÁCORA CONSOLIDADA DE CONSULTAS AL ASESOR NORMATIVO ISO', 18, y + 14);
-
-  y += 28;
+  // Encabezado institucional (línea de diseño OOMAPAS, services/pdfMarca.js)
+  y = encabezadoPDF(doc, {
+    titulo: 'MINUTA DE CONSULTAS AL ASESOR NORMATIVO ISO',
+    subtitulo: 'Sistema de Gestión de la Calidad',
+    derecha: [folio, `Emisión: ${fechaStr}`],
+    y: 10,
+  }) + 2;
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 40, 85);
+  doc.setTextColor(...MARCA.azulOscuro);
   doc.text(`SESIÓN CONSOLIDADA — ${folio}`, 14, y);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
@@ -362,7 +339,7 @@ export function exportarSesionCompletaISOPDF({ mensajes = [], usuario = null }) 
         doc.rect(14, y, pageWidth - 28, 12, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
-        doc.setTextColor(0, 40, 85);
+        doc.setTextColor(...MARCA.azulOscuro);
         doc.text(`CONSULTA #${Math.floor(i / 2) + 1} (${m.timestamp || ''})`, 18, y + 5);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);

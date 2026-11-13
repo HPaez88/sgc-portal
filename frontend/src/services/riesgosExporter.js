@@ -3,17 +3,18 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { CLAVE_MATRIZ, ESCALAS, ESTADOS_RIESGO, clasificar, puntaje } from '../constants/riesgos';
 import { formatearFecha } from '../constants/workflow';
+import { MARCA, ESTILO_TABLA, encabezadoPDF, piePDF } from './pdfMarca';
 
-const AZUL = [11, 25, 44];
+const AZUL = MARCA.azulOscuro;
 const NIVEL_RGB = { Bajo: [167, 243, 208], Medio: [253, 230, 138], Alto: [253, 164, 175] };
-const OPORT_RGB = { Bajo: [241, 245, 249], Medio: [186, 230, 253], Alto: [110, 231, 183] };
+const OPORT_RGB = { Bajo: [241, 245, 249], Medio: [204, 231, 245], Alto: [157, 206, 99] }; // gris · azul claro · verde del logo
 const pct = (v) => (v != null ? `${v}%` : '-');
 
 function mapa(doc, x, y, tipo, items) {
   const celda = 13;
   const impactos = ESCALAS[tipo].impacto.map(([v]) => v);
   doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
-  doc.text(tipo === 'Riesgo' ? 'Mapa de riesgos' : 'Mapa de oportunidades', x, y - 2);
+  doc.setTextColor(...MARCA.azulOscuro); doc.text(tipo === 'Riesgo' ? 'Mapa de riesgos' : 'Mapa de oportunidades', x, y - 2);
   [5, 4, 3, 2, 1].forEach((p, fila) => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(100, 116, 139);
     doc.text(String(p), x + 4, y + fila * celda + celda / 2 + 1, { align: 'right' });
@@ -43,27 +44,26 @@ export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, compar
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...AZUL); doc.text(titulo, m, y);
     autoTable(doc, {
       startY: y + 2, head: [head], body, margin: { left: m, right: m, top: 30 },
-      styles: { fontSize: 7.5, cellPadding: 1.6, lineColor: [226, 232, 240], lineWidth: 0.1 },
-      headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
+      ...ESTILO_TABLA,
       ...opciones,
+      styles: { ...ESTILO_TABLA.styles, ...(opciones.styles || {}) },
     });
   };
 
-  // Encabezado del informe
-  doc.setFillColor(...AZUL); doc.rect(m, 10, W - 2 * m, 16, 'F');
-  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-  doc.text('OOMAPAS DE CAJEME — INFORME DE RIESGOS Y OPORTUNIDADES', m + 4, 17);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
-  doc.text(`ISO 9001:2015 § 6.1 · Matriz ${CLAVE_MATRIZ} · Ejercicio ${anio} · Emitido ${formatearFecha(new Date().toISOString())}${usuario ? ` por ${usuario}` : ''}`, m + 4, 22.5);
+  // Encabezado del informe (línea de diseño institucional)
+  const y0 = encabezadoPDF(doc, {
+    titulo: 'INFORME DE RIESGOS Y OPORTUNIDADES',
+    subtitulo: `ISO 9001:2015 § 6.1 · Matriz ${CLAVE_MATRIZ} · Sistema de Gestión de la Calidad`,
+    derecha: [`Ejercicio ${anio}`, `Emitido ${formatearFecha(new Date().toISOString())}`, usuario ? `por ${usuario}` : ''],
+  });
   doc.setTextColor(...AZUL); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-  doc.text(nombreAlcance, m, 35);
+  doc.text(nombreAlcance, m, y0 + 2);
 
   autoTable(doc, {
-    startY: 39, margin: { left: m, right: m },
+    startY: y0 + 5, margin: { left: m, right: m },
     head: [['Riesgos', 'Altos', 'Nivel promedio', 'Oportunidades', 'Con plan de mejora', 'Vencidos', 'Por dictaminar', 'Eficacia']],
     body: [[actual.riesgos, actual.altos, actual.nivelPromedio ?? '-', actual.oportunidades, actual.conPM, actual.vencidos, actual.porDictaminar, pct(actual.eficacia)]],
-    styles: { fontSize: 9, halign: 'center', fontStyle: 'bold' }, headStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontSize: 7 },
+    styles: { fontSize: 9, halign: 'center', fontStyle: 'bold' }, headStyles: { fillColor: MARCA.verdeTenue, textColor: AZUL, fontSize: 7 }, bodyStyles: { textColor: AZUL },
   });
 
   tabla('1. Hallazgos para la toma de decisiones', ['#', 'Hallazgo'], hallazgos.map((h, i) => [i + 1, h.texto]), {
@@ -92,13 +92,7 @@ export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, compar
       : [['-', `Sin riesgos altos en ${anio}.`, '', '', '', '']],
     { columnStyles: { 0: { cellWidth: 11, halign: 'center', fontStyle: 'bold' }, 1: { cellWidth: 70 } } });
 
-  const paginas = doc.getNumberOfPages();
-  for (let p = 1; p <= paginas; p += 1) {
-    doc.setPage(p);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
-    doc.text(`Informe ${CLAVE_MATRIZ} ${anio} · ${nombreAlcance}`, m, H - 8);
-    doc.text(`Página ${p} de ${paginas}`, W - m, H - 8, { align: 'right' });
-  }
+  piePDF(doc, `OOMAPAS de Cajeme · Informe ${CLAVE_MATRIZ} ${anio} · ${nombreAlcance}`);
   return doc;
 }
 

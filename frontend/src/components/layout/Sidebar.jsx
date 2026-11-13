@@ -65,19 +65,19 @@ const Sidebar = ({
       } h-screen flex flex-col transition-all duration-200 ease-out bg-[#0A1424] border-r border-slate-800/80 shadow-xl`}
     >
       {/* Brand Header */}
+      <div className="h-1 shrink-0 bg-gradient-to-r from-marca-azul via-marca-azul to-marca-verde" aria-hidden="true" />
       <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 to-blue-700 flex items-center justify-center shrink-0 shadow-md">
-            <Droplet className="text-white fill-white/20" size={20} />
-          </div>
-          {!sidebarCollapsed && (
-            <div className="leading-tight truncate">
-              <span className="font-extrabold text-sm tracking-wide text-white block">
-                OOMAPASC <span className="text-sky-400 font-medium">SGC</span>
+          {sidebarCollapsed ? (
+            <div className="w-9 h-9 rounded-xl bg-marca-azul flex items-center justify-center shrink-0 shadow-md">
+              <Droplet className="text-white fill-white/20" size={20} />
+            </div>
+          ) : (
+            <div className="leading-tight truncate flex items-center gap-2.5">
+              <span className="bg-white rounded-lg px-2 py-1 shrink-0 shadow-sm">
+                <img src="/logo-oomapasc.png" alt="OOMAPAS de Cajeme" className="h-7 w-auto" />
               </span>
-              <span className="text-[10px] text-slate-400 font-mono tracking-wider block">
-                PORTAL DE CALIDAD
-              </span>
+              <span className="text-[10px] font-bold text-marca-verde-claro tracking-wider uppercase">SGC<br /><span className="text-slate-400 font-mono font-normal">Portal de Calidad</span></span>
             </div>
           )}
         </div>

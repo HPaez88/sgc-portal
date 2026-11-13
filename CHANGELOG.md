@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T03:00Z · @claude-code · [DESIGN] · Línea de diseño institucional (logo OOMAPAS)
+A petición de @human se adoptan los colores del logo oficial: azul #0083C0, azul institucional oscuro #005B86 (títulos y tablas), verde #76BE44 (acentos). services/pdfMarca.js centraliza el encabezado con logo + barra azul/verde, estilo de tablas y pie; se aplica al informe de riesgos, informe ejecutivo del panel, dictamen y minuta del Asesor ISO y Revisión por la Dirección OOMRSC-04 (portada con logo). Plataforma: logo en el menú y en el inicio de sesión, franja azul-verde y acentos verdes; se conserva el azul profundo del menú. Regla documentada en docs/linea-diseno-institucional.md. Los formatos municipales (ficha técnica, CONAC) no cambian.
+- Deploy: pendiente
+
 ## 2026-11-14T02:00Z · @claude-code · [FEATURE] · Riesgos etapa 3: informes por área, dirección y organismo
 Nueva pestaña "Informes" en Riesgos y Oportunidades. El SGC elige el alcance (todo el organismo, una dirección o un área); las áreas solo ven el informe de su área. Secciones numeradas con títulos y tablas con encabezados: 1) Resumen (riesgos, altos, nivel promedio, oportunidades, con plan, vencidos, por dictaminar, eficacia), 2) Hallazgos para la toma de decisiones (planes vencidos, pendientes de dictamen, riesgos altos aceptados sin plan, subida o baja contra el año anterior, dónde se concentran los altos, eficacia, matrices aceptadas), 3) Comparativo con hasta 3 años anteriores (barras por nivel y tabla), 4) Mapas de calor, 5) Desglose por dirección / área / proceso según el alcance, 6) Riesgos altos con su tratamiento, plan de mejora, vencimiento y estado. Botón "Descargar PDF" (carta, encabezado institucional, mismas secciones, numeración de páginas). Lógica pura en constants/riesgosInforme.js con pruebas; prueba de construcción del PDF. Verificado en copia local con datos de prueba de 2025 y 2026.
 - Tareas STATE: C21

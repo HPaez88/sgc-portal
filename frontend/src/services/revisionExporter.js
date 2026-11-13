@@ -4,6 +4,8 @@
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { MARCA, encabezadoPDF } from './pdfMarca';
+import { LOGO_OOMAPASC, LOGO_PROPORCION } from '../assets/logoOomapasc';
 
 export function exportarRevisionDireccionOOMRSC04({
   revisionData = {},
@@ -22,29 +24,19 @@ export function exportarRevisionDireccionOOMRSC04({
   const margin = 14;
   const contentWidth = pageWidth - (margin * 2);
 
-  const primaryColor = [11, 25, 44]; // #0B192C
-  const accentColor = [14, 116, 144]; // #0E7490
-  const skyBlue = [2, 132, 199]; // #0284C7
+  const primaryColor = MARCA.azulOscuro; // línea de diseño institucional (pdfMarca.js)
+  const accentColor = MARCA.azul;
+  const skyBlue = MARCA.verde;
   const darkSlate = [30, 41, 59]; // #1E293B
 
   const drawHeaderFooter = (pageNumber, totalPages, title = 'REVISIÓN POR LA DIRECCIÓN') => {
-    // Header
-    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(margin, 10, contentWidth, 14, 'F');
-
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('OOMAPASC DE CAJEME — SISTEMA DE GESTIÓN DE LA CALIDAD', margin + 4, 16);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(186, 230, 253);
-    doc.text(`FORMATO OOMRSC-04 REV. 09 · ISO 9001:2015 / ISO 9001:2026 § 9.3 · ${mes.toUpperCase()} ${ejercicio}`, margin + 4, 21);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(revisionData.folio || `OOMRSC-04/${ejercicio}-${mes.slice(0, 3).toUpperCase()}`, pageWidth - margin - 4, 18, { align: 'right' });
+    // Encabezado institucional (logo + barra azul/verde)
+    encabezadoPDF(doc, {
+      titulo: title,
+      subtitulo: `Formato OOMRSC-04 Rev. 09 · ISO 9001:2015 § 9.3 · ${mes.toUpperCase()} ${ejercicio}`,
+      derecha: [revisionData.folio || `OOMRSC-04/${ejercicio}-${mes.slice(0, 3).toUpperCase()}`],
+      y: 6, altoLogo: 12,
+    });
 
     // Footer
     doc.setDrawColor(226, 232, 240);
@@ -65,10 +57,13 @@ export function exportarRevisionDireccionOOMRSC04({
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
   // Decoración visual
-  doc.setFillColor(14, 116, 144);
+  doc.setFillColor(...MARCA.azul);
   doc.rect(0, 0, 8, pageHeight, 'F');
-  doc.setFillColor(2, 132, 199);
+  doc.setFillColor(...MARCA.verde);
   doc.rect(8, 0, 4, pageHeight, 'F');
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(26, 12, 16 * LOGO_PROPORCION + 8, 20, 2, 2, 'F');
+  doc.addImage(LOGO_OOMAPASC, 'PNG', 30, 14, 16 * LOGO_PROPORCION, 16);
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
@@ -82,12 +77,12 @@ export function exportarRevisionDireccionOOMRSC04({
   doc.text('SISTEMA DE GESTIÓN DE LA CALIDAD (SGC)', 26, 54);
 
   // Cuadro central
-  doc.setFillColor(15, 33, 58);
+  doc.setFillColor(0, 70, 104);
   doc.roundedRect(26, 65, pageWidth - 46, 75, 3, 3, 'F');
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(56, 189, 248);
+  doc.setTextColor(...MARCA.verdeClaro);
   doc.text('FORMATO OFICIAL OOMRSC-04 REV. 09', 36, 80);
 
   doc.setFontSize(22);
@@ -118,7 +113,7 @@ export function exportarRevisionDireccionOOMRSC04({
     theme: 'plain',
     styles: { fontSize: 8.5, cellPadding: 3, textColor: [241, 245, 249] },
     columnStyles: {
-      0: { fontStyle: 'bold', width: 45, textColor: [56, 189, 248] },
+      0: { fontStyle: 'bold', width: 45, textColor: MARCA.verdeClaro },
       1: { textColor: [255, 255, 255] }
     }
   });
@@ -250,7 +245,7 @@ export function exportarRevisionDireccionOOMRSC04({
     head: [['Dirección Responsable', '% Cumplimiento de Acciones Correctivas (OOMRSC-20)']],
     body: acPorDireccion,
     theme: 'striped',
-    headStyles: { fillColor: [44, 62, 80], textColor: 255, fontSize: 8 },
+    headStyles: { fillColor: MARCA.azulOscuro, textColor: 255, fontSize: 8 },
     styles: { fontSize: 7.5, cellPadding: 2 }
   });
 

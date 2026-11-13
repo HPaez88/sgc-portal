@@ -4,6 +4,7 @@
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { MARCA, encabezadoPDF } from './pdfMarca';
 
 export function exportarInformeDireccionPDF({
   ejercicio = new Date().getFullYear(),
@@ -26,31 +27,13 @@ export function exportarInformeDireccionPDF({
 
   let y = 16;
 
-  // 1. Encabezado Institucional OOMAPASC
-  doc.setFillColor(11, 25, 44); // #0B192C
-  doc.rect(14, y, pageWidth - 28, 24, 'F');
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('OOMAPASC — SISTEMA DE GESTIÓN DE LA CALIDAD', 18, y + 8);
-
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(186, 230, 253);
-  doc.text('INFORME EJECUTIVO DE DESEMPEÑO Y REVISIÓN POR LA DIRECCIÓN (ISO 9001:2015 / 2026 § 9.3)', 18, y + 14);
-  doc.text('ORGANISMO OPERADOR MUNICIPAL DE AGUA POTABLE DE CAJEME', 18, y + 19);
-
-  // Folio y Fecha
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text(folio, pageWidth - 18, y + 9, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(203, 213, 225);
-  doc.text(`Corte: ${periodoNombre} · ${ejercicio}`, pageWidth - 18, y + 15, { align: 'right' });
-
-  y += 30;
+  // 1. Encabezado institucional (línea de diseño OOMAPAS, services/pdfMarca.js)
+  y = encabezadoPDF(doc, {
+    titulo: 'INFORME EJECUTIVO DE DESEMPEÑO',
+    subtitulo: 'Revisión por la Dirección · Sistema de Gestión de la Calidad · ISO 9001:2015 § 9.3',
+    derecha: [folio, `Corte: ${periodoNombre} · ${ejercicio}`],
+    y: 10,
+  }) + 2;
 
   // 2. Metadatos de la Revisión
   const meta = [
@@ -65,8 +48,8 @@ export function exportarInformeDireccionPDF({
     theme: 'plain',
     styles: { fontSize: 8, cellPadding: 2, textColor: [30, 41, 59] },
     columnStyles: {
-      0: { fontStyle: 'bold', width: 38, textColor: [0, 40, 85] },
-      2: { fontStyle: 'bold', width: 38, textColor: [0, 40, 85] }
+      0: { fontStyle: 'bold', width: 38, textColor: MARCA.azulOscuro },
+      2: { fontStyle: 'bold', width: 38, textColor: MARCA.azulOscuro }
     }
   });
 
@@ -75,7 +58,7 @@ export function exportarInformeDireccionPDF({
   // 3. Resumen de KPIs Clave
   doc.setFontSize(9.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 40, 85);
+  doc.setTextColor(...MARCA.azulOscuro);
   doc.text('1. RESUMEN DE INDICADORES CLAVE DE RENDIMIENTO (KPIs)', 14, y);
   y += 4;
 
@@ -112,11 +95,11 @@ export function exportarInformeDireccionPDF({
     head: [['Dimensión Estratégica', 'Resultado / Estatus', 'Detalle Operativo']],
     body: tablaKpis,
     theme: 'grid',
-    headStyles: { fillColor: [0, 40, 85], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+    headStyles: { fillColor: MARCA.azulOscuro, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
     styles: { fontSize: 7.5, cellPadding: 2.5, textColor: [30, 41, 59] },
     columnStyles: {
       0: { fontStyle: 'bold', width: 60 },
-      1: { fontStyle: 'bold', width: 45, textColor: [0, 40, 85] }
+      1: { fontStyle: 'bold', width: 45, textColor: MARCA.azulOscuro }
     }
   });
 
@@ -171,7 +154,7 @@ export function exportarInformeDireccionPDF({
 
     doc.setFontSize(9.5);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 40, 85);
+    doc.setTextColor(...MARCA.azulOscuro);
     doc.text('3. DIAGNÓSTICO ESTRATÉGICO Y RECOMENDACIONES DE LA DIRECCIÓN', 14, y);
     y += 4;
 
@@ -193,7 +176,7 @@ export function exportarInformeDireccionPDF({
   y += 6;
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 40, 85);
+  doc.setTextColor(...MARCA.azulOscuro);
   doc.text('4. REVISIÓN Y VALIDACIÓN INSTITUCIONAL', 14, y);
   y += 18;
 
