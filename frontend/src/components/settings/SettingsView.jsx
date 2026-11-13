@@ -7,6 +7,8 @@ import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import ContenedorModal from '../common/ContenedorModal';
 import EncargadosSGC from './EncargadosSGC';
 import AccesibilidadPanel from './AccesibilidadPanel';
+import FodaEditor from '../riesgos/FodaEditor';
+import { normalizarFoda } from '../../constants/foda';
 import { TITULOS, separarTitulo, unirTitulo, compararPorNombre } from '../../constants/titulos';
 import SubdireccionesEditor from './SubdireccionesEditor';
 import { ModalRestablecer, ModalAccesosMasivos, AvisoCorreoInactivo } from './AccesosCorreo';
@@ -296,7 +298,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     if (!correo.trim()) return toast.warning('El correo institucional para avisos del SGC es obligatorio.');
 
     if (modalArea.esEdicion) {
-      setAreasDetalle(prev => prev.map(a => a.id === modalArea.data.id ? modalArea.data : a));
+      setAreasDetalle(prev => prev.map(a => a.id === modalArea.data.id ? { ...modalArea.data, ...(modalArea.data.foda ? { foda: normalizarFoda(modalArea.data.foda) } : {}) } : a));
       notificar(`✓ Área "${nombre}" actualizada correctamente`);
     } else {
       setAreasDetalle(prev => [...prev, modalArea.data]);
@@ -1941,6 +1943,12 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   Borrador redactado por el SGC con base en el Manual y la Matriz de Procesos. Marcar como confirmado.
                 </label>
               )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Análisis FODA del área</label>
+              <p className="text-[11px] text-slate-500 mb-1.5">Lo mismo que en Riesgos → FODA y propósito. {modalArea.data.foda_estado === 'revisado' ? 'Revisado con el área.' : 'Borrador: falta revisarlo con el área.'}</p>
+              <FodaEditor foda={modalArea.data.foda || {}} onChange={(foda) => setModalArea({ ...modalArea, data: { ...modalArea.data, foda } })} />
             </div>
 
             <EncargadosSGC

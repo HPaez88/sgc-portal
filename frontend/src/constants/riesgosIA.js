@@ -1,17 +1,20 @@
 // IA que sugiere riesgos y oportunidades de un área (etapa 2, 2026-11-13).
 // Solo sugiere: el área elige cuáles agregar y luego los edita. Lógica pura (sin red) para poder probarla.
 import { CONTEXTOS, ESCALAS, TRATAMIENTOS, CLAVE_MATRIZ, puntaje } from './riesgos';
+import { fodaParaPrompt } from './foda';
 
 export const MAX_SUGERENCIAS = 8;
 const IMPACTOS = ESCALAS.Riesgo.impacto.map(([v]) => v); // 2, 4, 6, 8, 10
 const recorta = (t, n) => String(t || '').trim().slice(0, n);
 
-export function promptSugerencias({ area, direccion, proposito, procesos = [], indicadores = [], noConformidades = [], anteriores = [], existentes = [], anio }) {
+export function promptSugerencias({ area, direccion, proposito, foda, procesos = [], indicadores = [], noConformidades = [], anteriores = [], existentes = [], anio }) {
   const lista = (arr, f) => (arr.length ? arr.map(f).join('\n') : '- (sin datos)');
   return `Eres el asesor del Sistema de Gestión de Calidad ISO 9001:2015 (cláusula 6.1) de OOMAPAS de Cajeme, organismo operador de agua potable, alcantarillado y saneamiento en Ciudad Obregón, Sonora.
 Propón riesgos y oportunidades para la matriz ${CLAVE_MATRIZ} ${anio} del área "${area}" (${direccion || 'sin dirección'}).
 
 PROPÓSITO DEL ÁREA: ${proposito || '(no capturado; dedúcelo del nombre del área y sus indicadores)'}
+ANÁLISIS FODA DEL ÁREA (úsalo como referencia: debilidades y amenazas sugieren riesgos; fortalezas y oportunidades sugieren oportunidades):
+${fodaParaPrompt(foda)}
 PROCESOS DEL SGC PERMITIDOS: ${procesos.join(' | ')}
 INDICADORES DEL ÁREA:
 ${lista(indicadores, (i) => `- #${i.id} ${recorta(i.nombre, 120)} (meta ${i.meta ?? '-'} ${i.unidad || ''})`)}

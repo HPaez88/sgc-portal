@@ -4,7 +4,8 @@
 // Tablero (quien ve todas las áreas) · Informes (todos; las áreas solo el suyo) · Revisión SGC (administradores).
 // ═══════════════════════════════════════════════════════════════
 import React, { useMemo, useState } from 'react';
-import { ShieldAlert, ListChecks, Grid3x3, LayoutDashboard, FileBarChart2, ClipboardCheck, Plus, Sparkles } from 'lucide-react';
+import { ShieldAlert, ListChecks, Grid3x3, LayoutDashboard, FileBarChart2, ClipboardCheck, Plus, Sparkles, Compass } from 'lucide-react';
+import FodaArea from './FodaArea';
 import { useSGC } from '../../SGCContext';
 import { useLocalStorage } from '../../hooks';
 import { esAdminSGC, can } from '../../constants/workflow';
@@ -23,7 +24,7 @@ const PRIMER_ANIO = Math.min(2025, ANIO_ACTUAL - 1);
 const ANIOS = Array.from({ length: ANIO_ACTUAL + 2 - PRIMER_ANIO }, (_, i) => PRIMER_ANIO + i);
 
 export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas, areaUsuario, setActiveTab }) {
-  const { areasDetalle = [], procesos = [], planesMejora = [], setPlanesMejora, registrarMovimiento, usuarioLogueado } = useSGC();
+  const { areasDetalle = [], setAreasDetalle, procesos = [], planesMejora = [], setPlanesMejora, registrarMovimiento, usuarioLogueado } = useSGC();
   const [matrices, setMatrices] = useLocalStorage('sgc-matrices-riesgos', []);
   const esAdmin = esAdminSGC(usuarioLogueado);
   const [tab, setTab] = useState('seguimiento'); // Seguimiento siempre es la primera pestaña
@@ -97,6 +98,8 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
     { id: 'matriz', label: puedeTodasAreas ? 'Matriz por área' : 'Mi matriz', Icono: Grid3x3, cuenta: estadoMiMatriz,
       ayuda: `Captura anual ${CLAVE_MATRIZ}: identificar, evaluar y planear; se envía al SGC para su aceptación.` },
     ...(puedeTodasAreas ? [{ id: 'tablero', label: 'Tablero', Icono: LayoutDashboard, ayuda: 'Cifras y mapas de calor de lo aceptado por el SGC.' }] : []),
+    { id: 'foda', label: 'FODA y propósito', Icono: Compass,
+      ayuda: 'Propósito y análisis FODA de cada área: se revisan con el área y la IA los usa para sugerir riesgos y oportunidades.' },
     { id: 'informes', label: 'Informes', Icono: FileBarChart2, ayuda: puedeTodasAreas ? 'Informe por área, dirección u organismo, comparativo anual y PDF.' : 'Informe de tu área, comparativo anual y PDF.' },
     ...(esAdmin ? [{ id: 'revision', label: 'Revisión SGC', Icono: ClipboardCheck, cuenta: porRevisar ? `${porRevisar} por revisar` : null, alerta: porRevisar > 0,
       ayuda: 'Bandeja del SGC: revisar, devolver con observaciones, aceptar o reabrir matrices.' }] : []),
@@ -174,6 +177,11 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
       )}
 
       {actual.id === 'seguimiento' && <SeguimientoRiesgos items={enSeguimiento} setRiesgos={setRiesgos} planesMejora={planesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} onVerPM={verPM} onReplantear={replantear} />}
+
+      {actual.id === 'foda' && (
+        <FodaArea areas={areasCatalogo} areaInicial={puedeTodasAreas ? area : areaUsuario} areasDetalle={areasDetalle} setAreasDetalle={setAreasDetalle}
+          puedeEditar={esAdmin} puedeElegirArea={puedeTodasAreas} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />
+      )}
 
       {actual.id === 'informes' && (
         <InformeRiesgos lista={oficiales} enCaptura={enCaptura} planesMejora={planesMejora} areasDetalle={areasDetalle} matrices={listaMatrices}

@@ -25,6 +25,7 @@ export default function PanelSugerenciasIA({ area, direccion, anio, riesgos, set
     const prompt = promptSugerencias({
       area, direccion, anio, procesos,
       proposito: ficha.proposito,
+      foda: ficha.foda,
       indicadores: INDICADORES.filter((i) => i.area === area),
       noConformidades: accionesCorrectivas
         .filter((ac) => ac.area === area)
