@@ -23,7 +23,7 @@ YA CAPTURADOS ESTE AÑO (NO los repitas):
 ${lista(existentes, (r) => `- ${r.tipo}: ${recorta(r.descripcion, 140)}`)}
 
 Reglas:
-- Entre 4 y ${MAX_SUGERENCIAS} propuestas en total, mezclando riesgos y oportunidades, concretas para esta área de OOMAPASC (nada genérico).
+- Entre 4 y ${MAX_SUGERENCIAS} propuestas en total: AL MENOS 2 riesgos y AL MENOS 2 oportunidades, concretas para esta área de OOMAPASC (nada genérico).
 - "contexto" debe ser exactamente uno de: ${CONTEXTOS.join(' | ')}. "resultado" explica qué se observó en ese contexto (p. ej. el indicador que no cumplió, la no conformidad, el requisito de la parte interesada).
 - "proceso" debe ser exactamente uno de los PROCESOS DEL SGC PERMITIDOS.
 - "impacto" uno de 2, 4, 6, 8, 10 y "probabilidad" de 1 a 5 (escala ${CLAVE_MATRIZ}: nivel = impacto × probabilidad; bajo 0-19, medio 20-29, alto 30-50).

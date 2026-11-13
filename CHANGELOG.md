@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T00:30Z · @claude-code · [FEATURE+FIX] · Riesgos etapa 2: la IA sugiere riesgos y oportunidades
+Botón "Sugerir con IA" en la matriz del área: arma el contexto con el propósito del área, sus procesos, sus indicadores del Cuadro de Control, sus no conformidades recientes, lo del año anterior y lo ya capturado (para no repetir). La respuesta se valida y corrige (constants/riesgosIA.js, con pruebas): contexto y proceso de las listas oficiales, impacto 2-10, probabilidad 1-5, tratamiento válido, máximo 8. El área elige cuáles agregar (nada se agrega solo); quedan marcadas sugerido_ia y se editan como cualquier registro; bitácora. Fix en el backend: las respuestas JSON de la IA se piden en modo json_object (la prueba real devolvió JSON con una coma faltante); si el modelo no lo soporta se reintenta sin él (test_ai_service.py). Prueba real en el servidor con Plantas Potabilizadoras: JSON válido en 6.8 s con sugerencias pertinentes; se reforzó el prompt para que siempre incluya oportunidades.
+- Tareas STATE: C20
+- Deploy: SI
+
 ## 2026-11-13T22:30Z · @claude-code · [FEATURE] · Riesgos con el formato oficial OOMRSC-37 Rev. 06
 A petición de @human se integra lo que pide el formato OOMRSC-37 Rev. 06 (Master Web): hoja Identificación (contexto: objetivos del área, indicadores, análisis interno y externo, partes interesadas + resultado) y Matriz (contexto, proceso, riesgo/oportunidad, impacto, probabilidad, nivel, plan, responsable, evidencias al término, fecha de término). La escala pasa a la oficial: Impacto 2-4-6-8-10 (Marginal… Catastrófico; en oportunidades Bajo… Alto) × Probabilidad 1-5 (Baja… Alta) = nivel 2 a 50; Bajo 0-19, Medio 20-29, Alto 30-50, con la importancia de cada nivel según los Criterios del formato. Así los niveles se comparan con años anteriores. Contexto y proceso son obligatorios para enviar. Encabezados "Acción" en las tablas. Verificado en copia local.
 - Deploy: SI

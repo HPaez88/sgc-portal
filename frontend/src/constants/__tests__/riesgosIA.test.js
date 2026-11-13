@@ -15,6 +15,7 @@ describe('prompt de sugerencias', () => {
     expect(p).toContain('Bombas sin mantenimiento');
     expect(p).toContain('Riesgo: Falla eléctrica');
     expect(p).toContain('Producción | Gestión de Recursos');
+    expect(p).toContain('AL MENOS 2 oportunidades');
   });
 });
 
