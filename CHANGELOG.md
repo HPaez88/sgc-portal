@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14T07:00Z · @claude-code · [UX] · Riesgos: dar de alta desde Seguimiento
+Barra "Dar de alta en la matriz {año}" en Seguimiento con "+ Riesgo", "+ Oportunidad" y "Sugerir con IA" (el SGC elige el área ahí mismo; las áreas ven solo la suya). Cada botón lleva a la pestaña de la matriz, agrega el registro y lo deja abierto a la vista, o arranca la IA. Si la matriz ya se envió o se aceptó, avisa que el SGC debe reabrirla. Protección para no duplicar el alta.
+- Deploy: SI
+
 ## 2026-11-14T06:30Z · @claude-code · [UX] · Riesgos: Seguimiento como primera pestaña y pestañas según el rol
 Pedido de @human. Orden: Seguimiento (todos, primera y abierta por defecto) · Mi matriz / Matriz por área · Tablero (solo quien ve todas las áreas) · Informes (las áreas, solo el de su área) · Revisión SGC (administradores). Cada pestaña con ícono, contador de pendientes (en curso, por dictaminar, por revisar en rojo, estado de mi matriz) y una línea que explica para qué sirve. Selectores con etiqueta visible ("Área", "Año" / "Año de la matriz"). Seguimiento: filtros con su cantidad y se ocultan los vacíos; mensaje que explica cuándo aparecen registros; no se repite "Cerrado" en vencimiento.
 - Deploy: SI

@@ -1,5 +1,5 @@
 // Matriz anual de riesgos y oportunidades de un área (OOMRSC-37): captura, envío al SGC y observaciones.
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Send, ChevronDown, ChevronUp, Trash2, MessageSquareWarning } from 'lucide-react';
 import FormRiesgo from './FormRiesgo';
 import PanelSugerenciasIA from './PanelSugerenciasIA';
@@ -9,7 +9,7 @@ import { useToast } from '../common/Toast';
 import { formatearFecha } from '../../constants/workflow';
 import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, faltante, nuevoRiesgo, idMatriz, llevaPM } from '../../constants/riesgos';
 
-export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos, matriz, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, puedeEditar = false, puedeEnviar: permisoEnviar = false, onVerPM }) {
+export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos, matriz, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, puedeEditar = false, puedeEnviar: permisoEnviar = false, onVerPM, accionInicial = null, onAccionHecha }) {
   const toast = useToast();
   const { confirmar: pedirConfirmacion, props: propsDialogos } = useDialogos();
   const [abierto, setAbierto] = useState(null);
@@ -32,6 +32,27 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
     setRiesgos((prev) => prev.filter((x) => x.id !== r.id));
     registrarMovimiento?.({ modulo: 'RIESGOS', accion: 'QUITAR_REGISTRO', descripcion: `${r.tipo} "${r.descripcion || 'sin descripción'}" quitado de la matriz ${anio} de ${area}`, folio: `${CLAVE_MATRIZ}-${anio}` });
   };
+
+  // Alta desde Seguimiento: agrega el registro (o arranca la IA) y lo deja abierto a la vista.
+  const [iaAuto, setIaAuto] = useState(0); // contador: cada clic en "Sugerir con IA" vuelve a arrancar
+  const tarjeta = useRef(null);
+  const accionAtendida = useRef(false); // evita duplicar el alta si el efecto corre dos veces
+  useEffect(() => {
+    if (!accionInicial) { accionAtendida.current = false; return; }
+    if (accionAtendida.current) return;
+    accionAtendida.current = true;
+    if (!editable) {
+      toast.warning(puedeEditar
+        ? `La matriz ${anio} de ${area} está "${ESTADOS_MATRIZ[estado].label}". Para agregar registros el SGC debe reabrirla.`
+        : 'No tienes permiso para capturar en la matriz de esta área.');
+    } else if (accionInicial === 'IA') {
+      setIaAuto((n) => n + 1);
+    } else {
+      agregar(accionInicial);
+      setTimeout(() => tarjeta.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }
+    onAccionHecha?.();
+  }, [accionInicial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pendientes = items.map((r) => ({ r, falta: faltante(r) })).filter((x) => x.falta);
   const puedeEnviar = editable && permisoEnviar && items.length > 0 && pendientes.length === 0;
@@ -63,7 +84,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
         {editable && (
           <div className="flex flex-wrap gap-2 justify-end">
             <PanelSugerenciasIA area={area} direccion={direccion} anio={anio} riesgos={riesgos} setRiesgos={setRiesgos}
-              procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />
+              procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} autoIniciar={iaAuto} />
             <button type="button" onClick={() => agregar('Riesgo')} className="px-3 py-2 text-xs font-bold text-rose-800 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 inline-flex items-center gap-1"><Plus size={14} /> Riesgo</button>
             <button type="button" onClick={() => agregar('Oportunidad')} className="px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 inline-flex items-center gap-1"><Plus size={14} /> Oportunidad</button>
             <button type="button" disabled={!puedeEnviar} onClick={() => setConfirmar(true)}
@@ -109,7 +130,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
               const nivel = nivelDe(r);
               const abiertoEste = abierto === r.id;
               return (
-                <article key={r.id} className="bg-white rounded-xl border border-slate-200">
+                <article key={r.id} ref={abierto === r.id ? tarjeta : null} className="bg-white rounded-xl border border-slate-200 scroll-mt-4">
                   <button type="button" onClick={() => setAbierto(abiertoEste ? null : r.id)} className="w-full flex items-center gap-3 p-3 text-left">
                     <span className={`shrink-0 w-12 text-center px-2 py-1 rounded-lg text-xs font-black border ${nivel ? nivel.suave : 'bg-white text-slate-600 border-slate-200'}`}>{puntaje(r) || '—'}</span>
                     <span className="flex-1 min-w-0">

@@ -4,7 +4,7 @@
 // Tablero (quien ve todas las áreas) · Informes (todos; las áreas solo el suyo) · Revisión SGC (administradores).
 // ═══════════════════════════════════════════════════════════════
 import React, { useMemo, useState } from 'react';
-import { ShieldAlert, ListChecks, Grid3x3, LayoutDashboard, FileBarChart2, ClipboardCheck } from 'lucide-react';
+import { ShieldAlert, ListChecks, Grid3x3, LayoutDashboard, FileBarChart2, ClipboardCheck, Plus, Sparkles } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { useLocalStorage } from '../../hooks';
 import { esAdminSGC, can } from '../../constants/workflow';
@@ -26,6 +26,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
   const [matrices, setMatrices] = useLocalStorage('sgc-matrices-riesgos', []);
   const esAdmin = esAdminSGC(usuarioLogueado);
   const [tab, setTab] = useState('seguimiento'); // Seguimiento siempre es la primera pestaña
+  const [accionAlta, setAccionAlta] = useState(null); // 'Riesgo' | 'Oportunidad' | 'IA' pedida desde Seguimiento
   // La matriz se captura desde noviembre para el año siguiente; el seguimiento e informes son del año en curso.
   const [anioSeguimiento, setAnioSeguimiento] = useState(ANIO_ACTUAL);
   const [anioMatriz, setAnioMatriz] = useState(new Date().getMonth() >= 10 ? ANIO_ACTUAL + 1 : ANIO_ACTUAL);
@@ -141,10 +142,30 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
       {actual.id === 'matriz' && (area ? (
         <MatrizArea area={area} direccion={direccion} anio={anio} riesgos={lista} setRiesgos={setRiesgos} matriz={matriz}
           guardarMatriz={guardarMatriz} procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento}
-          puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} onVerPM={verPM} />
+          puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} onVerPM={verPM}
+          accionInicial={accionAlta} onAccionHecha={() => setAccionAlta(null)} />
       ) : <p className="text-sm text-slate-600">Tu usuario no tiene un área asignada. Pide al SGC que te la asigne.</p>)}
 
       {actual.id === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} enCaptura={enCaptura} />}
+
+      {actual.id === 'seguimiento' && (puedeTodasAreas ? esAdmin : puedeCapturarArea(usuarioLogueado, areaUsuario, areasDetalle)) && (
+        <section aria-label="Dar de alta" className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 border-l-4 border-l-marca-verde rounded-xl px-4 py-3">
+          <p className="text-sm font-bold text-slate-800 mr-1">Dar de alta en la matriz {anioMatriz}</p>
+          {puedeTodasAreas && (
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+              de
+              <select value={area} onChange={(e) => setAreaSel(e.target.value)} className="p-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold">
+                {areasCatalogo.map((a) => <option key={a.nombre} value={a.nombre}>{a.nombre}</option>)}
+              </select>
+            </label>
+          )}
+          <span className="flex-1" />
+          {[['Riesgo', 'Riesgo', 'text-rose-800 bg-rose-50 border-rose-200 hover:bg-rose-100', Plus], ['Oportunidad', 'Oportunidad', 'text-emerald-800 bg-emerald-50 border-emerald-200 hover:bg-emerald-100', Plus], ['IA', 'Sugerir con IA', 'text-violet-800 bg-violet-50 border-violet-200 hover:bg-violet-100', Sparkles]].map(([accion, texto, cls, Icono]) => (
+            <button key={accion} type="button" onClick={() => { setAccionAlta(accion); setTab('matriz'); }}
+              className={`px-3 py-2 text-xs font-bold border rounded-lg inline-flex items-center gap-1 ${cls}`}><Icono size={14} /> {texto}</button>
+          ))}
+        </section>
+      )}
 
       {actual.id === 'seguimiento' && <SeguimientoRiesgos items={enSeguimiento} setRiesgos={setRiesgos} planesMejora={planesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} onVerPM={verPM} onReplantear={replantear} />}
 

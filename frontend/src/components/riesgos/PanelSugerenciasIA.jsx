@@ -1,6 +1,6 @@
 // Sugerencias de la IA para la matriz del área: usa el propósito del área, sus procesos, sus indicadores,
 // sus no conformidades recientes y lo del año anterior. El área elige qué agregar; nada se agrega solo.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sparkles, Check } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { api } from '../../services/apiClient';
@@ -11,7 +11,7 @@ import { promptSugerencias, normalizarSugerencias } from '../../constants/riesgo
 
 const CONTEXTO_IA = 'Eres asesor experto en ISO 9001:2015 del Sistema de Gestión de Calidad de OOMAPAS de Cajeme. Responde únicamente con JSON válido.';
 
-export default function PanelSugerenciasIA({ area, direccion, anio, riesgos, setRiesgos, procesos, usuarioLogueado, registrarMovimiento }) {
+export default function PanelSugerenciasIA({ area, direccion, anio, riesgos, setRiesgos, procesos, usuarioLogueado, registrarMovimiento, autoIniciar = 0 }) {
   const { areasDetalle = [], accionesCorrectivas = [] } = useSGC();
   const toast = useToast();
   const [estado, setEstado] = useState('inicio'); // inicio | cargando | listo
@@ -45,6 +45,9 @@ export default function PanelSugerenciasIA({ area, direccion, anio, riesgos, set
     setElegidas(new Set());
     setEstado('listo');
   };
+
+  // Desde Seguimiento: "Sugerir con IA" llega aquí y arranca solo.
+  useEffect(() => { if (autoIniciar > 0) pedir(); }, [autoIniciar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const alternar = (i) => setElegidas((prev) => {
     const s = new Set(prev);
