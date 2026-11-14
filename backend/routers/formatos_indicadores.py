@@ -10,8 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlmodel import Session, select
 
+from backend.auth import usuario_actual
 from backend.database import get_session
-from backend.models import EstadoPortal
+from backend.models import EstadoPortal, Usuario
 from backend.services import formatos_indicadores as fmt
 from backend.tenant import get_organismo_id
 
@@ -34,6 +35,19 @@ def _archivo(contenido: bytes, tipo: str, nombre: str) -> Response:
     return Response(contenido, media_type=tipo, headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(limpio)}"})
 
 
+def puede_area(usuario, area: str, areas_detalle: list) -> bool:
+    """Misma regla que puedeCapturarArea del portal: admin SGC, el área propia, su correo o sus encargados del SGC."""
+    if usuario.rol in ("Super Admin", "Admin"):
+        return True
+    if not area:
+        return False
+    correo = (usuario.email or "").lower()
+    ficha = next((a for a in areas_detalle if isinstance(a, dict) and a.get("nombre") == area), {})
+    return usuario.area == area or bool(correo) and (
+        str(ficha.get("correo") or "").lower() == correo
+        or correo in [str(c).lower() for c in ficha.get("encargados_sgc") or []])
+
+
 def cumplimiento_mensual(datos_ind: dict, indicador_id, anio) -> list[str]:
     """Resultados capturados en el Cuadro de Control para la fila 'Cumplimiento' de la ficha."""
     if indicador_id in (None, ""):
@@ -48,11 +62,13 @@ def cumplimiento_mensual(datos_ind: dict, indicador_id, anio) -> list[str]:
 
 @router.get("/{proyecto_id}/{tipo}")
 def descargar(proyecto_id: str, tipo: str, actividad: int = 0, session: Session = Depends(get_session),
-              organismo_id: int = Depends(get_organismo_id)):
+              organismo_id: int = Depends(get_organismo_id), usuario: Usuario = Depends(usuario_actual)):
     proyectos = _estado(session, organismo_id, "sgc-proyectos-indicadores", [])
     p = next((x for x in proyectos if isinstance(x, dict) and str(x.get("id")) == proyecto_id), None)
     if not p:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado. Guarda los cambios y vuelve a intentar.")
+    if not puede_area(usuario, p.get("area", ""), _estado(session, organismo_id, "sgc-config-areas-detalle", [])):
+        raise HTTPException(status_code=403, detail="Solo el área del proyecto o el SGC pueden descargar sus formatos.")
     base = f"{p.get('anio', '')} {p.get('area', '')}"
     if tipo == "proyecto":
         return _archivo(fmt.llenar_proyecto(p), DOCX, f"Formato de Presentación de Proyectos {base}.docx")

@@ -103,3 +103,13 @@ def test_formatos_indicadores(cliente, cab):
     finally:
         cliente.put("/api/v1/estado/sgc-proyectos-indicadores", headers=cab, json={"valor": []})
         cliente.put("/api/v1/estado/sgc-indicadores-data", headers=cab, json={"valor": {}})
+
+
+def test_formatos_solo_area_o_sgc():
+    from types import SimpleNamespace as U
+    from backend.routers.formatos_indicadores import puede_area
+    areas = [{"nombre": "Informática", "correo": "inf@x.mx", "encargados_sgc": ["Enc@x.mx"]}]
+    assert puede_area(U(rol="Admin", email="a@x.mx", area="Otra"), "Informática", areas)
+    assert puede_area(U(rol="Usuario", email="z@x.mx", area="Informática"), "Informática", areas)
+    assert puede_area(U(rol="Encargado", email="enc@x.mx", area="Otra"), "Informática", areas)
+    assert not puede_area(U(rol="Encargado", email="otro@x.mx", area="Otra"), "Informática", areas)

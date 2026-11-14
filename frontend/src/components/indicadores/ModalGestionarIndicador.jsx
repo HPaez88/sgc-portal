@@ -184,33 +184,33 @@ export default function ModalGestionarIndicador({
   const [direccion, setDireccion] = useState('Dir. General');
   const [area, setArea] = useState('Sistema de Gestión de Calidad');
   const [proceso, setProceso] = useState('Responsabilidad de la Dirección');
-  const [metaAnual, setMetaAnual] = useState(85);
-  const [metasTrimestrales, setMetasTrimestrales] = useState({ T1: 20, T2: 20, T3: 20, T4: 25 });
+  const [metaAnual, setMetaAnual] = useState('');
+  const [metasTrimestrales, setMetasTrimestrales] = useState({ T1: '', T2: '', T3: '', T4: '' });
   const [impacto, setImpacto] = useState('Bajo');
   const [esMenor, setEsMenor] = useState(false);
   const [observacionDefault, setObservacionDefault] = useState('');
 
   // Estados de Ficha Técnica PMD (Ayuntamiento de Cajeme)
-  const [ejePmd, setEjePmd] = useState('Cajeme Limpio y Ordenado');
-  const [programaPmd, setProgramaPmd] = useState('Desarrollo con Servicios Públicos de Calidad');
-  const [objetivoPmd, setObjetivoPmd] = useState('Gestión Moderna y Eficiente del Cobro de Agua');
-  const [estrategiaPmd, setEstrategiaPmd] = useState('Monitoreo trimestral de metas operativas y administrativas');
-  const [lineaAccion, setLineaAccion] = useState('Atención y seguimiento a compromisos institucionales');
+  const [ejePmd, setEjePmd] = useState('');
+  const [programaPmd, setProgramaPmd] = useState('');
+  const [objetivoPmd, setObjetivoPmd] = useState('');
+  const [estrategiaPmd, setEstrategiaPmd] = useState('');
+  const [lineaAccion, setLineaAccion] = useState('');
   const [dimension, setDimension] = useState('Eficacia');
   const [tipoIndicador, setTipoIndicador] = useState('Gestión');
   const [sentidoIndicador, setSentidoIndicador] = useState('Ascendente');
-  const [fuenteInformacion, setFuenteInformacion] = useState('Cuadro de Control de Desempeño OOMRSC-05 y registros de área');
-  const [medioVerificacion, setMedioVerificacion] = useState('Reportes mensuales del Portal SGC y bitácoras operativas');
-  const [supuestos, setSupuestos] = useState('Disponibilidad presupuestal y continuidad operativa normal.');
+  const [fuenteInformacion, setFuenteInformacion] = useState('');
+  const [medioVerificacion, setMedioVerificacion] = useState('');
+  const [supuestos, setSupuestos] = useState('');
 
   // Atributos CREMAA
   const [cremaa, setCremaa] = useState({
-    claridad: 'Permite comprender el resultado esperado de forma precisa',
-    relevancia: 'Alineado a los compromisos de calidad y atención ciudadana',
-    economia: 'Generación digital mediante el Portal SGC sin costo extra',
-    monitoreable: 'Trazabilidad auditable en el formato OOMRSC-05',
-    adecuado: 'Refleja fielmente la capacidad operativa del organismo',
-    aportacion_marginal: 'Contribuye directamente al Plan Municipal de Desarrollo'
+    claridad: '',
+    relevancia: '',
+    economia: '',
+    monitoreable: '',
+    adecuado: '',
+    aportacion_marginal: ''
   });
 
   // Inicializar o sincronizar datos cuando cambia el indicador seleccionado
@@ -241,12 +241,12 @@ export default function ModalGestionarIndicador({
       setDireccion(resp.direccion);
       setArea(resp.area);
       setProceso(indBase.proceso || (procesosDisponibles.length > 0 ? procesosDisponibles[0] : 'Responsabilidad de la Dirección'));
-      setMetaAnual(indBase.meta_anual || indBase.meta || 85);
+      setMetaAnual(indBase.meta_anual ?? indBase.meta ?? '');
       setMetasTrimestrales({
-        T1: indBase.metas_trimestrales?.T1 ?? 20,
-        T2: indBase.metas_trimestrales?.T2 ?? 20,
-        T3: indBase.metas_trimestrales?.T3 ?? 20,
-        T4: indBase.metas_trimestrales?.T4 ?? 25
+        T1: indBase.metas_trimestrales?.T1 ?? '',
+        T2: indBase.metas_trimestrales?.T2 ?? '',
+        T3: indBase.metas_trimestrales?.T3 ?? '',
+        T4: indBase.metas_trimestrales?.T4 ?? ''
       });
       setImpacto(indBase.impacto || 'Bajo');
       setEsMenor(!!indBase.es_menor);
@@ -255,8 +255,8 @@ export default function ModalGestionarIndicador({
       setDireccion('Dir. General');
       setArea('Sistema de Gestión de Calidad');
       setProceso(procesosDisponibles[0] || 'Responsabilidad de la Dirección');
-      setMetaAnual(85);
-      setMetasTrimestrales({ T1: 20, T2: 20, T3: 20, T4: 25 });
+      setMetaAnual('');
+      setMetasTrimestrales({ T1: '', T2: '', T3: '', T4: '' });
       setImpacto('Bajo');
       setEsMenor(false);
       setObservacionDefault('');
@@ -268,28 +268,28 @@ export default function ModalGestionarIndicador({
     const variables = fichaCompleta?.caracteristicas_variables || {};
     const cremaaData = fichaCompleta?.atributos_cremaa || {};
 
-    setEjePmd(alineacion.eje_rector_pmd || 'Cajeme Limpio y Ordenado');
-    setProgramaPmd(alineacion.programa_pmd || 'Desarrollo con Servicios Públicos de Calidad');
-    setObjetivoPmd(alineacion.objetivo_pmd || 'Gestión Moderna y Eficiente del Cobro de Agua');
-    setEstrategiaPmd(alineacion.estrategia_pmd || 'Monitoreo trimestral de metas operativas y administrativas');
-    setLineaAccion(alineacion.linea_accion || 'Atención y seguimiento a compromisos institucionales');
+    setEjePmd(alineacion.eje_rector_pmd || '');
+    setProgramaPmd(alineacion.programa_pmd || '');
+    setObjetivoPmd(alineacion.objetivo_pmd || '');
+    setEstrategiaPmd(alineacion.estrategia_pmd || '');
+    setLineaAccion(alineacion.linea_accion || '');
 
     setDimension(identificacion.dimension || 'Eficacia');
     setTipoIndicador(identificacion.tipo_indicador || 'Gestión');
     setSentidoIndicador(identificacion.sentido_indicador || (indBase?.es_menor ? 'Descendente' : 'Ascendente'));
-    setSupuestos(identificacion.supuestos || 'Disponibilidad presupuestal y continuidad operativa normal.');
+    setSupuestos(identificacion.supuestos || '');
 
-    setFuenteInformacion(variables.fuente_informacion || 'Cuadro de Control de Desempeño OOMRSC-05 y registros de área');
-    setMedioVerificacion(variables.medios_verificacion || 'Reportes mensuales del Portal SGC y bitácoras operativas');
+    setFuenteInformacion(variables.fuente_informacion || '');
+    setMedioVerificacion(variables.medios_verificacion || '');
 
     if (cremaaData) {
       setCremaa({
-        claridad: cremaaData.claridad || 'Permite comprender el resultado esperado de forma precisa',
-        relevancia: cremaaData.relevancia || 'Alineado a los compromisos de calidad y atención ciudadana',
-        economia: cremaaData.economia || 'Generación digital mediante el Portal SGC sin costo extra',
-        monitoreable: cremaaData.monitoreable || 'Trazabilidad auditable en el formato OOMRSC-05',
-        adecuado: cremaaData.adecuado || 'Refleja fielmente la capacidad operativa del organismo',
-        aportacion_marginal: cremaaData.aportacion_marginal || 'Contribuye directamente al Plan Municipal de Desarrollo'
+        claridad: cremaaData.claridad || '',
+        relevancia: cremaaData.relevancia || '',
+        economia: cremaaData.economia || '',
+        monitoreable: cremaaData.monitoreable || '',
+        adecuado: cremaaData.adecuado || '',
+        aportacion_marginal: cremaaData.aportacion_marginal || ''
       });
     }
   }, [isOpen, indicadorIdActual]);
@@ -344,10 +344,10 @@ export default function ModalGestionarIndicador({
         otro: 'No aplica'
       },
       informacion_adicional: {
-        titular_unidad: `Encargado de ${area}`,
-        cargo_titular: `Titular del Área de ${area}`,
+        titular_unidad: '',
+        cargo_titular: '',
         fecha_elaboracion: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }),
-        notas: `Alineado al formato oficial OOMRSC-05 y Presupuesto de Egresos.`
+        notas: ''
       }
     };
   }, [
@@ -399,6 +399,10 @@ export default function ModalGestionarIndicador({
       toast.error('Por favor escribe el nombre descriptivo del indicador.');
       return;
     }
+    if (metaAnual === '' || Number.isNaN(Number(metaAnual))) {
+      toast.error('Captura la meta anual del indicador (puede ser 0).');
+      return;
+    }
 
     const numFinal = Number(numero);
 
@@ -415,10 +419,10 @@ export default function ModalGestionarIndicador({
       meta: Number(metaAnual),
       meta_anual: Number(metaAnual),
       metas_trimestrales: {
-        T1: Number(metasTrimestrales.T1),
-        T2: Number(metasTrimestrales.T2),
-        T3: Number(metasTrimestrales.T3),
-        T4: Number(metasTrimestrales.T4)
+        T1: Number(metasTrimestrales.T1 === '' ? metaAnual : metasTrimestrales.T1),
+        T2: Number(metasTrimestrales.T2 === '' ? metaAnual : metasTrimestrales.T2),
+        T3: Number(metasTrimestrales.T3 === '' ? metaAnual : metasTrimestrales.T3),
+        T4: Number(metasTrimestrales.T4 === '' ? metaAnual : metasTrimestrales.T4)
       },
       impacto,
       es_menor: esMenor,
@@ -884,6 +888,7 @@ export default function ModalGestionarIndicador({
                   onChange={(e) => setEjePmd(e.target.value)}
                   className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
                 >
+                  <option value="">— Selecciona el eje —</option>
                   {EJES_PMD_CAJEME.map(ej => (
                     <option key={ej} value={ej}>{ej}</option>
                   ))}
@@ -899,6 +904,7 @@ export default function ModalGestionarIndicador({
                   onChange={(e) => setProgramaPmd(e.target.value)}
                   className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
                 >
+                  <option value="">— Selecciona el programa —</option>
                   {PROGRAMAS_PMD_CAJEME.map(pr => (
                     <option key={pr} value={pr}>{pr}</option>
                   ))}
