@@ -518,7 +518,13 @@ export default function ModalGestionarIndicador({
         {/* CUERPO DEL FORMULARIO CONTINUO (UNA SOLA VISTA SIN PESTAÑAS) */}
         {/* ============================================================ */}
         <form onSubmit={handleSubmitIntegral} className="overflow-y-auto flex-1 p-6 space-y-6 bg-slate-50/50">
-          
+          {indicadorAEditar?.proyecto && (
+            <p role="note" className="text-sm text-sky-900 bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
+              <strong>Este indicador viene del proyecto {indicadorAEditar.proyecto.anio} de {indicadorAEditar.proyecto.area}</strong> ({indicadorAEditar.proyecto.nombre}).
+              Nombre, unidad, meta, metas T1–T4, periodicidad, impacto y ficha técnica se capturan en <strong>Proyectos y fichas</strong>; lo que cambies aquí de esos datos no se aplica.
+            </p>
+          )}
+
           {/* SECCIÓN I: IDENTIFICACIÓN GENERAL Y PARÁMETROS COMPARTIDOS */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">

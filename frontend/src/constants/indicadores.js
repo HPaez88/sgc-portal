@@ -35,7 +35,8 @@ export function evalSemaforoOOMRSC05(valorReal, meta, esMenor = false) {
   }
 
   const numVal = Number(valorReal);
-  const numMeta = Number(meta) || 100;
+  // ponytail: meta 0 es válida (accidentes = 0); solo sin meta se toma 100.
+  const numMeta = meta === '' || meta === null || meta === undefined || !Number.isFinite(Number(meta)) ? 100 : Number(meta);
   let pct = 0;
 
   if (esMenor) {

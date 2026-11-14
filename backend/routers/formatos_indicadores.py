@@ -64,5 +64,5 @@ def descargar(proyecto_id: str, tipo: str, actividad: int = 0, session: Session 
             raise HTTPException(status_code=404, detail="Actividad no encontrada.")
         a = acts[actividad]
         cumpl = cumplimiento_mensual(_estado(session, organismo_id, "sgc-indicadores-data", {}), a.get("indicador_id"), p.get("anio"))
-        return _archivo(fmt.llenar_ficha(p, a, cumpl), DOCX, f"{actividad + 1}- Ficha técnica {a.get('indicador', '')[:60]} {base}.docx")
+        return _archivo(fmt.llenar_ficha(p, a, cumpl), DOCX, f"{actividad + 1}- Ficha técnica {(a.get('indicador') or '')[:60]} {base}.docx")
     raise HTTPException(status_code=404, detail="Formato no reconocido.")

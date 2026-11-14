@@ -45,3 +45,12 @@ def test_indicadores_empiezan_el_primer_mes_despues_del_arranque():
     arranque = date(2026, 11, 16)
     assert m.avisos_indicadores(cat, {}, date(2026, 11, 16), set(), arranque) == []   # ciclo de noviembre: no
     assert m.avisos_indicadores(cat, {}, date(2026, 12, 1), set(), arranque)[0]["etapa"] == "AVISO"
+
+
+def test_catalogo_vivo_toma_altas_reasignaciones_y_proyecto():
+    base = [{"id": 1, "nombre": "A", "area": "Plantas", "periodicidad": "Mensual"}]
+    pers = {"1": {"id": 1, "area": "Comercial"}, "101": {"id": 101, "nombre": "Nuevo", "area": "Informática", "periodicidad": "Mensual"}}
+    proys = [{"anio": 2027, "estado": "APROBADO", "actividades": [{"indicador_id": "1", "periodicidad": "Trimestral"}]}]
+    cat = {i["id"]: i for i in m.catalogo_vivo(base, pers, proys, date(2027, 2, 1))}
+    assert cat[1]["area"] == "Comercial" and cat[1]["periodicidad"] == "Trimestral" and 101 in cat
+    assert m.catalogo_vivo(base, pers, proys, date(2026, 11, 2))[0]["periodicidad"] == "Mensual"  # proyecto 2027 no aplica a 2026

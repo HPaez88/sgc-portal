@@ -20,7 +20,7 @@ const num = (v) => {
 export const nuevaActividad = () => ({
   id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
   actividad: '', indicador: '', unidad: 'Porcentaje', meta: '', trimestres: ['', '', '', ''], ponderado: '',
-  periodicidad: 'Mensual', ap_clave: '', ap_nombre: '', indicador_id: '', ficha: {}, avances: {},
+  periodicidad: 'Mensual', impacto: 'Bajo', ap_clave: '', ap_nombre: '', indicador_id: '', ficha: {}, avances: {},
 });
 
 export const nuevoProyecto = (anio, area, base = {}) => ({

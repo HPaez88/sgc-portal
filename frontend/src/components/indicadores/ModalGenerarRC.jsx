@@ -40,7 +40,7 @@ export default function ModalGenerarRC({
 
   useEffect(() => {
     if (indicador) {
-      const folioGen = `RC ${indicador.numero !== undefined ? indicador.numero : indicador.id}/${ejercicio}`;
+      const folioGen = `RC ${indicador.numero !== undefined ? indicador.numero : indicador.id}-${mes}/${ejercicio}`; // un RC por indicador y mes
       setFolio(folioGen);
       setResponsable(indicador.area || usuarioLogueado?.nombre || 'Responsable de Área');
       setDescripcionDesviacion(
@@ -49,7 +49,7 @@ export default function ModalGenerarRC({
       setCausaInmediata('Variación operativa en el período.');
       setAccionCorreccion('Implementar corrección inmediata y monitoreo reforzado en el siguiente corte.');
     }
-  }, [indicador, valorReal, semaforo, mes, ejercicio, usuarioLogueado, isOpen]);
+  }, [indicador?.id, mes, ejercicio, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps -- solo al abrir: no borra lo que se escribe
 
   const handleSubmit = (e) => {
     e.preventDefault();

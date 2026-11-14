@@ -15,6 +15,8 @@ import {
   nuevoProyecto, faltantesProyecto, totalesPresupuesto,
 } from '../../constants/proyectosIndicadores';
 import EditorProyecto from './EditorProyecto';
+import { altasAlAprobar } from '../../constants/catalogoIndicadores';
+import { obtenerDireccionDeArea } from '../../constants/areas';
 
 const sinAvances = (p) => JSON.stringify({ ...p, actividades: (p.actividades || []).map(({ avances, ...a }) => a), historial: undefined, estado: undefined });
 const pesos = (n) => `$${Math.round(n || 0).toLocaleString('es-MX')}`;
@@ -31,12 +33,14 @@ function Estado({ estado }) {
 }
 
 export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
-  const { areasDetalle = [], usuarioLogueado, registrarMovimiento } = useSGC();
+  const { areasDetalle = [], usuarioLogueado, registrarMovimiento, indicadoresData = {}, setIndicadoresData } = useSGC();
   const toast = useToast();
   const { confirmar, solicitar, props: dialogos } = useDialogos();
   const esAdmin = esAdminSGC(usuarioLogueado);
   const [proyectos, setProyectos] = useLocalStorage(CLAVE_PROYECTOS, []);
-  const [anio, setAnio] = useState(2027);
+  const hoy = new Date();
+  // De octubre en adelante se prepara el año siguiente.
+  const [anio, setAnio] = useState(hoy.getMonth() >= 9 ? hoy.getFullYear() + 1 : hoy.getFullYear());
   const [filtroArea, setFiltroArea] = useState('');
   const [borrador, setBorrador] = useState(null);
   const [nuevaArea, setNuevaArea] = useState('');
@@ -95,7 +99,17 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
       const { ok } = await confirmar({ titulo: 'Aprobar proyecto', mensaje: `Se aprueba el proyecto de ${borrador.area} ${borrador.anio}. Sus indicadores quedan como metas del año.` });
       if (!ok) return;
     }
-    const p = guardar(nota({ ...borrador, estado }, texto));
+    let base = borrador;
+    if (estado === 'APROBADO') {
+      // Los indicadores del proyecto quedan en el Cuadro de Control: los nuevos se dan de alta; los ligados toman metas del proyecto.
+      const { actividades, nuevos } = altasAlAprobar(borrador, indicadoresCatalogo, obtenerDireccionDeArea);
+      if (Object.keys(nuevos).length) {
+        setIndicadoresData((prev) => ({ ...prev, catalogoPersonalizado: { ...(prev?.catalogoPersonalizado || {}), ...nuevos }, updatedAt: new Date().toISOString() }));
+        texto += ` Alta en el Cuadro de Control: ${Object.values(nuevos).map((n) => `#${n.id}`).join(', ')}.`;
+      }
+      base = { ...borrador, actividades };
+    }
+    const p = guardar(nota({ ...base, estado }, texto));
     bitacora(`PROYECTO_${estado}`, p, texto);
     toast.success(texto);
   };
@@ -157,7 +171,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
             {(borrador.actividades || []).map((a, i) => <BotonDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList}>Ficha {i + 1}</BotonDescarga>)}
           </section>
         )}
-        <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} indicadoresCatalogo={indicadoresCatalogo} />
+        <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} indicadoresCatalogo={indicadoresCatalogo} resultados={indicadoresData.resultados || {}} />
       </div>
     );
   }
@@ -173,7 +187,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs font-bold text-slate-800">Año
             <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className="block mt-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white">
-              {[2026, 2027, 2028].map((a) => <option key={a}>{a}</option>)}
+              {[hoy.getFullYear() - 1, hoy.getFullYear(), hoy.getFullYear() + 1, hoy.getFullYear() + 2].map((a) => <option key={a}>{a}</option>)}
             </select></label>
           {esAdmin && <label className="text-xs font-bold text-slate-800">Área
             <select value={filtroArea} onChange={(e) => setFiltroArea(e.target.value)} className="block mt-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white max-w-[220px]">

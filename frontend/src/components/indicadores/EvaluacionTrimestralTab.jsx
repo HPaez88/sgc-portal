@@ -38,7 +38,7 @@ const ORDEN_TRIMESTRES = ['T1', 'T2', 'T3', 'T4'];
 export default function EvaluacionTrimestralTab({
   listaIndicadores = [],
   resultados = {},
-  ejercicio = 2026,
+  ejercicio = new Date().getFullYear(),
   onAbrirCaptura,
   onAbrirGenerarRC
 }) {
@@ -97,7 +97,7 @@ export default function EvaluacionTrimestralTab({
           metaProgramadaT = pesoTrimestralT;
 
           if (ind.es_menor) {
-            const metaLimite = Number(ind.meta) || 10;
+            const metaLimite = Number.isFinite(Number(ind.meta)) && ind.meta !== '' && ind.meta !== null ? Number(ind.meta) : 10;
             pctCumplimientoT = logroRealT <= metaLimite ? 100 : Math.max(0, Math.round((metaLimite / (logroRealT || 1)) * 100));
           } else {
             const metaBase = (ind.meta && ind.meta >= 50 && ind.meta <= 100 && ind.periodicidad !== 'Trimestral') ? Number(ind.meta) : 100;
@@ -468,7 +468,7 @@ export default function EvaluacionTrimestralTab({
       {/* Tabla Oficial de Evaluación Trimestral */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-xs border-collapse tablas-marcadas">
             <thead className="bg-slate-100 text-slate-700 font-extrabold border-b border-slate-200">
               <tr>
                 <th className="py-2.5 px-3 w-12 text-center">#</th>

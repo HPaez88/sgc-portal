@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Target, 
   Search, 
@@ -41,7 +41,6 @@ import {
 import { 
   INDICADORES, 
   FORMATO_CUADRO_CONTROL, 
-  RANGOS_SEMAFORO_OOMRSC05, 
   evalSemaforoOOMRSC05, 
   REPORTES_CORRECCION_INICIALES 
 } from '../../constants/indicadores';
@@ -52,15 +51,17 @@ import { acDesdeIndicador } from '../../services/flujoService';
 import DesempenoProcesosTab from './DesempenoProcesosTab';
 import ModalGestionarIndicador from './ModalGestionarIndicador';
 import ModalGenerarRC from './ModalGenerarRC';
-import ModalGestionarRC from './ModalGestionarRC';
 import ReportesCorreccionPanel from '../acciones/ReportesCorreccionPanel';
 import ModalRecordatorioAtrasos from './ModalRecordatorioAtrasos';
 import FichasGubernamentalesTab from './FichasGubernamentalesTab';
 import ProyectosIndicadoresTab from './ProyectosIndicadoresTab';
 import EvaluacionTrimestralTab from './EvaluacionTrimestralTab';
 import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamentales';
-import { AREAS, DIRECCIONES, normalizarArea, normalizarDireccion, obtenerDireccionDeArea, resolverResponsable } from '../../constants/areas';
-import { useIsMobile } from '../../hooks';
+import { AREAS, DIRECCIONES, resolverResponsable } from '../../constants/areas';
+import { useIsMobile, useLocalStorage } from '../../hooks';
+import { puedeCapturarArea } from '../../constants/riesgos';
+import { CLAVE_PROYECTOS } from '../../constants/proyectosIndicadores';
+import { aplicarProyectos, fichasConProyecto, tocaReportar } from '../../constants/catalogoIndicadores';
 import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 import { esCerrado, esAdminSGC, getVencimiento, getFechaCompromiso, formatearFecha } from '../../constants/workflow';
 
@@ -71,12 +72,6 @@ const RC_CERRADOS = ['CERRADA', 'CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO', 'ESCA
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MESES_COMPLETOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-const TRIMESTRES = {
-  1: { label: '1er Trimestre (Ene-Mar)', meses: ['Ene', 'Feb', 'Mar'], key: 'T1' },
-  2: { label: '2do Trimestre (Abr-Jun)', meses: ['Abr', 'May', 'Jun'], key: 'T2' },
-  3: { label: '3er Trimestre (Jul-Sep)', meses: ['Jul', 'Ago', 'Sep'], key: 'T3' },
-  4: { label: '4to Trimestre (Oct-Dic)', meses: ['Oct', 'Nov', 'Dic'], key: 'T4' },
-};
 
 const PAGE_SIZE = 25;
 
@@ -93,25 +88,23 @@ export default function IndicadoresView({
     accionesCorrectivas = [],
     setAccionesCorrectivas, 
     registrarMovimiento, 
-    usuarioLogueado 
+    usuarioLogueado,
+    areasDetalle = []
   } = useSGC();
+  const [proyectosAnuales] = useLocalStorage(CLAVE_PROYECTOS, []);
   const toast = useToast();
   const { isMobile } = useIsMobile();
 
   // Permisos: Admin o personal del SGC
-  const esAdminOSGC = Boolean(
-    usuarioLogueado?.rol?.toLowerCase().includes('admin') ||
-    usuarioLogueado?.rol?.toLowerCase().includes('sgc') ||
-    usuarioLogueado?.rol?.toLowerCase().includes('calidad') ||
-    puedeTodasAreas
-  );
+  const esAdminOSGC = esAdminSGC(usuarioLogueado);
 
   // Estados de navegación
   // 'cuadro' | 'procesos' | 'trimestral' | 'correcciones'
   const [tabActiva, setTabActiva] = useState('cuadro');
   const [vistaModo, setVistaModo] = useState('mensual'); // 'mensual' | 'anual' (Matriz 12 meses)
-  const [ejercicio, setEjercicio] = useState(2026);
-  const [mesActivoIndex, setMesActivoIndex] = useState(() => Math.min(new Date().getMonth(), 9)); // Octubre default
+  const hoy = new Date();
+  const [ejercicio, setEjercicio] = useState(hoy.getMonth() === 0 ? hoy.getFullYear() - 1 : hoy.getFullYear());
+  const [mesActivoIndex, setMesActivoIndex] = useState(() => (hoy.getMonth() + 11) % 12); // mes que se reporta (el anterior)
   const mesActivo = MESES[mesActivoIndex];
   const mesActivoNombre = MESES_COMPLETOS[mesActivoIndex];
   const [mesParaCaptura, setMesParaCaptura] = useState(mesActivo);
@@ -159,11 +152,6 @@ export default function IndicadoresView({
     return REPORTES_CORRECCION_INICIALES;
   });
 
-  // Modal para Gestión / Dictamen de Reportes de Corrección (RC)
-  const [rcParaGestionar, setRcParaGestionar] = useState(null);
-  const [modalGestionarRCOpen, setModalGestionarRCOpen] = useState(false);
-  const [filtroEstadoRC, setFiltroEstadoRC] = useState('TODOS');
-  const [busquedaRC, setBusquedaRC] = useState('');
 
   // Modal de Recordatorios y Envío de Correos a Áreas
   const [modalRecordatoriosOpen, setModalRecordatoriosOpen] = useState(false);
@@ -195,13 +183,11 @@ export default function IndicadoresView({
     return indicadoresData?.fichasPersonalizadas || {};
   });
 
-  const [modalFichaAyuntamientoOpen, setModalFichaAyuntamientoOpen] = useState(false);
   const [fichaParaModal, setFichaParaModal] = useState(null);
   const [pestanaModalInicial, setPestanaModalInicial] = useState('pmd');
 
   const handleAbrirFichaAyuntamiento = (ind) => {
-    const numId = ind.numero !== undefined ? ind.numero : ind.id;
-    const customData = fichasPersonalizadas[numId] || null;
+    const customData = fichasEfectivas;
     const fichaCompleta = obtenerFichaTecnicaIndicador(ind, customData);
     setFichaParaModal(fichaCompleta);
     setIndicadorParaGestionar(ind);
@@ -249,8 +235,11 @@ export default function IndicadoresView({
     Object.values(catalogoCustom).forEach(ind => {
       if (!mapa.has(ind.id)) mapa.set(ind.id, { ...ind, ...resolverResponsable(ind.area, ind.direccion) });
     });
-    return Array.from(mapa.values()).sort((a, b) => (a.numero ?? a.id) - (b.numero ?? b.id));
-  }, [catalogoCustom]);
+    const lista = Array.from(mapa.values()).sort((a, b) => (a.numero ?? a.id) - (b.numero ?? b.id));
+    return aplicarProyectos(lista, proyectosAnuales, ejercicio);
+  }, [catalogoCustom, proyectosAnuales, ejercicio]);
+  const fichasEfectivas = useMemo(() => fichasConProyecto(fichasPersonalizadas, proyectosAnuales, ejercicio, listaIndicadores),
+    [fichasPersonalizadas, proyectosAnuales, ejercicio, listaIndicadores]);
 
   // Resultados guardados en contexto global
   const resultados = indicadoresData.resultados || {};
@@ -272,14 +261,9 @@ export default function IndicadoresView({
       } : {})
     };
 
-    const nuevosResultados = {
-      ...resultados,
-      [key]: nuevoObj
-    };
-
     setIndicadoresData?.(prev => ({
       ...prev,
-      resultados: nuevosResultados,
+      resultados: { ...(prev?.resultados || {}), [key]: nuevoObj },
       updatedAt: new Date().toISOString()
     }));
   };
@@ -333,6 +317,10 @@ export default function IndicadoresView({
 
   // Abrir Modal para Capturar / Editar Valor
   const abrirModalCaptura = (ind, mesEspecifico = null) => {
+    if (!esAdminOSGC && !puedeCapturarArea(usuarioLogueado, ind.area, areasDetalle)) {
+      toast.error(`Solo el área ${ind.area} o el SGC capturan este indicador.`);
+      return;
+    }
     const mesTarget = mesEspecifico || mesActivo;
     setMesParaCaptura(mesTarget);
     const key = `${ind.id}-${mesTarget}-${ejercicio}`;
@@ -670,7 +658,7 @@ export default function IndicadoresView({
         if (filtroSemaforo === 'ACEPTABLE' && sem.rango !== 'ACEPTABLE') return false;
         if (filtroSemaforo === 'PREVENTIVO' && sem.rango !== 'PREVENTIVO') return false;
         if (filtroSemaforo === 'CRITICO' && sem.rango !== 'CRITICO') return false;
-        if (filtroSemaforo === 'PENDIENTE' && sem.rango !== 'SIN_DATOS') return false;
+        if (filtroSemaforo === 'PENDIENTE' && (sem.rango !== 'SIN_DATOS' || !tocaReportar(ind, mesActivoIndex))) return false;
       }
 
       if (busqueda) {
@@ -680,7 +668,7 @@ export default function IndicadoresView({
       }
       return true;
     });
-  }, [listaIndicadores, busqueda, filtroDireccion, filtroProceso, filtroArea, filtroImpacto, filtroSemaforo, mesActivo, ejercicio, resultados, puedeTodasAreas, areaUsuario]);
+  }, [listaIndicadores, busqueda, filtroDireccion, filtroProceso, filtroArea, filtroImpacto, filtroSemaforo, mesActivo, mesActivoIndex, ejercicio, resultados, puedeTodasAreas, areaUsuario]);
 
   // Paginación
   const totalPaginas = Math.max(1, Math.ceil(indicadoresFiltrados.length / PAGE_SIZE));
@@ -715,12 +703,12 @@ export default function IndicadoresView({
         criticos++;
         sumaPorcentaje += sem.porcentaje || 50;
         evaluadosCount++;
-      } else {
+      } else if (tocaReportar(ind, mesActivoIndex)) {
         pendientes++;
       }
     });
 
-    const promedioGlobal = evaluadosCount > 0 ? Math.round(sumaPorcentaje / evaluadosCount) : 92;
+    const promedioGlobal = evaluadosCount > 0 ? Math.round(sumaPorcentaje / evaluadosCount) : null;
 
     return {
       total: listaIndicadores.length,
@@ -730,10 +718,11 @@ export default function IndicadoresView({
       pendientes,
       promedioGlobal
     };
-  }, [listaIndicadores, mesActivo, ejercicio, resultados]);
+  }, [listaIndicadores, mesActivo, mesActivoIndex, ejercicio, resultados]);
 
   // Exportar Cuadro de Control a CSV
   const handleExportarCSV = () => {
+    const csv = (v) => { const t = String(v ?? ''); return `"${(/^[=+\-@]/.test(t) ? `'${t}` : t).replace(/"/g, '""')}"`; };
     try {
       const headers = [
         'No. Proceso', 'Proceso', 'Dirección', 'Área', '# Indicador', 
@@ -751,26 +740,10 @@ export default function IndicadoresView({
         const sem = evalSemaforoOOMRSC05(val, ind.meta_anual || ind.meta, ind.es_menor);
 
         return [
-          ind.id,
-          `"${ind.proceso || ''}"`,
-          `"${ind.direccion || ''}"`,
-          `"${ind.area || ''}"`,
-          ind.numero ?? ind.id,
-          `"${(ind.nombre || '').replace(/"/g, '""')}"`,
-          ind.periodicidad || 'Trimestral',
-          ind.unidad || 'Porcentaje',
-          ind.meta_anual || ind.meta || 85,
-          ind.metas_trimestrales?.T1 ?? '',
-          ind.metas_trimestrales?.T2 ?? '',
-          ind.metas_trimestrales?.T3 ?? '',
-          ind.metas_trimestrales?.T4 ?? '',
-          ind.impacto || 'Bajo',
-          sem.cumple,
-          val,
-          sem.porcentaje !== null ? `${sem.porcentaje}%` : '',
-          `"${obs.replace(/"/g, '""')}"`,
-          `"${acc}"`
-        ].join(',');
+          ind.id, ind.proceso, ind.direccion, ind.area, ind.numero ?? ind.id, ind.nombre, ind.periodicidad || '', ind.unidad || '',
+          ind.meta_anual ?? ind.meta ?? '', ind.metas_trimestrales?.T1 ?? '', ind.metas_trimestrales?.T2 ?? '', ind.metas_trimestrales?.T3 ?? '',
+          ind.metas_trimestrales?.T4 ?? '', ind.impacto || '', sem.cumple, val, sem.porcentaje !== null ? `${sem.porcentaje}%` : '', obs, acc,
+        ].map(csv).join(',');
       });
 
       const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
@@ -864,7 +837,7 @@ export default function IndicadoresView({
                 className="bg-transparent text-white text-xs font-bold px-2 py-1.5 border-l border-slate-700 focus:outline-none cursor-pointer"
                 title="Seleccionar ejercicio fiscal"
               >
-                {[2025, 2026, 2027].map(y => (
+                {[hoy.getFullYear() - 2, hoy.getFullYear() - 1, hoy.getFullYear(), hoy.getFullYear() + 1].map(y => (
                   <option key={y} value={y} className="bg-slate-900 text-white">
                     {y}
                   </option>
@@ -959,7 +932,7 @@ export default function IndicadoresView({
             Eficacia Global
           </span>
           <span className="text-2xl font-black text-slate-900 block">
-            {statsGlobales.promedioGlobal}%
+            {statsGlobales.promedioGlobal === null ? '—' : `${statsGlobales.promedioGlobal}%`}
           </span>
           <span className="text-[10px] text-emerald-600 font-bold block flex items-center gap-1">
             <Check size={12} /> {mesActivoNombre} {ejercicio}
@@ -1176,10 +1149,10 @@ export default function IndicadoresView({
                 className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-bold focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 <option value="">Todos los Semáforos</option>
-                <option value="ACEPTABLE">🟢 Aceptables (≥90%)</option>
-                <option value="PREVENTIVO">🟡 Preventivos (80-89%)</option>
-                <option value="CRITICO">🔴 Críticos (≤79%)</option>
-                <option value="PENDIENTE">⏳ Sin captura</option>
+                <option value="ACEPTABLE">Aceptables (≥90%)</option>
+                <option value="PREVENTIVO">Preventivos (80-89%)</option>
+                <option value="CRITICO">Críticos (≤79%)</option>
+                <option value="PENDIENTE">Sin captura</option>
               </select>
             </div>
           </div>
@@ -1187,9 +1160,10 @@ export default function IndicadoresView({
           {/* TABLA PRINCIPAL DEL CUADRO DE CONTROL (MENSUAL O MATRIZ ANUAL) */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <span className="font-mono text-slate-600">
-                Mostrando <strong>{indicadoresPaginados.length}</strong> de <strong>{indicadoresFiltrados.length}</strong> indicadores
-              </span>
+              <h3 className="text-sm font-extrabold text-slate-900">
+                {vistaModo === 'mensual' ? 'Cuadro de Control mensual' : 'Matriz anual'} <span className="text-slate-600 font-bold">({indicadoresFiltrados.length})</span>
+                <span className="ml-2 font-normal text-slate-600">mostrando {indicadoresPaginados.length}</span>
+              </h3>
               <span className="text-slate-600 font-semibold flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-sky-500"></span>
                 {vistaModo === 'mensual' ? (
@@ -1205,7 +1179,7 @@ export default function IndicadoresView({
               /* VISTA 1: CUADRO DE CONTROL MENSUAL DETALLADO                  */
               /* ============================================================= */
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs tablas-marcadas">
                   <thead>
                     <tr className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase font-mono">
                       <th className="py-3 px-3 w-12 text-center">#</th>
@@ -1312,6 +1286,8 @@ export default function IndicadoresView({
                                     <span className="font-mono text-slate-900 font-bold">{valReal}</span>
                                   ) : isMobile ? (
                                     <span className="text-slate-400 font-mono text-[11px]">-</span>
+                                  ) : !tocaReportar(ind, mesActivoIndex) ? (
+                                    <span className="text-slate-500 font-semibold" title={`Indicador ${String(ind.periodicidad || '').toLowerCase()}: no reporta este mes`}>No reporta</span>
                                   ) : (
                                     <span className="text-sky-600 font-semibold flex items-center gap-1">
                                       <Plus size={11} /> Capturar
@@ -1400,8 +1376,7 @@ export default function IndicadoresView({
                             <td className="py-3 px-2 text-center">
                               <button
                                 onClick={() => {
-                                  const numId = ind.numero !== undefined ? ind.numero : ind.id;
-                                  const customData = fichasPersonalizadas[numId] || null;
+                                  const customData = fichasEfectivas;
                                   const fichaCompleta = obtenerFichaTecnicaIndicador(ind, customData);
                                   setFichaParaModal(fichaCompleta);
                                   setIndicadorParaGestionar(ind);
@@ -1425,7 +1400,7 @@ export default function IndicadoresView({
               /* VISTA 2: MATRIZ ANUAL CONCENTRADA (12 MESES: ENE A DIC)       */
               /* ============================================================= */
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs tablas-marcadas">
                   <thead>
                     <tr className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase font-mono">
                       <th className="py-3 px-3 w-10 text-center sticky left-0 bg-slate-100 z-10">#</th>
@@ -1551,8 +1526,7 @@ export default function IndicadoresView({
                             <td className="py-2.5 px-2 text-center">
                               <button
                                 onClick={() => {
-                                  const numId = ind.numero !== undefined ? ind.numero : ind.id;
-                                  const customData = fichasPersonalizadas[numId] || null;
+                                  const customData = fichasEfectivas;
                                   const fichaCompleta = obtenerFichaTecnicaIndicador(ind, customData);
                                   setFichaParaModal(fichaCompleta);
                                   setIndicadorParaGestionar(ind);
@@ -1617,8 +1591,7 @@ export default function IndicadoresView({
           onCrearReporteCorreccion={handleAbrirCrearRC}
           esAdminOSGC={esAdminOSGC}
           onEditarIndicador={(ind) => {
-            const numId = ind.numero !== undefined ? ind.numero : ind.id;
-            const customData = fichasPersonalizadas[numId] || null;
+            const customData = fichasEfectivas;
             const fichaCompleta = obtenerFichaTecnicaIndicador(ind, customData);
             setFichaParaModal(fichaCompleta);
             setIndicadorParaGestionar(ind);
@@ -1637,7 +1610,7 @@ export default function IndicadoresView({
           indicadores={listaIndicadores}
           resultados={resultados}
           ejercicio={ejercicio}
-          fichasPersonalizadas={fichasPersonalizadas}
+          fichasPersonalizadas={fichasEfectivas}
           onAbrirFicha={(ficha) => {
             const indNum = ficha.indicador_numero ?? ficha.indicador_id ?? 0;
             const indBase = listaIndicadores.find(i => (i.numero !== undefined ? i.numero : i.id) === indNum);
@@ -1891,7 +1864,7 @@ export default function IndicadoresView({
                       className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold rounded-xl shadow-md text-xs flex items-center justify-center gap-2 cursor-pointer transition-all transform active:scale-98"
                     >
                       <AlertTriangle size={15} />
-                      <span>⚡ Detonar Acción Correctiva Oficial (OOMRSC-20) Ahora</span>
+                      <span>Detonar Acción Correctiva Oficial (OOMRSC-20) Ahora</span>
                     </button>
                   ) : (
                     <button
@@ -1900,7 +1873,7 @@ export default function IndicadoresView({
                       className="w-full py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold rounded-xl shadow-md text-xs flex items-center justify-center gap-2 cursor-pointer transition-all transform active:scale-98"
                     >
                       <AlertOctagon size={15} />
-                      <span>📝 Emitir Reporte de Corrección (RC) Ahora</span>
+                      <span>Emitir Reporte de Corrección (RC) Ahora</span>
                     </button>
                   )}
                 </div>
@@ -2018,7 +1991,7 @@ export default function IndicadoresView({
             </div>
 
             <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-sky-900 text-[11px] leading-relaxed">
-              💡 <strong>¿Requiere corregir este resultado?</strong> Solicite a la Coordinación del SGC o a un usuario con rol de Administrador que realice el ajuste justificado en la bitácora institucional.
+              <strong>¿Requiere corregir este resultado?</strong> Solicite a la Coordinación del SGC o a un usuario con rol de Administrador que realice el ajuste justificado en la bitácora institucional.
             </div>
           </div>
         </ContenedorModal>
@@ -2242,12 +2215,11 @@ export default function IndicadoresView({
       )}
 
       {/* MODAL UNIFICADO: GESTIÓN INTEGRAL SGC (OOMRSC-05) + FICHA PMD (AYUNTAMIENTO DE CAJEME) */}
-      {(modalGestionIndicadorOpen || modalFichaAyuntamientoOpen) && (
+      {modalGestionIndicadorOpen && (
         <ModalGestionarIndicador
-          isOpen={modalGestionIndicadorOpen || modalFichaAyuntamientoOpen}
+          isOpen={modalGestionIndicadorOpen}
           onClose={() => {
             setModalGestionIndicadorOpen(false);
-            setModalFichaAyuntamientoOpen(false);
             setIndicadorParaGestionar(null);
             setFichaParaModal(null);
           }}
@@ -2255,7 +2227,7 @@ export default function IndicadoresView({
           fichaData={fichaParaModal}
           onGuardarIndicador={handleGuardarIndicadorFicha}
           onGuardarFichaPersonalizada={handleGuardarFichaPersonalizada}
-          fichasPersonalizadas={fichasPersonalizadas}
+          fichasPersonalizadas={fichasEfectivas}
           valoresMensuales={resultados}
           direccionesDisponibles={direccionesUnicas}
           procesosDisponibles={procesosUnicos}
@@ -2277,24 +2249,10 @@ export default function IndicadoresView({
           indicador={datosParaRC.indicador}
           valorReal={datosParaRC.valorReal}
           semaforo={datosParaRC.semaforo}
-          mes={mesActivo}
+          mes={mesParaCaptura || mesActivo}
           ejercicio={ejercicio}
           usuarioLogueado={usuarioLogueado}
           onConfirmarRC={handleConfirmarRC}
-        />
-      )}
-
-      {/* MODAL PARA GESTIÓN Y VERIFICACIÓN DE REPORTE DE CORRECCIÓN (RC) */}
-      {modalGestionarRCOpen && rcParaGestionar && (
-        <ModalGestionarRC
-          isOpen={modalGestionarRCOpen}
-          onClose={() => {
-            setModalGestionarRCOpen(false);
-            setRcParaGestionar(null);
-          }}
-          reporte={rcParaGestionar}
-          onActualizarReporte={handleActualizarReporteCorreccion}
-          usuarioLogueado={usuarioLogueado}
         />
       )}
 

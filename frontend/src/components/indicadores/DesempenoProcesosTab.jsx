@@ -48,7 +48,7 @@ const TRIMESTRES_CONFIG = {
 export default function DesempenoProcesosTab({
   indicadores = [],
   resultados = {},
-  ejercicio = 2026,
+  ejercicio = new Date().getFullYear(),
   setEjercicio,
   mesActivoIndex = 9,
   setMesActivoIndex,
@@ -348,7 +348,7 @@ export default function DesempenoProcesosTab({
                   onChange={(e) => setEjercicio?.(Number(e.target.value))}
                   className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
                 >
-                  {[2025, 2026, 2027].map(y => (
+                  {[0, 1, 2, 3].map((k) => new Date().getFullYear() - 2 + k).map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
@@ -373,7 +373,7 @@ export default function DesempenoProcesosTab({
                   onChange={(e) => setEjercicio?.(Number(e.target.value))}
                   className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
                 >
-                  {[2025, 2026, 2027].map(y => (
+                  {[0, 1, 2, 3].map((k) => new Date().getFullYear() - 2 + k).map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
@@ -390,7 +390,7 @@ export default function DesempenoProcesosTab({
                   onChange={(e) => setEjercicio?.(Number(e.target.value))}
                   className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
                 >
-                  {[2025, 2026, 2027].map(y => (
+                  {[0, 1, 2, 3].map((k) => new Date().getFullYear() - 2 + k).map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
@@ -581,7 +581,7 @@ export default function DesempenoProcesosTab({
                 {estaExpandido && (
                   <div className="border-t border-slate-200 bg-slate-50/40 p-4 space-y-3">
                     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                      <table className="w-full text-left text-xs">
+                      <table className="w-full text-left text-xs tablas-marcadas">
                         <thead>
                           <tr className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 text-[10.5px] uppercase font-mono">
                             <th className="py-2.5 px-3 w-12 text-center">#</th>

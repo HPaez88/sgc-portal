@@ -59,6 +59,23 @@ def avisos_acciones(acciones: list, hoy: date, arranque: date, enviadas: set) ->
     return out
 
 
+def catalogo_vivo(base: list, personalizado: dict, proyectos: list, hoy: date) -> list[dict]:
+    """Catálogo como lo ve el portal: base + cambios/altas del administrador + periodicidad del proyecto aprobado del año reportado."""
+    por_id = {str(i["id"]): dict(i) for i in base}
+    for k, v in (personalizado or {}).items():
+        if isinstance(v, dict):
+            por_id[str(v.get("id", k))] = {**por_id.get(str(v.get("id", k)), {}), **v}
+    anio, _ = mes_reportado(hoy)
+    for p in proyectos or []:
+        if not isinstance(p, dict) or p.get("anio") != anio or p.get("estado") != "APROBADO":
+            continue
+        for a in p.get("actividades") or []:
+            ind = por_id.get(str(a.get("indicador_id")))
+            if ind is not None and a.get("periodicidad"):
+                ind["periodicidad"] = a["periodicidad"]
+    return [i for i in por_id.values() if i.get("id") is not None and i.get("nombre")]
+
+
 def mes_reportado(hoy: date) -> tuple[int, int]:
     """En el mes actual se entrega el resultado del mes anterior."""
     return (hoy.year - 1, 12) if hoy.month == 1 else (hoy.year, hoy.month - 1)

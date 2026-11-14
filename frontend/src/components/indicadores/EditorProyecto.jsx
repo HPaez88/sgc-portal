@@ -5,6 +5,16 @@ import { Plus, Trash2, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-reac
 import {
   CAPITULOS, TRIMESTRES, LIMITE_PALABRAS, palabras, nuevaActividad, totalesPresupuesto, cumpleTrimestre, justificacionAutomatica,
 } from '../../constants/proyectosIndicadores';
+import { promedioTrimestreCuadro } from '../../constants/catalogoIndicadores';
+
+const MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+/** Reparte la meta anual en 4 trimestres como en el formato: 95 → 24, 24, 24, 23. */
+export const repartirMeta = (meta) => {
+  const n = parseFloat(String(meta).replace(/[%,]/g, ''));
+  if (!Number.isFinite(n)) return ['', '', '', ''];
+  const t = Math.round(n / 4);
+  return [t, t, t, Math.round((n - 3 * t) * 100) / 100].map(String);
+};
 
 const SECCIONES = [
   ['datos', '1. Datos del proyecto'], ['actividades', '2. Actividades e indicadores'], ['presupuesto', '3. Presupuesto'],
@@ -29,7 +39,7 @@ function Campo({ etiqueta, valor, onChange, multi, limite, disabled, ayuda, tipo
   );
 }
 
-export default function EditorProyecto({ proyecto: p, onCambio, editable, indicadoresCatalogo = [] }) {
+export default function EditorProyecto({ proyecto: p, onCambio, editable, indicadoresCatalogo = [], resultados = {} }) {
   const [seccion, setSeccion] = useState('datos');
   const [fichaIdx, setFichaIdx] = useState(0);
   const set = (campo, valor) => onCambio({ ...p, [campo]: valor });
@@ -93,23 +103,38 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, indica
                 <Campo disabled={!editable} multi etiqueta="Actividad" valor={a.actividad} onChange={(v) => setAct(i, { actividad: v })} />
                 <Campo disabled={!editable} multi etiqueta="Indicador" valor={a.indicador} onChange={(v) => setAct(i, { indicador: v })} />
               </div>
-              <div className="grid gap-2 grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
+              <div className="grid gap-2 grid-cols-2 md:grid-cols-5 lg:grid-cols-9">
                 <Campo disabled={!editable} etiqueta="Unidad de medida" valor={a.unidad} onChange={(v) => setAct(i, { unidad: v })} />
-                <Campo disabled={!editable} etiqueta="Meta anual" valor={a.meta} onChange={(v) => setAct(i, { meta: v })} />
+                <Campo disabled={!editable} etiqueta="Meta anual" valor={a.meta}
+                  onChange={(v) => setAct(i, { meta: v, ...((a.trimestres || []).every((x) => x === '' || x == null) || a.trimestresAuto ? { trimestres: repartirMeta(v), trimestresAuto: true } : {}) })}
+                  ayuda={a.trimestresAuto ? 'T1–T4 repartidas solas' : undefined} />
                 {TRIMESTRES.map((t, ti) => (
-                  <Campo disabled={!editable} key={t} etiqueta={`Meta ${t}`} valor={a.trimestres?.[ti]} onChange={(v) => setAct(i, { trimestres: (a.trimestres || ['', '', '', '']).map((x, k) => (k === ti ? v : x)) })} />
+                  <Campo disabled={!editable} key={t} etiqueta={`Meta ${t}`} valor={a.trimestres?.[ti]} onChange={(v) => setAct(i, { trimestresAuto: false, trimestres: (a.trimestres || ['', '', '', '']).map((x, k) => (k === ti ? v : x)) })} />
                 ))}
                 <Campo disabled={!editable} etiqueta="Ponderado %" valor={a.ponderado} onChange={(v) => setAct(i, { ponderado: v })} />
                 <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Frecuencia</span>
                   <select disabled={!editable} value={a.periodicidad || 'Mensual'} onChange={(e) => setAct(i, { periodicidad: e.target.value })} className={ENTRADA}>
                     {['Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'].map((x) => <option key={x}>{x}</option>)}
                   </select></label>
+                <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Impacto</span>
+                  <select disabled={!editable} value={a.impacto || 'Bajo'} onChange={(e) => setAct(i, { impacto: e.target.value })} className={ENTRADA} title="Si el resultado del mes sale bajo: Bajo → Reporte de corrección; Alto → Acción correctiva">
+                    <option value="Bajo">Bajo (RC)</option><option value="Alto">Alto (AC)</option>
+                  </select></label>
               </div>
               <div className="grid gap-2 md:grid-cols-[120px_1fr_1fr]">
                 <Campo disabled={!editable} etiqueta="Clave act. pública" valor={a.ap_clave} onChange={(v) => setAct(i, { ap_clave: v })} />
                 <Campo disabled={!editable} etiqueta="Actividad pública (PEM-2)" valor={a.ap_nombre} onChange={(v) => setAct(i, { ap_nombre: v })} />
                 <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Indicador en el Cuadro de Control</span>
-                  <select disabled={!editable} value={a.indicador_id ?? ''} onChange={(e) => setAct(i, { indicador_id: e.target.value })} className={ENTRADA}>
+                  <select disabled={!editable} value={a.indicador_id ?? ''} onChange={(e) => {
+                    // Al ligar un indicador existente se prellena lo que falte (sin pisar lo ya capturado).
+                    const x = indicadoresCatalogo.find((c) => String(c.id) === e.target.value);
+                    const vacio = (k) => !String(a[k] ?? '').trim();
+                    setAct(i, { indicador_id: e.target.value, ...(x ? {
+                      ...(vacio('indicador') ? { indicador: x.nombre } : {}), ...(vacio('unidad') ? { unidad: x.unidad } : {}),
+                      ...(vacio('meta') ? { meta: String(x.meta_anual ?? x.meta ?? ''), trimestres: repartirMeta(x.meta_anual ?? x.meta), trimestresAuto: true } : {}),
+                      periodicidad: a.periodicidad && a.periodicidad !== 'Mensual' ? a.periodicidad : (x.periodicidad || 'Mensual'), impacto: a.impacto || x.impacto || 'Bajo',
+                    } : {}) });
+                  }} className={ENTRADA}>
                     <option value="">— Sin ligar (se liga al aprobarse) —</option>
                     {indicadoresCatalogo.map((x) => <option key={x.id} value={x.id}>#{x.id} {x.nombre}</option>)}
                   </select></label>
@@ -238,6 +263,12 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, indica
                             {cumple === true && <CheckCircle2 size={15} className="text-emerald-600" aria-label="Cumple" />}
                             {cumple === false && <AlertTriangle size={15} className="text-rose-600" aria-label="No cumple" />}
                           </div>
+                          {(() => {
+                            const ref = promedioTrimestreCuadro(resultados, a.indicador_id, p.anio, ti, MESES_CORTOS);
+                            return ref === null ? null : (
+                              <p className="text-[11px] text-slate-600">Indicador en el Cuadro: <strong>{ref}{/porcent/i.test(a.unidad || '') ? '%' : ''}</strong> (promedio del trimestre)</p>
+                            );
+                          })()}
                           {cumple === false && (
                             <div>
                               <textarea rows={2} aria-label={`Justificación ${t}`} value={av.justificacion || ''} onChange={(e) => setAv({ justificacion: e.target.value })} className={`${ENTRADA} text-xs`} />

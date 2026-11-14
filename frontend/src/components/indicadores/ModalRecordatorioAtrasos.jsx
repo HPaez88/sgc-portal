@@ -20,6 +20,7 @@ import ContenedorModal from '../common/ContenedorModal';
 import { contactoResponsable, resolverResponsable } from '../../constants/areas';
 import { useToast } from '../common/Toast';
 import { useSGC } from '../../SGCContext';
+import { tocaReportar } from '../../constants/catalogoIndicadores';
 
 export default function ModalRecordatorioAtrasos({
   isOpen,
@@ -52,7 +53,9 @@ export default function ModalRecordatorioAtrasos({
     });
     return [...grupos.values()].map(({ r, indicadores, muestra }) => {
       const contacto = contactoResponsable(muestra, areasDetalle, direccionesDetalle);
+      const mesIdx = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'].indexOf(mesActivo);
       const pendientesCaptura = indicadores.filter(ind => {
+        if (!tocaReportar(ind, mesIdx)) return false;
         const res = resultados[`${ind.id}-${mesActivo}-${ejercicio}`];
         return res === undefined || res?.valor === null || res?.valor === '';
       });

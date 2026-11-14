@@ -95,7 +95,8 @@ def ejecutar(hoy: date | None = None) -> dict:
         areas = _estado(s, "sgc-config-areas-detalle", [])
         direcciones = _estado(s, "sgc-config-direcciones-detalle", [])
         datos_ind = _estado(s, "sgc-indicadores-data", {})
-        catalogo = json.load(open(CATALOGO, encoding="utf-8"))
+        catalogo = motor.catalogo_vivo(json.load(open(CATALOGO, encoding="utf-8")), datos_ind.get("catalogoPersonalizado") or {},
+                                       _estado(s, "sgc-proyectos-indicadores", []), hoy)
         admins = [u.email for u in s.exec(select(Usuario).where(Usuario.rol.in_(("Super Admin", "Admin")))).all() if u.activo]
 
         pendientes = []
