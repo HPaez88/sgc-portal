@@ -48,6 +48,11 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, indica
         ))}
       </nav>
 
+      <h3 className="text-base font-extrabold text-marca-azul-oscuro border-b-2 border-marca-azul-oscuro/30 pb-1.5">
+        {SECCIONES.find(([id]) => id === seccion)?.[1]}
+        {seccion === 'actividades' && <span className="ml-2 text-sm font-bold text-slate-600">({acts.length})</span>}
+      </h3>
+
       {seccion === 'datos' && (
         <div className="grid gap-3 md:grid-cols-2">
           <Campo disabled={!editable} etiqueta="Dependencia / Entidad paramunicipal" valor={p.dependencia} onChange={(v) => set('dependencia', v)} />
@@ -78,11 +83,12 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, indica
           <p className="text-xs text-slate-600">Cada actividad lleva su indicador (con su ficha técnica) y su clave de actividad pública para el PEMS. Los porcentajes se capturan como número (95 = 95%).
             <span className={`ml-2 font-bold ${Math.round(pond) === 100 ? 'text-emerald-700' : 'text-rose-700'}`}>Ponderado: {pond}%</span></p>
           {acts.map((a, i) => (
-            <div key={a.id || i} className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-extrabold text-slate-900">Actividad {i + 1}</h4>
-                {editable && acts.length > 1 && <button type="button" onClick={() => set('actividades', acts.filter((_, j) => j !== i))} className="text-xs text-rose-700 inline-flex items-center gap-1 hover:underline"><Trash2 size={13} /> Quitar</button>}
+            <div key={a.id || i} className="rounded-lg border-2 border-slate-200 bg-white overflow-hidden">
+              <div className="flex items-center justify-between gap-2 bg-marca-azul-oscuro text-white px-3 py-2">
+                <h4 className="text-sm font-extrabold truncate">Actividad {i + 1}{a.indicador ? ` · ${a.indicador}` : ''}</h4>
+                {editable && acts.length > 1 && <button type="button" onClick={() => set('actividades', acts.filter((_, j) => j !== i))} className="text-xs text-white/90 inline-flex items-center gap-1 hover:underline shrink-0"><Trash2 size={13} /> Quitar</button>}
               </div>
+              <div className="p-3 space-y-2">
               <div className="grid gap-2 md:grid-cols-2">
                 <Campo disabled={!editable} multi etiqueta="Actividad" valor={a.actividad} onChange={(v) => setAct(i, { actividad: v })} />
                 <Campo disabled={!editable} multi etiqueta="Indicador" valor={a.indicador} onChange={(v) => setAct(i, { indicador: v })} />
@@ -107,6 +113,7 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, indica
                     <option value="">— Sin ligar (se liga al aprobarse) —</option>
                     {indicadoresCatalogo.map((x) => <option key={x.id} value={x.id}>#{x.id} {x.nombre}</option>)}
                   </select></label>
+              </div>
               </div>
             </div>
           ))}
