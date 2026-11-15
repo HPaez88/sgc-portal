@@ -32,6 +32,8 @@ TITULOS = {
     "AVISO_INCUMPLIMIENTO": "Aviso de incumplimiento", "OFICIO_EXHORTO": "Oficio de exhorto por emitir",
     "AVISO": "Entrega de resultados de indicadores", "RECORDATORIO": "Recordatorio de entrega de indicadores",
     "ULTIMO_RECORDATORIO": "Hoy vence la entrega de indicadores",
+    "RENOVACION_OCT": "Confirmación del proyecto del año siguiente", "RENOVACION_NOV": "Recordatorio: confirmar el proyecto del año siguiente",
+    "RENOVACION_DIC": "Urgente: confirmar el proyecto del año siguiente",
 }
 
 
@@ -81,6 +83,14 @@ def _mensaje_ind(x: dict) -> str:
     return f"{base}\n\n{lista}"
 
 
+def _mensaje_renovacion(x: dict) -> str:
+    urgencia = {"RENOVACION_NOV": "Aún no se ha confirmado. ", "RENOVACION_DIC": "Diciembre es el último mes para confirmarlo. "}.get(x["etapa"], "")
+    return (f"{urgencia}Para {x['periodo']} necesitamos saber si su área seguirá con el mismo proyecto, actividades e indicadores "
+            f"(\"{x['proyecto']}\") o si se actualizará alguna información.\n\n"
+            "En el portal, en Indicadores → Proyecto anual, elijan \"Sigue igual\" para enviarlo tal cual a aceptación del SGC, "
+            "o \"Actualizar\" para modificarlo antes de enviarlo. Una vez aceptado por el SGC, el proyecto queda cerrado para cambios.")
+
+
 def ejecutar(hoy: date | None = None) -> dict:
     modo = os.getenv("AVISOS_MODO", "simulacion").lower()
     hoy = hoy or datetime.now(ZONA).date()
@@ -92,11 +102,12 @@ def ejecutar(hoy: date | None = None) -> dict:
         previos = s.exec(select(AvisoAutomatico).where(AvisoAutomatico.modo == modo)).all()
         enviadas_ac = {(p.registro_id, p.referencia, p.etapa) for p in previos if p.tipo == "AC"}
         enviadas_ind = {(p.registro, p.referencia, p.etapa) for p in previos if p.tipo == "INDICADORES"}
+        enviadas_ren = {(p.registro, p.referencia, p.etapa) for p in previos if p.tipo == "RENOVACION"}
         areas = _estado(s, "sgc-config-areas-detalle", [])
         direcciones = _estado(s, "sgc-config-direcciones-detalle", [])
         datos_ind = _estado(s, "sgc-indicadores-data", {})
-        catalogo = motor.catalogo_vivo(json.load(open(CATALOGO, encoding="utf-8")), datos_ind.get("catalogoPersonalizado") or {},
-                                       _estado(s, "sgc-proyectos-indicadores", []), hoy)
+        proyectos = _estado(s, "sgc-proyectos-indicadores", [])
+        catalogo = motor.catalogo_vivo(json.load(open(CATALOGO, encoding="utf-8")), datos_ind.get("catalogoPersonalizado") or {}, proyectos, hoy)
         admins = [u.email for u in s.exec(select(Usuario).where(Usuario.rol.in_(("Super Admin", "Admin")))).all() if u.activo]
 
         pendientes = []
@@ -108,6 +119,10 @@ def ejecutar(hoy: date | None = None) -> dict:
             pendientes.append({"tipo": "INDICADORES", "registro": x["unidad"], "registro_id": "", "etapa": x["etapa"], "referencia": x["periodo"],
                                "para": _contactos(x["unidad"], areas, direcciones), "cc": admins if x["etapa"] == "AVISO_INCUMPLIMIENTO" else [],
                                "mensaje": _mensaje_ind(x), "unidad": x["unidad"]})
+        # Renovación anual del proyecto (octubre–diciembre): al área y a quienes la apoyan en el SGC, con copia a los administradores.
+        for x in motor.avisos_renovacion(proyectos, hoy, enviadas_ren):
+            pendientes.append({"tipo": "RENOVACION", "registro": x["unidad"], "registro_id": "", "etapa": x["etapa"], "referencia": x["periodo"],
+                               "para": _contactos(x["unidad"], areas, direcciones), "cc": admins, "mensaje": _mensaje_renovacion(x), "unidad": x["unidad"]})
 
         for p in pendientes:
             enviado, error = False, ""

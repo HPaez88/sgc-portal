@@ -119,3 +119,25 @@ def avisos_indicadores(catalogo: list, resultados: dict, hoy: date, enviadas: se
             out.append({"unidad": unidad, "etapa": etapa, "periodo": periodo, "mes_texto": f"{MESES_LARGOS[mes_r - 1]} {anio_r}",
                         "indicadores": [{"id": i["id"], "nombre": i["nombre"]} for i in lista]})
     return out
+
+
+MESES_RENOVACION = {10: "RENOVACION_OCT", 11: "RENOVACION_NOV", 12: "RENOVACION_DIC"}
+
+
+def avisos_renovacion(proyectos: list, hoy: date, enviadas: set) -> list[dict]:
+    """De octubre a diciembre, un aviso al mes por área con proyecto APROBADO del año en curso y sin proyecto del siguiente.
+    [{unidad, etapa, periodo, proyecto}] — enviadas = {(unidad, periodo, etapa)} con periodo = año siguiente."""
+    etapa = MESES_RENOVACION.get(hoy.month)
+    if not etapa:
+        return []
+    siguiente = str(hoy.year + 1)
+    con_siguiente = {p.get("area") for p in proyectos if isinstance(p, dict) and int(p.get("anio") or 0) == hoy.year + 1}
+    out = []
+    for p in proyectos:
+        if not isinstance(p, dict) or int(p.get("anio") or 0) != hoy.year or p.get("estado") != "APROBADO":
+            continue
+        area = p.get("area") or ""
+        if not area or area in con_siguiente or (area, siguiente, etapa) in enviadas:
+            continue
+        out.append({"unidad": area, "etapa": etapa, "periodo": siguiente, "proyecto": p.get("nombre") or ""})
+    return out

@@ -54,3 +54,16 @@ def test_catalogo_vivo_toma_altas_reasignaciones_y_proyecto():
     cat = {i["id"]: i for i in m.catalogo_vivo(base, pers, proys, date(2027, 2, 1))}
     assert cat[1]["area"] == "Comercial" and cat[1]["periodicidad"] == "Trimestral" and 101 in cat
     assert m.catalogo_vivo(base, pers, proys, date(2026, 11, 2))[0]["periodicidad"] == "Mensual"  # proyecto 2027 no aplica a 2026
+
+
+def test_renovacion_solo_oct_dic_y_una_vez_por_mes():
+    proy = [{"id": "a", "anio": 2026, "area": "Contabilidad", "estado": "APROBADO", "nombre": "P1"},
+            {"id": "b", "anio": 2026, "area": "Informática", "estado": "APROBADO", "nombre": "P2"},
+            {"id": "c", "anio": 2027, "area": "Informática", "estado": "BORRADOR", "nombre": "P2"},
+            {"id": "d", "anio": 2026, "area": "Jurídico", "estado": "BORRADOR", "nombre": "P3"}]
+    assert m.avisos_renovacion(proy, date(2026, 9, 30), set()) == []
+    r = m.avisos_renovacion(proy, date(2026, 10, 5), set())
+    assert [x["unidad"] for x in r] == ["Contabilidad"]  # Informática ya tiene 2027; Jurídico no está aprobado
+    assert r[0]["etapa"] == "RENOVACION_OCT" and r[0]["periodo"] == "2027"
+    assert m.avisos_renovacion(proy, date(2026, 10, 20), {("Contabilidad", "2027", "RENOVACION_OCT")}) == []
+    assert m.avisos_renovacion(proy, date(2026, 12, 1), {("Contabilidad", "2027", "RENOVACION_OCT")})[0]["etapa"] == "RENOVACION_DIC"

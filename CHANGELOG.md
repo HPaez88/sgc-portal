@@ -1,6 +1,9 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14 — Aviso por correo de renovación anual del proyecto
+- Tarea diaria de avisos: de octubre a diciembre, un correo al mes (aviso, recordatorio, urgente) a cada área con proyecto aceptado del año en curso que no ha confirmado el del siguiente. Va al correo del área y a sus encargados del SGC, con copia a los administradores. Respeta AVISOS_MODO.
+
 ## 2026-11-14 — Cuadro limpio y ciclo anual de proyectos
 - Cuadro de Control: se quitan el selector de mes/año del encabezado, "Exportar OOMRSC-05", "+ Nuevo Indicador" (todo indicador nace en el proyecto) y las tarjetas de resumen. El año se elige junto a los meses.
 - Proyecto anual: una vez aceptado se cierra para el área (solo captura avance trimestral); el SGC puede "Abrir para que el área modifique" y vuelve a pasar por aceptación.
