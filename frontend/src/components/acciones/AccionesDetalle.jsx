@@ -40,6 +40,8 @@ export default function AccionesDetalle({
   const tieneFolio = form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación';
   const enFaseAuditoria = ['REVISION_AUDITOR', 'CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO'].includes(form.estado);
   const estaCerrada = form.estado === 'CERRADO_EFECTIVO' || form.estado === 'CERRADO_NO_EFECTIVO';
+  // Desde que se solicita el cierre la evidencia queda congelada para el auditor (regla 2).
+  const evidenciaCongelada = estaCerrada || ['SOLICITUD_CIERRE', 'REVISION_AUDITOR'].includes(form.estado);
   const esAdmin = usuarioLogueado?.rol === 'Super Admin' || usuarioLogueado?.rol === 'Admin';
 
   const [guardandoEvidencia, setGuardandoEvidencia] = React.useState(false);
@@ -89,6 +91,7 @@ export default function AccionesDetalle({
 
   const handleUploadEvidencia = async (index, file) => {
     if (!file) return;
+    if (evidenciaCongelada) { toast.warning('La evidencia no se modifica después de solicitar el cierre. Pide al SGC que regrese la acción a seguimiento.'); return; }
     setSubiendoIndex(index);
     try {
       const res = await processEvidenceFile(file, usuarioLogueado?.nombre || 'Usuario', { entidad: 'ac', referencia: form?.folio_codigo || form?.id });
@@ -116,6 +119,7 @@ export default function AccionesDetalle({
   };
 
   const handleEliminarEvidencia = async (index) => {
+    if (evidenciaCongelada) { toast.warning('La evidencia no se retira después de solicitar el cierre.'); return; }
     const { ok } = await confirmar({
       titulo: 'Retirar evidencia',
       mensaje: '¿Desea retirar esta evidencia para adjuntar otra?',

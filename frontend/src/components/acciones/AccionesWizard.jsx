@@ -31,10 +31,10 @@ export default function AccionesWizard({
 
   // Si el usuario es Encargado o Usuario, fijar obligatoriamente su área
   React.useEffect(() => {
-    if (!puedeTodasAreas && usuarioLogueado?.area && form.area !== usuarioLogueado.area) {
+    if (!form.id && !puedeTodasAreas && usuarioLogueado?.area && form.area !== usuarioLogueado.area) {
       setForm(f => ({ ...f, area: usuarioLogueado.area }));
     }
-  }, [puedeTodasAreas, usuarioLogueado, form.area, setForm]);
+  }, [puedeTodasAreas, usuarioLogueado, form.area, form.id, setForm]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -197,6 +197,12 @@ export default function GestorAprobacionesView({
     });
     if (!confirma) return;
 
+    // Solo se aprueba (y se asigna folio) lo que está en revisión. Una solicitud de cierre o revisión de auditor
+    // tiene su propio paso en el módulo; aprobarla aquí reasignaba folio y borraba la solicitud.
+    if (app.estado !== 'EN_REVISION') {
+      mostrarMensaje(`${app.documento} está en "${app.subtipo}". Ese paso se atiende desde el módulo de ${app.tipo === 'Acción Correctiva' ? 'Acciones Correctivas' : 'Planes de Mejora'} (asignar auditor o dictamen).`);
+      return;
+    }
     if (app.tipo === 'Acción Correctiva') {
       let folioNumero, anio, folioCodigo;
       try { ({ numero: folioNumero, anio, codigo: folioCodigo } = await asignarFolio('AC')); } catch (e) { mostrarMensaje(`❌ ${e.message}`); return; }
@@ -214,7 +220,7 @@ export default function GestorAprobacionesView({
         ...(fechaSeguimientoInicial(app.objeto_original) ? { fecha_seguimiento: fechaSeguimientoInicial(app.objeto_original) } : {})
       };
 
-      setAccionesCorrectivas(accionesCorrectivas.map(a => a.id === app.id_original ? nuevoObj : a));
+      setAccionesCorrectivas((prev) => (prev || []).map(a => a.id === app.id_original ? { ...a, ...nuevoObj, id: a.id } : a));
       mostrarMensaje(`✅ Acción Correctiva aprobada y en seguimiento. Folio: ${folioCodigo}`);
       registrarMovimiento({
         modulo: 'ACCIONES_CORRECTIVAS',
@@ -242,7 +248,7 @@ export default function GestorAprobacionesView({
         ...(fechaSeguimientoInicial(app.objeto_original) ? { fecha_seguimiento: fechaSeguimientoInicial(app.objeto_original) } : {})
       };
 
-      setPlanesMejora(planesMejora.map(p => p.id === app.id_original ? nuevoObj : p));
+      setPlanesMejora((prev) => (prev || []).map(p => p.id === app.id_original ? { ...p, ...nuevoObj, id: p.id } : p));
       mostrarMensaje(`✅ Plan de Mejora aprobado y en seguimiento. Folio: ${folioCodigo}`);
       registrarMovimiento({
         modulo: 'PLANES_MEJORA',
@@ -303,23 +309,14 @@ export default function GestorAprobacionesView({
       return;
     }
 
+    const destino = app.estado === 'EN_REVISION' ? 'RECHAZADO' : 'EN_SEGUIMIENTO';
+    const cambios = { estado: destino, observaciones_sgc: obs, comentarios_revision: obs };
     if (app.tipo === 'Acción Correctiva') {
-      const nuevoObj = {
-        ...app.objeto_original,
-        estado: 'RECHAZADO',
-        observaciones_sgc: obs
-      };
-      setAccionesCorrectivas(accionesCorrectivas.map(a => a.id === app.id_original ? nuevoObj : a));
-      mostrarMensaje(`❌ Acción Correctiva devuelta al usuario con observaciones.`);
-      
+      setAccionesCorrectivas((prev) => (prev || []).map(a => a.id === app.id_original ? { ...a, ...cambios } : a));
+      mostrarMensaje(destino === 'RECHAZADO' ? 'Acción Correctiva devuelta al área con observaciones.' : 'Acción Correctiva regresada a seguimiento con observaciones.');
     } else if (app.tipo === 'Plan de Mejora') {
-      const nuevoObj = {
-        ...app.objeto_original,
-        estado: 'RECHAZADO',
-        observaciones_sgc: obs
-      };
-      setPlanesMejora(planesMejora.map(p => p.id === app.id_original ? nuevoObj : p));
-      mostrarMensaje(`❌ Plan de Mejora devuelto al usuario con observaciones.`);
+      setPlanesMejora((prev) => (prev || []).map(p => p.id === app.id_original ? { ...p, ...cambios } : p));
+      mostrarMensaje(destino === 'RECHAZADO' ? 'Plan de Mejora devuelto al área con observaciones.' : 'Plan de Mejora regresado a seguimiento con observaciones.');
     }
   };
 

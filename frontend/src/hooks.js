@@ -16,7 +16,9 @@ export function useLocalStorage(key, initialValue) {
   const setValue = useCallback((value) => {
     setStoredValue((prev) => {
       const valueToStore = value instanceof Function ? value(prev) : value;
-      guardar(key, valueToStore);
+      // El actualizador puede correr durante el render (React lo difiere si hay otra actualización en cola);
+      // el envío al servidor notifica a otros componentes, así que se saca del render.
+      queueMicrotask(() => guardar(key, valueToStore));
       return valueToStore;
     });
   }, [key]);

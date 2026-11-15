@@ -17,10 +17,12 @@ import HojaAnalisisRiesgo from './riesgos/HojaAnalisisRiesgo';
 
 // ponytail: interruptor temporal mientras se captura la información; poner en false para abrir el módulo a todos.
 const PM_EN_CONSTRUCCION = true;
+import { esAdminSGC, puedeVerArea } from '../constants/workflow';
+import { puedeCapturarArea } from '../constants/riesgos';
 import BarraRegreso from './common/BarraRegreso';
 
 export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
-  const { registrarMovimiento, riesgos = [] } = useSGC();
+  const { registrarMovimiento, riesgos = [], areasDetalle = [], setRiesgos } = useSGC();
   // PM que viene de la matriz de riesgos: hoja extra con el análisis del riesgo (OOMRSC-37).
   const [hojaPM, setHojaPM] = useState('plan');
   const toast = useToast();
@@ -115,7 +117,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       try {
         const parsed = typeof pm.integrantes === 'string' ? JSON.parse(pm.integrantes) : pm.integrantes;
         setEquipo(parsed.length > 0 ? parsed : [{ id: 1, nombre: '', puesto: '', rol: 'Responsable principal' }]);
-      } catch(e) { console.log(e); }
+      } catch { setEquipo([{ id: 1, nombre: pm.responsable || '', puesto: '', rol: 'Responsable principal' }]); }
     } else {
       setEquipo([{ id: 1, nombre: pm.responsable || '', puesto: '', rol: 'Responsable principal' }]);
     }
@@ -124,8 +126,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     if (pm.actividades) {
       try {
         const parsed = typeof pm.actividades === 'string' ? JSON.parse(pm.actividades) : pm.actividades;
-        setActividades(parsed);
-      } catch(e) { console.log(e); }
+        setActividades(Array.isArray(parsed) ? parsed : []);
+      } catch { setActividades([]); }
     } else {
       setActividades([]);
     }
@@ -167,13 +169,16 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       actividades: overrideData?.actividades ?? JSON.stringify(actividades)
     };
 
-    let listasActualizadas;
-    if (datosActuales.id) {
-      listasActualizadas = planesMejora.map(pm => pm.id === datosActuales.id ? nuevo : pm);
-    } else {
-      listasActualizadas = [...planesMejora, nuevo];
-    }
-    setPlanesMejora(listasActualizadas);
+    // Guardado seguro: parte de la versión más reciente de la lista; un cambio de flujo solo aplica sus campos.
+    setPlanesMejora((prev) => {
+      const lista = prev || [];
+      const vigente = lista.find((pm) => pm.id === nuevoId);
+      if (!vigente) return [...lista, nuevo];
+      const final = overrideData
+        ? { ...vigente, ...overrideData, actividades: overrideData.actividades ?? vigente.actividades ?? nuevo.actividades }
+        : { ...vigente, ...nuevo };
+      return lista.map((pm) => (pm.id === nuevoId ? final : pm));
+    });
 
     try {
       if (!isSupabaseConfigured || !supabase) {
@@ -201,6 +206,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   const eliminarPM = (id) => {
     const pm = planesMejora.find(p => p.id === id);
     if (!pm) return;
+    if (pm.riesgo_id) { toast.warning(`Este plan atiende un riesgo de la matriz; no se elimina. Ciérralo con dictamen o replantea el riesgo.`); return; }
     setModalEliminar({ isOpen: true, item: pm });
   };
 
@@ -215,7 +221,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     } catch (e) {
       console.warn('Delete skipped in Supabase:', e);
     }
-    setPlanesMejora(planesMejora.filter(item => item.id !== pm.id));
+    setPlanesMejora((prev) => (prev || []).filter(item => item.id !== pm.id));
 
     // Registrar en Bitácora oficial de auditoría
     registrarMovimiento({
@@ -369,9 +375,12 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
 
   const confirmarAuditor = () => {
     if (!auditorSeleccionado) return;
+    // Regla 2: sin evidencia en todas las actividades no pasa a revisión del auditor.
+    const bloqueo = motivoBloqueoCierre(actividades);
+    if (bloqueo) { toast.error(bloqueo); return; }
     const aud = usuarios.find(u => u.nombre === auditorSeleccionado || u.id === auditorSeleccionado);
     const nombreAuditor = aud?.nombre || auditorSeleccionado;
-    const emailAuditor = aud?.email || 'auditor@oomapasc.gob.mx';
+    const emailAuditor = aud?.email || '';
 
     const cambios = {
       estado: 'REVISION_AUDITOR',
@@ -383,7 +392,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     guardarBorrador(cambios);
     setMostrarModalAuditor(false);
     setAuditorSeleccionado('');
-    setMensaje(`📧 Auditor asignado: ${nombreAuditor}. Expediente y notificación enviados a ${emailAuditor}`);
+    setMensaje(`Auditor asignado: ${nombreAuditor}.`);
     setTimeout(() => { setVista('lista'); }, 700);
   };
 
@@ -439,6 +448,10 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     }
 
     const esEfectiva = modalDictamen.resultado === 'EFECTIVA';
+    if (esEfectiva) {
+      const bloqueo = motivoBloqueoCierre(actividades);
+      if (bloqueo) { toast.error(`No se puede cerrar como efectiva: ${bloqueo}`); return; }
+    }
     let cambios = {};
 
     if (esEfectiva) {
@@ -479,8 +492,14 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
           creado_por: usuarioLogueado?.nombre || 'Auditor', creador_email: usuarioLogueado?.email || '', creador_area: form.area,
           fecha_creacion_borrador: new Date().toISOString(), created_at: new Date().toISOString(),
           integrantes: form.integrantes || '[]', actividades: '[]',
+          riesgo_id: form.riesgo_id ?? null, riesgo_tipo: form.riesgo_tipo ?? null, correos_responsables: form.correos_responsables || [],
           clave_formato: 'OOMRSC-21', revision_formato: 'Rev. 02'
         } : null;
+      if (nueva && form.riesgo_id && setRiesgos) {
+        setRiesgos((prev) => (prev || []).map((r) => (String(r.id) === String(form.riesgo_id)
+          ? { ...r, pm_id: nueva.id, pm_folio: nueva.folio_codigo, historial_pm: [...(r.historial_pm || []), { pm_id: form.id, folio: form.folio_codigo, resultado: 'NO_EFECTIVA', fecha: new Date().toISOString() }] }
+          : r)));
+      }
 
       cambios = {
         estado: 'CERRADO_NO_EFECTIVO',
@@ -676,15 +695,10 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
               </button>
             );
           }
-          botones.push(
-            <button key="auditor" onClick={asignarAuditor} className="px-6 py-2.5 bg-[#002855] text-white font-medium rounded-lg hover:bg-[#001f42] transition-colors ml-2 shadow-sm">
-              👤 Asignar Auditor
-            </button>
-          );
         }
         break;
       case 'REVISION_AUDITOR':
-        if (esAuditorAsignado || rol === 'Auditor' || esAdmin) {
+        if (esAuditorAsignado || esAdmin) {
           botones.push(
             <button key="dictaminar" onClick={abrirModalDictamen} className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2">
               <span>⚖️</span> Emitir Dictamen de Auditoría
@@ -702,18 +716,19 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
           </button>
         );
         break;
-      case 'CERRADO_EFECTIVO':
       case 'CERRADO_NO_EFECTIVO':
-        if (rol === 'Super Admin') {
+        // Un cierre efectivo es definitivo; el no efectivo sin plan de seguimiento lo reabre el SGC.
+        if (esAdmin && !form.accion_seguimiento_id) {
           botones.push(
             <button key="reabrir" onClick={async () => {
               const { ok } = await confirmar({
                 titulo: 'Reabrir Plan de Mejora',
-                mensaje: 'El plan volverá a seguimiento continuo para dar más tiempo o continuar con las actividades.',
+                mensaje: 'El plan volverá a seguimiento. Se borra el dictamen de cierre y el auditor asignado.',
                 textoAceptar: 'Reabrir',
               });
               if (ok) {
-                const cambios = { estado: 'EN_SEGUIMIENTO', fecha_reapertura: new Date().toISOString() };
+                const cambios = { estado: 'EN_SEGUIMIENTO', fecha_reapertura: new Date().toISOString(), reabierto_por: usuarioLogueado?.nombre || '',
+                  fecha_cierre: null, resultado_cierre: null, conclusion_eficacia: '', decision_no_efectiva: null, auditor_cierre: '', auditor_email: '', fecha_asignacion_auditor: null };
                 setForm(f => ({...f, ...cambios}));
                 guardarBorrador(cambios);
                 setMensaje('🔓 Reabierto a Seguimiento');
@@ -743,8 +758,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     />
   );
 
-  // Solo el Super Admin ve el módulo mientras está en construcción (decidido 2026-11-11).
-  if (PM_EN_CONSTRUCCION && usuarioLogueado?.rol !== 'Super Admin') {
+  // Mientras está en construcción solo lo ven los administradores del SGC (Admin y Super Admin).
+  if (PM_EN_CONSTRUCCION && !esAdminSGC(usuarioLogueado)) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-24 px-6 bg-white rounded-xl border border-slate-200">
         <Construction size={44} className="text-amber-500 mb-4" />
@@ -770,7 +785,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
           requiereMotivo={true}
         />
         <PlanesLista 
-          planesMejora={planesMejora}
+          planesMejora={planesMejora.filter((pm) => puedeVerArea(usuarioLogueado, pm.area || pm.gerencia_coordinacion) || puedeCapturarArea(usuarioLogueado, pm.area || pm.gerencia_coordinacion, areasDetalle))}
           setPlanesMejora={setPlanesMejora}
           setVista={setVista}
           setStep={setStep}

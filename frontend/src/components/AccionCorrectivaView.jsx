@@ -12,10 +12,11 @@ import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionRe
 import { ESTADOS_SGC, getEstadoColor, getEstadoLabel, can, getDireccionDeArea, puedeVerArea } from '../constants';
 import { asignarFolio } from '../services/folioService';
 import { motivoBloqueoCierre, fechaSeguimientoInicial } from '../constants/workflow';
+import { puedeCapturarArea } from '../constants/riesgos';
 import BarraRegreso from './common/BarraRegreso';
 
 export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesCorrectivas, usuarios, puedeTodasAreas, areaUsuario, usuarioLogueado }) {
-  const { registrarMovimiento } = useSGC();
+  const { registrarMovimiento, areasDetalle = [] } = useSGC();
   const toast = useToast();
   const { confirmar, solicitar, props: propsDialogos } = useDialogos();
   const [vista, setVista] = useState('lista');
@@ -129,13 +130,17 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
       actividades_json: overrideData?.actividades_json ?? JSON.stringify(actividades)
     };
 
-    let listasActualizadas;
-    if (datosActuales.id) {
-      listasActualizadas = accionesCorrectivas.map(ac => ac.id === datosActuales.id ? nuevo : ac);
-    } else {
-      listasActualizadas = [...accionesCorrectivas, nuevo];
-    }
-    setAccionesCorrectivas(listasActualizadas);
+    // Guardado seguro: se parte de la versión más reciente de la lista (puede traer cambios de otros usuarios o del SGC).
+    // Un cambio de flujo (override) solo aplica sus campos; el guardado del formulario aplica lo capturado en pantalla.
+    setAccionesCorrectivas((prev) => {
+      const lista = prev || [];
+      const vigente = lista.find((ac) => ac.id === nuevoId);
+      if (!vigente) return [...lista, nuevo];
+      const final = overrideData
+        ? { ...vigente, ...overrideData, actividades_json: overrideData.actividades_json ?? vigente.actividades_json ?? nuevo.actividades_json }
+        : { ...vigente, ...nuevo };
+      return lista.map((ac) => (ac.id === nuevoId ? final : ac));
+    });
 
     try {
       if (!isSupabaseConfigured || !supabase) {
@@ -325,10 +330,12 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
       peligro: true,
     });
     if (!ok) return;
-    const cambios = { estado: 'RECHAZADO' };
+    const { ok: okObs, valor: obs } = await solicitar({ titulo: 'Motivo del rechazo', etiqueta: 'Observaciones para el área responsable', textoAceptar: 'Rechazar y devolver', peligro: true, filas: 4 });
+    if (!okObs || !obs?.trim()) return;
+    const cambios = { estado: 'RECHAZADO', observaciones_sgc: obs.trim(), comentarios_revision: obs.trim() };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
-    setTimeout(() => { setVista('lista'); setMensaje('❌ Acción Rechazada'); }, 600);
+    setTimeout(() => { setVista('lista'); setMensaje('Acción rechazada y devuelta al área.'); }, 600);
   };
 
   const [mostrarModalAuditor, setMostrarModalAuditor] = useState(false);
@@ -350,9 +357,12 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
 
   const confirmarAuditor = () => {
     if (!auditorSeleccionado) return;
+    // Regla 2: sin evidencia en todas las actividades no pasa a revisión del auditor.
+    const bloqueo = motivoBloqueoCierre(actividades);
+    if (bloqueo) { toast.error(bloqueo); return; }
     const aud = usuarios.find(u => u.nombre === auditorSeleccionado || u.id === auditorSeleccionado);
     const nombreAuditor = aud?.nombre || auditorSeleccionado;
-    const emailAuditor = aud?.email || 'auditor@oomapasc.gob.mx';
+    const emailAuditor = aud?.email || '';
 
     const cambios = {
       estado: 'REVISION_AUDITOR',
@@ -364,7 +374,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     guardarBorrador(cambios);
     setMostrarModalAuditor(false);
     setAuditorSeleccionado('');
-    setMensaje(`📧 Auditor asignado: ${nombreAuditor}. Expediente y notificación enviados a ${emailAuditor}`);
+    setMensaje(`Auditor asignado: ${nombreAuditor}.`);
     setTimeout(() => { setVista('lista'); }, 700);
   };
 
@@ -420,6 +430,10 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     }
 
     const esEfectiva = modalDictamen.resultado === 'EFECTIVA';
+    if (esEfectiva) {
+      const bloqueo = motivoBloqueoCierre(actividades);
+      if (bloqueo) { toast.error(`No se puede cerrar como efectiva: ${bloqueo}`); return; }
+    }
     let cambios = {};
 
     if (esEfectiva) {
@@ -598,7 +612,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
 
     // Lógica para Administradores (SGC) viendo el detalle de un formato
     if (esAdmin && vista === 'ver') {
-      if (form.estado === 'BORRADOR' || form.estado === 'GENERADO_IA' || form.estado === 'EN_REVISION') {
+      if (form.estado === 'EN_REVISION') {
         botones.push(
           <button key="rechazar" onClick={rechazarSGC} className="px-5 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm">
             ❌ Rechazar
@@ -620,9 +634,6 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
           </button>,
           <button key="solicitar_cierre" onClick={solicitarCierre} className="px-5 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1.5">
             <span>🚀</span> Solicitar Cierre al SGC
-          </button>,
-          <button key="auditor" onClick={asignarAuditor} className="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
-            👤 Asignar Auditor
           </button>
         );
       } else if (form.estado === 'REVISION_AUDITOR') {
@@ -670,17 +681,19 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
       }
     }
 
-    if (form.estado === 'CERRADO_EFECTIVO' || form.estado === 'CERRADO_NO_EFECTIVO') {
-      if (rol === 'Super Admin') {
+    // Un cierre efectivo es definitivo. Un cierre no efectivo sin acción de seguimiento puede reabrirlo el SGC.
+    if (form.estado === 'CERRADO_NO_EFECTIVO' && !form.accion_seguimiento_id) {
+      if (esAdmin) {
         botones.push(
           <button key="reabrir" onClick={async () => {
             const { ok } = await confirmar({
               titulo: 'Reabrir Acción Correctiva',
-              mensaje: 'La acción volverá a seguimiento continuo para dar más tiempo o continuar con las actividades.',
+              mensaje: 'La acción volverá a seguimiento. Se borra el dictamen de cierre y el auditor asignado.',
               textoAceptar: 'Reabrir',
             });
             if (ok) {
-              const cambios = { estado: 'EN_SEGUIMIENTO', fecha_reapertura: new Date().toISOString() };
+              const cambios = { estado: 'EN_SEGUIMIENTO', fecha_reapertura: new Date().toISOString(), reabierta_por: usuarioLogueado?.nombre || '',
+                fecha_cierre: null, resultado_cierre: null, conclusion_eficacia: '', decision_no_efectiva: null, auditor_cierre: '', auditor_email: '', fecha_asignacion_auditor: null };
               setForm(f => ({...f, ...cambios}));
               guardarBorrador(cambios);
               setMensaje('🔓 Reabierta a Seguimiento');
@@ -726,7 +739,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
           requiereMotivo={true}
         />
         <AccionesLista 
-          accionesCorrectivas={accionesCorrectivas}
+          accionesCorrectivas={accionesCorrectivas.filter((ac) => puedeVerArea(usuarioLogueado, ac.area) || puedeCapturarArea(usuarioLogueado, ac.area, areasDetalle))}
           setAccionesCorrectivas={setAccionesCorrectivas}
           setForm={setForm}
           setEquipo={setEquipo}
@@ -936,7 +949,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
               modalDictamen.resultado === 'EFECTIVA' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'
             }`}
           >
-            {modalDictamen.resultado === 'EFECTIVA' ? '✓ Confirmar Cierre Efectivo' : '⚠️ Devolver a Seguimiento con Observaciones'}
+            {modalDictamen.resultado === 'EFECTIVA' ? 'Confirmar cierre efectivo' : 'Confirmar cierre NO efectivo'}
           </button>
         </div>
       </div>

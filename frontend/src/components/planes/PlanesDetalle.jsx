@@ -37,6 +37,7 @@ export default function PlanesDetalle({
   const [previewImage, setPreviewImage] = React.useState(null);
   const esAdmin = usuarioLogueado?.rol === 'Super Admin' || usuarioLogueado?.rol === 'Admin';
   const estaCerrada = form.estado === 'CERRADO_EFECTIVO' || form.estado === 'CERRADO_NO_EFECTIVO';
+  const evidenciaCongelada = estaCerrada || ['SOLICITUD_CIERRE', 'REVISION_AUDITOR'].includes(form.estado);
 
   const [modalReplanteo, setModalReplanteo] = React.useState({
     show: false,
@@ -82,6 +83,7 @@ export default function PlanesDetalle({
 
   const handleUploadEvidencia = async (index, file) => {
     if (!file) return;
+    if (evidenciaCongelada) { toast.warning('La evidencia no se modifica después de solicitar el cierre. Pide al SGC que regrese el plan a seguimiento.'); return; }
     setSubiendoIndex(index);
     try {
       const res = await processEvidenceFile(file, usuarioLogueado?.nombre || 'Usuario', { entidad: 'pm', referencia: form?.folio_codigo || form?.id });
@@ -109,6 +111,7 @@ export default function PlanesDetalle({
   };
 
   const handleEliminarEvidencia = async (index) => {
+    if (evidenciaCongelada) { toast.warning('La evidencia no se retira después de solicitar el cierre.'); return; }
     const { ok } = await confirmar({
       titulo: 'Retirar evidencia',
       mensaje: '¿Desea retirar esta evidencia para adjuntar otra?',

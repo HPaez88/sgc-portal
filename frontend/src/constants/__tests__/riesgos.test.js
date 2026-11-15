@@ -68,7 +68,7 @@ describe('correcciones de la auditoría (2026-11-14)', () => {
   it('si borraron el PM ligado, el estado lo avisa', () => {
     const r = { estado: 'EN_TRATAMIENTO', pm_id: 5 };
     expect(estadoRiesgo(r, [{ id: 9 }])).toBe('PM_NO_ENCONTRADO');
-    expect(estadoRiesgo(r, [{ id: 5, estado: 'RECHAZADO' }])).toBe('PENDIENTE_DICTAMEN');
+    expect(estadoRiesgo(r, [{ id: 5, estado: 'RECHAZADO' }])).toBe('EN_TRATAMIENTO'); // un plan rechazado nunca se ejecutó: no hay nada que dictaminar
   });
   it('tablero e informes solo cuentan lo aceptado o con PM/dictamen', () => {
     const matrices = [{ id: idMatriz('A', 2026), estado: 'ACEPTADA' }, { id: idMatriz('B', 2026), estado: 'ENVIADA' }];

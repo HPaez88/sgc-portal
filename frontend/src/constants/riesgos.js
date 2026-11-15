@@ -119,7 +119,7 @@ export const estadoRiesgo = (r, planes = []) => {
     const pm = pmDe(r, planes);
     // Si borraron el PM ligado, el SGC debe saberlo y poder dictaminar o replantear.
     if (!pm && r.pm_id && planes.length) return 'PM_NO_ENCONTRADO';
-    if (pm && /^(CERRADO|RECHAZADO|CANCELADO)/.test(String(pm.estado || ''))) return 'PENDIENTE_DICTAMEN';
+    if (pm && /^CERRADO/.test(String(pm.estado || ''))) return 'PENDIENTE_DICTAMEN';
   }
   return r.estado || 'IDENTIFICADO';
 };

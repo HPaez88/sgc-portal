@@ -1,6 +1,14 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Auditoría fase 3: cierres, evidencia, bandeja y alcance en AC y PM
+- Bandeja de Aprobaciones: solo aprueba (y asigna folio) lo que está EN_REVISION; una solicitud de cierre ya no recibe folio nuevo ni pierde la solicitud. "Devolver" desde cierre/auditor regresa a seguimiento con observaciones. Guardados con estado funcional.
+- Guardado seguro en AC y PM: parte de la versión más reciente del registro; un cambio de flujo solo aplica sus campos (ya no revierte aprobaciones ni folios de otro usuario).
+- Evidencia obligatoria también al asignar auditor y al dictaminar efectivo; congelada desde que se solicita el cierre (no se sube ni se retira).
+- Admin aprueba/rechaza solo EN_REVISION (rechazo con motivo); ya no asigna auditor desde seguimiento. Reabrir: solo cierre NO efectivo sin seguimiento, limpia dictamen y auditor (cierre efectivo es definitivo). Dictamen solo auditor asignado o SGC.
+- Alcance por área en las listas de AC y PM (área propia, correo o encargados SGC; SGC/auditor/Director ven todo). El wizard ya no reescribe el área de un registro ajeno.
+- PM: módulo visible para Admin y Super Admin; no se elimina un plan ligado a un riesgo; el plan de seguimiento por cierre no efectivo hereda el riesgo y el riesgo apunta al nuevo plan (con historial). Un PM rechazado no cuenta como listo para dictamen. Abrir un PM con datos dañados ya no arrastra las actividades del anterior.
+
 ## 2026-11-15 — Auditoría fase 2: integridad de los Reportes de Corrección
 - Una sola fuente (`useLocalStorage` de `sgc-reportes-correccion`) en Cuadro, Acciones y contador de pestaña; se quitan los datos de ejemplo como respaldo y la lectura de texto. Helpers únicos en constants/reportesCorreccion.js (estados normalizados, folio, permisos, fecha local).
 - El RC se liga al mes de la fila o de la captura (ya no al último mes capturado) y no sobrescribe el resultado: si ya había valor solo se liga el folio. Desde "Por Procesos" solo se emite en la vista por mes.
