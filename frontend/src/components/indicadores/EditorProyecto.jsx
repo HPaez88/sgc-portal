@@ -16,10 +16,19 @@ export const repartirMeta = (meta) => {
   return [t, t, t, Math.round((n - 3 * t) * 100) / 100].map(String);
 };
 
+// Orden de llenado: el proyecto → sus actividades e indicadores → la ficha de cada indicador → claves y firmas → el avance → el presupuesto al final.
 const SECCIONES = [
-  ['datos', '1. Datos del proyecto'], ['actividades', '2. Actividades e indicadores'], ['presupuesto', '3. Presupuesto'],
-  ['fichas', '4. Fichas técnicas'], ['pems', '5. PEMS y firmas'], ['avance', '6. Avance trimestral (PEMS)'],
+  ['datos', '1. Datos del proyecto'], ['actividades', '2. Actividades e indicadores'], ['fichas', '3. Fichas técnicas'],
+  ['pems', '4. PEMS y firmas'], ['avance', '5. Avance trimestral (PEMS)'], ['presupuesto', '6. Presupuesto'],
 ];
+// Bloque con título dentro de una sección (regla visual: títulos marcados, cada grupo de datos separado).
+const Bloque = ({ titulo, ayuda, children, className = '' }) => (
+  <section className={`rounded-lg border border-slate-200 bg-white p-3 ${className}`}>
+    <h5 className="text-xs font-extrabold uppercase tracking-wide text-marca-azul-oscuro border-b border-slate-200 pb-1 mb-2">{titulo}</h5>
+    {ayuda && <p className="text-[11px] text-slate-600 mb-2">{ayuda}</p>}
+    {children}
+  </section>
+);
 const ENTRADA = 'w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-md bg-white focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none disabled:bg-slate-50 disabled:text-slate-600';
 const pesos = (n) => `$${Math.round(n || 0).toLocaleString('es-MX')}`;
 
@@ -90,45 +99,65 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, result
 
       {seccion === 'actividades' && (
         <div className="space-y-2">
-          <p className="text-xs text-slate-600">Aquí nace cada indicador: su nombre, meta y frecuencia. Se desarrolla en la pestaña 4 (ficha técnica) y al aprobar el proyecto se crea en el Cuadro de Control. Los porcentajes se capturan como número (95 = 95%).
-            <span className={`ml-2 font-bold ${Math.round(pond) === 100 ? 'text-emerald-700' : 'text-rose-700'}`}>Ponderado: {pond}%</span></p>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+            <p className="text-xs text-slate-700">Aquí nace cada indicador del área. Su nombre, meta y frecuencia se capturan una sola vez; la ficha técnica se desarrolla en la pestaña 3 y el Cuadro de Control se arma con esto al aprobar el proyecto.</p>
+            <span className={`text-xs font-extrabold px-2.5 py-1 rounded-md border ${Math.round(pond) === 100 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>Ponderado total: {pond}% {Math.round(pond) === 100 ? '' : '(debe sumar 100%)'}</span>
+          </div>
           {acts.map((a, i) => (
-            <div key={a.id || i} className="rounded-lg border-2 border-slate-200 bg-white overflow-hidden">
+            <div key={a.id || i} className="rounded-lg border-2 border-marca-azul-oscuro/30 bg-white overflow-hidden">
               <div className="flex items-center justify-between gap-2 bg-marca-azul-oscuro text-white px-3 py-2">
                 <h4 className="text-sm font-extrabold truncate">Actividad {i + 1}{a.indicador ? ` · ${a.indicador}` : ''}</h4>
                 {editable && acts.length > 1 && <button type="button" onClick={() => set('actividades', acts.filter((_, j) => j !== i))} className="text-xs text-white/90 inline-flex items-center gap-1 hover:underline shrink-0"><Trash2 size={13} /> Quitar</button>}
               </div>
-              <div className="p-3 space-y-2">
-              <div className="grid gap-2 md:grid-cols-2">
-                <Campo disabled={!editable} multi etiqueta="Actividad" valor={a.actividad} onChange={(v) => setAct(i, { actividad: v })} />
-                <Campo disabled={!editable} multi etiqueta="Indicador" valor={a.indicador} onChange={(v) => setAct(i, { indicador: v })} />
-              </div>
-              <div className="grid gap-2 grid-cols-2 md:grid-cols-5 lg:grid-cols-9">
-                <Campo disabled={!editable} etiqueta="Unidad de medida" valor={a.unidad} onChange={(v) => setAct(i, { unidad: v })} />
-                <Campo disabled={!editable} etiqueta="Meta anual" valor={a.meta}
-                  onChange={(v) => setAct(i, { meta: v, ...((a.trimestres || []).every((x) => x === '' || x == null) || a.trimestresAuto ? { trimestres: repartirMeta(v), trimestresAuto: true } : {}) })}
-                  ayuda={a.trimestresAuto ? 'T1–T4 repartidas solas' : undefined} />
-                {TRIMESTRES.map((t, ti) => (
-                  <Campo disabled={!editable} key={t} etiqueta={`Meta ${t}`} valor={a.trimestres?.[ti]} onChange={(v) => setAct(i, { trimestresAuto: false, trimestres: (a.trimestres || ['', '', '', '']).map((x, k) => (k === ti ? v : x)) })} />
-                ))}
-                <Campo disabled={!editable} etiqueta="Ponderado %" valor={a.ponderado} onChange={(v) => setAct(i, { ponderado: v })} />
-                <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Frecuencia</span>
-                  <select disabled={!editable} value={a.periodicidad || 'Mensual'} onChange={(e) => setAct(i, { periodicidad: e.target.value })} className={ENTRADA}>
-                    {['Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'].map((x) => <option key={x}>{x}</option>)}
-                  </select></label>
-                <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Impacto</span>
-                  <select disabled={!editable} value={a.impacto || 'Bajo'} onChange={(e) => setAct(i, { impacto: e.target.value })} className={ENTRADA} title="Si el resultado del mes sale bajo: Bajo → Reporte de corrección; Alto → Acción correctiva">
-                    <option value="Bajo">Bajo (RC)</option><option value="Alto">Alto (AC)</option>
-                  </select></label>
-              </div>
-              <div className="grid gap-2 md:grid-cols-[120px_1fr_1fr]">
-                <Campo disabled={!editable} etiqueta="Clave act. pública" valor={a.ap_clave} onChange={(v) => setAct(i, { ap_clave: v })} />
-                <Campo disabled={!editable} etiqueta="Actividad pública (PEM-2)" valor={a.ap_nombre} onChange={(v) => setAct(i, { ap_nombre: v })} />
-                {/* El indicador nace aquí: se crea en el Cuadro de Control al aprobar el proyecto (sin selector, para no entrar en bucle). */}
-                <div className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Indicador en el Cuadro de Control</span>
-                  <p className={`${ENTRADA} bg-slate-50 text-slate-700`}>{a.indicador_id !== '' && a.indicador_id != null ? `#${a.indicador_id} · ya está en el Cuadro` : 'Se crea al aprobar el proyecto'}</p>
+              <div className="p-3 space-y-3 bg-slate-50">
+                <Bloque titulo="A. Actividad e indicador" ayuda="Qué se hace y con qué indicador se mide. El indicador se desarrolla en la pestaña 3 (ficha técnica).">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Campo disabled={!editable} multi etiqueta="Actividad" valor={a.actividad} onChange={(v) => setAct(i, { actividad: v })} />
+                    <Campo disabled={!editable} multi etiqueta="Indicador" valor={a.indicador} onChange={(v) => setAct(i, { indicador: v })} />
+                  </div>
+                </Bloque>
+                <Bloque titulo="B. Metas" ayuda="Los porcentajes se capturan como número (95 = 95%). Al escribir la meta anual, las metas trimestrales se reparten solas; puedes ajustarlas.">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm tablas-marcadas">
+                      <thead><tr>
+                        <th scope="col" className="p-2 text-left min-w-[150px]">Unidad de medida</th>
+                        <th scope="col" className="p-2 text-left min-w-[110px]">Meta anual</th>
+                        {TRIMESTRES.map((t, ti) => <th key={t} scope="col" className="p-2 text-left min-w-[100px]">Meta {t}<span className="block text-[10px] font-semibold text-slate-600">{['Ene–Mar', 'Abr–Jun', 'Jul–Sep', 'Oct–Dic'][ti]}</span></th>)}
+                      </tr></thead>
+                      <tbody><tr>
+                        <td className="p-1.5"><input aria-label="Unidad de medida" disabled={!editable} value={a.unidad || ''} onChange={(e) => setAct(i, { unidad: e.target.value })} className={ENTRADA} /></td>
+                        <td className="p-1.5"><input aria-label="Meta anual" inputMode="decimal" disabled={!editable} value={a.meta || ''} className={`${ENTRADA} font-bold`}
+                          onChange={(e) => { const v = e.target.value; setAct(i, { meta: v, ...((a.trimestres || []).every((x) => x === '' || x == null) || a.trimestresAuto ? { trimestres: repartirMeta(v), trimestresAuto: true } : {}) }); }} /></td>
+                        {TRIMESTRES.map((t, ti) => (
+                          <td key={t} className="p-1.5"><input aria-label={`Meta ${t}`} inputMode="decimal" disabled={!editable} value={a.trimestres?.[ti] ?? ''} className={ENTRADA}
+                            onChange={(e) => setAct(i, { trimestresAuto: false, trimestres: (a.trimestres || ['', '', '', '']).map((x, k) => (k === ti ? e.target.value : x)) })} /></td>
+                        ))}
+                      </tr></tbody>
+                    </table>
+                  </div>
+                  {a.trimestresAuto && <p className="text-[11px] text-emerald-700 mt-1">Metas trimestrales repartidas a partir de la meta anual.</p>}
+                </Bloque>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Bloque titulo="C. Seguimiento en el Cuadro de Control" ayuda="Cada cuánto se reporta el resultado y qué pasa si sale bajo.">
+                    <div className="grid gap-3 grid-cols-2">
+                      <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Frecuencia</span>
+                        <select disabled={!editable} value={a.periodicidad || 'Mensual'} onChange={(e) => setAct(i, { periodicidad: e.target.value })} className={ENTRADA}>
+                          {['Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'].map((x) => <option key={x}>{x}</option>)}
+                        </select></label>
+                      <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Impacto si no cumple</span>
+                        <select disabled={!editable} value={a.impacto || 'Bajo'} onChange={(e) => setAct(i, { impacto: e.target.value })} className={ENTRADA}>
+                          <option value="Bajo">Bajo: Reporte de corrección (RC)</option><option value="Alto">Alto: Acción correctiva (AC)</option>
+                        </select></label>
+                    </div>
+                  </Bloque>
+                  <Bloque titulo="D. Programa de egresos (PEMS)" ayuda="Peso de la actividad dentro del proyecto y su clave de actividad pública para el PEM-2.">
+                    <div className="grid gap-3 grid-cols-[110px_110px_1fr]">
+                      <Campo disabled={!editable} etiqueta="Ponderado %" valor={a.ponderado} onChange={(v) => setAct(i, { ponderado: v })} />
+                      <Campo disabled={!editable} etiqueta="Clave act. pública" valor={a.ap_clave} onChange={(v) => setAct(i, { ap_clave: v })} />
+                      <Campo disabled={!editable} etiqueta="Actividad pública (PEM-2)" valor={a.ap_nombre} onChange={(v) => setAct(i, { ap_nombre: v })} />
+                    </div>
+                  </Bloque>
                 </div>
-              </div>
               </div>
             </div>
           ))}
@@ -186,7 +215,7 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, result
             const setF = (k, v) => setAct(fichaIdx, { ficha: { ...f, [k]: v } });
             return (
               <div className="grid gap-3 md:grid-cols-2 rounded-lg border border-slate-200 bg-white p-3">
-                <p className="md:col-span-2 text-xs text-slate-600">Nombre, unidad, meta y frecuencia vienen de la actividad. El cumplimiento mensual se llena con los resultados del Cuadro de Control.</p>
+                <p className="md:col-span-2 text-xs text-slate-600">Nombre, unidad, meta y frecuencia vienen de la pestaña 2. El cumplimiento mensual se llena con los resultados del Cuadro de Control.</p>
                 <div className="md:col-span-2"><Campo disabled={!editable} multi etiqueta="Definición del indicador" valor={f.definicion} onChange={(v) => setF('definicion', v)} /></div>
                 <Campo disabled={!editable} etiqueta="Tipo de indicador" valor={f.tipo_indicador} onChange={(v) => setF('tipo_indicador', v)} ayuda="Ej. GESTIÓN, ESTRATÉGICO" />
                 <Campo disabled={!editable} etiqueta="Dimensión" valor={f.dimension} onChange={(v) => setF('dimension', v)} ayuda="Ej. EFICACIA, EFICIENCIA, CALIDAD, ECONOMÍA" />
