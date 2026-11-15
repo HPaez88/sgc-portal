@@ -92,7 +92,7 @@ const Sidebar = ({
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className="space-y-1">
             {!sidebarCollapsed && (
-              <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">
+              <p className="px-3 text-[10px] font-bold text-marca-verde-claro uppercase tracking-widest mb-1.5 font-mono">
                 {section.title}
               </p>
             )}
@@ -108,15 +108,15 @@ const Sidebar = ({
                   title={sidebarCollapsed ? item.label : undefined}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-150 group text-xs font-semibold ${
                     isActive 
-                      ? 'bg-sky-500/15 text-white border border-sky-500/30 shadow-sm' 
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border border-transparent'
+                      ? 'bg-marca-verde/15 text-white border border-marca-verde/40 shadow-sm' 
+                      : 'text-slate-200 hover:bg-marca-verde/10 hover:text-white border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-3 truncate">
                     <item.icon 
                       size={18} 
                       className={`shrink-0 transition-colors ${
-                        isActive ? 'text-sky-400' : 'text-slate-400 group-hover:text-slate-200'
+                        isActive ? 'text-marca-verde-claro' : 'text-slate-400 group-hover:text-marca-verde-claro'
                       }`} 
                     />
                     {!sidebarCollapsed && (
@@ -125,7 +125,7 @@ const Sidebar = ({
                   </div>
 
                   {!sidebarCollapsed && item.count && (
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700">
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-marca-verde/10 text-marca-verde-claro border border-marca-verde/30">
                       {item.count}
                     </span>
                   )}
@@ -144,7 +144,7 @@ const Sidebar = ({
       {/* Institutional Footer */}
       <div className="p-3 border-t border-slate-800/80 bg-slate-950/40 shrink-0">
         <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800/60">
-          <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+          <ShieldCheck size={16} className="text-marca-verde-claro shrink-0" />
           {!sidebarCollapsed && (
             <div className="truncate text-left leading-tight">
               <p className="text-[11px] font-semibold text-slate-300 truncate">ISO 9001:2015</p>
