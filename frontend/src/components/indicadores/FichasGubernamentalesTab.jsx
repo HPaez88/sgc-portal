@@ -26,14 +26,13 @@ import {
   obtenerFichaTecnicaIndicador,
   CONFIG_AYUNTAMIENTO_CAJEME
 } from '../../constants/fichasGubernamentales';
-import {
-  exportarFichaTecnicaPDF,
-  descargarFichaTecnicaDocx
-} from '../../services/fichaTecnicaExporter';
 import { useToast } from '../common/Toast';
 import ModalFichaTecnicaAyuntamiento from './ModalFichaTecnicaAyuntamiento';
 import BotonInformePDF from './BotonInformePDF';
 import { exportarInformeIndicadoresPDF } from '../../services/indicadoresExporter';
+import { descargarFormatoOficial, origenFicha } from '../../services/formatosOficiales';
+import { useLocalStorage } from '../../hooks';
+import { CLAVE_PROYECTOS } from '../../constants/proyectosIndicadores';
 
 export default function FichasGubernamentalesTab({
   indicadores = [],
@@ -100,26 +99,17 @@ export default function FichasGubernamentalesTab({
     });
   }, [fichasList, busqueda, filtroProceso, filtroDireccion, filtroDimension, filtroTipo]);
 
-  const handleDescargarPDF = (ficha, e) => {
+  // La ficha oficial es el formato del Ayuntamiento lleno con el Proyecto anual; no se genera con diseño propio.
+  const [proyectos] = useLocalStorage(CLAVE_PROYECTOS, []);
+  const [descargando, setDescargando] = useState('');
+  const descargarFicha = async (indicador, formato, e) => {
     e.stopPropagation();
-    try {
-      const indNum = ficha.indicador_numero ?? ficha.indicador_id ?? 0;
-      exportarFichaTecnicaPDF(ficha, resultados);
-      toast.success(`Ficha Técnica #${indNum} descargada en PDF oficial`);
-    } catch (err) {
-      toast.error(`Error al generar PDF: ${err.message}`);
-    }
-  };
-
-  const handleDescargarWord = async (ficha, e) => {
-    e.stopPropagation();
-    try {
-      const indNum = ficha.indicador_numero ?? ficha.indicador_id ?? 0;
-      await descargarFichaTecnicaDocx(ficha, resultados);
-      toast.success(`Ficha Técnica #${indNum} descargada en Word (.docx)`);
-    } catch (err) {
-      toast.error(`Error al generar Word: ${err.message}`);
-    }
+    const origen = origenFicha(indicador, proyectos);
+    if (!origen) return toast.error('Esta ficha se llena en el Proyecto anual del área. Liga el indicador a una actividad del proyecto.');
+    setDescargando(`${indicador.id}-${formato}`);
+    const error = await descargarFormatoOficial(origen.proyecto, 'ficha', { actividad: origen.actividad, formato });
+    setDescargando('');
+    if (error) toast.error(error);
   };
 
   const handleGuardarFicha = (indId, nuevaFicha) => {
@@ -342,20 +332,18 @@ export default function FichasGubernamentalesTab({
                   >
                     <Settings size={13} />
                   </button>
-                  <button
-                    onClick={(e) => handleDescargarPDF(ficha, e)}
-                    className="p-1.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                    title="Descargar PDF Oficial"
-                  >
-                    <Download size={13} />
-                  </button>
-                  <button
-                    onClick={(e) => handleDescargarWord(ficha, e)}
-                    className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                    title="Descargar Word (.docx)"
-                  >
-                    <FileDown size={13} />
-                  </button>
+                  {origenFicha(indicador, proyectos) ? ['original', 'pdf'].map((formato) => (
+                    <button key={formato}
+                      onClick={(e) => descargarFicha(indicador, formato, e)}
+                      disabled={Boolean(descargando)}
+                      className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
+                      title={`Ficha técnica oficial del Ayuntamiento en ${formato === 'pdf' ? 'PDF' : 'Word'}`}
+                    >
+                      {descargando === `${indicador.id}-${formato}` ? '…' : formato === 'pdf' ? 'PDF' : 'Word'}
+                    </button>
+                  )) : (
+                    <span className="text-[10px] text-slate-500 max-w-[110px] leading-tight" title="La ficha oficial sale del Proyecto anual del área">Sin proyecto ligado</span>
+                  )}
                 </div>
               </div>
             </div>

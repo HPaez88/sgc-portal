@@ -30,7 +30,17 @@ def _estado(s: Session, organismo_id: int, clave: str, defecto):
         return defecto
 
 
-def _archivo(contenido: bytes, tipo: str, nombre: str) -> Response:
+PDF = "application/pdf"
+
+
+def _archivo(contenido: bytes, tipo: str, nombre: str, formato: str = "original") -> Response:
+    """Entrega el formato oficial lleno tal cual (Word/Excel) o convertido a PDF, sin cambiar su diseño."""
+    if formato == "pdf":
+        try:
+            contenido = fmt.a_pdf(contenido, nombre.rsplit(".", 1)[-1])
+        except Exception as e:  # noqa: BLE001 — soffice ausente, tiempo agotado o archivo dañado
+            raise HTTPException(status_code=503, detail="No se pudo convertir a PDF. Descarga el Word/Excel original.") from e
+        tipo, nombre = PDF, nombre.rsplit(".", 1)[0] + ".pdf"
     limpio = re.sub(r"[^\w\- .]", "", nombre).strip() or "formato"
     return Response(contenido, media_type=tipo, headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(limpio)}"})
 
@@ -61,7 +71,7 @@ def cumplimiento_mensual(datos_ind: dict, indicador_id, anio) -> list[str]:
 
 
 @router.get("/{proyecto_id}/{tipo}")
-def descargar(proyecto_id: str, tipo: str, actividad: int = 0, session: Session = Depends(get_session),
+def descargar(proyecto_id: str, tipo: str, actividad: int = 0, formato: str = "original", session: Session = Depends(get_session),
               organismo_id: int = Depends(get_organismo_id), usuario: Usuario = Depends(usuario_actual)):
     proyectos = _estado(session, organismo_id, "sgc-proyectos-indicadores", [])
     p = next((x for x in proyectos if isinstance(x, dict) and str(x.get("id")) == proyecto_id), None)
@@ -71,14 +81,14 @@ def descargar(proyecto_id: str, tipo: str, actividad: int = 0, session: Session 
         raise HTTPException(status_code=403, detail="Solo el área del proyecto o el SGC pueden descargar sus formatos.")
     base = f"{p.get('anio', '')} {p.get('area', '')}"
     if tipo == "proyecto":
-        return _archivo(fmt.llenar_proyecto(p), DOCX, f"Formato de Presentación de Proyectos {base}.docx")
+        return _archivo(fmt.llenar_proyecto(p), DOCX, f"Formato de Presentación de Proyectos {base}.docx", formato)
     if tipo == "pems":
-        return _archivo(fmt.llenar_pems(p), XLSX, f"PEMS {base}.xlsx")
+        return _archivo(fmt.llenar_pems(p), XLSX, f"PEMS {base}.xlsx", formato)
     if tipo == "ficha":
         acts = p.get("actividades") or []
         if not 0 <= actividad < len(acts):
             raise HTTPException(status_code=404, detail="Actividad no encontrada.")
         a = acts[actividad]
         cumpl = cumplimiento_mensual(_estado(session, organismo_id, "sgc-indicadores-data", {}), a.get("indicador_id"), p.get("anio"))
-        return _archivo(fmt.llenar_ficha(p, a, cumpl), DOCX, f"{actividad + 1}- Ficha técnica {(a.get('indicador') or '')[:60]} {base}.docx")
+        return _archivo(fmt.llenar_ficha(p, a, cumpl), DOCX, f"{actividad + 1}- Ficha técnica {(a.get('indicador') or '')[:60]} {base}.docx", formato)
     raise HTTPException(status_code=404, detail="Formato no reconocido.")

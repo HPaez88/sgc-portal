@@ -28,11 +28,10 @@ import {
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
-import {
-  exportarFichaTecnicaPDF,
-  descargarFichaTecnicaDocx,
-  mapearResultadosMensualesIndicador
-} from '../../services/fichaTecnicaExporter';
+import { mapearResultadosMensualesIndicador } from '../../services/fichaTecnicaExporter';
+import { descargarFormatoOficial, origenFicha } from '../../services/formatosOficiales';
+import { useLocalStorage } from '../../hooks';
+import { CLAVE_PROYECTOS } from '../../constants/proyectosIndicadores';
 import {
   obtenerFichaTecnicaIndicador,
   CONFIG_AYUNTAMIENTO_CAJEME
@@ -368,28 +367,18 @@ export default function ModalGestionarIndicador({
     );
   }, [numero, valoresMensuales, metaAnual, sentidoIndicador]);
 
-  // Exportar a PDF con diseño institucional azul del Ayuntamiento
-  const handleDescargarPDF = () => {
-    try {
-      exportarFichaTecnicaPDF(fichaActualParaExportar, valoresMensuales);
-      toast.success(`Ficha Técnica #${numero} descargada en PDF institucional del Ayuntamiento`);
-    } catch (err) {
-      toast.error(`Error al generar PDF: ${err.message}`);
-    }
-  };
-
-  // Exportar a Word (.docx) con diseño institucional azul del Ayuntamiento
-  const handleDescargarWord = async () => {
+  // Ficha oficial del Ayuntamiento: plantilla original llena con el Proyecto anual (Word o PDF), sin diseño propio.
+  const [proyectos] = useLocalStorage(CLAVE_PROYECTOS, []);
+  const origen = origenFicha(indicadorAEditar, proyectos);
+  const descargarFicha = async (formato) => {
+    if (!origen) return toast.error('La ficha oficial se llena en el Proyecto anual del área.');
     setDescargandoDocx(true);
-    try {
-      await descargarFichaTecnicaDocx(fichaActualParaExportar, valoresMensuales);
-      toast.success(`Ficha Técnica #${numero} descargada en formato Word (.docx) institucional`);
-    } catch (err) {
-      toast.error(`Error al generar Word: ${err.message}`);
-    } finally {
-      setDescargandoDocx(false);
-    }
+    const error = await descargarFormatoOficial(origen.proyecto, 'ficha', { actividad: origen.actividad, formato });
+    setDescargandoDocx(false);
+    if (error) toast.error(error);
   };
+  const handleDescargarWord = () => descargarFicha('original');
+  const handleDescargarPDF = () => descargarFicha('pdf');
 
   // Guardar unificado (Sincroniza tanto SGC como PMD)
   const handleSubmitIntegral = (e) => {
@@ -486,12 +475,12 @@ export default function ModalGestionarIndicador({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            {origen && <><button
               type="button"
               onClick={handleDescargarWord}
               disabled={descargandoDocx}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 text-sky-100 border border-sky-300/40 text-xs font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
-              title="Descargar Ficha Técnica en formato Word (.docx)"
+              title="Ficha técnica oficial del Ayuntamiento (Word)"
             >
               <FileDown size={14} />
               <span>{descargandoDocx ? 'Generando...' : 'Descargar Word'}</span>
@@ -501,11 +490,11 @@ export default function ModalGestionarIndicador({
               type="button"
               onClick={handleDescargarPDF}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-100 border border-rose-300/40 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-              title="Descargar Ficha Técnica en PDF oficial"
+              title="Ficha técnica oficial del Ayuntamiento (PDF)"
             >
               <Download size={14} />
               <span>Descargar PDF</span>
-            </button>
+            </button></>}
 
             <button
               type="button"
@@ -1198,12 +1187,12 @@ export default function ModalGestionarIndicador({
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end flex-wrap">
-            <button
+            {origen && <><button
               type="button"
               onClick={handleDescargarWord}
               disabled={descargandoDocx}
               className="px-3 py-2 text-xs font-bold text-sky-900 bg-sky-50 hover:bg-sky-100 border border-sky-300 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-              title="Descargar Ficha Técnica en formato Word (.docx)"
+              title="Ficha técnica oficial del Ayuntamiento (Word)"
             >
               <FileDown size={14} className="text-[#2A78B0]" />
               <span>Descargar Word</span>
@@ -1213,11 +1202,11 @@ export default function ModalGestionarIndicador({
               type="button"
               onClick={handleDescargarPDF}
               className="px-3 py-2 text-xs font-bold text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-              title="Descargar Ficha Técnica en PDF oficial"
+              title="Ficha técnica oficial del Ayuntamiento (PDF)"
             >
               <Download size={14} className="text-rose-600" />
               <span>Descargar PDF</span>
-            </button>
+            </button></>}
 
             <button
               type="button"

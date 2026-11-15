@@ -8,8 +8,7 @@ import { useToast } from '../common/Toast';
 import Dialogos, { useDialogos } from '../common/Dialogos';
 import { esAdminSGC } from '../../constants/workflow';
 import { puedeCapturarArea } from '../../constants/riesgos';
-import { requestBlob, descargarBlob } from '../../services/apiClient';
-import { getEstadoSync } from '../../services/estadoService';
+import { descargarFormatoOficial } from '../../services/formatosOficiales';
 import {
   CLAVE_PROYECTOS, ESTADOS_PROYECTO, PILOTO_INFORMATICA_2027, OBJETIVO_INSTITUCIONAL_OOMAPASC,
   nuevoProyecto, faltantesProyecto, totalesPresupuesto, CAPITULOS, TRIMESTRES,
@@ -64,11 +63,6 @@ function informeProyectosPDF(lista, anio) {
   }, uno ? `Proyecto_${anio}_${uno.area}` : `Proyectos_${anio}`);
 }
 
-async function esperarSincronizacion(maxMs = 6000) {
-  const inicio = Date.now();
-  while (getEstadoSync().pendientes > 0 && Date.now() - inicio < maxMs) await new Promise((r) => setTimeout(r, 300));
-  return getEstadoSync().pendientes === 0;
-}
 
 function Estado({ estado }) {
   const [t, cls] = ESTADOS_PROYECTO[estado] || ESTADOS_PROYECTO.BORRADOR;
@@ -157,19 +151,12 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
     toast.success(texto);
   };
 
-  const descargar = async (tipo, actividad = 0) => {
+  const descargar = async (tipo, actividad, formato) => {
     if (cambios) return toast.error('Guarda los cambios antes de descargar.');
-    setDescargando(`${tipo}-${actividad}`);
-    if (!(await esperarSincronizacion())) {
-      setDescargando('');
-      return toast.error('Aún no se sincroniza con el servidor. Intenta en unos segundos.');
-    }
-    const r = await requestBlob(`/api/v1/indicadores/formatos/${encodeURIComponent(borrador.id)}/${tipo}?actividad=${actividad}`);
+    setDescargando(`${tipo}-${actividad}-${formato}`);
+    const error = await descargarFormatoOficial(borrador, tipo, { actividad, formato });
     setDescargando('');
-    if (!r.ok) return toast.error(r.error?.message || 'No se pudo generar el formato.');
-    const base = `${borrador.anio} ${borrador.area}`;
-    descargarBlob(r.blob, { proyecto: `Formato de Presentación de Proyectos ${base}.docx`, pems: `PEMS ${base}.xlsx`,
-      ficha: `${actividad + 1}- Ficha técnica de indicador ${base}.docx` }[tipo]);
+    if (error) toast.error(error);
   };
 
   const cerrar = async () => {
@@ -181,11 +168,17 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
   };
 
   if (borrador) {
+    // Formato oficial: se descarga en su archivo original (Word/Excel) o en PDF; el diseño no se toca.
     const BotonDescarga = ({ tipo, actividad = 0, children, Icono }) => (
-      <button type="button" disabled={Boolean(descargando)} onClick={() => descargar(tipo, actividad)}
-        className="px-2.5 py-1.5 text-xs font-semibold text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 inline-flex items-center gap-1.5">
-        <Icono size={14} /> {descargando === `${tipo}-${actividad}` ? 'Generando…' : children}
-      </button>
+      <span className="inline-flex items-stretch rounded-lg border border-slate-300 overflow-hidden text-xs">
+        <span className="px-2.5 py-1.5 font-semibold text-slate-800 bg-white inline-flex items-center gap-1.5"><Icono size={14} /> {children}</span>
+        {[['original', tipo === 'pems' ? 'Excel' : 'Word'], ['pdf', 'PDF']].map(([formato, etiqueta]) => (
+          <button key={formato} type="button" disabled={Boolean(descargando)} onClick={() => descargar(tipo, actividad, formato)}
+            className="px-2 py-1.5 font-bold border-l border-slate-300 text-marca-azul-oscuro bg-slate-50 hover:bg-sky-50 disabled:opacity-50">
+            {descargando === `${tipo}-${actividad}-${formato}` ? '…' : etiqueta}
+          </button>
+        ))}
+      </span>
     );
     const ultimaNota = (borrador.historial || []).slice(-1)[0];
     return (
@@ -209,7 +202,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
         </header>
         {original && (
           <section aria-label="Formatos oficiales" className="bg-slate-50 rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-slate-800 inline-flex items-center gap-1.5 mr-1"><Download size={14} /> Formatos oficiales:</span>
+            <span className="text-xs font-bold text-slate-800 inline-flex items-center gap-1.5 mr-1"><Download size={14} /> Formatos oficiales del Ayuntamiento (sin modificar):</span>
             <BotonDescarga tipo="proyecto" Icono={FileText}>Presentación de proyecto</BotonDescarga>
             <BotonDescarga tipo="pems" Icono={FileSpreadsheet}>PEMS (PEM-1 y PEM-2)</BotonDescarga>
             {(borrador.actividades || []).map((a, i) => <BotonDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList}>Ficha {i + 1}</BotonDescarga>)}

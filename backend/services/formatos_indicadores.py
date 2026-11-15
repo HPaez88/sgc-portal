@@ -5,6 +5,7 @@ Se escriben solo los textos de las celdas: encabezados, logos, bordes y firmas q
 Si cambia un formato, se reemplaza la plantilla y, si cambió la posición de alguna celda, el mapa de este archivo.
 Proyecto (dict) = un elemento de la clave 'sgc-proyectos-indicadores' (ver frontend/src/constants/proyectosIndicadores.js).
 """
+from pathlib import Path
 import copy
 import io
 import os
@@ -254,6 +255,23 @@ def llenar_pems(p: dict) -> bytes:
     wb.save(buf)
     return buf.getvalue()
 
+
+
+def a_pdf(contenido: bytes, extension: str) -> bytes:
+    """Convierte el formato oficial ya lleno a PDF con LibreOffice, sin tocar su diseño.
+    ponytail: un proceso soffice por descarga con perfil propio (evita choques entre descargas simultáneas)."""
+    import shutil
+    import subprocess
+    import tempfile
+    soffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if not soffice:
+        raise RuntimeError("La conversión a PDF no está disponible en este servidor.")
+    with tempfile.TemporaryDirectory() as d:
+        origen = Path(d) / f"formato.{extension}"
+        origen.write_bytes(contenido)
+        subprocess.run([soffice, f"-env:UserInstallation=file://{d}/perfil", "--headless", "--convert-to", "pdf",
+                        "--outdir", d, str(origen)], check=True, timeout=90, capture_output=True)
+        return (Path(d) / "formato.pdf").read_bytes()
 
 if __name__ == "__main__":  # autoverificación rápida: python -m backend.services.formatos_indicadores
     ej = {"anio": 2027, "tipo": "OPERACION", "nombre": "PRUEBA", "fecha_inicio": "2027-01-01",
