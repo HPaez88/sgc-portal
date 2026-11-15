@@ -55,7 +55,8 @@ import ReportesCorreccionPanel from '../acciones/ReportesCorreccionPanel';
 import ModalRecordatorioAtrasos from './ModalRecordatorioAtrasos';
 import FichasGubernamentalesTab from './FichasGubernamentalesTab';
 import ProyectosIndicadoresTab from './ProyectosIndicadoresTab';
-import EvaluacionTrimestralTab from './EvaluacionTrimestralTab';
+import BotonInformePDF from './BotonInformePDF';
+import { exportarInformeIndicadoresPDF, etiquetaSemaforo } from '../../services/indicadoresExporter';
 import { obtenerFichaTecnicaIndicador } from '../../constants/fichasGubernamentales';
 import { AREAS, DIRECCIONES, resolverResponsable } from '../../constants/areas';
 import { useIsMobile, useLocalStorage } from '../../hooks';
@@ -677,6 +678,31 @@ export default function IndicadoresView({
     return indicadoresFiltrados.slice(inicio, inicio + PAGE_SIZE);
   }, [indicadoresFiltrados, pagina]);
 
+  // Informe PDF del Cuadro de Control: lo que está filtrado en pantalla, del mes y la matriz anual.
+  const handleInformeCuadroPDF = () => {
+    const filas = indicadoresFiltrados.map((ind) => {
+      const val = resultados[`${ind.id}-${mesActivo}-${ejercicio}`]?.valor;
+      const sem = evalSemaforoOOMRSC05(val ?? null, ind.meta_anual ?? ind.meta, ind.es_menor);
+      const resultado = val ?? (tocaReportar(ind, mesActivoIndex) ? 'Sin captura' : 'No reporta');
+      return { ind, sem, fila: [ind.numero ?? ind.id, ind.nombre, ind.area, ind.unidad, `${ind.es_menor ? 'Máx.' : 'Mín.'} ${ind.meta_anual ?? ind.meta}`, resultado, tocaReportar(ind, mesActivoIndex) ? etiquetaSemaforo(sem.rango, sem.porcentaje) : '—'] };
+    });
+    exportarInformeIndicadoresPDF({
+      titulo: 'CUADRO DE CONTROL DE DESEMPEÑO (OOMRSC-05)',
+      subtitulo: 'Seguimiento mensual de indicadores · Sistema de Gestión de la Calidad ISO 9001:2015',
+      derecha: [`${mesActivoNombre} ${ejercicio}`],
+      resumen: [['Indicadores', statsGlobales.total], ['Eficacia global', statsGlobales.promedioGlobal === null ? '—' : `${statsGlobales.promedioGlobal}%`], ['Aceptables', statsGlobales.aceptables], ['Preventivos', statsGlobales.preventivos], ['Críticos', statsGlobales.criticos], ['Sin captura', statsGlobales.pendientes]],
+      secciones: [
+        { titulo: `1. Resultados de ${mesActivoNombre} ${ejercicio}`, head: ['#', 'Indicador', 'Área', 'Unidad', 'Meta', 'Resultado', 'Semáforo'],
+          body: filas.map((f) => f.fila), semaforoCol: 6, semaforos: filas.map((f) => f.sem.rango),
+          columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 95 }, 4: { halign: 'center' }, 5: { halign: 'center' }, 6: { cellWidth: 30 } } },
+        { titulo: `2. Matriz anual ${ejercicio}`, head: ['#', 'Indicador', 'Meta', ...MESES],
+          body: indicadoresFiltrados.map((ind) => [ind.numero ?? ind.id, ind.nombre, ind.meta_anual ?? ind.meta, ...MESES.map((m) => resultados[`${ind.id}-${m}-${ejercicio}`]?.valor ?? '')]),
+          columnStyles: { 0: { cellWidth: 9, halign: 'center' }, 1: { cellWidth: 80 } } },
+      ],
+      leyenda: `OOMAPAS de Cajeme · Cuadro de Control OOMRSC-05 · ${mesActivoNombre} ${ejercicio}`,
+    }, `Cuadro_de_Control_${mesActivo}_${ejercicio}`);
+  };
+
   // Estadísticas del Mes Seleccionado (Semáforo Global)
   const statsGlobales = useMemo(() => {
     let aceptables = 0;
@@ -885,14 +911,13 @@ export default function IndicadoresView({
         </div>
 
         {/* PESTAÑAS RESPONSIVAS (SIN BARRA DESPLAZADORA HORIZONTAL) */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 w-full mt-6 pt-4 border-t border-slate-700/60">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 w-full mt-6 pt-4 border-t border-slate-700/60">
           {[
             { id: 'cuadro', num: '1', label: 'Cuadro Mensual', sub: 'OOMRSC-05', icon: Target },
-            { id: 'procesos', num: '2', label: 'Por Procesos', sub: 'Eficacia global', icon: Layers },
-            { id: 'fichas', num: '3', label: 'Fichas PMD', sub: 'Ayuntamiento', icon: FileSpreadsheet },
-            { id: 'proyectos', num: '4', label: 'Proyectos y fichas', sub: 'Setup anual · PEMS', icon: Building2 },
-            { id: 'trimestral', num: '5', label: 'Evaluación Trimestral', sub: 'T1 a T4 / MIR', icon: BarChart3 },
-            { id: 'correcciones', num: '6', label: 'Reportes RC', sub: `${reportesCorreccion.length} casos`, icon: FileWarning }
+            { id: 'proyectos', num: '2', label: 'Proyecto anual', sub: 'Fuente de indicadores y formatos', icon: Building2 },
+            { id: 'procesos', num: '3', label: 'Por Procesos', sub: 'Eficacia global', icon: Layers },
+            { id: 'fichas', num: '4', label: 'Fichas PMD', sub: 'Ayuntamiento', icon: FileSpreadsheet },
+            { id: 'correcciones', num: '5', label: 'Reportes RC', sub: `${reportesCorreccion.length} casos`, icon: FileWarning }
           ].map(tab => {
             const Icon = tab.icon;
             const esActiva = tabActiva === tab.id;
@@ -1164,6 +1189,7 @@ export default function IndicadoresView({
                 {vistaModo === 'mensual' ? 'Cuadro de Control mensual' : 'Matriz anual'} <span className="text-slate-600 font-bold">({indicadoresFiltrados.length})</span>
                 <span className="ml-2 font-normal text-slate-600">mostrando {indicadoresPaginados.length}</span>
               </h3>
+              <BotonInformePDF onClick={handleInformeCuadroPDF} className="sm:ml-auto sm:mr-3" />
               <span className="text-slate-600 font-semibold flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-sky-500"></span>
                 {vistaModo === 'mensual' ? (
@@ -1623,23 +1649,11 @@ export default function IndicadoresView({
         />
       )}
 
-      {/* TAB 4: SETUP ANUAL — PROYECTOS, FICHAS TÉCNICAS, PEMS Y AVANCE TRIMESTRAL */}
+      {/* TAB 2: PROYECTO ANUAL (fuente de todo) — PROYECTOS, FICHAS TÉCNICAS, PEMS Y AVANCE TRIMESTRAL */}
       {tabActiva === 'proyectos' && <ProyectosIndicadoresTab indicadoresCatalogo={listaIndicadores} />}
 
       {/* ==================================================================== */}
-      {/* TAB 5: EVALUACIÓN TRIMESTRAL & MIR (T1 A T4)                         */}
-      {/* ==================================================================== */}
-      {tabActiva === 'trimestral' && (
-        <EvaluacionTrimestralTab
-          listaIndicadores={listaIndicadores}
-          resultados={resultados}
-          ejercicio={ejercicio}
-          onAbrirGenerarRC={handleAbrirCrearRC}
-        />
-      )}
-
-      {/* ==================================================================== */}
-      {/* TAB 6: BITÁCORA DE REPORTES DE CORRECCIÓN (RC)                     */}
+      {/* TAB 5: BITÁCORA DE REPORTES DE CORRECCIÓN (RC)                     */}
       {/* ==================================================================== */}
       {tabActiva === 'correcciones' && (
         <ReportesCorreccionPanel reportes={reportesCorreccion} onActualizar={handleActualizarReporteCorreccion} usuarioLogueado={usuarioLogueado} />

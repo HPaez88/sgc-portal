@@ -12,14 +12,57 @@ import { requestBlob, descargarBlob } from '../../services/apiClient';
 import { getEstadoSync } from '../../services/estadoService';
 import {
   CLAVE_PROYECTOS, ESTADOS_PROYECTO, PILOTO_INFORMATICA_2027, OBJETIVO_INSTITUCIONAL_OOMAPASC,
-  nuevoProyecto, faltantesProyecto, totalesPresupuesto,
+  nuevoProyecto, faltantesProyecto, totalesPresupuesto, CAPITULOS, TRIMESTRES,
 } from '../../constants/proyectosIndicadores';
+import BotonInformePDF from './BotonInformePDF';
+import { exportarInformeIndicadoresPDF } from '../../services/indicadoresExporter';
 import EditorProyecto from './EditorProyecto';
 import { altasAlAprobar } from '../../constants/catalogoIndicadores';
 import { obtenerDireccionDeArea } from '../../constants/areas';
 
 const sinAvances = (p) => JSON.stringify({ ...p, actividades: (p.actividades || []).map(({ avances, ...a }) => a), historial: undefined, estado: undefined });
 const pesos = (n) => `$${Math.round(n || 0).toLocaleString('es-MX')}`;
+
+// Informe PDF institucional de uno o varios proyectos (lista del año o el proyecto abierto).
+function informeProyectosPDF(lista, anio) {
+  const uno = lista.length === 1 ? lista[0] : null;
+  const filasActs = lista.flatMap((p) => (p.actividades || []).map((a, i) => [lista.length > 1 ? p.area : i + 1, a.actividad, a.indicador, a.unidad, a.meta, ...(a.trimestres || ['', '', '', '']), a.ponderado ? `${a.ponderado}%` : '', a.impacto === 'Alto' ? 'Alto (AC)' : 'Bajo (RC)']));
+  const filasAvance = lista.flatMap((p) => (p.actividades || []).map((a, i) => [lista.length > 1 ? p.area : i + 1, a.actividad, ...TRIMESTRES.map((t, k) => {
+    const real = a.avances?.[t]?.avance;
+    return real === undefined || real === '' ? `Meta ${a.trimestres?.[k] ?? ''}` : `${real} de ${a.trimestres?.[k] ?? ''}`;
+  })]));
+  const secciones = [];
+  if (!uno) {
+    secciones.push({ titulo: '1. Proyectos del año', head: ['Área', 'Proyecto', 'Estado', 'Actividades', 'Presupuesto anual'],
+      body: lista.map((p) => [p.area, p.nombre || '', ESTADOS_PROYECTO[p.estado]?.[0] || p.estado, (p.actividades || []).length, pesos(totalesPresupuesto(p.presupuesto).anual)]),
+      columnStyles: { 1: { cellWidth: 110 }, 4: { halign: 'right' } } });
+  } else {
+    secciones.push({ titulo: '1. Datos del proyecto', head: ['Dato', 'Contenido'], body: [
+      ['Unidad responsable', uno.unidad_responsable || uno.area], ['Eje rector PMD', uno.eje_rector || ''], ['Programa PMD', uno.programa_pmd || ''], ['Programa presupuestario', uno.programa_presupuestario || ''], ['Resumen ejecutivo', uno.resumen || ''],
+      ['Objetivo', uno.objetivo || ''], ['Justificación', uno.justificacion || ''], ['Estado', ESTADOS_PROYECTO[uno.estado]?.[0] || uno.estado],
+    ].filter(([, v]) => v), columnStyles: { 0: { cellWidth: 45, fontStyle: 'bold' } } });
+  }
+  const n = secciones.length;
+  secciones.push({ titulo: `${n + 1}. Actividades, indicadores y metas`, head: [uno ? 'No.' : 'Área', 'Actividad', 'Indicador', 'Unidad', 'Meta', 'T1', 'T2', 'T3', 'T4', 'Ponderado', 'Impacto'], body: filasActs,
+    columnStyles: { 0: { cellWidth: uno ? 10 : 30 }, 1: { cellWidth: 60 }, 2: { cellWidth: 55 } } });
+  if (uno) {
+    const t = totalesPresupuesto(uno.presupuesto);
+    secciones.push({ titulo: `${n + 2}. Presupuesto por capítulo`, head: ['Capítulo', 'T1', 'T2', 'T3', 'T4', 'Anual'],
+      body: [...CAPITULOS.map(([c, nom]) => { const v = (uno.presupuesto?.[c] || []).map((x) => Number(String(x).replace(/[$,\s]/g, '')) || 0); return [`${c} ${nom}`, ...[0, 1, 2, 3].map((i) => pesos(v[i])), pesos(v.reduce((a, b) => a + b, 0))]; }),
+        [{ content: 'Total', styles: { fontStyle: 'bold' } }, ...t.trimestres.map((x) => ({ content: pesos(x), styles: { fontStyle: 'bold' } })), { content: pesos(t.anual), styles: { fontStyle: 'bold' } }]],
+      columnStyles: { 0: { cellWidth: 95 }, 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } } });
+  }
+  secciones.push({ titulo: `${secciones.length + 1}. Avance trimestral (PEMS): avance real de la meta del trimestre`, head: [uno ? 'No.' : 'Área', 'Actividad', ...TRIMESTRES], body: filasAvance,
+    columnStyles: { 0: { cellWidth: uno ? 10 : 30 }, 1: { cellWidth: 100 } } });
+  exportarInformeIndicadoresPDF({
+    titulo: uno ? `PROYECTO ${anio} · ${uno.area}`.toUpperCase() : `PROYECTOS ANUALES ${anio}`,
+    subtitulo: uno ? (uno.nombre || '') : 'Proyectos, actividades, indicadores, metas y presupuesto por área',
+    derecha: [`Ejercicio ${anio}`],
+    resumen: uno ? [] : [['Proyectos', lista.length], ['Aprobados', lista.filter((p) => p.estado === 'APROBADO').length], ['Actividades', filasActs.length], ['Presupuesto total', pesos(lista.reduce((s, p) => s + totalesPresupuesto(p.presupuesto).anual, 0))]],
+    secciones,
+    leyenda: `OOMAPAS de Cajeme · ${uno ? `Proyecto ${anio} ${uno.area}` : `Proyectos anuales ${anio}`}`,
+  }, uno ? `Proyecto_${anio}_${uno.area}` : `Proyectos_${anio}`);
+}
 
 async function esperarSincronizacion(maxMs = 6000) {
   const inicio = Date.now();
@@ -160,6 +203,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
             {puedeEditar && borrador.estado === 'BORRADOR' && <button type="button" onClick={() => cambiarEstado('EN_REVISION')} className="px-3 py-1.5 text-xs font-bold text-marca-azul-oscuro border border-marca-azul-oscuro/40 rounded-lg hover:bg-sky-50 inline-flex items-center gap-1.5"><Send size={14} /> Enviar a revisión SGC</button>}
             {esAdmin && borrador.estado !== 'APROBADO' && <button type="button" onClick={() => cambiarEstado('APROBADO')} className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><CheckCircle2 size={14} /> Aprobar</button>}
             {esAdmin && borrador.estado !== 'BORRADOR' && original && <button type="button" onClick={() => cambiarEstado('BORRADOR')} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><Undo2 size={14} /> Devolver al área</button>}
+            <BotonInformePDF onClick={() => informeProyectosPDF([borrador], borrador.anio)} />
             <button type="button" onClick={cerrar} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><X size={14} /> Cerrar</button>
           </div>
         </header>
@@ -181,10 +225,11 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
       <Dialogos {...dialogos} />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2"><FolderKanban size={20} className="text-marca-azul-oscuro" /> Proyectos y fichas <span className="text-sm font-bold text-slate-500">({lista.length})</span></h3>
-          <p className="text-sm text-slate-600">Setup anual: el proyecto de cada área genera su Formato de Presentación, fichas técnicas y PEMS, y registra el avance trimestral.</p>
+          <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2"><FolderKanban size={20} className="text-marca-azul-oscuro" /> Proyecto anual por área <span className="text-sm font-bold text-slate-500">({lista.length})</span></h3>
+          <p className="text-sm text-slate-600">Se captura una sola vez: el proyecto aprobado de cada área da de alta sus indicadores en el Cuadro de Control y genera el Formato de Presentación, las fichas técnicas y el PEMS.</p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
+          <BotonInformePDF onClick={() => informeProyectosPDF([...lista].sort((a, b) => a.area.localeCompare(b.area, 'es')), anio)} />
           <label className="text-xs font-bold text-slate-800">Año
             <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className="block mt-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white">
               {[hoy.getFullYear() - 1, hoy.getFullYear(), hoy.getFullYear() + 1, hoy.getFullYear() + 2].map((a) => <option key={a}>{a}</option>)}

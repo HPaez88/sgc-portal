@@ -7,6 +7,11 @@ import ModalNuevoRC from './ModalNuevoRC';
 import { FilePlus2 } from 'lucide-react';
 import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 import { REPORTES_CORRECCION_INICIALES } from '../../constants/indicadores';
+import BotonInformePDF from '../indicadores/BotonInformePDF';
+import { exportarInformeIndicadoresPDF } from '../../services/indicadoresExporter';
+
+const ESTADO_RC = (e) => (['CERRADO_EFECTIVO', 'CERRADA'].includes(e) ? 'Cierre efectivo' : e === 'CERRADO_NO_EFECTIVO' ? 'No efectivo' : e === 'ESCALADO_A_AC' ? 'Escalado a AC' : 'En atención');
+const SEMAFORO_RC = (e) => (['CERRADO_EFECTIVO', 'CERRADA'].includes(e) ? 'ACEPTABLE' : ['CERRADO_NO_EFECTIVO', 'ESCALADO_A_AC'].includes(e) ? 'CRITICO' : 'PREVENTIVO');
 
 const leerReportes = () => {
   try {
@@ -38,11 +43,29 @@ export default function ReportesCorreccionPanel({ reportes, onActualizar, usuari
     });
   };
 
+  const informePDF = () => {
+    const lista = [...reportesCorreccion].sort((a, b) => String(b.fechaRegistro || '').localeCompare(String(a.fechaRegistro || '')));
+    const cuenta = (f) => lista.filter((r) => f(r.estado)).length;
+    exportarInformeIndicadoresPDF({
+      titulo: 'BITÁCORA DE REPORTES DE CORRECCIÓN (RC)',
+      subtitulo: 'Corrección de desviaciones en indicadores · ISO 9001:2015 § 10.2',
+      resumen: [['Casos', lista.length], ['En atención', cuenta((e) => ESTADO_RC(e) === 'En atención')], ['Cierre efectivo', cuenta((e) => ESTADO_RC(e) === 'Cierre efectivo')], ['No efectivo / escalados a AC', cuenta((e) => SEMAFORO_RC(e) === 'CRITICO')]],
+      secciones: [{
+        titulo: 'Reportes registrados', head: ['Folio', 'Periodo', 'Área', 'Indicador', 'Desviación / causa', 'Corrección', 'Responsable', 'Compromiso', 'Estado'],
+        body: lista.map((r) => [r.folio, `${r.mes || ''} ${r.ejercicio || ''}`.trim(), r.area || '', r.numeroIndicador ?? r.indicadorId ?? '', [r.descripcion, r.causa].filter(Boolean).join('\nCausa: '), r.accion || '', r.responsable || '', r.fechaCompromiso || '', ESTADO_RC(r.estado) + (r.folio_ac_vinculado ? `\n${r.folio_ac_vinculado}` : '')]),
+        semaforoCol: 8, semaforos: lista.map((r) => SEMAFORO_RC(r.estado)),
+        columnStyles: { 0: { cellWidth: 24 }, 3: { cellWidth: 14, halign: 'center' }, 4: { cellWidth: 60 }, 5: { cellWidth: 50 } },
+      }],
+      leyenda: 'OOMAPAS de Cajeme · Bitácora de Reportes de Corrección',
+    }, 'Bitacora_Reportes_de_Correccion');
+  };
+
   return (
     <>
-      {puedeCrear && (
-        <div className="flex justify-end mb-3">
-          <button type="button" onClick={() => setNuevoAbierto(true)} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><FilePlus2 size={14} /> Nuevo reporte de corrección</button>
+      {(
+        <div className="flex justify-end gap-2 mb-3">
+          <BotonInformePDF onClick={informePDF} />
+          {puedeCrear && <button type="button" onClick={() => setNuevoAbierto(true)} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><FilePlus2 size={14} /> Nuevo reporte de corrección</button>}
         </div>
       )}
         <div className="space-y-4">

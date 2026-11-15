@@ -32,6 +32,8 @@ import {
 } from '../../services/fichaTecnicaExporter';
 import { useToast } from '../common/Toast';
 import ModalFichaTecnicaAyuntamiento from './ModalFichaTecnicaAyuntamiento';
+import BotonInformePDF from './BotonInformePDF';
+import { exportarInformeIndicadoresPDF } from '../../services/indicadoresExporter';
 
 export default function FichasGubernamentalesTab({
   indicadores = [],
@@ -129,6 +131,22 @@ export default function FichasGubernamentalesTab({
     }
   };
 
+  const informePDF = () => exportarInformeIndicadoresPDF({
+    titulo: 'CATÁLOGO DE FICHAS TÉCNICAS DE INDICADORES (PMD)',
+    subtitulo: 'Alineación al Plan Municipal de Desarrollo · H. Ayuntamiento de Cajeme',
+    derecha: [`Ejercicio ${ejercicio}`],
+    resumen: [['Fichas', fichasList.length], ['En este informe', fichasFiltradas.length]],
+    secciones: [
+      { titulo: '1. Identificación y alineación', head: ['#', 'Indicador', 'Eje PMD', 'Programa PMD', 'Dimensión', 'Tipo', 'Sentido', 'Frecuencia'],
+        body: fichasFiltradas.map(({ indicador: i, ficha: f }) => [i.numero ?? i.id, i.nombre, f.alineacion?.eje_rector_pmd || '', f.alineacion?.programa_pmd || '', f.identificacion?.dimension || '', f.identificacion?.tipo_indicador || '', f.identificacion?.sentido_indicador || '', f.identificacion?.frecuencia_medicion || i.periodicidad || '']),
+        columnStyles: { 0: { cellWidth: 9, halign: 'center' }, 1: { cellWidth: 70 } } },
+      { titulo: '2. Método de cálculo y metas', head: ['#', 'Indicador', 'Método de cálculo', 'Unidad', 'Meta anual', 'T1', 'T2', 'T3', 'T4'],
+        body: fichasFiltradas.map(({ indicador: i, ficha: f }) => [i.numero ?? i.id, i.nombre, f.identificacion?.metodo_calculo || i.formula || '', i.unidad || '', i.meta_anual ?? i.meta ?? '', ...['T1', 'T2', 'T3', 'T4'].map((t) => i.metas_trimestrales?.[t] ?? '')]),
+        columnStyles: { 0: { cellWidth: 9, halign: 'center' }, 1: { cellWidth: 65 }, 2: { cellWidth: 80 } } },
+    ],
+    leyenda: `OOMAPAS de Cajeme · Fichas técnicas PMD · ${ejercicio}`,
+  }, `Fichas_tecnicas_PMD_${ejercicio}`);
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Banner Oficial PMD */}
@@ -139,7 +157,7 @@ export default function FichasGubernamentalesTab({
               H. AYUNTAMIENTO DE CAJEME · PMD
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-              OOMAPASC 2026
+              OOMAPASC {ejercicio}
             </span>
           </div>
           <h3 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
@@ -160,6 +178,7 @@ export default function FichasGubernamentalesTab({
             <span className="text-[10px] font-bold text-emerald-200 block uppercase">Filtradas</span>
             <span className="text-xl font-black text-emerald-400">{fichasFiltradas.length}</span>
           </div>
+          <BotonInformePDF onClick={informePDF} className="bg-marca-verde hover:bg-marca-verde/90" />
         </div>
       </div>
 

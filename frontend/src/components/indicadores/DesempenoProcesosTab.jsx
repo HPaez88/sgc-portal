@@ -22,6 +22,8 @@ import {
   Settings
 } from 'lucide-react';
 import { evalSemaforoOOMRSC05 } from '../../constants/indicadores';
+import BotonInformePDF from './BotonInformePDF';
+import { exportarInformeIndicadoresPDF, etiquetaSemaforo } from '../../services/indicadoresExporter';
 
 const MESES = [
   { clave: 'Ene', nombre: 'Enero' },
@@ -175,15 +177,15 @@ export default function DesempenoProcesosTab({
         const metrica = calcularMetricaIndicador(ind);
         if (metrica.sem.rango === 'ACEPTABLE') {
           aceptables++;
-          sumaPorcentaje += metrica.sem.porcentaje || 100;
+          sumaPorcentaje += metrica.sem.porcentaje ?? 0;
           evaluados++;
         } else if (metrica.sem.rango === 'PREVENTIVO') {
           preventivos++;
-          sumaPorcentaje += metrica.sem.porcentaje || 85;
+          sumaPorcentaje += metrica.sem.porcentaje ?? 0;
           evaluados++;
         } else if (metrica.sem.rango === 'CRITICO') {
           criticos++;
-          sumaPorcentaje += metrica.sem.porcentaje || 50;
+          sumaPorcentaje += metrica.sem.porcentaje ?? 0;
           evaluados++;
         } else {
           pendientes++;
@@ -194,9 +196,11 @@ export default function DesempenoProcesosTab({
         };
       });
 
-      const promedio = evaluados > 0 ? Math.round(sumaPorcentaje / evaluados) : 0;
+      // Un proceso sin capturas en el periodo no es crítico: queda "sin datos".
+      const promedio = evaluados > 0 ? Math.round(sumaPorcentaje / evaluados) : null;
       let semaforoProceso = 'ACEPTABLE';
-      if (promedio < 80) semaforoProceso = 'CRITICO';
+      if (promedio === null) semaforoProceso = 'SIN_DATOS';
+      else if (promedio < 80) semaforoProceso = 'CRITICO';
       else if (promedio < 90) semaforoProceso = 'PREVENTIVO';
 
       return {
@@ -214,7 +218,7 @@ export default function DesempenoProcesosTab({
     });
 
     // Ordenar procesos: primero los de menor eficacia o con más críticos para visibilidad inmediata
-    return lista.sort((a, b) => b.criticos - a.criticos || a.promedioEficacia - b.promedioEficacia);
+    return lista.sort((a, b) => b.criticos - a.criticos || (a.promedioEficacia ?? 101) - (b.promedioEficacia ?? 101));
   }, [indicadores, resultados, modoTemporal, mesActivo, trimestreSeleccionado, ejercicio]);
 
   // Filtrar procesos por término de búsqueda
@@ -242,14 +246,15 @@ export default function DesempenoProcesosTab({
     let preventivosTotal = 0;
     let aceptablesTotal = 0;
 
+    const conDatos = procesosEvaluados.filter(p => p.promedioEficacia !== null);
     procesosEvaluados.forEach(p => {
-      sumaEficacia += p.promedioEficacia;
+      sumaEficacia += p.promedioEficacia ?? 0;
       criticosTotal += p.criticos;
       preventivosTotal += p.preventivos;
       aceptablesTotal += p.aceptables;
     });
 
-    const promedioGlobal = totalProcesos > 0 ? Math.round(sumaEficacia / totalProcesos) : 0;
+    const promedioGlobal = conDatos.length > 0 ? Math.round(sumaEficacia / conDatos.length) : null;
 
     return {
       totalProcesos,
@@ -263,6 +268,26 @@ export default function DesempenoProcesosTab({
       aceptablesTotal
     };
   }, [procesosEvaluados, indicadores.length]);
+
+  const informePDF = () => {
+    const periodo = procesosEvaluados[0]?.indicadores[0]?.periodoEtiqueta || `${mesActivoNombre} ${ejercicio}`;
+    const detalle = procesosFiltrados.flatMap((p) => p.indicadores.map((i) => ({ p, i })));
+    exportarInformeIndicadoresPDF({
+      titulo: 'DESEMPEÑO POR ENFOQUE DE PROCESOS',
+      subtitulo: 'Eficacia de los procesos del SGC · ISO 9001:2015 § 4.4 y OOMRSC-05',
+      derecha: [periodo],
+      resumen: [['Procesos', resumenGlobal.totalProcesos], ['Eficacia media', resumenGlobal.promedioGlobal === null ? '—' : `${resumenGlobal.promedioGlobal}%`], ['Conformes', resumenGlobal.procesosVerdes], ['En riesgo', resumenGlobal.procesosAmarillos], ['Críticos', resumenGlobal.procesosRojos]],
+      secciones: [
+        { titulo: '1. Eficacia por proceso', head: ['Proceso', 'Dirección', 'Indicadores', 'Aceptables', 'Preventivos', 'Críticos', 'Sin captura', 'Eficacia'],
+          body: procesosFiltrados.map((p) => [p.nombre, p.direccion, p.total, p.aceptables, p.preventivos, p.criticos, p.pendientes, etiquetaSemaforo(p.semaforoProceso, p.promedioEficacia)]),
+          semaforoCol: 7, semaforos: procesosFiltrados.map((p) => p.semaforoProceso), columnStyles: { 0: { cellWidth: 60 } } },
+        { titulo: '2. Indicadores de cada proceso', head: ['Proceso', '#', 'Indicador', 'Meta', 'Resultado', 'Semáforo'],
+          body: detalle.map(({ p, i }) => [p.nombre, i.numero ?? i.id, i.nombre, i.metaEvaluada ?? '', i.val ?? '', etiquetaSemaforo(i.sem.rango, i.sem.porcentaje)]),
+          semaforoCol: 5, semaforos: detalle.map(({ i }) => i.sem.rango), columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 9, halign: 'center' }, 2: { cellWidth: 100 } } },
+      ],
+      leyenda: `OOMAPAS de Cajeme · Desempeño por procesos · ${periodo}`,
+    }, `Desempeno_por_procesos_${periodo}`);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -283,6 +308,7 @@ export default function DesempenoProcesosTab({
             </div>
           </div>
 
+          <BotonInformePDF onClick={informePDF} className="self-start md:self-auto md:ml-auto" />
           {/* Selector de Modo Temporal (Mes / Trimestre / Todo el Año) */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start md:self-auto shrink-0">
             <button
@@ -435,10 +461,10 @@ export default function DesempenoProcesosTab({
             Eficacia Media de Procesos
           </span>
           <span className="text-2xl font-black text-slate-900 block">
-            {resumenGlobal.promedioGlobal}%
+            {resumenGlobal.promedioGlobal === null ? '—' : `${resumenGlobal.promedioGlobal}%`}
           </span>
           <span className="text-[10px] text-sky-700 font-bold block">
-            {resumenGlobal.totalProcesos} Procesos Evaluados
+            {resumenGlobal.totalProcesos} procesos en total
           </span>
         </div>
 
@@ -494,13 +520,14 @@ export default function DesempenoProcesosTab({
             const esCritico = proc.semaforoProceso === 'CRITICO';
             const esPreventivo = proc.semaforoProceso === 'PREVENTIVO';
 
-            const barraBg = esCritico
+            const sinDatos = proc.semaforoProceso === 'SIN_DATOS';
+            const barraBg = sinDatos ? 'bg-slate-300' : esCritico
               ? 'bg-rose-500'
               : esPreventivo
               ? 'bg-amber-500'
               : 'bg-emerald-500';
 
-            const badgeBg = esCritico
+            const badgeBg = sinDatos ? 'bg-slate-100 text-slate-600 border-slate-200' : esCritico
               ? 'bg-rose-100 text-rose-800 border-rose-200'
               : esPreventivo
               ? 'bg-amber-100 text-amber-800 border-amber-200'
@@ -531,7 +558,7 @@ export default function DesempenoProcesosTab({
                           {proc.nombre}
                         </h4>
                         <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-black border ${badgeBg}`}>
-                          {proc.promedioEficacia}% Eficacia
+                          {proc.promedioEficacia === null ? 'Sin captura' : `${proc.promedioEficacia}% Eficacia`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap">
@@ -565,12 +592,12 @@ export default function DesempenoProcesosTab({
                     <div className="w-28 sm:w-36 space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 font-bold">
                         <span>Meta SGC</span>
-                        <span>{proc.promedioEficacia}%</span>
+                        <span>{proc.promedioEficacia === null ? '—' : `${proc.promedioEficacia}%`}</span>
                       </div>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${barraBg}`}
-                          style={{ width: `${Math.min(100, proc.promedioEficacia)}%` }}
+                          style={{ width: `${Math.min(100, proc.promedioEficacia ?? 0)}%` }}
                         />
                       </div>
                     </div>

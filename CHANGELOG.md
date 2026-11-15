@@ -1,6 +1,12 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14 — Indicadores: el proyecto anual en la pestaña 2 e informes PDF
+- Pestañas: 1 Cuadro Mensual, 2 Proyecto anual (fuente de indicadores y formatos), 3 Por Procesos, 4 Fichas PMD, 5 Reportes RC. Se oculta Evaluación Trimestral.
+- Botón "Informe PDF" con diseño institucional en cada pestaña (Cuadro del mes + matriz anual, proyecto o proyectos del año, procesos, fichas PMD y bitácora de RC).
+- Por Procesos: un proceso sin capturas ya no cuenta como crítico; queda "Sin captura" y no entra al promedio.
+- Menú lateral: verde de la marca, flecha en el borde para plegarlo y logo reducido completo.
+
 ## 2026-11-14 — Indicadores: formatos por área y sin datos de ejemplo
 - Descarga de formatos oficiales (proyecto, ficha, PEMS) limitada al área del proyecto, sus encargados SGC y los administradores (misma regla que la captura).
 - Alta de indicador: se quitan los textos de ejemplo (eje, programa, CREMAA, supuestos, fuentes, titular, notas, meta 85 y T 20/20/20/25); la meta anual es obligatoria.
