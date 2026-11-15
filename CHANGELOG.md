@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Rotación de personal: al quitar un encargado se pregunta si se deshabilita su acceso
+- Al editar o eliminar un área (encargado y apoyos SGC) o una dirección (director, subdirecciones y apoyos SGC), por cada correo que deja de estar asignado el portal pregunta si se deshabilita el usuario; si sigue asignado en otra área o dirección, lo informa y conserva el acceso. Queda en bitácora (SEGURIDAD · DESHABILITAR_ACCESO). Nunca aplica al propio usuario ni a administradores.
+- Se dieron de alta en producción los 39 encargados/directores que ya estaban en el catálogo sin usuario.
+
 ## 2026-11-15 — Encargados del catálogo = usuarios del portal; buscador muestra encargados
 - Al guardar un área o una dirección (con sus subdirecciones), el encargado/director se da de alta como usuario si no existe (`POST /api/v1/auth/usuarios/asegurar`, rol Encargado/Director, sin contraseña utilizable hasta que el Super Admin la genere). Script `backend.scripts.altas_encargados` para los que ya estaban en el catálogo.
 - Buscador global: las áreas muestran encargado y correo, y se agregan las direcciones (director). Con varias palabras prefiere la frase exacta.

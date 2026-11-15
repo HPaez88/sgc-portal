@@ -14,6 +14,7 @@ import SubdireccionesEditor from './SubdireccionesEditor';
 import { ModalRestablecer, ModalAccesosMasivos, AvisoCorreoInactivo } from './AccesosCorreo';
 import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
 import { cambioEncargado } from '../../constants/workflow';
+import { useDialogos, Dialogos } from '../common/Dialogos';
 import {
   Users,
   Type,
@@ -305,12 +306,47 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     }
   };
 
+  const { confirmar, props: dialogosProps } = useDialogos();
+
+  // Correos ligados a un área (encargado + apoyos SGC) y a una dirección (director, subdirecciones y apoyos SGC).
+  const correosDeArea = (a) => [a?.correo, ...(a?.encargados_sgc || [])].map((c) => String(c || '').toLowerCase()).filter(Boolean);
+  const correosDeDireccion = (d) => [d?.correo, ...(d?.subdirecciones || []).map((sd) => sd?.correo), ...(d?.encargados_sgc || [])].map((c) => String(c || '').toLowerCase()).filter(Boolean);
+  const dondeSigueAsignado = (correo, areasNuevas, direccionesNuevas) => [
+    ...areasNuevas.filter((a) => correosDeArea(a).includes(correo)).map((a) => a.nombre),
+    ...direccionesNuevas.filter((d) => correosDeDireccion(d).includes(correo)).map((d) => d.nombre),
+  ];
+
+  // Regla (Héctor, 2026-11-15): el personal rota cada 3 años. Al quitar a alguien del catálogo se pregunta si se le
+  // deshabilita el acceso; si sigue asignado en otra área o dirección, no se pregunta.
+  const revisarSalidas = async (correosQuitados, { areasNuevas = areasDetalle, direccionesNuevas = direccionesDetalle, contexto = '' } = {}) => {
+    for (const correo of [...new Set(correosQuitados.map((c) => String(c || '').toLowerCase()).filter(Boolean))]) {
+      if (correo === String(usuarioLogueado?.email || '').toLowerCase()) continue;
+      const u = usuariosList.find((x) => String(x.email).toLowerCase() === correo);
+      if (!u || u.activo === false || ['Super Admin', 'Admin'].includes(u.rol)) continue;
+      const otros = dondeSigueAsignado(correo, areasNuevas, direccionesNuevas);
+      if (otros.length) { toast.info(`${u.nombre} sigue asignado en ${otros.join(', ')}; conserva su acceso.`); continue; }
+      const { ok } = await confirmar({
+        titulo: 'Deshabilitar acceso al portal',
+        mensaje: `${u.nombre} (${u.email}) ya no aparece como ${contexto || 'encargado'}. Si ya no pertenece al organismo no debe entrar al portal. ¿Deshabilitamos su acceso? (Se puede reactivar después desde Usuarios.)`,
+        textoAceptar: 'Deshabilitar acceso', textoCancelar: 'Conservar acceso', peligro: true,
+      });
+      if (!ok) continue;
+      const r = await api.put(`/api/v1/auth/usuarios/${u.id}`, { nombre: u.nombre, email: u.email, telefono: u.telefono || null, area: u.area, direccion: u.direccion || null, rol: u.rol, activo: false });
+      if (!r.ok) { toast.error(`No se pudo deshabilitar a ${u.nombre}: ${r.error?.message || ''}`); continue; }
+      registrarMovimiento({ modulo: 'SEGURIDAD', accion: 'DESHABILITAR_ACCESO', descripcion: `Acceso deshabilitado a ${u.nombre} (${u.email}) al dejar de ser ${contexto || 'encargado'}`, detalles: 'Rotación de personal: quitado del catálogo.', folio: 'SEG-USER' });
+      toast.success(`Acceso de ${u.nombre} deshabilitado.`);
+    }
+    await recargarUsuarios();
+  };
+
   const guardarArea = async () => {
     const { nombre, encargado, correo, direccion, telefono } = modalArea.data;
     if (!nombre.trim()) return toast.warning('El nombre del área es obligatorio.');
     if (!encargado.trim()) return toast.warning('El nombre del encargado actual es obligatorio.');
     if (!correo.trim()) return toast.warning('El correo institucional para avisos del SGC es obligatorio.');
 
+    const previa = modalArea.esEdicion ? areasDetalle.find((a) => a.id === modalArea.data.id) : null;
+    const areasNuevas = modalArea.esEdicion ? areasDetalle.map((a) => (a.id === modalArea.data.id ? modalArea.data : a)) : [...areasDetalle, modalArea.data];
     if (modalArea.esEdicion) {
       setAreasDetalle(prev => prev.map(a => a.id === modalArea.data.id ? { ...modalArea.data, ...(modalArea.data.foda ? { foda: normalizarFoda(modalArea.data.foda) } : {}) } : a));
       notificar(`✓ Área "${nombre}" actualizada correctamente`);
@@ -321,6 +357,10 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     setModalArea({ show: false, esEdicion: false, data: {} });
     await ajustarEncargados(modalArea.data.encargados_sgc || [], nombre.trim());
     await asegurarUsuarios([{ nombre: encargado, email: correo, area: nombre.trim(), direccion: direccion || null, rol: 'Encargado' }]);
+    if (previa) {
+      const quitados = correosDeArea(previa).filter((c) => !correosDeArea(modalArea.data).includes(c));
+      await revisarSalidas(quitados, { areasNuevas, contexto: `encargado o apoyo del área ${nombre.trim()}` });
+    }
   };
 
   // Control de permisos estrictos: Solo Super Admin (Lic. Héctor Páez / Super Admin) puede eliminar datos de los catálogos
@@ -335,10 +375,11 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       show: true,
       type: 'Área',
       name: area.nombre,
-      action: (motivo) => {
+      action: async (motivo) => {
         setAreasDetalle(prev => prev.filter(a => a.id !== area.id));
         setConfirmDelete({ show: false, type: '', name: '', action: null });
-        notificar(`🗑️ Área "${area.nombre}" eliminada`);
+        notificar(`Área "${area.nombre}" eliminada`);
+        await revisarSalidas(correosDeArea(area), { areasNuevas: areasDetalle.filter((a) => a.id !== area.id), contexto: `encargado del área ${area.nombre} (eliminada)` });
         registrarMovimiento({
           modulo: 'CATALOGOS',
           accion: 'ELIMINACION',
@@ -386,6 +427,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       setAreasDetalle(prev => prev.map(a => (a.direccion === nombre && renombres[a.subdireccion] ? { ...a, subdireccion: renombres[a.subdireccion] } : a)));
     }
 
+    const direccionesNuevas = modalDireccion.esEdicion ? direccionesDetalle.map((d) => (d.id === datos.id ? datos : d)) : [...direccionesDetalle, datos];
     if (modalDireccion.esEdicion) {
       setDireccionesDetalle(prev => prev.map(d => d.id === datos.id ? datos : d));
       notificar(`✓ Dirección "${nombre}" actualizada correctamente`);
@@ -398,6 +440,10 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       { nombre: director, email: correo, area: nombre.trim(), direccion: nombre.trim(), rol: 'Director' },
       ...subs.map((sd) => ({ nombre: sd.encargado, email: sd.correo, area: sd.nombre, direccion: nombre.trim(), rol: 'Encargado' })),
     ]);
+    if (previa) {
+      const quitados = correosDeDireccion(previa).filter((c) => !correosDeDireccion(datos).includes(c));
+      await revisarSalidas(quitados, { direccionesNuevas, contexto: `director, subdirector o apoyo de ${nombre.trim()}` });
+    }
   };
 
   const eliminarDireccion = (dir) => {
@@ -666,6 +712,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      <Dialogos {...dialogosProps} />
       {/* Alerta de Éxito */}
       {mensajeExito && (
         <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 rounded-r-xl shadow-2xs flex items-center justify-between gap-3 animate-slide-down">
