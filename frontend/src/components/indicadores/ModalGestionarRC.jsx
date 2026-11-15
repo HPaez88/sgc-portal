@@ -20,6 +20,9 @@ import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
 import { useSGC } from '../../SGCContext';
 import CampoFecha from '../common/CampoFecha';
+import { acDesdeReporteCorreccion } from '../../services/flujoService';
+import { estadoRC, etiquetaRC, puedeDictaminarRC, hoyISO } from '../../constants/reportesCorreccion';
+import { formatearFecha } from '../../constants/workflow';
 
 export default function ModalGestionarRC({
   isOpen,
@@ -32,7 +35,7 @@ export default function ModalGestionarRC({
   const toast = useToast();
   const { setAccionesCorrectivas, registrarMovimiento } = useSGC();
 
-  const [estado, setEstado] = useState('ABIERTO');
+  const [estado, setEstado] = useState('EN_ATENCION');
   const [causa, setCausa] = useState('');
   const [accion, setAccion] = useState('');
   const [responsable, setResponsable] = useState('');
@@ -43,18 +46,22 @@ export default function ModalGestionarRC({
 
   useEffect(() => {
     if (reporte) {
-      setEstado(reporte.estado || 'ABIERTO');
+      setEstado(estadoRC(reporte));
       setCausa(reporte.causa || '');
       setAccion(reporte.accion || '');
       setResponsable(reporte.responsable || '');
       setFechaCompromiso(reporte.fechaCompromiso || '');
       setObservacionesVerificacion(reporte.observacionesVerificacion || '');
       setVerificadoPor(reporte.verificadoPor || usuarioLogueado?.nombre || 'Coordinador SGC');
-      setFechaVerificacion(reporte.fechaVerificacion || new Date().toISOString().split('T')[0]);
+      setFechaVerificacion(reporte.fechaVerificacion || hoyISO());
     }
-  }, [reporte, usuarioLogueado, isOpen]);
+  }, [reporte?.id, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps -- solo al abrir: no borra lo que se escribe
 
   if (!isOpen || !reporte) return null;
+  const abierto = estadoRC(reporte) === 'EN_ATENCION';
+  const dictamina = puedeDictaminarRC(usuarioLogueado);
+  // El área captura la corrección mientras está abierto; el dictamen (cierre o escalado) es del SGC / auditor.
+  const puedeEditar = abierto || dictamina;
 
   const handleGuardarCambios = (nuevoEstado = estado) => {
     const reporteActualizado = {
@@ -71,7 +78,7 @@ export default function ModalGestionarRC({
     };
 
     onActualizarReporte?.(reporteActualizado);
-    toast.success(`Reporte de Corrección [${reporte.folio}] actualizado (Estatus: ${nuevoEstado}).`);
+    toast.success(`Reporte ${reporte.folio} guardado (${etiquetaRC({ estado: nuevoEstado }).label}).`);
     onClose();
   };
 
@@ -83,37 +90,23 @@ export default function ModalGestionarRC({
     handleGuardarCambios('CERRADO_EFECTIVO');
   };
 
+  // Regla: un RC no efectivo escala a Acción Correctiva (análisis de causa raíz). Una sola vez.
   const handleCierreNoEfectivo = () => {
     if (!observacionesVerificacion.trim()) {
-      toast.warning('Por favor especifica las razones por las cuales el cierre no resultó efectivo.');
+      toast.warning('Especifica por qué la corrección no resultó efectiva.');
       return;
     }
-    handleGuardarCambios('CERRADO_NO_EFECTIVO');
+    if (reporte.folio_ac_vinculado) {
+      toast.warning(`Este reporte ya generó la acción ${reporte.folio_ac_vinculado}.`);
+      return;
+    }
+    handleEjecutarEscalamientoAC();
   };
 
   // Escalamiento a Acción Correctiva formal (OOMRSC-20)
   const handleEjecutarEscalamientoAC = () => {
-    const anioActual = reporte.ejercicio || new Date().getFullYear();
-    const folioAC = `AC-${anioActual}-RC${reporte.numeroIndicador !== undefined ? reporte.numeroIndicador : (reporte.id % 100)}`;
-
-    const nuevaAccionCorrectiva = {
-      id: Date.now(),
-      folio: folioAC,
-      folio_codigo: folioAC,
-      origen: 'INDICADORES_RC',
-      tipo: 'NO_CONFORMIDAD',
-      proceso: reporte.proceso || 'Responsabilidad de la Dirección',
-      area: reporte.area || 'Operativa',
-      responsable: reporte.responsable || usuarioLogueado?.nombre || 'Responsable de Área',
-      descripcion: `Desviación no subsanada desde Reporte de Corrección ${reporte.folio}. ${reporte.descripcion || ''}`,
-      causa_raiz: reporte.causa || 'Causa no resuelta en ciclo de corrección operativa.',
-      accion_inmediata: reporte.accion || 'Corrección operativa previa aplicada sin eficacia sostenible.',
-      estado: 'BORRADOR',
-      fecha_solicitud: new Date().toISOString().split('T')[0],
-      fecha_compromiso: fechaCompromiso || new Date().toISOString().split('T')[0],
-      reporte_correccion_origen: reporte.folio,
-      indicador_relacionado_id: reporte.indicadorId
-    };
+    const nuevaAccionCorrectiva = acDesdeReporteCorreccion({ ...reporte, causa, accion, responsable, observacionesVerificacion });
+    const folioAC = nuevaAccionCorrectiva.folio_provisional;
 
     // Agregar a la lista de Acciones Correctivas del contexto
     setAccionesCorrectivas?.(prev => [nuevaAccionCorrectiva, ...(prev || [])]);
@@ -123,9 +116,9 @@ export default function ModalGestionarRC({
       ...reporte,
       estado: 'ESCALADO_A_AC',
       folio_ac_vinculado: folioAC,
-      observacionesVerificacion: observacionesVerificacion || `Escalado a Acción Correctiva formal ${folioAC} por ineficacia de corrección o criticidad.`,
-      verificadoPor: verificadoPor || usuarioLogueado?.nombre || 'Coordinador SGC',
-      fechaVerificacion: new Date().toISOString().split('T')[0]
+      resultado_cierre: 'NO_EFECTIVO', causa, accion, responsable, fechaCompromiso,
+      observacionesVerificacion, verificadoPor: verificadoPor || usuarioLogueado?.nombre || '',
+      fechaVerificacion: fechaVerificacion || hoyISO(), fechaUltimaModificacion: new Date().toISOString(),
     };
 
     onActualizarReporte?.(reporteEscalado);
@@ -138,10 +131,7 @@ export default function ModalGestionarRC({
       folio: folioAC
     });
 
-    toast.success(
-      `Reporte escalado con éxito a Acción Correctiva ${folioAC}. Puedes darle seguimiento en el módulo de Acciones Correctivas (OOMRSC-20).`,
-      { duracion: 7000 }
-    );
+    toast.success(`Reporte ${reporte.folio} cerrado como no efectivo. Se abrió el borrador de Acción Correctiva ${folioAC} en Acciones Correctivas → Por abrir.`, { duracion: 7000 });
 
     onEscalarAC?.(nuevaAccionCorrectiva);
     onClose();
@@ -183,17 +173,7 @@ export default function ModalGestionarRC({
           {/* Banner de Estado */}
           <div className="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-bold bg-slate-50 border-slate-200">
             <span className="text-slate-700 text-sm">Estatus del Reporte de Corrección:</span>
-            <span className={`px-4 py-1.5 rounded-full font-extrabold text-xs border ${
-              estado === 'CERRADO_EFECTIVO' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-              estado === 'CERRADO_NO_EFECTIVO' ? 'bg-rose-100 text-rose-800 border-rose-300' :
-              estado === 'ESCALADO_A_AC' ? 'bg-purple-100 text-purple-800 border-purple-300' :
-              'bg-amber-100 text-amber-800 border-amber-300'
-            }`}>
-              {estado === 'CERRADO_EFECTIVO' && '✓ Cierre Efectivo'}
-              {estado === 'CERRADO_NO_EFECTIVO' && '✕ Cierre No Efectivo'}
-              {estado === 'ESCALADO_A_AC' && '⚡ Escalado a Acción Correctiva (OOMRSC-20)'}
-              {(estado === 'ABIERTO' || estado === 'EN_ATENCION') && '⏳ En Atención Operativa'}
-            </span>
+            <span className={`px-4 py-1.5 rounded-full font-extrabold text-xs border ${etiquetaRC({ estado }).cls}`}>{etiquetaRC({ estado }).label}</span>
           </div>
 
           {/* Información del Indicador y Área */}
@@ -204,7 +184,7 @@ export default function ModalGestionarRC({
                 Área Responsable: {reporte.area || 'Operativa'}
               </span>
               <span className="text-slate-500 font-mono font-bold">
-                Mes: {reporte.mes || 'Oct'}
+                Periodo: {[reporte.mes, reporte.ejercicio].filter(Boolean).join(' ') || '—'} · Registrado {formatearFecha(reporte.fechaRegistro) || '—'}
               </span>
             </div>
             <p className="text-slate-800 font-medium text-xs sm:text-sm leading-relaxed">
@@ -314,8 +294,10 @@ export default function ModalGestionarRC({
               </div>
             </div>
 
-            {/* Botones de Dictamen */}
-            <div className="pt-2 flex flex-wrap gap-2">
+            {/* Botones de dictamen: SGC o auditor, y solo mientras el reporte está en atención */}
+            {!dictamina && <p className="text-xs text-slate-600">El dictamen de eficacia lo registra el SGC o un auditor.</p>}
+            {dictamina && !abierto && <p className="text-xs text-slate-600">Este reporte ya tiene dictamen ({etiquetaRC(reporte).label}); no se modifica.</p>}
+            {dictamina && abierto && <div className="pt-2 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={handleCierreEfectivo}
@@ -329,18 +311,9 @@ export default function ModalGestionarRC({
                 onClick={handleCierreNoEfectivo}
                 className="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
-                <AlertTriangle size={14} /> Marcar Cierre No Efectivo
+                <AlertTriangle size={14} /> No efectivo: escalar a Acción Correctiva
               </button>
-
-              <button
-                type="button"
-                onClick={handleEjecutarEscalamientoAC}
-                className="px-3 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ml-auto"
-                title="Genera automáticamente un registro en Acciones Correctivas (OOMRSC-20)"
-              >
-                <Sparkles size={14} /> Escalar a Acción Correctiva (OOMRSC-20)
-              </button>
-            </div>
+            </div>}
           </div>
         </div>
 
@@ -354,13 +327,13 @@ export default function ModalGestionarRC({
             Cerrar
           </button>
 
-          <button
+          {puedeEditar && <button
             type="button"
             onClick={() => handleGuardarCambios(estado)}
             className="px-5 py-2 bg-[#0B192C] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md"
           >
             <Save size={14} /> Guardar Registro
-          </button>
+          </button>}
         </div>
       </div>
     </ContenedorModal>

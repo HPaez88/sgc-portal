@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { siguienteHabil, esFinDeSemana } from '../fechasHabiles';
-import { folioRC } from '../../components/acciones/ModalNuevoRC';
+import { folioRC } from '../reportesCorreccion';
 
 describe('fechas hábiles y folio de RC', () => {
   it('recorre sábado y domingo al lunes', () => {

@@ -7,7 +7,8 @@ import { useToast } from '../common/Toast';
 import PorAbrirPanel from '../common/PorAbrirPanel';
 import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
 import ReportesCorreccionPanel from './ReportesCorreccionPanel';
-import { leerEstadoTexto } from '../../services/estadoService';
+import { useLocalStorage } from '../../hooks';
+import { CLAVE_RC } from '../../constants/reportesCorreccion';
 import CampoFecha from '../common/CampoFecha';
 
 const noConformidadDe = (ac) => ac.descripcion_no_conformidad_final || ac.descripcion_no_conformidad_original || ac.descripcion_problema || '';
@@ -74,7 +75,8 @@ export default function AccionesLista({
   
   // Filtrar acciones (estado canónico + búsqueda + vencimiento)
   const [pestana, setPestana] = useState('control');
-  const totalRC = (() => { try { return (JSON.parse(leerEstadoTexto('sgc-reportes-correccion') || '[]') || []).length; } catch { return null; } })();
+  const [reportesRC] = useLocalStorage(CLAVE_RC, []);
+  const totalRC = (reportesRC || []).length;
   const porAbrir = accionesCorrectivas.filter(esPorAbrir);
   const enControl = accionesCorrectivas.filter((r) => !esPorAbrir(r));
   const accionesFiltradas = enControl.filter(ac => {

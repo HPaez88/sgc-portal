@@ -1,250 +1,118 @@
-// Reportes de Corrección (RC): bitácora, filtros y dictamen. Se gestionan desde Acciones Correctivas
-// (pestaña propia) y también se ven en Indicadores; ambos usan la misma información (sgc-reportes-correccion).
-import React, { useState } from 'react';
-import { Edit3, FileWarning, Search } from 'lucide-react';
+// Reportes de Corrección (RC): bitácora, filtros y dictamen. Se ve desde Acciones Correctivas y desde Indicadores;
+// las dos pantallas leen y escriben la misma clave con useLocalStorage, así que siempre muestran lo mismo.
+import React, { useMemo, useState } from 'react';
+import { Edit3, FileWarning, Search, FilePlus2 } from 'lucide-react';
 import ModalGestionarRC from '../indicadores/ModalGestionarRC';
 import ModalNuevoRC from './ModalNuevoRC';
-import { FilePlus2 } from 'lucide-react';
-import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
-import { REPORTES_CORRECCION_INICIALES } from '../../constants/indicadores';
 import BotonInformePDF from '../indicadores/BotonInformePDF';
 import { exportarInformeIndicadoresPDF } from '../../services/indicadoresExporter';
+import { useLocalStorage } from '../../hooks';
+import { useSGC } from '../../SGCContext';
+import { formatearFecha } from '../../constants/workflow';
+import { CLAVE_RC, RC_ESTADOS, estadoRC, etiquetaRC, puedeCrearRCManual, puedeVerRC } from '../../constants/reportesCorreccion';
 
-const ESTADO_RC = (e) => (['CERRADO_EFECTIVO', 'CERRADA'].includes(e) ? 'Cierre efectivo' : e === 'CERRADO_NO_EFECTIVO' ? 'No efectivo' : e === 'ESCALADO_A_AC' ? 'Escalado a AC' : 'En atención');
-const SEMAFORO_RC = (e) => (['CERRADO_EFECTIVO', 'CERRADA'].includes(e) ? 'ACEPTABLE' : ['CERRADO_NO_EFECTIVO', 'ESCALADO_A_AC'].includes(e) ? 'CRITICO' : 'PREVENTIVO');
+const SEMAFORO_PDF = { CERRADO_EFECTIVO: 'ACEPTABLE', EN_ATENCION: 'PREVENTIVO', CERRADO_NO_EFECTIVO: 'CRITICO', ESCALADO_A_AC: 'CRITICO' };
+const FILTROS = [['TODOS', 'Todos los estados'], ...Object.entries(RC_ESTADOS).map(([k, v]) => [k, v.label])];
 
-const leerReportes = () => {
-  try {
-    const g = leerEstadoTexto('sgc-reportes-correccion');
-    if (g) return JSON.parse(g);
-  } catch { /* sin datos guardados */ }
-  return REPORTES_CORRECCION_INICIALES;
-};
-
-export default function ReportesCorreccionPanel({ reportes, onActualizar, usuarioLogueado }) {
-  // Si la pantalla que lo usa no maneja los reportes (Acciones Correctivas), el panel los lee y guarda solo.
-  const [propios, setPropios] = useState(reportes ? null : leerReportes);
-  const reportesCorreccion = reportes || propios || [];
-  const [filtroEstadoRC, setFiltroEstadoRC] = useState('TODOS');
-  const [busquedaRC, setBusquedaRC] = useState('');
-  const [rcParaGestionar, setRcParaGestionar] = useState(null);
-  const [modalGestionarRCOpen, setModalGestionarRCOpen] = useState(false);
+export default function ReportesCorreccionPanel({ usuarioLogueado }) {
+  const { areasDetalle = [] } = useSGC();
+  const [reportes, setReportes] = useLocalStorage(CLAVE_RC, []);
+  const [filtro, setFiltro] = useState('TODOS');
+  const [busqueda, setBusqueda] = useState('');
+  const [rcAbierto, setRcAbierto] = useState(null);
   const [nuevoAbierto, setNuevoAbierto] = useState(false);
-  const puedeCrear = ['Super Admin', 'Admin', 'Auditor'].includes(usuarioLogueado?.rol);
 
-  const actualizar = (rep) => {
-    if (onActualizar) return onActualizar(rep);
-    setPropios((prev) => {
-      const lista = prev || [];
-      const i = lista.findIndex((r) => r.id === rep.id || r.folio === rep.folio);
-      const nuevos = i >= 0 ? lista.map((r, k) => (k === i ? rep : r)) : [rep, ...lista];
-      try { escribirEstadoTexto('sgc-reportes-correccion', JSON.stringify(nuevos)); } catch { /* sin almacenamiento */ }
-      return nuevos;
-    });
-  };
+  // Alcance por área: el área ve lo suyo; SGC, auditores y Director ven todo.
+  const visibles = useMemo(() => (reportes || []).filter((r) => puedeVerRC(usuarioLogueado, r, areasDetalle)), [reportes, usuarioLogueado, areasDetalle]);
+  const conteo = (estado) => visibles.filter((r) => estadoRC(r) === estado).length;
+  const lista = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return visibles
+      .filter((r) => filtro === 'TODOS' || estadoRC(r) === filtro)
+      .filter((r) => !q || [r.folio, r.responsable, r.area, r.descripcion].some((t) => String(t || '').toLowerCase().includes(q)))
+      .sort((a, b) => String(b.fechaRegistro || '').localeCompare(String(a.fechaRegistro || '')));
+  }, [visibles, filtro, busqueda]);
 
-  const informePDF = () => {
-    const lista = [...reportesCorreccion].sort((a, b) => String(b.fechaRegistro || '').localeCompare(String(a.fechaRegistro || '')));
-    const cuenta = (f) => lista.filter((r) => f(r.estado)).length;
-    exportarInformeIndicadoresPDF({
-      titulo: 'BITÁCORA DE REPORTES DE CORRECCIÓN (RC)',
-      subtitulo: 'Corrección de desviaciones en indicadores · ISO 9001:2015 § 10.2',
-      resumen: [['Casos', lista.length], ['En atención', cuenta((e) => ESTADO_RC(e) === 'En atención')], ['Cierre efectivo', cuenta((e) => ESTADO_RC(e) === 'Cierre efectivo')], ['No efectivo / escalados a AC', cuenta((e) => SEMAFORO_RC(e) === 'CRITICO')]],
-      secciones: [{
-        titulo: 'Reportes registrados', head: ['Folio', 'Periodo', 'Área', 'Indicador', 'Desviación / causa', 'Corrección', 'Responsable', 'Compromiso', 'Estado'],
-        body: lista.map((r) => [r.folio, `${r.mes || ''} ${r.ejercicio || ''}`.trim(), r.area || '', r.numeroIndicador ?? r.indicadorId ?? '', [r.descripcion, r.causa].filter(Boolean).join('\nCausa: '), r.accion || '', r.responsable || '', r.fechaCompromiso || '', ESTADO_RC(r.estado) + (r.folio_ac_vinculado ? `\n${r.folio_ac_vinculado}` : '')]),
-        semaforoCol: 8, semaforos: lista.map((r) => SEMAFORO_RC(r.estado)),
-        columnStyles: { 0: { cellWidth: 24 }, 3: { cellWidth: 14, halign: 'center' }, 4: { cellWidth: 60 }, 5: { cellWidth: 50 } },
-      }],
-      leyenda: 'OOMAPAS de Cajeme · Bitácora de Reportes de Corrección',
-    }, 'Bitacora_Reportes_de_Correccion');
-  };
+  const actualizar = (rep) => setReportes((prev) => {
+    const l = prev || [];
+    return l.some((r) => r.id === rep.id) ? l.map((r) => (r.id === rep.id ? rep : r)) : [rep, ...l];
+  });
+
+  const informePDF = () => exportarInformeIndicadoresPDF({
+    titulo: 'BITÁCORA DE REPORTES DE CORRECCIÓN (RC)',
+    subtitulo: 'Corrección de desviaciones en indicadores · ISO 9001:2015 § 10.2',
+    resumen: [['Casos', visibles.length], ...Object.entries(RC_ESTADOS).map(([k, v]) => [v.label, conteo(k)])],
+    secciones: [{
+      titulo: 'Reportes registrados', head: ['Folio', 'Periodo', 'Área', 'Indicador', 'Desviación / causa', 'Corrección', 'Responsable', 'Compromiso', 'Estado'],
+      body: lista.map((r) => [r.folio, `${r.mes || ''} ${r.ejercicio || ''}`.trim(), r.area || '', r.numeroIndicador ?? r.indicadorId ?? '', [r.descripcion, r.causa].filter(Boolean).join('\nCausa: '), r.accion || '', r.responsable || '', formatearFecha(r.fechaCompromiso) || '', etiquetaRC(r).label + (r.folio_ac_vinculado ? `\n${r.folio_ac_vinculado}` : '')]),
+      semaforoCol: 8, semaforos: lista.map((r) => SEMAFORO_PDF[estadoRC(r)]),
+      columnStyles: { 0: { cellWidth: 24 }, 3: { cellWidth: 14, halign: 'center' }, 4: { cellWidth: 60 }, 5: { cellWidth: 50 } },
+    }],
+    leyenda: 'OOMAPAS de Cajeme · Bitácora de Reportes de Corrección',
+  }, 'Bitacora_Reportes_de_Correccion');
 
   return (
-    <>
-      {(
-        <div className="flex justify-end gap-2 mb-3">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-base font-extrabold text-slate-900 inline-flex items-center gap-2"><FileWarning size={18} className="text-amber-600" /> Reportes de corrección <span className="text-sm font-bold text-slate-500">({visibles.length})</span></h3>
+        <div className="flex gap-2">
           <BotonInformePDF onClick={informePDF} />
-          {puedeCrear && <button type="button" onClick={() => setNuevoAbierto(true)} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><FilePlus2 size={14} /> Nuevo reporte de corrección</button>}
+          {puedeCrearRCManual(usuarioLogueado) && <button type="button" onClick={() => setNuevoAbierto(true)} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><FilePlus2 size={14} /> Nuevo reporte</button>}
         </div>
-      )}
-        <div className="space-y-4">
-          {/* Métricas de la Bitácora */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase block">Total Casos Registrados</span>
-              <span className="text-2xl font-black text-slate-900 font-mono mt-0.5 block">
-                {reportesCorreccion.length}
-              </span>
-            </div>
-            <div className="bg-amber-50/70 p-4 rounded-xl border border-amber-200 shadow-xs">
-              <span className="text-[11px] font-bold text-amber-800 uppercase block">En Atención Operativa</span>
-              <span className="text-2xl font-black text-amber-700 font-mono mt-0.5 block">
-                {reportesCorreccion.filter(r => r.estado === 'ABIERTO' || r.estado === 'EN_ATENCION' || r.estado === 'ABIERTA').length}
-              </span>
-            </div>
-            <div className="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 shadow-xs">
-              <span className="text-[11px] font-bold text-emerald-800 uppercase block">Cierres Efectivos</span>
-              <span className="text-2xl font-black text-emerald-700 font-mono mt-0.5 block">
-                {reportesCorreccion.filter(r => r.estado === 'CERRADO_EFECTIVO' || r.estado === 'CERRADA').length}
-              </span>
-            </div>
-            <div className="bg-purple-50/70 p-4 rounded-xl border border-purple-200 shadow-xs">
-              <span className="text-[11px] font-bold text-purple-800 uppercase block">Escalados a AC (OOMRSC-20)</span>
-              <span className="text-2xl font-black text-purple-700 font-mono mt-0.5 block">
-                {reportesCorreccion.filter(r => r.estado === 'ESCALADO_A_AC' || r.estado === 'CERRADO_NO_EFECTIVO').length}
-              </span>
-            </div>
-          </div>
+      </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <FileWarning size={18} className="text-amber-600" />
-                <h3 className="font-bold text-slate-900 text-sm">
-                  Bitácora Oficial de Reportes de Corrección (RC)
-                </h3>
-              </div>
-              
-              {/* Filtros de la bitácora */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
-                  <Search size={13} className="absolute left-2.5 top-2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Buscar folio, responsable o área..."
-                    value={busquedaRC}
-                    onChange={(e) => setBusquedaRC(e.target.value)}
-                    className="pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-sky-500 font-medium"
-                  />
-                </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Object.entries(RC_ESTADOS).map(([k, v]) => (
+          <button key={k} type="button" aria-pressed={filtro === k} onClick={() => setFiltro(filtro === k ? 'TODOS' : k)}
+            className={`text-left p-3 rounded-xl border ${v.cls} ${filtro === k ? 'ring-2 ring-marca-azul' : ''}`}>
+            <span className="text-[11px] font-bold uppercase block">{v.label}</span>
+            <span className="text-2xl font-black font-mono block">{conteo(k)}</span>
+          </button>
+        ))}
+      </div>
 
-                <select
-                  value={filtroEstadoRC}
-                  onChange={(e) => setFiltroEstadoRC(e.target.value)}
-                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 outline-none"
-                >
-                  <option value="TODOS">Todos los Estados</option>
-                  <option value="ABIERTOS">En Atención Operativa</option>
-                  <option value="EFECTIVOS">Cierres Efectivos</option>
-                  <option value="NO_EFECTIVOS">Cierres No Efectivos</option>
-                  <option value="ESCALADOS">Escalados a Acción Correctiva</option>
-                </select>
-              </div>
-            </div>
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="relative flex-1 min-w-[220px]">
+            <Search size={13} className="absolute left-2.5 top-2.5 text-slate-400" />
+            <input type="search" placeholder="Buscar folio, responsable, área o descripción" value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full pl-7 pr-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs" />
+          </label>
+          <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800">
+            {FILTROS.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
+          </select>
+        </div>
 
-            {/* Listado de RCs */}
-            <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
-                  <tr>
-                    <th className="py-2.5 px-3">Folio</th>
-                    <th className="py-2.5 px-3">Área / Responsable</th>
-                    <th className="py-2.5 px-3">Desviación / Causa</th>
-                    <th className="py-2.5 px-3 text-center">Estado</th>
-                    <th className="py-2.5 px-3 text-center">Acciones</th>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs tablas-marcadas">
+            <caption className="sr-only">Reportes de corrección</caption>
+            <thead><tr>
+              <th scope="col" className="p-2 text-left">Folio</th><th scope="col" className="p-2 text-left">Periodo</th><th scope="col" className="p-2 text-left">Área / responsable</th>
+              <th scope="col" className="p-2 text-left">Desviación y causa</th><th scope="col" className="p-2 text-left">Compromiso</th><th scope="col" className="p-2 text-left">Estado</th><th scope="col" className="p-2 text-right">Acción</th>
+            </tr></thead>
+            <tbody>
+              {lista.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-slate-500">Sin reportes con ese filtro.</td></tr>}
+              {lista.map((rc) => {
+                const et = etiquetaRC(rc);
+                return (
+                  <tr key={rc.id || rc.folio}>
+                    <td className="p-2 font-mono font-bold text-slate-900 whitespace-nowrap">{rc.folio}{rc.numeroIndicador != null && <span className="block text-[10px] font-sans font-semibold text-slate-600">Indicador #{rc.numeroIndicador}</span>}</td>
+                    <td className="p-2 whitespace-nowrap">{[rc.mes, rc.ejercicio].filter(Boolean).join(' ')}</td>
+                    <td className="p-2"><span className="font-semibold text-slate-900 block">{rc.area || '—'}</span><span className="text-slate-600">{rc.responsable || 'Sin responsable'}</span></td>
+                    <td className="p-2 max-w-md"><p className="text-slate-800 line-clamp-2">{rc.descripcion || '—'}</p>{rc.causa && <p className="text-slate-600 line-clamp-1">Causa: {rc.causa}</p>}{rc.folio_ac_vinculado && <span className="inline-block mt-1 text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Ligado a {rc.folio_ac_vinculado}</span>}</td>
+                    <td className="p-2 whitespace-nowrap">{formatearFecha(rc.fechaCompromiso) || '—'}</td>
+                    <td className="p-2"><span className={`px-2 py-0.5 rounded-full font-bold text-[10px] border inline-block whitespace-nowrap ${et.cls}`}>{et.label}</span></td>
+                    <td className="p-2 text-right"><button type="button" onClick={() => setRcAbierto(rc)} className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg font-bold border border-slate-300 inline-flex items-center gap-1"><Edit3 size={12} /> Abrir</button></td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
-                  {reportesCorreccion
-                    .filter(rc => {
-                      if (filtroEstadoRC === 'ABIERTOS') {
-                        return rc.estado === 'ABIERTO' || rc.estado === 'EN_ATENCION' || rc.estado === 'ABIERTA';
-                      }
-                      if (filtroEstadoRC === 'EFECTIVOS') {
-                        return rc.estado === 'CERRADO_EFECTIVO' || rc.estado === 'CERRADA';
-                      }
-                      if (filtroEstadoRC === 'NO_EFECTIVOS') {
-                        return rc.estado === 'CERRADO_NO_EFECTIVO';
-                      }
-                      if (filtroEstadoRC === 'ESCALADOS') {
-                        return rc.estado === 'ESCALADO_A_AC';
-                      }
-                      return true;
-                    })
-                    .filter(rc => {
-                      if (!busquedaRC) return true;
-                      const q = busquedaRC.toLowerCase();
-                      return (rc.folio || '').toLowerCase().includes(q) ||
-                        (rc.responsable || '').toLowerCase().includes(q) ||
-                        (rc.area || '').toLowerCase().includes(q) ||
-                        (rc.descripcion || '').toLowerCase().includes(q);
-                    })
-                    .map(rc => (
-                      <tr key={rc.id || rc.folio} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-3">
-                          <span className="font-mono text-xs font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 block w-fit">
-                            {rc.folio}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
-                            {rc.ejercicio || ''} {rc.mes ? `· ${rc.mes}` : ''}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-3">
-                          <span className="font-bold text-slate-900 block">
-                            {rc.area || 'Área Operativa'}
-                          </span>
-                          <span className="text-[11px] text-slate-600 block">
-                            Titular: {rc.responsable || 'No asignado'}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-3 max-w-sm">
-                          <p className="text-slate-800 font-medium line-clamp-2">
-                            {rc.descripcion || rc.causa || 'Seguimiento a desviación en indicador.'}
-                          </p>
-                          {rc.folio_ac_vinculado && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 mt-1">
-                              Vinculado a {rc.folio_ac_vinculado}
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="py-3 px-3 text-center">
-                          <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] border inline-block ${
-                            (rc.estado === 'CERRADO_EFECTIVO' || rc.estado === 'CERRADA') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            rc.estado === 'CERRADO_NO_EFECTIVO' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                            rc.estado === 'ESCALADO_A_AC' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                            'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                            {(rc.estado === 'CERRADO_EFECTIVO' || rc.estado === 'CERRADA') && '✓ Cierre Efectivo'}
-                            {rc.estado === 'CERRADO_NO_EFECTIVO' && '✕ No Efectivo'}
-                            {rc.estado === 'ESCALADO_A_AC' && '⚡ Escalado a AC'}
-                            {(rc.estado === 'ABIERTO' || rc.estado === 'EN_ATENCION' || rc.estado === 'ABIERTA' || !rc.estado) && '⏳ En Atención'}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRcParaGestionar(rc);
-                              setModalGestionarRCOpen(true);
-                            }}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-all border border-slate-200 inline-flex items-center gap-1 cursor-pointer"
-                          >
-                            <Edit3 size={12} /> Gestionar / Dictamen
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
+      </div>
 
-      {modalGestionarRCOpen && rcParaGestionar && (
-        <ModalGestionarRC
-          isOpen={modalGestionarRCOpen}
-          onClose={() => { setModalGestionarRCOpen(false); setRcParaGestionar(null); }}
-          reporte={rcParaGestionar}
-          onActualizarReporte={actualizar}
-          usuarioLogueado={usuarioLogueado}
-        />
-      )}
-      {nuevoAbierto && <ModalNuevoRC reportes={reportesCorreccion} onGuardar={actualizar} onClose={() => setNuevoAbierto(false)} />}
-    </>
+      {rcAbierto && <ModalGestionarRC isOpen reporte={(reportes || []).find((r) => r.id === rcAbierto.id) || rcAbierto} onClose={() => setRcAbierto(null)} onActualizarReporte={actualizar} usuarioLogueado={usuarioLogueado} />}
+      {nuevoAbierto && <ModalNuevoRC reportes={reportes || []} onGuardar={actualizar} onClose={() => setNuevoAbierto(false)} />}
+    </div>
   );
 }

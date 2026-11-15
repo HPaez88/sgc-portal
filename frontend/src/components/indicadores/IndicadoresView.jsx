@@ -63,10 +63,9 @@ import { useIsMobile, useLocalStorage } from '../../hooks';
 import { puedeCapturarArea } from '../../constants/riesgos';
 import { CLAVE_PROYECTOS } from '../../constants/proyectosIndicadores';
 import { aplicarProyectos, fichasConProyecto, tocaReportar } from '../../constants/catalogoIndicadores';
-import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 import { esCerrado, esAdminSGC, getVencimiento, getFechaCompromiso, formatearFecha } from '../../constants/workflow';
 
-const RC_CERRADOS = ['CERRADA', 'CERRADO_EFECTIVO', 'CERRADO_NO_EFECTIVO', 'ESCALADO_A_AC'];
+import { CLAVE_RC, esRCAbierto, rcDelPeriodo } from '../../constants/reportesCorreccion';
 
 
 
@@ -144,36 +143,12 @@ export default function IndicadoresView({
   const [modalRCOpen, setModalRCOpen] = useState(false);
   const [datosParaRC, setDatosParaRC] = useState(null);
 
-  // Reportes de corrección históricos (con persistencia local)
-  const [reportesCorreccion, setReportesCorreccion] = useState(() => {
-    try {
-      const g = leerEstadoTexto('sgc-reportes-correccion');
-      if (g) return JSON.parse(g);
-    } catch (e) { /* ignore */ }
-    return REPORTES_CORRECCION_INICIALES;
-  });
+  // Reportes de corrección: misma clave y mismo hook que la pestaña de Acciones (se ven igual en todas las pantallas).
+  const [reportesCorreccion, setReportesCorreccion] = useLocalStorage(CLAVE_RC, []);
 
 
   // Modal de Recordatorios y Envío de Correos a Áreas
   const [modalRecordatoriosOpen, setModalRecordatoriosOpen] = useState(false);
-
-  // Actualizar reporte de corrección (edición, cierre o dictamen)
-  const handleActualizarReporteCorreccion = (reporteActualizado) => {
-    setReportesCorreccion(prev => {
-      const idx = prev.findIndex(r => r.id === reporteActualizado.id || r.folio === reporteActualizado.folio);
-      let actualizados;
-      if (idx >= 0) {
-        actualizados = [...prev];
-        actualizados[idx] = reporteActualizado;
-      } else {
-        actualizados = [reporteActualizado, ...prev];
-      }
-      try {
-        escribirEstadoTexto('sgc-reportes-correccion', JSON.stringify(actualizados));
-      } catch (e) { /* ignore */ }
-      return actualizados;
-    });
-  };
 
   // Fichas Técnicas Oficiales Gubernamentales (Ayuntamiento de Cajeme)
   const [fichasPersonalizadas, setFichasPersonalizadas] = useState(() => {
@@ -403,8 +378,7 @@ export default function IndicadoresView({
             anio: ejercicio,
             meses: [mesTarget]
           });
-          folioACGenerado = nuevaAC.folio_codigo || `AC-IND#${indicadorEnEdicion.numero ?? indicadorEnEdicion.id}/${Date.now().toString().slice(-4)}`;
-          nuevaAC.folio = folioACGenerado;
+          folioACGenerado = nuevaAC.folio_provisional;
           setAccionesCorrectivas(prev => [nuevaAC, ...(prev || [])]);
           accionFinal = folioACGenerado;
         } else {
@@ -538,8 +512,7 @@ export default function IndicadoresView({
       meses: [mesTarget]
     });
 
-    const folioAC = nuevaAC.folio_codigo || `AC-IND#${ind.numero || ind.id}/${Date.now().toString().slice(-4)}`;
-    nuevaAC.folio = folioAC;
+    const folioAC = nuevaAC.folio_provisional;
 
     setAccionesCorrectivas(prev => [nuevaAC, ...(prev || [])]);
     toast.exito(`Acción Correctiva Oficial (${folioAC}) generada para ${ind.nombre}.`);
@@ -576,45 +549,32 @@ export default function IndicadoresView({
   };
 
   // Abrir modal de Reporte de Corrección (Bajo Impacto)
-  const handleAbrirCrearRC = (ind, valReal, sem) => {
+  const handleAbrirCrearRC = (ind, valReal, sem, mes = mesActivo) => {
     const valCalculado = valReal !== null && valReal !== undefined ? valReal : (valorInput || ind.valor_default || 0);
     const semCalculado = sem || evalSemaforoOOMRSC05(valCalculado, ind.meta_anual || ind.meta, ind.es_menor);
-
-    setDatosParaRC({
-      indicador: ind,
-      valorReal: valCalculado,
-      semaforo: semCalculado
-    });
+    if (!esAdminOSGC && !puedeCapturarArea(usuarioLogueado, ind.area, areasDetalle)) return toast.warning('Este indicador es de otra área.');
+    if (ind.impacto === 'Alto') return toast.warning('Un indicador de impacto Alto genera Acción Correctiva, no RC.');
+    if (semCalculado?.rango !== 'CRITICO') return toast.warning('El RC se emite cuando el resultado es crítico (menor al 80% de la meta).');
+    const previo = rcDelPeriodo(reportesCorreccion, ind.id, mes, ejercicio);
+    if (previo) return toast.warning(`Ya existe el reporte ${previo.folio} para este indicador en ${mes} ${ejercicio}.`);
+    setDatosParaRC({ indicador: ind, valorReal: valCalculado, semaforo: semCalculado, mes });
     setModalRCOpen(true);
   };
 
   // Confirmar y registrar Reporte de Corrección (RC)
   const handleConfirmarRC = (reportePayload) => {
-    setReportesCorreccion(prev => {
-      const actualizados = [reportePayload, ...prev];
-      try {
-        escribirEstadoTexto('sgc-reportes-correccion', JSON.stringify(actualizados));
-      } catch (e) { /* ignore */ }
-      return actualizados;
-    });
-
-    const mesTarget = mesParaCaptura || mesActivo;
-
-    // Actualizar campo acción del indicador en el cuadro de control
-    guardarResultado(
-      reportePayload.indicadorId,
-      mesTarget,
-      ejercicio,
-      datosParaRC?.valorReal ?? 0,
-      reportePayload.descripcion,
-      reportePayload.folio,
-      {
-        bloqueado: true,
-        capturadoPor: usuarioLogueado?.nombre || 'Usuario SGC',
-        fechaCaptura: new Date().toISOString(),
-        folioRC: reportePayload.folio
-      }
-    );
+    setReportesCorreccion((prev) => [reportePayload, ...(prev || [])]);
+    const mesTarget = reportePayload.mes;
+    const key = `${reportePayload.indicadorId}-${mesTarget}-${ejercicio}`;
+    const previo = resultados[key];
+    if (previo && previo.valor !== null && previo.valor !== undefined && previo.valor !== '') {
+      // El resultado ya estaba capturado: solo se liga el folio, sin tocar valor ni observación.
+      setIndicadoresData?.((p) => ({ ...p, resultados: { ...(p?.resultados || {}), [key]: { ...(p?.resultados?.[key] || previo), accion: reportePayload.folio, folioRC: reportePayload.folio } }, updatedAt: new Date().toISOString() }));
+    } else {
+      guardarResultado(reportePayload.indicadorId, mesTarget, ejercicio, datosParaRC?.valorReal ?? 0, observacionInput?.trim() || '', reportePayload.folio,
+        { bloqueado: true, capturadoPor: usuarioLogueado?.nombre || 'Usuario SGC', fechaCaptura: new Date().toISOString(), folioRC: reportePayload.folio });
+    }
+    toast.success(`Reporte de corrección ${reportePayload.folio} registrado.`);
 
     registrarMovimiento?.({
       modulo: 'INDICADORES',
@@ -638,7 +598,7 @@ export default function IndicadoresView({
       if (ac.origen === 'Indicador' && ac.origen_referencia && ac.folio_codigo && !esCerrado(ac.estado)) agregar(ac.origen_referencia, { tipo: 'AC', folio: ac.folio_codigo, fecha: getFechaCompromiso(ac), venc: getVencimiento(ac) });
     });
     (reportesCorreccion || []).forEach((rc) => {
-      if (rc.indicadorId !== undefined && rc.indicadorId !== null && !RC_CERRADOS.includes(rc.estado)) agregar(rc.indicadorId, { tipo: 'RC', folio: rc.folio, fecha: getFechaCompromiso(rc), venc: getVencimiento(rc) });
+      if (rc.indicadorId !== undefined && rc.indicadorId !== null && esRCAbierto(rc)) agregar(rc.indicadorId, { tipo: 'RC', folio: rc.folio, fecha: getFechaCompromiso(rc), venc: getVencimiento(rc) });
     });
     return mapa;
   }, [accionesCorrectivas, reportesCorreccion]);
@@ -1491,7 +1451,7 @@ export default function IndicadoresView({
       {/* TAB 5: BITÁCORA DE REPORTES DE CORRECCIÓN (RC)                     */}
       {/* ==================================================================== */}
       {tabActiva === 'correcciones' && (
-        <ReportesCorreccionPanel reportes={reportesCorreccion} onActualizar={handleActualizarReporteCorreccion} usuarioLogueado={usuarioLogueado} />
+        <ReportesCorreccionPanel usuarioLogueado={usuarioLogueado} />
       )}
 
       {/* ==================================================================== */}
@@ -1718,7 +1678,7 @@ export default function IndicadoresView({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => handleAbrirCrearRC(indicadorEnEdicion, valorInput, semaforoModalEnVivo)}
+                      onClick={() => handleAbrirCrearRC(indicadorEnEdicion, valorInput, semaforoModalEnVivo, mesParaCaptura || mesActivo)}
                       className="w-full py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold rounded-xl shadow-md text-xs flex items-center justify-center gap-2 cursor-pointer transition-all transform active:scale-98"
                     >
                       <AlertOctagon size={15} />
@@ -2098,9 +2058,9 @@ export default function IndicadoresView({
           indicador={datosParaRC.indicador}
           valorReal={datosParaRC.valorReal}
           semaforo={datosParaRC.semaforo}
-          mes={mesParaCaptura || mesActivo}
+          mes={datosParaRC.mes}
           ejercicio={ejercicio}
-          usuarioLogueado={usuarioLogueado}
+          reportes={reportesCorreccion}
           onConfirmarRC={handleConfirmarRC}
         />
       )}

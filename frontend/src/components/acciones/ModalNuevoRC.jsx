@@ -9,14 +9,9 @@ import { useToast } from '../common/Toast';
 import { INDICADORES } from '../../constants/indicadores';
 import { unidadesDeRiesgo } from '../../constants/unidades';
 import { siguienteHabil } from '../../constants/fechasHabiles';
+import { folioRC, hoyISO } from '../../constants/reportesCorreccion';
 
 export const ORIGENES_RC = ['Indicador', 'Auditoría interna', 'Auditoría externa', 'Proceso o producto no conforme (§ 8.7)', 'Otra detección'];
-
-// Consecutivo de los RC manuales del año: RC#1/2026, RC#2/2026…
-export const folioRC = (reportes, anio) => {
-  const nums = reportes.map((r) => String(r.folio || '').match(new RegExp(`^RC#(\\d+)/${anio}$`))?.[1]).filter(Boolean).map(Number);
-  return `RC#${(nums.length ? Math.max(...nums) : 0) + 1}/${anio}`;
-};
 
 const campo = 'mt-1 w-full p-2 text-sm bg-white border rounded-lg font-normal';
 
@@ -34,12 +29,12 @@ export default function ModalNuevoRC({ reportes = [], onGuardar, onClose }) {
     if (falta) return toast.warning(`Falta ${falta}.`);
     const folio = folioRC(reportes, anio);
     const rc = {
-      id: Date.now(), folio, ejercicio: String(anio), estado: 'ABIERTA', manual: true,
+      id: Date.now(), folio, ejercicio: String(anio), estado: 'EN_ATENCION', manual: true,
       origen: d.origen, origen_referencia: d.origen === 'Indicador' ? (indicador ? `#${indicador.id} ${indicador.nombre}` : '') : d.referencia.trim(),
       ...(indicador ? { indicadorId: indicador.id, numeroIndicador: indicador.numero ?? indicador.id } : {}),
       area: d.area, proceso: d.proceso, responsable: d.responsable.trim() || d.area,
       descripcion: d.descripcion.trim(), causa: d.causa.trim(), accion: d.accion.trim(),
-      fechaCompromiso: siguienteHabil(d.fechaCompromiso), fechaRegistro: new Date().toISOString().split('T')[0],
+      fechaCompromiso: siguienteHabil(d.fechaCompromiso), fechaRegistro: hoyISO(),
       creadoPor: usuarioLogueado?.nombre || '',
     };
     onGuardar(rc);

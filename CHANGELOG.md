@@ -1,6 +1,13 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Auditoría fase 2: integridad de los Reportes de Corrección
+- Una sola fuente (`useLocalStorage` de `sgc-reportes-correccion`) en Cuadro, Acciones y contador de pestaña; se quitan los datos de ejemplo como respaldo y la lectura de texto. Helpers únicos en constants/reportesCorreccion.js (estados normalizados, folio, permisos, fecha local).
+- El RC se liga al mes de la fila o de la captura (ya no al último mes capturado) y no sobrescribe el resultado: si ya había valor solo se liga el folio. Desde "Por Procesos" solo se emite en la vista por mes.
+- Folio único `RC#n/aaaa` asignado por el portal (campo de solo lectura); no se emite dos veces para el mismo indicador y periodo; valida impacto Bajo, resultado crítico y área.
+- Dictamen solo SGC/auditor; "No efectivo" escala a Acción Correctiva en un paso, una sola vez, creando el borrador con la base oficial (aparece en Por abrir y ligado al indicador en el Cuadro). Formulario sin reinicios al escribir; fechas locales; sin emojis; tablas marcadas; alcance por área en la bitácora.
+- Borradores de AC generados por el sistema ya no llevan folio oficial falso (`folio_codigo` = Pendiente de aprobación; referencia en `folio_provisional`).
+
 ## 2026-11-15 — Auditoría AC / RC / PM, fase 1: reglas en el servidor y folios atómicos
 - `PUT /api/v1/estado` valida AC, PM y RC antes de guardar (services/flujo_reglas.py): transiciones del flujo, quién puede aprobar/asignar auditor/dictaminar/reabrir, alcance por área (área propia, correo o encargados SGC), evidencia obligatoria para solicitar cierre, revisión de auditor y cierre efectivo, folio oficial intocable, eliminación solo SGC; RC: folio único, dictamen solo SGC/auditor, sin regresar un RC cerrado. Rechazo = 409 con el motivo.
 - Folios AC#/OM#: nuevo `POST /api/v1/folios/{AC|PM}` con bloqueo de fila (sin duplicados ni saltos); el navegador ya no escribe `sgc-config-folios` (el servidor lo rechaza).

@@ -701,8 +701,10 @@ export default function DesempenoProcesosTab({
                                         <span>+ Generar AC</span>
                                       </button>
                                     ) : (
-                                      <button
-                                        onClick={() => onCrearReporteCorreccion?.(ind, ind.val, sem)}
+                                      modoTemporal !== 'mes' ? (
+                                        <span className="text-[10px] text-slate-600" title="El reporte se liga al resultado de un mes; cámbiate a la vista Por Mes">RC desde la vista por mes</span>
+                                      ) : <button
+                                        onClick={() => onCrearReporteCorreccion?.(ind, ind.val, sem, MESES[mesActivoIndex]?.clave)}
                                         className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1 justify-center w-full cursor-pointer transition-all"
                                         title="Indicador de Bajo Impacto fuera de meta: Requiere Reporte de Corrección (RC)"
                                       >

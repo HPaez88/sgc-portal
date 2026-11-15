@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { esRCAbierto } from '../../constants/reportesCorreccion';
 import {
   Mail,
   Send,
@@ -59,9 +60,7 @@ export default function ModalRecordatorioAtrasos({
         const res = resultados[`${ind.id}-${mesActivo}-${ejercicio}`];
         return res === undefined || res?.valor === null || res?.valor === '';
       });
-      const rcsAbiertos = reportesCorreccion.filter(rc =>
-        rc.area === r.area && (rc.estado === 'ABIERTO' || rc.estado === 'EN_ATENCION' || rc.estado === 'ABIERTA')
-      );
+      const rcsAbiertos = reportesCorreccion.filter((rc) => rc.area === r.area && esRCAbierto(rc));
       const totalAtrasos = pendientesCaptura.length + rcsAbiertos.length;
       return {
         nombre: r.area, direccion: r.direccion, tipo: r.responsable_tipo,

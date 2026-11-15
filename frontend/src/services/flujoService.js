@@ -27,8 +27,10 @@ export function fechaEnDias(dias) {
 function baseAccionCorrectiva(overrides = {}) {
   const hoy = new Date().toISOString();
   return {
-    id: Date.now(),
-    folio_codigo: folioBorrador('AC', overrides.origen_tipo || 'SGC'),
+    id: Date.now() + Math.floor(Math.random() * 1000),
+    // El folio oficial AC#n/aaaa lo asigna el SGC al aprobar; mientras, el borrador solo lleva una referencia provisional.
+    folio_codigo: 'Pendiente de aprobación',
+    folio_provisional: folioBorrador('AC', overrides.origen_tipo || 'SGC'),
     folio: null,
     estado: 'BORRADOR',
     fecha_creacion_borrador: hoy,
@@ -98,6 +100,29 @@ export function acDesdeIndicador(indicador, { cumplimiento = null, anio = null, 
       `Notificar al responsable del área ${indicador?.area || ''} y revisar la causa del desvío del indicador.`,
     origen_modulo: 'INDICADORES',
     origen_referencia: String(indicador?.id ?? ''),
+  });
+}
+
+/**
+ * ACCIÓN CORRECTIVA desde un REPORTE DE CORRECCIÓN cerrado como NO efectivo (la corrección no bastó).
+ * Origen ISO: 10.2 — la no conformidad persiste y requiere análisis de causa raíz.
+ */
+export function acDesdeReporteCorreccion(rc) {
+  return baseAccionCorrectiva({
+    origen: 'Indicador',
+    origen_tipo: 'RC',
+    area: rc?.area || '',
+    proceso: rc?.proceso || '',
+    responsable: rc?.responsable || '',
+    descripcion_no_conformidad_original:
+      `La corrección aplicada en el Reporte de Corrección ${rc?.folio || ''} no fue efectiva. ${rc?.descripcion || ''}`.trim(),
+    evidencia: `Reporte de Corrección ${rc?.folio || ''}: corrección "${rc?.accion || ''}"; verificación: ${rc?.observacionesVerificacion || 'sin eficacia comprobada'}.`,
+    accion_contenedora: rc?.accion || '',
+    causa_inmediata_rc: rc?.causa || '',
+    origen_modulo: 'INDICADORES',
+    origen_referencia: rc?.indicadorId != null && rc?.indicadorId !== '' ? String(rc.indicadorId) : null,
+    reporte_correccion_origen: rc?.folio || '',
+    reporte_correccion_id: rc?.id ?? null,
   });
 }
 
