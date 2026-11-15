@@ -34,15 +34,9 @@ const Header = ({
       {/* Left section: Toggle & Search */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => {
-            if (window.innerWidth >= 768) {
-              setSidebarCollapsed(!sidebarCollapsed);
-            } else {
-              setIsSidebarOpen(true);
-            }
-          }}
-          className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-          title="Colapsar / Expandir Menú"
+          onClick={() => setIsSidebarOpen(true)}
+          className="md:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+          title="Abrir menú"
         >
           <Menu size={20} />
         </button>

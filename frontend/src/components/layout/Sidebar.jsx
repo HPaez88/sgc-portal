@@ -13,6 +13,7 @@ import {
   X,
   ShieldCheck,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
   Award
 , BookOpen, Inbox
@@ -66,9 +67,20 @@ const Sidebar = ({
         sidebarCollapsed ? 'w-20' : 'w-72'
       } h-screen flex flex-col transition-all duration-200 ease-out bg-[#0A1424] border-r border-slate-800/80 shadow-xl`}
     >
+      {/* Flecha para plegar el menú (escritorio): sale del borde del menú */}
+      <button
+        type="button"
+        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        className="hidden md:flex absolute -right-3.5 top-[4.5rem] z-10 h-7 w-7 items-center justify-center rounded-full bg-[#0A1424] border border-marca-verde/50 text-marca-verde-claro shadow-md hover:bg-marca-verde hover:text-white hover:border-marca-verde transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-marca-verde-claro"
+        title={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+        aria-label={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+      >
+        {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+      </button>
+
       {/* Brand Header */}
       <div className="h-1 shrink-0 bg-gradient-to-r from-marca-azul via-marca-azul to-marca-verde" aria-hidden="true" />
-      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80 shrink-0">
+      <div className={`h-16 flex items-center ${sidebarCollapsed ? 'md:justify-center' : ''} justify-between px-5 border-b border-slate-800/80 shrink-0`}>
         <div className="flex items-center gap-3 overflow-hidden">
           {sidebarCollapsed ? (
             <img src="/logo-oomapasc-icono.png" alt="OOMAPAS de Cajeme" className="h-9 w-auto shrink-0" />
