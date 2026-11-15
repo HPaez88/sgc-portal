@@ -206,6 +206,43 @@ def crear_usuario(
     return {"usuario": _publico(nuevo), "password_temporal": temporal, "correo_enviado": enviado, "correo_error": error}
 
 
+class PersonaCatalogo(BaseModel):
+    nombre: str
+    email: str
+    area: str
+    direccion: Optional[str] = None
+    rol: str = "Encargado"
+
+
+class AsegurarInput(BaseModel):
+    personas: list[PersonaCatalogo]
+
+
+@router.post("/usuarios/asegurar")
+def asegurar_usuarios(
+    datos: AsegurarInput,
+    actor: Usuario = Depends(auth.requiere_rol(*auth.ROLES_ADMIN)),
+    session: Session = Depends(get_session),
+):
+    """Los encargados del catálogo de áreas/direcciones son usuarios reales del portal: si no existen, se crean
+    (sin contraseña utilizable; el Super Admin les genera la temporal desde Configuración). Los existentes no se tocan."""
+    creados, existentes = [], []
+    for per in datos.personas:
+        email = per.email.lower().strip()
+        if not email or "@" not in email or not per.nombre.strip():
+            continue
+        if session.exec(select(Usuario).where(Usuario.email == email)).first():
+            existentes.append(email)
+            continue
+        rol = per.rol if per.rol in auth.ROLES and per.rol != "Super Admin" else "Encargado"
+        session.add(Usuario(organismo_id=actor.organismo_id, nombre=per.nombre.strip(), email=email, area=per.area.strip(),
+                            direccion=per.direccion, rol=rol, activo=True,
+                            password_hash=auth.hashear_password(auth.password_temporal()), debe_cambiar_password=True))
+        creados.append(email)
+    session.commit()
+    return {"creados": creados, "existentes": existentes}
+
+
 @router.put("/usuarios/{usuario_id}", response_model=UsuarioPublico)
 def actualizar_usuario(
     usuario_id: int,

@@ -285,3 +285,16 @@ def test_tarea_diaria_de_avisos_en_simulacion(cliente, buzon, monkeypatch):
         if f:
             s.delete(f)
             s.commit()
+
+
+def test_asegurar_usuarios_del_catalogo(cliente):
+    r = cliente.post("/api/v1/auth/login", json={"email": "hpaez@oomapasc.gob.mx", "password": "ClaveInicial2026"})
+    cab = {"Authorization": f"Bearer {r.json()['token']}"}
+    personas = [{"nombre": "Lic. Luis Raya", "email": "LRaya@oomapasc.gob.mx", "area": "Control y Servicios", "direccion": "Dir. Comercial", "rol": "Encargado"},
+                {"nombre": "Héctor", "email": "hpaez@oomapasc.gob.mx", "area": "SGC"},
+                {"nombre": "Sin correo", "email": "", "area": "X"}]
+    r = cliente.post("/api/v1/auth/usuarios/asegurar", headers=cab, json={"personas": personas})
+    assert r.status_code == 200 and r.json() == {"creados": ["lraya@oomapasc.gob.mx"], "existentes": ["hpaez@oomapasc.gob.mx"]}
+    u = next(x for x in cliente.get("/api/v1/auth/usuarios", headers=cab).json() if x["email"] == "lraya@oomapasc.gob.mx")
+    assert u["rol"] == "Encargado" and u["area"] == "Control y Servicios" and u["debe_cambiar_password"]
+    assert cliente.post("/api/v1/auth/usuarios/asegurar", headers=cab, json={"personas": personas[:1]}).json()["creados"] == []

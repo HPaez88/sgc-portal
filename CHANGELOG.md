@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Encargados del catálogo = usuarios del portal; buscador muestra encargados
+- Al guardar un área o una dirección (con sus subdirecciones), el encargado/director se da de alta como usuario si no existe (`POST /api/v1/auth/usuarios/asegurar`, rol Encargado/Director, sin contraseña utilizable hasta que el Super Admin la genere). Script `backend.scripts.altas_encargados` para los que ya estaban en el catálogo.
+- Buscador global: las áreas muestran encargado y correo, y se agregan las direcciones (director). Con varias palabras prefiere la frase exacta.
+
 ## 2026-11-15 — Auditoría fase 5: fechas locales, IA que solo sugiere, ortografía estricta
 - `soloOrtografia` compara palabra por palabra (acentos, mayúsculas y puntuación); "Se cumple" ya no puede volverse "No se cumple".
 - IA en AC y PM: solo llena campos vacíos, no reemplaza causas, actividades ni integrantes capturados, y no inventa valores por omisión (requiere_cambio_sgc/matriz en NO salvo que la IA lo proponga).

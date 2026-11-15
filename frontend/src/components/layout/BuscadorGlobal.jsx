@@ -7,7 +7,7 @@ import { INDICADORES } from '../../constants/indicadores';
 import { leerEstadoTexto } from '../../services/estadoService';
 
 export default function BuscadorGlobal({ modulos = [], setActiveTab }) {
-  const { accionesCorrectivas = [], planesMejora = [], riesgos = [], documentos = [], areasDetalle = [], usuarios = [], usuarioLogueado, puedeTodasAreas, areaUsuario, registrarMovimiento } = useSGC();
+  const { accionesCorrectivas = [], planesMejora = [], riesgos = [], documentos = [], areasDetalle = [], direccionesDetalle = [], usuarios = [], usuarioLogueado, puedeTodasAreas, areaUsuario, registrarMovimiento } = useSGC();
   const [texto, setTexto] = useState('');
   const [abierto, setAbierto] = useState(false);
   const [activo, setActivo] = useState(0);
@@ -20,8 +20,8 @@ export default function BuscadorGlobal({ modulos = [], setActiveTab }) {
     let reportes = [];
     try { reportes = JSON.parse(leerEstadoTexto('sgc-reportes-correccion') || '[]') || []; } catch { reportes = []; }
     return buscarGlobal(texto, { modulos, acciones: accionesCorrectivas, planes: planesMejora, reportes, riesgos: Array.isArray(riesgos) ? riesgos : [],
-      indicadores: INDICADORES, documentos: Array.isArray(documentos) ? documentos : [], areas: areasDetalle, usuarios, puedeTodasAreas, areaUsuario, esAdmin });
-  }, [texto, modulos, accionesCorrectivas, planesMejora, riesgos, documentos, areasDetalle, usuarios, puedeTodasAreas, areaUsuario, esAdmin]);
+      indicadores: INDICADORES, documentos: Array.isArray(documentos) ? documentos : [], areas: areasDetalle, direcciones: direccionesDetalle, usuarios, puedeTodasAreas, areaUsuario, esAdmin });
+  }, [texto, modulos, accionesCorrectivas, planesMejora, riesgos, documentos, areasDetalle, direccionesDetalle, usuarios, puedeTodasAreas, areaUsuario, esAdmin]);
   const planos = grupos.flatMap((g) => g.items);
 
   // Ctrl+K desde cualquier pantalla; clic fuera cierra.

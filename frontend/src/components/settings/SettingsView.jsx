@@ -291,6 +291,20 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     });
   };
 
+  const { recargarUsuarios } = useSGC();
+
+  // Los encargados del catálogo son usuarios reales: al guardar un área o dirección se dan de alta si faltan.
+  const asegurarUsuarios = async (personas) => {
+    const lista = personas.filter((p) => String(p.email || '').includes('@') && String(p.nombre || '').trim());
+    if (!lista.length) return;
+    const r = await api.post('/api/v1/auth/usuarios/asegurar', { personas: lista });
+    if (!r.ok) return toast.warning(`No se pudieron dar de alta los usuarios del catálogo: ${r.error?.message || ''}`);
+    if (r.data.creados?.length) {
+      await recargarUsuarios();
+      toast.info(`Usuario(s) creado(s) en el portal: ${r.data.creados.join(', ')}. Genera su contraseña temporal desde Usuarios.`, { duracion: 8000 });
+    }
+  };
+
   const guardarArea = async () => {
     const { nombre, encargado, correo, direccion, telefono } = modalArea.data;
     if (!nombre.trim()) return toast.warning('El nombre del área es obligatorio.');
@@ -306,6 +320,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     }
     setModalArea({ show: false, esEdicion: false, data: {} });
     await ajustarEncargados(modalArea.data.encargados_sgc || [], nombre.trim());
+    await asegurarUsuarios([{ nombre: encargado, email: correo, area: nombre.trim(), direccion: direccion || null, rol: 'Encargado' }]);
   };
 
   // Control de permisos estrictos: Solo Super Admin (Lic. Héctor Páez / Super Admin) puede eliminar datos de los catálogos
@@ -354,7 +369,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     });
   };
 
-  const guardarDireccion = () => {
+  const guardarDireccion = async () => {
     const { nombre, director, correo, siglas } = modalDireccion.data;
     if (!nombre.trim()) return toast.warning('El nombre de la dirección es obligatorio.');
     if (!director.trim()) return toast.warning('El nombre del director en el puesto es obligatorio.');
@@ -379,6 +394,10 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       notificar(`✓ Dirección "${nombre}" agregada al catálogo`);
     }
     setModalDireccion({ show: false, esEdicion: false, data: {} });
+    await asegurarUsuarios([
+      { nombre: director, email: correo, area: nombre.trim(), direccion: nombre.trim(), rol: 'Director' },
+      ...subs.map((sd) => ({ nombre: sd.encargado, email: sd.correo, area: sd.nombre, direccion: nombre.trim(), rol: 'Encargado' })),
+    ]);
   };
 
   const eliminarDireccion = (dir) => {
@@ -554,8 +573,6 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       data: { ...user, ...separarTitulo(user.nombre), newPassword: '' }
     });
   };
-
-  const { recargarUsuarios } = useSGC();
 
   const guardarUsuario = async () => {
     const { email, area, rol } = modalUsuario.data;

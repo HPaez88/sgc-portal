@@ -15,7 +15,7 @@ const coincide = (q, ...campos) => {
 const corto = (t, n = 90) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 
 export function buscarGlobal(texto, {
-  modulos = [], acciones = [], planes = [], reportes = [], riesgos = [], indicadores = [], documentos = [], areas = [], usuarios = [],
+  modulos = [], acciones = [], planes = [], reportes = [], riesgos = [], indicadores = [], documentos = [], areas = [], direcciones = [], usuarios = [],
   puedeTodasAreas = true, areaUsuario = '', esAdmin = false,
 } = {}) {
   const palabrasQ = sinAcentos(texto).split(/\s+/).filter(Boolean);
@@ -37,7 +37,8 @@ export function buscarGlobal(texto, {
     ['Documentos', documentos.filter((d) => coincide(palabras, d.clave, d.nombre, d.titulo, d.tipo))
       .map((d) => ({ titulo: d.clave || d.nombre || d.titulo, detalle: corto(d.nombre || d.titulo), destino: { tab: 'documents' } }))],
     ...(esAdmin ? [
-      ['Áreas', areas.filter((a) => coincide(palabras, a.nombre, a.direccion, a.encargado)).map((a) => ({ titulo: a.nombre, detalle: a.direccion || '', destino: { tab: 'settings' } }))],
+      ['Áreas', areas.filter((a) => coincide(palabras, a.nombre, a.direccion, a.encargado, a.correo)).map((a) => ({ titulo: a.nombre, detalle: [a.direccion, a.encargado ? `Encargado: ${a.encargado}` : '', a.correo].filter(Boolean).join(' · '), destino: { tab: 'settings' } }))],
+      ['Direcciones', direcciones.filter((d) => coincide(palabras, d.nombre, d.director, d.correo, d.siglas)).map((d) => ({ titulo: d.nombre, detalle: [d.director ? `Director: ${d.director}` : '', d.correo].filter(Boolean).join(' · '), destino: { tab: 'settings' } }))],
       ['Usuarios', usuarios.filter((u) => coincide(palabras, u.nombre, u.email, u.area, u.rol)).map((u) => ({ titulo: u.nombre, detalle: `${u.email} · ${u.area || ''}`, destino: { tab: 'settings' } }))],
     ] : []),
   ];
