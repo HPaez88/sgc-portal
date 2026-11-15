@@ -4,7 +4,7 @@ import { useSGC } from '../../SGCContext';
 import { generarPropuestaIA } from './AccionesAI';
 import BarraActividades from '../common/BarraActividades';
 import { INDICADORES } from '../../constants/indicadores';
-import { soloOrtografia } from '../../constants/workflow';
+import { soloOrtografia, fechaISO } from '../../constants/workflow';
 
 const esAuditoria = (origen) => /^auditor/i.test(origen || '');
 import { 
@@ -179,23 +179,25 @@ export default function AccionesWizard({
         descripcion_no_conformidad_final: soloOrtografia(form.descripcion_no_conformidad_original, iaData.registro?.descripcion_no_conformidad_mejorada),
         impacta_otros_procesos: iaData.registro?.impacta_otros_procesos || 'NO',
         otros_procesos_afectados: iaData.registro?.otros_procesos_afectados || '',
-        accion_contenedora: iaData.analisis?.accion_contenedora || 'Contención inmediata de la desviación en campo.',
-        actividad_inmediata: iaData.analisis?.actividad_inmediata?.actividad || 'Verificación y mitigación emergente.',
-        responsable_actividad_inmediata: iaData.analisis?.actividad_inmediata?.responsable || equipo.find(e => e.es_responsable_principal)?.nombre || equipo[0]?.nombre || '',
-        fecha_actividad_inmediata: iaData.analisis?.actividad_inmediata?.fecha_sugerida || new Date().toISOString().split('T')[0],
-        herramienta_analisis: 'Lluvia de ideas / Ishikawa',
-        requiere_actualizar_matriz_riesgos: iaData.analisis?.requiere_actualizar_matriz_riesgos || 'SI',
-        descripcion_riesgo_oportunidad: iaData.analisis?.descripcion_riesgo_oportunidad || 'Riesgo de recurrencia operacional.',
-        requiere_cambio_sgc: iaData.actividades?.requiere_cambio_sgc || 'SI',
+        // La IA solo propone donde el usuario no capturó; nada inventado por omisión.
+        accion_contenedora: f.accion_contenedora?.trim() || iaData.analisis?.accion_contenedora || '',
+        actividad_inmediata: f.actividad_inmediata?.trim() || iaData.analisis?.actividad_inmediata?.actividad || '',
+        responsable_actividad_inmediata: f.responsable_actividad_inmediata?.trim() || iaData.analisis?.actividad_inmediata?.responsable || equipo.find(e => e.es_responsable_principal)?.nombre || equipo[0]?.nombre || '',
+        fecha_actividad_inmediata: f.fecha_actividad_inmediata || iaData.analisis?.actividad_inmediata?.fecha_sugerida || fechaISO(new Date()),
+        herramienta_analisis: f.herramienta_analisis || 'Lluvia de ideas / Ishikawa',
+        requiere_actualizar_matriz_riesgos: f.requiere_actualizar_matriz_riesgos || iaData.analisis?.requiere_actualizar_matriz_riesgos || 'NO',
+        descripcion_riesgo_oportunidad: f.descripcion_riesgo_oportunidad?.trim() || iaData.analisis?.descripcion_riesgo_oportunidad || '',
+        requiere_cambio_sgc: f.requiere_cambio_sgc || iaData.actividades?.requiere_cambio_sgc || 'NO',
         estado: 'BORRADOR',
         fecha_generacion_ia: new Date().toISOString()
       }));
       
-      if (iaData.analisis?.causas && iaData.analisis.causas.length > 0) {
+      // Causas y actividades: solo si el usuario aún no capturó las suyas.
+      if (iaData.analisis?.causas && iaData.analisis.causas.length > 0 && !(causas || []).some((c) => String(c?.causa || '').trim())) {
         setCausas(iaData.analisis.causas);
       }
       
-      if (iaData.actividades?.actividades_correctivas && iaData.actividades.actividades_correctivas.length > 0) {
+      if (iaData.actividades?.actividades_correctivas && iaData.actividades.actividades_correctivas.length > 0 && (actividades || []).length === 0) {
         const respPrincipal = equipo.find(e => e.es_responsable_principal)?.nombre || equipo[0]?.nombre || '';
         const nuevasActividades = iaData.actividades.actividades_correctivas.map((a, i) => ({
           id: i + 1,
@@ -215,7 +217,7 @@ export default function AccionesWizard({
         setActividades(nuevasActividades);
       }
       
-      setMensaje('✨ Estructura de Acción Correctiva generada exitosamente conforme a ISO 9001:2015.');
+      setMensaje('Propuesta de la IA aplicada en los campos vacíos. Revisa y ajusta lo que corresponda.');
       setStep(3);
     } catch (err) {
       console.error('Error generando propuesta:', err);

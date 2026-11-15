@@ -21,7 +21,8 @@ export function folioBorrador(prefijo, origen) {
 export function fechaEnDias(dias) {
   const fecha = new Date();
   fecha.setDate(fecha.getDate() + dias);
-  return fecha.toISOString().split('T')[0];
+  // Fecha local (no UTC: en Sonora la UTC ya es mañana después de las 5 p.m.).
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
 }
 
 /** Estructura base de una AC en borrador, alineada con el formato OOMRSC-20. */

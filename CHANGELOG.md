@@ -1,6 +1,12 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Auditoría fase 5: fechas locales, IA que solo sugiere, ortografía estricta
+- `soloOrtografia` compara palabra por palabra (acentos, mayúsculas y puntuación); "Se cumple" ya no puede volverse "No se cumple".
+- IA en AC y PM: solo llena campos vacíos, no reemplaza causas, actividades ni integrantes capturados, y no inventa valores por omisión (requiere_cambio_sgc/matriz en NO salvo que la IA lo proponga).
+- Fechas de creación y sugeridas con hora local (AC/PM/RC, flujoService, aiClient); fechas dd/mm/aaaa en los PDF de actividades, en la bandeja de Aprobaciones y en los mensajes de replanteo.
+- Avisos: `correos_responsables` guardado como texto ya no se expande letra por letra.
+
 ## 2026-11-15 — Auditoría fase 4: se retira la API REST vieja de AC/PM
 - Eliminados `routers/acciones.py`, `routers/planes.py`, `_sgc_common.py`, `services/doc_service.py` y el `/api/v1/dashboard` sobre tablas SQL que el portal no usa (otro formato de folio, +180 días, cierre sin evidencia, sin roles). El estado compartido (`/api/v1/estado`) con sus reglas es la única fuente.
 - `AREAS_DIRECCION` vive ahora en `routers/catalogo.py`. En el frontend se eliminan `GestorAprobaciones.jsx` (sin uso) y `workflowService.js`; `flujoService.pmDesdeRiesgo` obsoleto se retira (el vigente está en `constants/riesgos.js`); nueva prueba de `acDesdeReporteCorreccion`.

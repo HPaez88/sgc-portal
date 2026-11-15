@@ -17,7 +17,7 @@ import HojaAnalisisRiesgo from './riesgos/HojaAnalisisRiesgo';
 
 // ponytail: interruptor temporal mientras se captura la información; poner en false para abrir el módulo a todos.
 const PM_EN_CONSTRUCCION = true;
-import { esAdminSGC, puedeVerArea } from '../constants/workflow';
+import { esAdminSGC, puedeVerArea, formatearFecha } from '../constants/workflow';
 import { puedeCapturarArea } from '../constants/riesgos';
 import BarraRegreso from './common/BarraRegreso';
 
@@ -600,7 +600,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     };
     setActividades(nuevasActividades);
     guardarBorrador({ actividades: JSON.stringify(nuevasActividades) });
-    setMensaje(`✓ Replanteo aprobado por SGC (${replanteosCount} de 2). Nueva fecha: ${req.nueva_fecha}`);
+    setMensaje(`✓ Replanteo aprobado por SGC (${replanteosCount} de 2). Nueva fecha: ${formatearFecha(req.nueva_fecha)}`);
   };
 
   const rechazarReplanteoActividad = async (index) => {

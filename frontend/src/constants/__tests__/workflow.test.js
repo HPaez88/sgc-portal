@@ -325,6 +325,10 @@ describe('soloOrtografia (no se cambia la redacción del usuario)', () => {
     expect(soloOrtografia(original, 'Desviación en el control documental del registro. Evidencia: ' + original + '. Requisito ISO 9001 §7.5')).toBe(original);
     expect(soloOrtografia(original, 'El registro está desactualizado.')).toBe(original);
   });
+  it('rechaza un cambio de una sola palabra que altera el sentido', () => {
+    expect(soloOrtografia('Se cumple el requisito', 'No se cumple el requisito')).toBe('Se cumple el requisito');
+    expect(soloOrtografia('El equipo funciona bien', 'El equipo funciona mal')).toBe('El equipo funciona bien');
+  });
   it('sin propuesta deja el original', () => {
     expect(soloOrtografia(original, '')).toBe(original);
   });

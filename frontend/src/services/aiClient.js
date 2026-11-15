@@ -13,6 +13,9 @@
  */
 import { api } from './apiClient';
 
+// aaaa-mm-dd a N días de hoy, con la fecha local.
+const enDias = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
 const GROQ_MODELS = ['openai/gpt-oss-20b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
 
 /**
@@ -90,11 +93,10 @@ function generarAccionOffline(form, equipo) {
   const respExterno = equipo[2]?.nombre || 'Auditor Interno SGC';
 
   // Fechas relativas
-  const hoy = new Date();
-  const fechaInmediata = new Date(hoy.getTime() + (2 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-  const fechaAct1 = new Date(hoy.getTime() + (10 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-  const fechaAct2 = new Date(hoy.getTime() + (20 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-  const fechaAct3 = new Date(hoy.getTime() + (35 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  const fechaInmediata = enDias(2);
+  const fechaAct1 = enDias(10);
+  const fechaAct2 = enDias(20);
+  const fechaAct3 = enDias(35);
 
   const plantillas = {
     potabilizacion: {
@@ -193,10 +195,9 @@ function generarAccionOffline(form, equipo) {
  */
 function generarPlanMejoraOffline(descripcion, area = 'Organismo Operador', proceso = 'Mejora Continua') {
   const desc = (descripcion || '').toLowerCase();
-  const hoy = new Date();
-  const f1 = new Date(hoy.getTime() + (15 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-  const f2 = new Date(hoy.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
-  const f3 = new Date(hoy.getTime() + (60 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  const f1 = enDias(15);
+  const f2 = enDias(30);
+  const f3 = enDias(60);
 
   let categoria = 'Eficiencia Operativa';
   if (desc.includes('usuario') || desc.includes('cliente') || desc.includes('atencion')) {

@@ -67,3 +67,10 @@ def test_renovacion_solo_oct_dic_y_una_vez_por_mes():
     assert r[0]["etapa"] == "RENOVACION_OCT" and r[0]["periodo"] == "2027"
     assert m.avisos_renovacion(proy, date(2026, 10, 20), {("Contabilidad", "2027", "RENOVACION_OCT")}) == []
     assert m.avisos_renovacion(proy, date(2026, 12, 1), {("Contabilidad", "2027", "RENOVACION_OCT")})[0]["etapa"] == "RENOVACION_DIC"
+
+
+def test_correos_responsables_como_texto_o_lista():
+    from backend.tareas.avisos_diarios import _correos
+    assert _correos("a@x.mx, b@y.gob.mx") == ["a@x.mx", "b@y.gob.mx"]
+    assert _correos(["a@x.mx", "", None]) == ["a@x.mx"]
+    assert _correos(None) == []

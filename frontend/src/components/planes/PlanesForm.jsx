@@ -136,30 +136,31 @@ export default function PlanesForm({
         ...f,
         // El título que escribió el usuario se respeta; la IA solo propone si está vacío.
         titulo_mejora: f.titulo_mejora?.trim() || iaData.titulo_mejora || 'Plan de Mejora Continua',
-        categoria_mejora: iaData.categoria_mejora || f.categoria_mejora || 'Eficiencia Operativa',
+        // La IA solo propone donde el usuario no capturó; nada inventado por omisión.
+        categoria_mejora: f.categoria_mejora || iaData.categoria_mejora || '',
         descripcion_situacion_actual: descFinal,
-        situacion_deseada: iaData.situacion_deseada || 'Lograr un estándar operativo de excelencia con indicadores medibles.',
-        beneficios: iaData.beneficios || 'Optimización de recursos, reducción de tiempos y cumplimiento normativo ISO 9001:2015.',
+        situacion_deseada: f.situacion_deseada?.trim() || iaData.situacion_deseada || '',
+        beneficios: f.beneficios?.trim() || iaData.beneficios || '',
         estado: 'BORRADOR',
         fecha_creacion: new Date().toISOString()
       }));
       
-      if (iaData.integrantes && iaData.integrantes.length > 0) {
+      if (iaData.integrantes && iaData.integrantes.length > 0 && !(equipo || []).some((e) => String(e?.nombre || '').trim())) {
         const nuevosIntegrantes = iaData.integrantes.map((i, idx) => ({
           id: idx + 1,
-          nombre: i.nombre || `Responsable ${idx + 1}`,
-          puesto: i.puesto || 'Coordinador',
+          nombre: i.nombre || '',
+          puesto: i.puesto || '',
           rol: i.rol || 'Integrante área involucrada'
         }));
         setEquipo(nuevosIntegrantes);
       }
       
-      if (iaData.actividades && iaData.actividades.length > 0) {
+      if (iaData.actividades && iaData.actividades.length > 0 && (actividades || []).length === 0) {
         const nuevasActividades = iaData.actividades.map((a, idx) => ({
           id: idx + 1,
           actividad: a.actividad || '',
-          responsable: a.responsable || 'Responsable por definir',
-          indicador: a.indicador || 'Meta cumplida',
+          responsable: a.responsable || '',
+          indicador: a.indicador || '',
           fecha_termino_sugerida: a.fecha_termino_sugerida || '',
           evidencia_esperada: a.evidencia_esperada || 'Reporte de implementación',
           evidencia_cargada: '',
@@ -168,7 +169,7 @@ export default function PlanesForm({
         setActividades(nuevasActividades);
       }
       
-      setMensaje('✨ Plan de Mejora estructurado exitosamente conforme al formato oficial OOMRSC-21.');
+      setMensaje('Propuesta de la IA aplicada en los campos vacíos. Revisa y ajusta lo que corresponda.');
       setStep(2);
     } catch (err) {
       console.error('Error IA:', err);

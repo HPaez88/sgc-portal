@@ -1,4 +1,4 @@
-import { formatearFecha, parseFecha } from '../../constants/workflow';
+import { formatearFecha, parseFecha, fechaISO } from '../../constants/workflow';
 import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -262,7 +262,7 @@ export default function PlanesDetalle({
         i + 1,
         (a.actividad || '-').substring(0, 45),
         a.responsable || '-',
-        a.fecha_termino_sugerida || '-',
+        formatearFecha(a.fecha_termino_sugerida) || '-',
         a.evidencia_esperada || '-',
         a.evidencia_real ? 'Cargada' : 'Pendiente'
       ]);
@@ -308,7 +308,7 @@ export default function PlanesDetalle({
       doc.text(concLines, 14, y);
     }
 
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = fechaISO(new Date());
     doc.save(`PM_${form.folio_codigo || form.folio || 'borrador'}_${fecha}.pdf`);
   };
 

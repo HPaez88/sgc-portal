@@ -11,7 +11,7 @@ import ContenedorModal from './common/ContenedorModal';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { ESTADOS_SGC, getEstadoColor, getEstadoLabel, can, getDireccionDeArea, puedeVerArea } from '../constants';
 import { asignarFolio } from '../services/folioService';
-import { motivoBloqueoCierre, fechaSeguimientoInicial } from '../constants/workflow';
+import { motivoBloqueoCierre, fechaSeguimientoInicial, formatearFecha } from '../constants/workflow';
 import { puedeCapturarArea } from '../constants/riesgos';
 import BarraRegreso from './common/BarraRegreso';
 
@@ -576,7 +576,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     };
     setActividades(nuevasActividades);
     guardarBorrador({ actividades_json: JSON.stringify(nuevasActividades) });
-    setMensaje(`✓ Replanteo aprobado por SGC (${replanteosCount} de 2). Nueva fecha límite: ${req.nueva_fecha}`);
+    setMensaje(`✓ Replanteo aprobado por SGC (${replanteosCount} de 2). Nueva fecha límite: ${formatearFecha(req.nueva_fecha)}`);
   };
 
   const rechazarReplanteoActividad = async (index) => {

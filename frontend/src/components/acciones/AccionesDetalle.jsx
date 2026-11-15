@@ -1,4 +1,4 @@
-import { formatearFecha, parseFecha } from '../../constants/workflow';
+import { formatearFecha, parseFecha, fechaISO } from '../../constants/workflow';
 import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -258,7 +258,7 @@ export default function AccionesDetalle({
         i + 1,
         (a.actividad || a.actividades || '-').substring(0, 45),
         a.responsable || '-',
-        a.fecha_termino_sugerida || '-',
+        formatearFecha(a.fecha_termino_sugerida) || '-',
         a.evidencia_esperada || '-',
         a.evidencia_real ? 'Cargada' : 'Pendiente'
       ]);
@@ -304,7 +304,7 @@ export default function AccionesDetalle({
       doc.text(concLines, 14, y);
     }
 
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = fechaISO(new Date());
     doc.save(`AC_${form.folio_codigo || 'borrador'}_${fecha}.pdf`);
   };
 

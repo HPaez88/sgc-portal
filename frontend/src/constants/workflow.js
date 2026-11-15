@@ -405,14 +405,15 @@ export const aplicarReplanteoFinal = (registro, { nuevaFecha, motivo, por, ahora
 // la IA solo puede corregir ortografía, acentos y puntuación. Si la propuesta cambia la redacción
 // (otras palabras o largo distinto), se conserva el texto original.
 // ponytail: heurística por número de palabras y largo; afinar umbrales con casos reales.
-export const MAX_DIF_PALABRAS = 1;
-export const MAX_DIF_LARGO = 0.1;
+// Se acepta la propuesta solo si, palabra por palabra, coincide con el original ignorando acentos, mayúsculas
+// y signos de puntuación: así "se cumple" nunca se vuelve "no se cumple" ni se agrega texto.
+const _llano = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9ñ\s]/gi, ' ').split(/\s+/).filter(Boolean);
 export const soloOrtografia = (original, propuesta) => {
   const o = String(original || '').trim();
   const p = String(propuesta || '').trim();
   if (!o || !p) return o;
-  const palabras = (t) => t.split(/\s+/).filter(Boolean).length;
-  if (Math.abs(palabras(o) - palabras(p)) > MAX_DIF_PALABRAS) return o;
-  if (Math.abs(p.length - o.length) / o.length > MAX_DIF_LARGO) return o;
+  const a = _llano(o), b = _llano(p);
+  if (a.length !== b.length || a.some((w, i) => w !== b[i])) return o;
   return p;
 };

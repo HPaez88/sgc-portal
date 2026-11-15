@@ -45,6 +45,14 @@ def _estado(s: Session, clave: str, defecto):
         return defecto
 
 
+def _correos(valor) -> list[str]:
+    """Lista de correos de un registro: acepta lista o texto ('a@x.mx, b@x.mx'). Antes un texto se expandía letra por letra."""
+    import re
+    if isinstance(valor, str):
+        return re.findall(r"[\w.+-]+@[\w-]+\.[\w.-]+", valor)
+    return [str(c) for c in (valor or []) if c]
+
+
 def _contactos(unidad: str, areas: list, direcciones: list) -> list[str]:
     for a in areas:
         if a.get("nombre") == unidad:
@@ -112,7 +120,7 @@ def ejecutar(hoy: date | None = None) -> dict:
 
         pendientes = []
         for a in motor.avisos_acciones(_estado(s, "sgc-acciones-correctivas", []), hoy, arranque, enviadas_ac):
-            para = sorted(set(correo_l for correo_l in [*(a["ac"].get("correos_responsables") or []), *_contactos(a["area"], areas, direcciones)] if correo_l))
+            para = sorted(set(correo_l for correo_l in [*_correos(a["ac"].get("correos_responsables")), *_contactos(a["area"], areas, direcciones)] if correo_l))
             pendientes.append({"tipo": "AC", "registro": a["folio"], "registro_id": str(a["id"]), "etapa": a["etapa"], "referencia": a["vence"].isoformat(),
                                "para": para, "cc": admins if a["etapa"] == "AVISO_INCUMPLIMIENTO" else [], "mensaje": _mensaje_ac(a), "unidad": a["area"]})
         for x in motor.avisos_indicadores(catalogo, datos_ind.get("resultados") or {}, hoy, enviadas_ind, arranque):

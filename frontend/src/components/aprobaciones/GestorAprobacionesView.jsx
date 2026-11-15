@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, X, Eye } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { getEstadoColor, getEstadoLabel, getVencimiento, can } from '../../constants';
-import { fechaSeguimientoInicial } from '../../constants/workflow';
+import { fechaSeguimientoInicial, formatearFecha } from '../../constants/workflow';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import { asignarFolio } from '../../services/folioService';
 
@@ -398,7 +398,7 @@ export default function GestorAprobacionesView({
                     </td>
                     <td className="p-4 text-sm text-slate-700 font-medium">{app.area}</td>
                     <td className="p-4 text-sm text-slate-500">
-                      {app.fecha ? new Date(app.fecha).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}
+                      {formatearFecha(app.fecha) || '-'}
                     </td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getPrioridadColor(app.prioridad)}`}>
