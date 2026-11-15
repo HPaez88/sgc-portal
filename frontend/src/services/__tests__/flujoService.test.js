@@ -6,7 +6,7 @@ import {
   acDesdeIndicador,
   acDesdeAuditoria,
   acDesdeDocumento,
-  pmDesdeRiesgo,
+  acDesdeReporteCorreccion,
   movimientoVinculo,
   fechaEnDias,
   folioBorrador,
@@ -120,37 +120,16 @@ describe('acDesdeDocumento', () => {
   });
 });
 
-describe('pmDesdeRiesgo', () => {
-  const riesgo = {
-    id: 3,
-    riesgo: 'Falla de bombas por falta de mantenimiento',
-    causa: 'Mantenimiento preventivo no ejecutado',
-    efecto: 'Interrupción del servicio',
-    probabilidad: 4,
-    impacto: 5,
-    area: 'Mantenimiento de Redes',
-    proceso: 'Mantenimiento y Calibración',
-    direccion: 'Técnica',
-  };
-
-  it('crea un plan en borrador vinculado al riesgo', () => {
-    const pm = pmDesdeRiesgo(riesgo);
-    expect(pm.estado).toBe('BORRADOR');
-    expect(pm.origen_modulo).toBe('RIESGOS');
-    expect(pm.origen_referencia).toBe('3');
-    expect(pm.gerencia_coordinacion).toBe('Mantenimiento de Redes');
-  });
-
-  it('incorpora causa, efecto y nivel de exposición', () => {
-    const pm = pmDesdeRiesgo(riesgo);
-    expect(pm.descripcion_situacion_actual).toContain('Mantenimiento preventivo no ejecutado');
-    expect(pm.descripcion_situacion_actual).toContain('Interrupción del servicio');
-    expect(pm.descripcion_situacion_actual).toContain('20'); // 4 × 5
-  });
-
-  it('tolera un riesgo con campos faltantes', () => {
-    expect(() => pmDesdeRiesgo({ id: 1 })).not.toThrow();
-    expect(pmDesdeRiesgo({ id: 1 }).estado).toBe('BORRADOR');
+describe('acDesdeReporteCorreccion', () => {
+  it('crea un borrador de AC ligado al RC y al indicador, sin folio oficial', () => {
+    const ac = acDesdeReporteCorreccion({ id: 9, folio: 'RC#3/2026', indicadorId: 12, area: 'Plantas', accion: 'Se reparó', causa: 'Falla' });
+    expect(ac.estado).toBe('BORRADOR');
+    expect(ac.folio_codigo).toBe('Pendiente de aprobación');
+    expect(ac.folio_provisional).toMatch(/^AC-RC-/);
+    expect(ac.origen).toBe('Indicador');
+    expect(ac.origen_referencia).toBe('12');
+    expect(ac.reporte_correccion_origen).toBe('RC#3/2026');
+    expect(ac.descripcion_no_conformidad_original).toContain('RC#3/2026');
   });
 });
 

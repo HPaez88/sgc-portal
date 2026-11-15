@@ -45,7 +45,7 @@ def test_password_corta_se_rechaza():
 
 def test_api_sin_sesion_responde_401(cliente):
     assert cliente.get("/api/v1/organismos").status_code == 401
-    assert cliente.get("/api/v1/dashboard").status_code == 401
+    assert cliente.post("/api/v1/folios/AC").status_code == 401
     assert cliente.get("/api/v1/manual").status_code == 401
 
 

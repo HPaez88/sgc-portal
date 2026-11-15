@@ -3,7 +3,8 @@
 // Convierte los módulos en un sistema conectado (ISO 9001:2015):
 //   Indicador no cumplido  → Acción Correctiva   (§9.1.3 → §10.2)
 //   Auditoría / hallazgo   → Acción Correctiva   (§9.2 → §10.2)
-//   Riesgo sin plan        → Plan de Mejora      (§6.1 → §10.3)
+//   RC no efectivo         → Acción Correctiva   (§10.2)
+//   (El PM desde un riesgo vive en constants/riesgos.js: pmDesdeRiesgo)
 //   Documento crítico      → Acción Correctiva   (§7.5.3 → §10.2)
 // Toda la lógica de precarga vive aquí para no duplicarla en cada vista.
 // ═══════════════════════════
@@ -46,27 +47,6 @@ function baseAccionCorrectiva(overrides = {}) {
     actualiza_matriz_riesgos: false,
     requiere_cambio_sgc: 'NO',
     // Campos de vínculo inter-módulo (trazabilidad del origen)
-    origen_modulo: null,
-    origen_referencia: null,
-    ...overrides,
-  };
-}
-
-/** Estructura base de un PM en borrador, alineada con el formato OOMRSC-21. */
-function basePlanMejora(overrides = {}) {
-  const hoy = new Date().toISOString();
-  return {
-    id: Date.now(),
-    folio_codigo: folioBorrador('PM', overrides.origen_tipo || 'SGC'),
-    folio: null,
-    estado: 'BORRADOR',
-    fecha_creacion_borrador: hoy,
-    fecha_elaboracion: hoy.split('T')[0],
-    fecha_cierre_estimada: fechaEnDias(180),
-    generado_por: 'SGC Portal',
-    integrantes_json: '[]',
-    actividades_json: '[]',
-    presupuesto: 0,
     origen_modulo: null,
     origen_referencia: null,
     ...overrides,
@@ -176,37 +156,6 @@ export function acDesdeDocumento(doc, impacto = {}) {
 }
 
 /**
- * PLAN DE MEJORA desde un RIESGO sin plan de acción.
- * Origen ISO: 6.1 Riesgos y oportunidades → 10.3 Mejora continua.
- */
-export function pmDesdeRiesgo(riesgo) {
-  const nivel = (Number(riesgo?.probabilidad) || 0) * (Number(riesgo?.impacto) || 0);
-
-  return basePlanMejora({
-    origen: 'Objetivo de Calidad',
-    origen_tipo: 'RIE',
-    gerencia_coordinacion: riesgo?.area || '',
-    direccion: riesgo?.direccion || '',
-    proceso: riesgo?.proceso || '',
-    titulo_mejora:
-      `Mitigación del riesgo: ${(riesgo?.riesgo || 'sin descripción').slice(0, 90)}`,
-    descripcion_situacion_actual:
-      `Riesgo identificado en la matriz: "${riesgo?.riesgo || ''}". `
-      + `Causa: ${riesgo?.causa || 'por determinar'}. Efecto: ${riesgo?.efecto || 'por determinar'}. `
-      + `Nivel de exposición (probabilidad × impacto): ${nivel}. Sin plan de acción definido.`,
-    situacion_deseada:
-      `Riesgo controlado con plan de acción implementado y seguimiento documentado, `
-      + `reduciendo la exposición por debajo del umbral aceptable del SGC.`,
-    beneficios:
-      `Reducción de la probabilidad y el impacto del riesgo "${riesgo?.riesgo || ''}" `
-      + `sobre los procesos del área ${riesgo?.area || ''}.`,
-    responsable: riesgo?.responsable || '',
-    origen_modulo: 'RIESGOS',
-    origen_referencia: String(riesgo?.id ?? ''),
-  });
-}
-
-/**
  * Registra el vínculo inter-módulo en la bitácora.
  * Devuelve el objeto de movimiento listo para `registrarMovimiento`.
  */
@@ -224,7 +173,7 @@ export const FLUJO = {
   acDesdeIndicador,
   acDesdeAuditoria,
   acDesdeDocumento,
-  pmDesdeRiesgo,
+  acDesdeReporteCorreccion,
   movimientoVinculo,
   fechaEnDias,
   folioBorrador,

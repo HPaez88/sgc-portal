@@ -34,7 +34,7 @@ export const normalizarDireccion = (direccion) => {
   return DIRECCION_ALIAS[key] || direccion;
 };
 
-// Mapeo oficial Área → Dirección (espejo de backend/routers/_sgc_common.py)
+// Mapeo oficial Área → Dirección (espejo de AREAS_DIRECCION en backend/routers/catalogo.py)
 export const AREA_DIRECCION = {
   'Agencia Esperanza': 'Dir. Comercial',
   'Agencia Marte R. Gómez': 'Dir. Comercial',

@@ -19,12 +19,7 @@ from backend import auth as auth_lib
 from backend.seed_usuarios import sembrar_usuarios
 from backend.seed_documentos import sembrar_documentos
 from backend.tenant import get_organismo_id
-from backend.models import (
-    AccionCorrectiva, PlanDeMejora, Auditor, Replanteo,
-    AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
-    CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
-)
-from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth, documentos, estado, notificaciones, buzon, formatos_indicadores, folios
+from backend.routers import ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth, documentos, estado, notificaciones, buzon, formatos_indicadores, folios
 
 load_dotenv()
 
@@ -67,144 +62,10 @@ app.add_middleware(
 PROTEGIDO = [Depends(auth_lib.usuario_actual)]
 app.include_router(auth.router)
 app.include_router(buzon.router)  # webhook firmado + endpoints con su propia validación de rol
-for r in (acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, documentos, estado, notificaciones,
+for r in (ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, documentos, estado, notificaciones,
           formatos_indicadores, folios):
     app.include_router(r.router, dependencies=PROTEGIDO)
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# DASHBOARD — Estadísticas estilo Control 6
-# ═══════════════════════════════════════════════════════════════════════════════
-@app.get("/api/v1/dashboard", tags=["Dashboard"], dependencies=PROTEGIDO)
-def get_dashboard(
-    session: Session = Depends(get_session),
-    organismo_id: int = Depends(get_organismo_id),
-):
-    """Dashboard con métricas de Control 6."""
-    # === ACCIONES CORRECTIVAS ===
-    ac_todos = session.exec(
-        select(AccionCorrectiva).where(AccionCorrectiva.organismo_id == organismo_id)
-    ).all()
-    ac_abiertos = [ac for ac in ac_todos if ac.estado != "CERRADO"]
-    ac_cerradas = [ac for ac in ac_todos if ac.estado == "CERRADO"]
-    
-    # Por estado
-    ac_por_estado = {}
-    for ac in ac_todos:
-        ac_por_estado[ac.estado] = ac_por_estado.get(ac.estado, 0) + 1
-    
-    # En tiempo vs fuera de tiempo
-    hoy = datetime.now()
-    ac_en_tiempo = 0
-    ac_fuera_tiempo = 0
-    for ac in ac_abiertos:
-        dias_limite = 180  # 6 meses máximo
-        if (hoy - ac.fecha_apertura).days > dias_limite:
-            ac_fuera_tiempo += 1
-        else:
-            ac_en_tiempo += 1
-    
-    # === PLANES DE MEJORA ===
-    pm_todos = session.exec(
-        select(PlanDeMejora).where(PlanDeMejora.organismo_id == organismo_id)
-    ).all()
-    pm_abiertos = [pm for pm in pm_todos if pm.estado != "CERRADO"]
-    pm_cerrados = [pm for pm in pm_todos if pm.estado == "CERRADO"]
-    
-    pm_por_estado = {}
-    for pm in pm_todos:
-        pm_por_estado[pm.estado] = pm_por_estado.get(pm.estado, 0) + 1
-    
-    pm_en_tiempo = 0
-    pm_fuera_tiempo = 0
-    for pm in pm_abiertos:
-        dias_limite = 180
-        if (hoy - pm.fecha_elaboracion).days > dias_limite:
-            pm_fuera_tiempo += 1
-        else:
-            pm_en_tiempo += 1
-    
-    # === POR DIRECCIÓN (estilo RD de Control 6) ===
-    ac_por_direccion = {}
-    for ac in ac_todos:
-        direccion = ac.direccion or "SIN ASIGNAR"
-        ac_por_direccion[direccion] = ac_por_direccion.get(direccion, 0) + 1
-    
-    pm_por_direccion = {}
-    for pm in pm_todos:
-        direccion = pm.direccion or "SIN ASIGNAR"
-        pm_por_direccion[direccion] = pm_por_direccion.get(direccion, 0) + 1
-    
-    # === POR ÁREA (top 5) ===
-    area_count = {}
-    for ac in ac_todos:
-        area_count[ac.area] = area_count.get(ac.area, 0) + 1
-    for pm in pm_todos:
-        area_count[pm.gerencia_coordinacion] = area_count.get(pm.gerencia_coordinacion, 0) + 1
-    
-    top_areas = sorted(area_count.items(), key=lambda x: x[1], reverse=True)[:5]
-    
-    # === ACTIVIDAD RECIENTE ===
-    ultimas_ac = sorted(ac_todos, key=lambda x: x.fecha_apertura, reverse=True)[:3]
-    ultimos_pm = sorted(pm_todos, key=lambda x: x.fecha_elaboracion, reverse=True)[:3]
-    
-    recientes = sorted(
-        [
-            {"tipo": "AC", "folio": x.folio, "area": x.area, "estado": x.estado,
-             "fecha": x.fecha_apertura.isoformat()} for x in ultimas_ac
-        ] +
-        [
-            {"tipo": "PM", "folio": x.folio, "area": x.gerencia_coordinacion,
-             "estado": x.estado, "fecha": x.fecha_elaboracion.isoformat()} for x in ultimos_pm
-        ],
-        key=lambda x: x["fecha"], reverse=True
-    )[:6]
-    
-    # === RESUMEN ANUAL ===
-    año_actual = datetime.now().year
-    ac_año = [ac for ac in ac_todos if ac.fecha_apertura.year == año_actual]
-    pm_año = [pm for pm in pm_todos if pm.fecha_elaboracion.year == año_actual]
-    
-    return {
-        "periodo": {
-            "año": año_actual,
-            "mes_actual": hoy.strftime("%B"),
-        },
-        "totales": {
-            "acciones_correctivas": len(ac_todos),
-            "planes_mejora": len(pm_todos),
-            "total": len(ac_todos) + len(pm_todos),
-            "abiertas": len(ac_abiertos) + len(pm_abiertos),
-            "cerradas": len(ac_cerradas) + len(pm_cerrados),
-        },
-        "ac_por_estado": ac_por_estado,
-        "pm_por_estado": pm_por_estado,
-        
-        "ac_seguimiento": {
-            "en_tiempo": ac_en_tiempo,
-            "fuera_tiempo": ac_fuera_tiempo,
-            "total_abiertas": len(ac_abiertos),
-        },
-        "pm_seguimiento": {
-            "en_tiempo": pm_en_tiempo,
-            "fuera_tiempo": pm_fuera_tiempo,
-            "total_abiertas": len(pm_abiertos),
-        },
-        
-        "ac_por_direccion": ac_por_direccion,
-        "pm_por_direccion": pm_por_direccion,
-        
-        "top_areas": [{"area": a, "total": c} for a, c in top_areas],
-        
-        "recientes": recientes,
-        
-        "resumen_anio": {
-            "ac_abiertas": len([ac for ac in ac_año if ac.estado != "CERRADO"]),
-            "ac_cerradas": len([ac for ac in ac_año if ac.estado == "CERRADO"]),
-            "pm_abiertos": len([pm for pm in pm_año if pm.estado != "CERRADO"]),
-            "pm_cerrados": len([pm for pm in pm_año if pm.estado == "CERRADO"]),
-        },
-    }
 
 
 # NOTA: Los catálogos están disponibles en /api/v1/catalogos

@@ -12,7 +12,44 @@ from backend.models import (
     ESTADOS_CERRADOS, ESTADOS_ABIERTOS, PERMISOS_ROL, ROLES_EQUIPO, TRANSICIONES,
     ESTADO_META, ETIQUETAS_LEGACY, NORMALIZACION_ESTADOS, ACCIONES_WORKFLOW,
 )
-from backend.routers._sgc_common import AREAS_DIRECCION
+# Dirección a la que pertenece cada área (catálogo que consume el portal).
+AREAS_DIRECCION = {
+    "Mantenimiento de Redes": "TECNICA",
+    "Alcantarillado y Saneamiento": "TECNICA",
+    "Plantas Potabilizadoras": "TECNICA",
+    "Control de Calidad": "TECNICA",
+    "Sectorizacion hidrometrica e innovacion": "TECNICA",
+    "Suburbano Tecnico": "TECNICA",
+    "Supervision y control de obras": "TECNICA",
+    "Tramites Tecnicos": "TECNICA",
+    "Proyectos e Infraestructura": "TECNICA",
+    "Seguridad Industrial": "TECNICA",
+    "Padron de Usuarios": "COMERCIAL",
+    "Control y Servicios": "COMERCIAL",
+    "Contratos y Servicios": "COMERCIAL",
+    "Atencion Ciudadana": "COMERCIAL",
+    "Verificacion y Lectura": "COMERCIAL",
+    "Agencia Esperanza": "COMERCIAL",
+    "Agencia Marte R. Gomez": "COMERCIAL",
+    "Agencia Providencia": "COMERCIAL",
+    "Agencia Pueblo Yaqui": "COMERCIAL",
+    "Recursos Humanos": "ADMINISTRATIVA",
+    "Recursos Materiales": "ADMINISTRATIVA",
+    "Contabilidad": "ADMINISTRATIVA",
+    "Comunicacion e Imagen Institucional": "ADMINISTRATIVA",
+    "Informatica": "ADMINISTRATIVA",
+    "Licitaciones": "ADMINISTRATIVA",
+    "Mantenimiento y Servicios Generales": "ADMINISTRATIVA",
+    "Trabajo Social": "ADMINISTRATIVA",
+    "Programas Sociales": "ADMINISTRATIVA",
+    "Juridico": "JURIDICA",
+    "Organo de Control Interno": "ORGANO DE CONTROL INTERNO",
+    "Cultura del agua": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
+    "Programa Social": "PROGRAMAS SOCIALES Y CULTURA DEL AGUA",
+    "Linea OOMAPASC": "GENERAL",
+    "Sistema de Gestion de Calidad": "GENERAL",
+}
+
 
 router = APIRouter(prefix="/api/v1/catalogos", tags=["Catálogos"])
 

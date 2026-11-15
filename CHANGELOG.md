@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Auditoría fase 4: se retira la API REST vieja de AC/PM
+- Eliminados `routers/acciones.py`, `routers/planes.py`, `_sgc_common.py`, `services/doc_service.py` y el `/api/v1/dashboard` sobre tablas SQL que el portal no usa (otro formato de folio, +180 días, cierre sin evidencia, sin roles). El estado compartido (`/api/v1/estado`) con sus reglas es la única fuente.
+- `AREAS_DIRECCION` vive ahora en `routers/catalogo.py`. En el frontend se eliminan `GestorAprobaciones.jsx` (sin uso) y `workflowService.js`; `flujoService.pmDesdeRiesgo` obsoleto se retira (el vigente está en `constants/riesgos.js`); nueva prueba de `acDesdeReporteCorreccion`.
+
 ## 2026-11-15 — Auditoría fase 3: cierres, evidencia, bandeja y alcance en AC y PM
 - Bandeja de Aprobaciones: solo aprueba (y asigna folio) lo que está EN_REVISION; una solicitud de cierre ya no recibe folio nuevo ni pierde la solicitud. "Devolver" desde cierre/auditor regresa a seguimiento con observaciones. Guardados con estado funcional.
 - Guardado seguro en AC y PM: parte de la versión más reciente del registro; un cambio de flujo solo aplica sus campos (ya no revierte aprobaciones ni folios de otro usuario).
