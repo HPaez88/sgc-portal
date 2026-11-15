@@ -39,7 +39,7 @@ function Campo({ etiqueta, valor, onChange, multi, limite, disabled, ayuda, tipo
   );
 }
 
-export default function EditorProyecto({ proyecto: p, onCambio, editable, indicadoresCatalogo = [], resultados = {} }) {
+export default function EditorProyecto({ proyecto: p, onCambio, editable, resultados = {} }) {
   const [seccion, setSeccion] = useState('datos');
   const [fichaIdx, setFichaIdx] = useState(0);
   const set = (campo, valor) => onCambio({ ...p, [campo]: valor });
@@ -90,7 +90,7 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, indica
 
       {seccion === 'actividades' && (
         <div className="space-y-2">
-          <p className="text-xs text-slate-600">Cada actividad lleva su indicador (con su ficha técnica) y su clave de actividad pública para el PEMS. Los porcentajes se capturan como número (95 = 95%).
+          <p className="text-xs text-slate-600">Aquí nace cada indicador: su nombre, meta y frecuencia. Se desarrolla en la pestaña 4 (ficha técnica) y al aprobar el proyecto se crea en el Cuadro de Control. Los porcentajes se capturan como número (95 = 95%).
             <span className={`ml-2 font-bold ${Math.round(pond) === 100 ? 'text-emerald-700' : 'text-rose-700'}`}>Ponderado: {pond}%</span></p>
           {acts.map((a, i) => (
             <div key={a.id || i} className="rounded-lg border-2 border-slate-200 bg-white overflow-hidden">
@@ -124,20 +124,10 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, indica
               <div className="grid gap-2 md:grid-cols-[120px_1fr_1fr]">
                 <Campo disabled={!editable} etiqueta="Clave act. pública" valor={a.ap_clave} onChange={(v) => setAct(i, { ap_clave: v })} />
                 <Campo disabled={!editable} etiqueta="Actividad pública (PEM-2)" valor={a.ap_nombre} onChange={(v) => setAct(i, { ap_nombre: v })} />
-                <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Indicador en el Cuadro de Control</span>
-                  <select disabled={!editable} value={a.indicador_id ?? ''} onChange={(e) => {
-                    // Al ligar un indicador existente se prellena lo que falte (sin pisar lo ya capturado).
-                    const x = indicadoresCatalogo.find((c) => String(c.id) === e.target.value);
-                    const vacio = (k) => !String(a[k] ?? '').trim();
-                    setAct(i, { indicador_id: e.target.value, ...(x ? {
-                      ...(vacio('indicador') ? { indicador: x.nombre } : {}), ...(vacio('unidad') ? { unidad: x.unidad } : {}),
-                      ...(vacio('meta') ? { meta: String(x.meta_anual ?? x.meta ?? ''), trimestres: repartirMeta(x.meta_anual ?? x.meta), trimestresAuto: true } : {}),
-                      periodicidad: a.periodicidad && a.periodicidad !== 'Mensual' ? a.periodicidad : (x.periodicidad || 'Mensual'), impacto: a.impacto || x.impacto || 'Bajo',
-                    } : {}) });
-                  }} className={ENTRADA}>
-                    <option value="">— Sin ligar (se liga al aprobarse) —</option>
-                    {indicadoresCatalogo.map((x) => <option key={x.id} value={x.id}>#{x.id} {x.nombre}</option>)}
-                  </select></label>
+                {/* El indicador nace aquí: se crea en el Cuadro de Control al aprobar el proyecto (sin selector, para no entrar en bucle). */}
+                <div className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Indicador en el Cuadro de Control</span>
+                  <p className={`${ENTRADA} bg-slate-50 text-slate-700`}>{a.indicador_id !== '' && a.indicador_id != null ? `#${a.indicador_id} · ya está en el Cuadro` : 'Se crea al aprobar el proyecto'}</p>
+                </div>
               </div>
               </div>
             </div>

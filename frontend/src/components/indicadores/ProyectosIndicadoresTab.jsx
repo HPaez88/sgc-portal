@@ -208,7 +208,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
             {(borrador.actividades || []).map((a, i) => <BotonDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList}>Ficha {i + 1}</BotonDescarga>)}
           </section>
         )}
-        <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} indicadoresCatalogo={indicadoresCatalogo} resultados={indicadoresData.resultados || {}} />
+        <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} resultados={indicadoresData.resultados || {}} />
       </div>
     );
   }
