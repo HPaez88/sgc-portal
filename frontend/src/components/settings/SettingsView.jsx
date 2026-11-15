@@ -437,7 +437,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     }
     setModalDireccion({ show: false, esEdicion: false, data: {} });
     await asegurarUsuarios([
-      { nombre: director, email: correo, area: nombre.trim(), direccion: nombre.trim(), rol: 'Director' },
+      { nombre: director, email: correo, area: nombre.trim(), direccion: nombre.trim(), rol: 'Encargado' },
       ...subs.map((sd) => ({ nombre: sd.encargado, email: sd.correo, area: sd.nombre, direccion: nombre.trim(), rol: 'Encargado' })),
     ]);
     if (previa) {
@@ -1398,13 +1398,13 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
+                            {(!esSuperAdmin || u.id === usuarioLogueado?.id) && <button
                               onClick={() => abrirEditarUsuario(u)}
                               className="p-1.5 text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors cursor-pointer"
                               title="Editar usuario"
                             >
                               <Edit size={14} />
-                            </button>
+                            </button>}
                             {puedeMandarCorreo(usuarioLogueado) && (
                               <button onClick={() => setCorreoPara(u)} className="p-1.5 text-slate-500 hover:text-marca-azul-oscuro hover:bg-sky-50 rounded-lg transition-colors cursor-pointer" title="Enviar un correo a este usuario">
                                 <Mail size={14} />
@@ -2473,8 +2473,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   <option value="Encargado">Encargado (Su área: AC, PM, indicadores, riesgos)</option>
                   <option value="Auditor">Auditor (Crear AC/PM cualquier área, ver resultados)</option>
                   <option value="Admin">Admin (Compañeros SGC - todas las áreas)</option>
-                  <option value="Director">Director General (aprueba y publica el Manual y anexos)</option>
-                  <option value="Super Admin">Super Admin (Control total del sistema)</option>
+                  {/* El Super Admin es único: la opción solo aparece al editar su propia cuenta y no se puede cambiar. */}
+                  {modalUsuario.data.rol === 'Super Admin' && <option value="Super Admin">Super Admin (único · no se modifica)</option>}
                 </select>
                 <p className="text-[11px] text-slate-500 mt-1">
                   {modalUsuario.data.rol === 'Encargado' || modalUsuario.data.rol === 'Usuario' ? (

@@ -1,4 +1,4 @@
-"""Flujo de aprobación del Manual: borrador → revisión (otro admin) → publicación (Director). SQLite temporal."""
+"""Flujo de aprobación del Manual: borrador → revisión (otro admin) → publicación (Super Admin). SQLite temporal."""
 import os
 import tempfile
 
@@ -32,17 +32,17 @@ def _cab(cliente, email, password):
 
 @pytest.fixture(scope="module")
 def actores(cliente):
-    """Super Admin (autor), un Admin (revisor), un Director (aprobador) y un Usuario (solo lectura)."""
+    """Super Admin (autor y quien publica), un Admin (revisor) y un Usuario (solo lectura)."""
     superadmin = _cab(cliente, ADMIN, "ClaveInicial2026")
     creados = {}
-    for email, rol in (("revisor@oomapasc.gob.mx", "Admin"), ("director@oomapasc.gob.mx", "Director"), ("lector@oomapasc.gob.mx", "Usuario")):
+    for email, rol in (("revisor@oomapasc.gob.mx", "Admin"), ("lector@oomapasc.gob.mx", "Usuario")):
         r = cliente.post("/api/v1/auth/usuarios", headers=superadmin, json={"nombre": f"Persona {rol}", "email": email, "area": "SGC", "rol": rol})
         assert r.status_code == 201, r.text
         temporal = r.json()["password_temporal"]
         cab = _cab(cliente, email, temporal)
         cliente.post("/api/v1/auth/cambiar-password", headers=cab, json={"password_actual": temporal, "password_nueva": "Clave-Definitiva-1"})
         creados[rol] = _cab(cliente, email, "Clave-Definitiva-1")
-    return {"autor": superadmin, "revisor": creados["Admin"], "director": creados["Director"], "lector": creados["Usuario"]}
+    return {"autor": superadmin, "revisor": creados["Admin"], "director": superadmin, "lector": creados["Usuario"]}
 
 
 def test_manual_sembrado_como_revision_publicada(cliente, actores):
@@ -81,7 +81,7 @@ def test_flujo_completo_dos_pasos(cliente, actores):
     assert cliente.put(f"/api/v1/documentos/{CLAVE}/borrador", headers=autor, json={"secciones": secciones}).status_code == 409
     r = cliente.post(f"/api/v1/documentos/{CLAVE}/revisar", headers=revisor, json={"aprobado": True, "comentario": "Conforme"})
     assert r.status_code == 200 and r.json()["estado"] == "REVISADO"
-    # el revisor (Admin) no puede publicar; el Director sí
+    # el revisor (Admin) no puede publicar; el Super Admin sí
     assert cliente.post(f"/api/v1/documentos/{CLAVE}/publicar", headers=revisor, json={"aprobado": True}).status_code == 403
     r = cliente.post(f"/api/v1/documentos/{CLAVE}/publicar", headers=director, json={"aprobado": True})
     assert r.status_code == 200 and r.json()["estado"] == "PUBLICADO" and r.json()["hash"]

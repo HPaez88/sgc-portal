@@ -12,7 +12,7 @@ export const ESTADOS_SGC = [
   'CERRADO'
 ];
 
-export const ROLES = ['Super Admin', 'Admin', 'Director', 'Auditor', 'Encargado', 'Usuario'];
+export const ROLES = ['Super Admin', 'Admin', 'Auditor', 'Encargado', 'Usuario'];
 
 export const getEstadoColor = (estado) => {
   switch (estado) {

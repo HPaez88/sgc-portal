@@ -19,7 +19,7 @@ import ContenedorModal from '../common/ContenedorModal';
 
 marked.setOptions({ gfm: true, breaks: false });
 const ROLES_EDITAN = ['Super Admin', 'Admin'];
-const ROLES_PUBLICAN = ['Super Admin', 'Director'];
+const ROLES_PUBLICAN = ['Super Admin'];
 const urlOriginal = (nombre) => getApiUrl(`/api/v1/manual/archivos/${encodeURIComponent(nombre)}`);
 const fecha = (iso) => (iso ? new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
 const ESTADO_UI = {

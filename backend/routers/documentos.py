@@ -24,7 +24,7 @@ from backend.tenant import get_organismo_id
 router = APIRouter(prefix="/api/v1/documentos", tags=["Documentos controlados"])
 
 ROLES_EDITAN = ("Super Admin", "Admin")
-ROLES_PUBLICAN = ("Super Admin", "Director")
+ROLES_PUBLICAN = ("Super Admin",)
 ESTADOS_ABIERTOS = ("BORRADOR", "EN_REVISION", "REVISADO", "RECHAZADO")
 
 

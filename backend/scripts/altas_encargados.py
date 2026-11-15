@@ -19,7 +19,7 @@ def personas_del_catalogo(areas: list, direcciones: list) -> list[dict]:
     for d in direcciones:
         if not isinstance(d, dict):
             continue
-        out.append({"nombre": d.get("director") or "", "email": d.get("correo") or "", "area": d.get("nombre") or "", "direccion": d.get("nombre") or "", "rol": "Director"})
+        out.append({"nombre": d.get("director") or "", "email": d.get("correo") or "", "area": d.get("nombre") or "", "direccion": d.get("nombre") or "", "rol": "Encargado"})
         for sd in d.get("subdirecciones") or []:
             if isinstance(sd, dict):
                 out.append({"nombre": sd.get("encargado") or "", "email": sd.get("correo") or "", "area": sd.get("nombre") or "", "direccion": d.get("nombre") or "", "rol": "Encargado"})

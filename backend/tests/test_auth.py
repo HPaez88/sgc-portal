@@ -298,3 +298,26 @@ def test_asegurar_usuarios_del_catalogo(cliente):
     u = next(x for x in cliente.get("/api/v1/auth/usuarios", headers=cab).json() if x["email"] == "lraya@oomapasc.gob.mx")
     assert u["rol"] == "Encargado" and u["area"] == "Control y Servicios" and u["debe_cambiar_password"]
     assert cliente.post("/api/v1/auth/usuarios/asegurar", headers=cab, json={"personas": personas[:1]}).json()["creados"] == []
+
+
+def test_super_admin_es_unico_e_intocable(cliente):
+    r = cliente.post("/api/v1/auth/login", json={"email": "hpaez@oomapasc.gob.mx", "password": "ClaveInicial2026"})
+    cab = {"Authorization": f"Bearer {r.json()['token']}"}
+    yo = cliente.get("/api/v1/auth/me", headers=cab).json()
+    base = {"nombre": "Otro", "email": "otro.sa@oomapasc.gob.mx", "area": "SGC", "activo": True}
+    # ni el propio Super Admin puede crear otro Super Admin
+    assert cliente.post("/api/v1/auth/usuarios", headers=cab, json={**base, "rol": "Super Admin"}).status_code == 403
+    r = cliente.post("/api/v1/auth/usuarios", headers=cab, json={**base, "rol": "Admin"})
+    assert r.status_code == 201
+    uid = r.json()["usuario"]["id"]
+    # ni ascender a nadie a Super Admin
+    assert cliente.put(f"/api/v1/auth/usuarios/{uid}", headers=cab, json={**base, "rol": "Super Admin"}).status_code == 403
+    # un Admin no puede tocar ni desactivar al Super Admin
+    t_admin = cliente.post("/api/v1/auth/login", json={"email": base["email"], "password": r.json()["password_temporal"]}).json()["token"]
+    cab2 = {"Authorization": f"Bearer {t_admin}"}
+    assert cliente.put(f"/api/v1/auth/usuarios/{yo['id']}", headers=cab2, json={"nombre": yo["nombre"], "email": yo["email"], "area": yo["area"], "rol": "Usuario", "activo": True}).status_code == 403
+    assert cliente.delete(f"/api/v1/auth/usuarios/{yo['id']}", headers=cab2).status_code in (403, 422)
+    # el Super Admin puede editar sus datos conservando el rol, pero no degradarse ni desactivarse
+    assert cliente.put(f"/api/v1/auth/usuarios/{yo['id']}", headers=cab, json={"nombre": yo["nombre"], "email": yo["email"], "area": yo["area"], "rol": "Super Admin", "activo": True}).status_code == 200
+    assert cliente.put(f"/api/v1/auth/usuarios/{yo['id']}", headers=cab, json={"nombre": yo["nombre"], "email": yo["email"], "area": yo["area"], "rol": "Admin", "activo": True}).status_code == 422
+    cliente.delete(f"/api/v1/auth/usuarios/{uid}", headers=cab)

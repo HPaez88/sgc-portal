@@ -3,7 +3,7 @@ permisos.py — Reglas de alcance por área y rol compartidas por los routers (m
 """
 from backend.auth import ROLES_ADMIN
 
-ROLES_TODAS_AREAS = (*ROLES_ADMIN, "Director", "Auditor")
+ROLES_TODAS_AREAS = (*ROLES_ADMIN, "Auditor")
 
 
 def es_admin(usuario) -> bool:

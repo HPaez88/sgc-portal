@@ -168,11 +168,13 @@ def listar_usuarios(
     return [_publico(u) for u in filas]
 
 
-def _validar_rol(rol: str, actor: Usuario) -> None:
+def _validar_rol(rol: str, actor: Usuario, objetivo: Optional[Usuario] = None) -> None:
     if rol not in auth.ROLES:
         raise HTTPException(status_code=422, detail=f"Rol inválido. Opciones: {', '.join(auth.ROLES)}.")
-    if rol == "Super Admin" and actor.rol != "Super Admin":
-        raise HTTPException(status_code=403, detail="Solo un Super Admin puede otorgar el rol Super Admin.")
+    # El Super Admin es único (decidido por @human 2026-11-15): nadie, ni él mismo, asigna ese rol desde el portal.
+    # Solo se acepta al editar al propio Super Admin sin cambiarle el rol.
+    if rol == "Super Admin" and not (objetivo is not None and objetivo.rol == "Super Admin"):
+        raise HTTPException(status_code=403, detail="El rol Super Admin es único y no se asigna desde el portal.")
 
 
 @router.post("/usuarios", status_code=201)
@@ -253,9 +255,12 @@ def actualizar_usuario(
     u = session.get(Usuario, usuario_id)
     if not u or u.organismo_id != actor.organismo_id:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    _validar_rol(datos.rol, actor)
-    if u.rol == "Super Admin" and actor.rol != "Super Admin":
-        raise HTTPException(status_code=403, detail="Solo un Super Admin puede modificar a otro Super Admin.")
+    _validar_rol(datos.rol, actor, u)
+    if u.rol == "Super Admin":
+        if actor.id != u.id:
+            raise HTTPException(status_code=403, detail="Solo el propio Super Admin puede modificar su cuenta.")
+        if datos.rol != "Super Admin" or not datos.activo:
+            raise HTTPException(status_code=422, detail="El Super Admin no puede cambiar su rol ni desactivarse.")
     email = datos.email.lower().strip()
     otro = session.exec(select(Usuario).where(Usuario.email == email, Usuario.id != usuario_id)).first()
     if otro:
@@ -302,8 +307,8 @@ def desactivar_usuario(
     u = session.get(Usuario, usuario_id)
     if not u or u.organismo_id != actor.organismo_id:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    if u.id == actor.id:
-        raise HTTPException(status_code=422, detail="No puedes desactivar tu propia cuenta.")
+    if u.id == actor.id or u.rol == "Super Admin":
+        raise HTTPException(status_code=422, detail="La cuenta del Super Admin no se puede desactivar.")
     u.activo = False
     session.add(u)
     session.commit()

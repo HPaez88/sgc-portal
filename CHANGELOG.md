@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Super Admin único e intocable; se elimina el rol "Director"
+- El rol Super Admin es único: nadie (ni él mismo) lo asigna desde el portal; su ficha solo la edita él; no se puede degradar ni desactivar (servidor + pantalla). Gladys conserva únicamente el restablecimiento de su contraseña.
+- Se retira el rol "Director" (nunca se acordó): roles válidos Super Admin, Admin, Auditor, Encargado, Usuario. El Manual lo publica el Super Admin. Los directores de dirección quedan como Encargados de su dirección (script `quitar_rol_director`).
+
 ## 2026-11-15 — Rotación de personal: al quitar un encargado se pregunta si se deshabilita su acceso
 - Al editar o eliminar un área (encargado y apoyos SGC) o una dirección (director, subdirecciones y apoyos SGC), por cada correo que deja de estar asignado el portal pregunta si se deshabilita el usuario; si sigue asignado en otra área o dirección, lo informa y conserva el acceso. Queda en bitácora (SEGURIDAD · DESHABILITAR_ACCESO). Nunca aplica al propio usuario ni a administradores.
 - Se dieron de alta en producción los 39 encargados/directores que ya estaban en el catálogo sin usuario.
