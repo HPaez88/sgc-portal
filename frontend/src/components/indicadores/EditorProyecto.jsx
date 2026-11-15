@@ -48,7 +48,7 @@ function Campo({ etiqueta, valor, onChange, multi, limite, disabled, ayuda, tipo
   );
 }
 
-export default function EditorProyecto({ proyecto: p, onCambio, editable, resultados = {} }) {
+export default function EditorProyecto({ proyecto: p, onCambio, editable, editableAvance = editable, resultados = {} }) {
   const [seccion, setSeccion] = useState('datos');
   const [fichaIdx, setFichaIdx] = useState(0);
   const set = (campo, valor) => onCambio({ ...p, [campo]: valor });
@@ -273,7 +273,7 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, result
                         <td key={t} className="p-2 align-top space-y-1">
                           <div className="flex items-center gap-1.5">
                             <span className="text-slate-600 whitespace-nowrap">Meta {a.trimestres?.[ti] || '—'}</span>
-                            <input inputMode="decimal" aria-label={`Avance ${t}`} value={av.avance ?? ''} onChange={(e) => {
+                            <input inputMode="decimal" aria-label={`Avance ${t}`} disabled={!editableAvance} value={av.avance ?? ''} onChange={(e) => {
                               const avance = e.target.value;
                               const tmp = { ...a, avances: { ...(a.avances || {}), [t]: { ...av, avance } } };
                               const falla = cumpleTrimestre(tmp, ti) === false;
@@ -290,7 +290,7 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, result
                           })()}
                           {cumple === false && (
                             <div>
-                              <textarea rows={2} aria-label={`Justificación ${t}`} value={av.justificacion || ''} onChange={(e) => setAv({ justificacion: e.target.value })} className={`${ENTRADA} text-xs`} />
+                              <textarea rows={2} aria-label={`Justificación ${t}`} disabled={!editableAvance} value={av.justificacion || ''} onChange={(e) => setAv({ justificacion: e.target.value })} className={`${ENTRADA} text-xs`} />
                               <button type="button" onClick={() => setAv({ justificacion: justificacionAutomatica(a, ti) })} className="text-[11px] text-marca-azul-oscuro inline-flex items-center gap-1 hover:underline"><Sparkles size={11} /> Proponer justificación</button>
                             </div>
                           )}

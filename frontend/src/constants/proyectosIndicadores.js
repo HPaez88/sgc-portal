@@ -34,6 +34,18 @@ export const nuevoProyecto = (anio, area, base = {}) => ({
   pems: { ...(base.pems || {}) }, historial: [],
 });
 
+/** Renovación anual: copia del proyecto aprobado para el año siguiente. Conserva actividades, metas, fichas y el
+ *  indicador ya dado de alta en el Cuadro (indicador_id); limpia avances, folio y fechas. Vuelve a BORRADOR para re-aceptación. */
+export const renovarProyecto = (p, anioNuevo, usuario = '') => ({
+  ...p, id: `proy-${Date.now()}`, anio: anioNuevo, estado: 'BORRADOR', folio_tesoreria: '', fecha_elaboracion: '',
+  fecha_inicio: `${anioNuevo}-01-01`, fecha_conclusion: `${anioNuevo}-12-31`, renovado_de: p.id,
+  actividades: (p.actividades || []).map((a, i) => ({ ...a, id: `act-${Date.now()}-${i}`, avances: {} })),
+  historial: [{ fecha: new Date().toISOString(), usuario, texto: `Renovado a partir del proyecto ${p.anio}.` }],
+});
+
+/** Desde octubre se confirma el proyecto del año siguiente. */
+export const esTemporadaRenovacion = (hoy = new Date()) => hoy.getMonth() >= 9;
+
 export const palabras = (t) => String(t || '').trim().split(/\s+/).filter(Boolean).length;
 export const LIMITE_PALABRAS = { resumen: 150, justificacion: 350, objetivo: 50 };
 

@@ -1,6 +1,11 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-14 — Cuadro limpio y ciclo anual de proyectos
+- Cuadro de Control: se quitan el selector de mes/año del encabezado, "Exportar OOMRSC-05", "+ Nuevo Indicador" (todo indicador nace en el proyecto) y las tarjetas de resumen. El año se elige junto a los meses.
+- Proyecto anual: una vez aceptado se cierra para el área (solo captura avance trimestral); el SGC puede "Abrir para que el área modifique" y vuelve a pasar por aceptación.
+- Renovación anual (octubre–diciembre): aviso por área con proyecto aceptado del año en curso y sin proyecto del siguiente: "Sigue igual" (copia y envía a aceptación) o "Actualizar" (copia editable). Conserva metas, fichas e indicador del Cuadro; limpia avances, folio y fechas.
+
 ## 2026-11-14 — Indicadores: el proyecto anual en la pestaña 2 e informes PDF
 - Pestañas: 1 Cuadro Mensual, 2 Proyecto anual (fuente de indicadores y formatos), 3 Por Procesos, 4 Fichas PMD, 5 Reportes RC. Se oculta Evaluación Trimestral.
 - Botón "Informe PDF" con diseño institucional en cada pestaña (Cuadro del mes + matriz anual, proyecto o proyectos del año, procesos, fichas PMD y bitácora de RC).

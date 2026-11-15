@@ -747,47 +747,6 @@ export default function IndicadoresView({
   }, [listaIndicadores, mesActivo, mesActivoIndex, ejercicio, resultados]);
 
   // Exportar Cuadro de Control a CSV
-  const handleExportarCSV = () => {
-    const csv = (v) => { const t = String(v ?? ''); return `"${(/^[=+\-@]/.test(t) ? `'${t}` : t).replace(/"/g, '""')}"`; };
-    try {
-      const headers = [
-        'No. Proceso', 'Proceso', 'Dirección', 'Área', '# Indicador', 
-        'Nombre del Indicador', 'Periodicidad', 'Unidad de Medida', 'Meta Anual',
-        'Meta T1', 'Meta T2', 'Meta T3', 'Meta T4', 'Impacto',
-        'Cumple (SI/NO)', `Valor Real (${mesActivo} ${ejercicio})`, '% Cumplimiento', 'Observación', 'Acción / RC'
-      ];
-
-      const rows = listaIndicadores.map(ind => {
-        const key = `${ind.id}-${mesActivo}-${ejercicio}`;
-        const dataGuardada = resultados[key];
-        const val = dataGuardada?.valor !== undefined ? dataGuardada.valor : '';
-        const obs = dataGuardada?.observacion || ind.observacion_default || '';
-        const acc = dataGuardada?.accion || ind.accion_default || 'NA';
-        const sem = evalSemaforoOOMRSC05(val, ind.meta_anual || ind.meta, ind.es_menor);
-
-        return [
-          ind.id, ind.proceso, ind.direccion, ind.area, ind.numero ?? ind.id, ind.nombre, ind.periodicidad || '', ind.unidad || '',
-          ind.meta_anual ?? ind.meta ?? '', ind.metas_trimestrales?.T1 ?? '', ind.metas_trimestrales?.T2 ?? '', ind.metas_trimestrales?.T3 ?? '',
-          ind.metas_trimestrales?.T4 ?? '', ind.impacto || '', sem.cumple, val, sem.porcentaje !== null ? `${sem.porcentaje}%` : '', obs, acc,
-        ].map(csv).join(',');
-      });
-
-      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `OOMRSC-05_Cuadro_Control_${mesActivo}_${ejercicio}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.exito(`Cuadro de Control OOMRSC-05 exportado exitosamente.`);
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al exportar el archivo CSV.');
-    }
-  };
 
   // Opciones de filtros según catálogo oficial institucional OOMAPASC
   const direccionesUnicas = useMemo(() => {
@@ -835,52 +794,7 @@ export default function IndicadoresView({
             </p>
           </div>
 
-          {/* Selector de Mes/Año, Exportar & Nuevo Indicador */}
           <div className="flex flex-wrap items-center gap-2.5 min-w-0">
-            {/* Selector de Mes & Ejercicio */}
-            <div className="flex items-center bg-slate-800/90 border border-slate-600/80 rounded-xl p-1 shadow-sm">
-              <select
-                value={mesActivoIndex}
-                onChange={(e) => {
-                  setMesActivoIndex(Number(e.target.value));
-                  setPagina(1);
-                }}
-                className="bg-transparent text-white text-xs font-bold px-3 py-1.5 focus:outline-none cursor-pointer"
-                title="Seleccionar mes evaluado"
-              >
-                {MESES_COMPLETOS.map((m, idx) => (
-                  <option key={m} value={idx} className="bg-slate-900 text-white">
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={ejercicio}
-                onChange={(e) => {
-                  setEjercicio(Number(e.target.value));
-                  setPagina(1);
-                }}
-                className="bg-transparent text-white text-xs font-bold px-2 py-1.5 border-l border-slate-700 focus:outline-none cursor-pointer"
-                title="Seleccionar ejercicio fiscal"
-              >
-                {[hoy.getFullYear() - 2, hoy.getFullYear() - 1, hoy.getFullYear(), hoy.getFullYear() + 1].map(y => (
-                  <option key={y} value={y} className="bg-slate-900 text-white">
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Exportar Excel */}
-            <button
-              onClick={handleExportarCSV}
-              className="px-3.5 py-2 text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-              title="Descargar Cuadro de Control OOMRSC-05 en archivo CSV compatible con Excel"
-            >
-              <FileSpreadsheet size={15} />
-              <span>Exportar OOMRSC-05</span>
-            </button>
-
             {/* Recordatorios por Correo a Áreas con Atraso */}
             <button
               onClick={() => setModalRecordatoriosOpen(true)}
@@ -890,23 +804,6 @@ export default function IndicadoresView({
               <Mail size={15} />
               <span>Recordatorios por Correo</span>
             </button>
-
-            {/* Único Botón Oficial: Nuevo Indicador (Unificado PMD + SGC) */}
-            {esAdminOSGC && (
-              <button
-                onClick={() => {
-                  setIndicadorParaGestionar(null);
-                  setFichaParaModal(null);
-                  setPestanaModalInicial('pmd');
-                  setModalGestionIndicadorOpen(true);
-                }}
-                className="hidden md:flex px-3.5 py-2 text-xs font-extrabold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl shadow-md transition-all items-center justify-center gap-2 cursor-pointer active:scale-95"
-                title="Dar de alta un nuevo indicador oficial en el catálogo y configurar su Ficha PMD"
-              >
-                <PlusCircle size={15} />
-                <span>+ Nuevo Indicador</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -950,73 +847,6 @@ export default function IndicadoresView({
 
       </div>
 
-      {/* STATS CARDS DEL MES (SEMÁFOROS OFICIALES) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-slate-500 block uppercase font-mono">
-            Eficacia Global
-          </span>
-          <span className="text-2xl font-black text-slate-900 block">
-            {statsGlobales.promedioGlobal === null ? '—' : `${statsGlobales.promedioGlobal}%`}
-          </span>
-          <span className="text-[10px] text-emerald-600 font-bold block flex items-center gap-1">
-            <Check size={12} /> {mesActivoNombre} {ejercicio}
-          </span>
-        </div>
-
-        <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-emerald-800 block uppercase font-mono flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Aceptable (≥90%)
-          </span>
-          <span className="text-2xl font-black text-emerald-900 block">
-            {statsGlobales.aceptables}
-          </span>
-          <span className="text-[10px] text-emerald-700 font-semibold block">
-            Cumplen objetivo
-          </span>
-        </div>
-
-        <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-200 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-amber-800 block uppercase font-mono flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-            Preventivo (80-89%)
-          </span>
-          <span className="text-2xl font-black text-amber-900 block">
-            {statsGlobales.preventivos}
-          </span>
-          <span className="text-[10px] text-amber-700 font-semibold block">
-            En rango preventivo
-          </span>
-        </div>
-
-        <div className="p-4 bg-rose-50/70 rounded-2xl border border-rose-200 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-rose-800 block uppercase font-mono flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-            Crítico (≤79%)
-          </span>
-          <span className="text-2xl font-black text-rose-900 block">
-            {statsGlobales.criticos}
-          </span>
-          <span className="text-[10px] text-rose-700 font-semibold block">
-            Requieren RC / AC
-          </span>
-        </div>
-
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 sm:col-span-1">
-          <span className="text-[11px] font-bold text-slate-500 block uppercase font-mono flex items-center gap-1">
-            <Clock size={12} className="text-slate-400" />
-            Sin Captura
-          </span>
-          <span className="text-2xl font-black text-slate-700 block">
-            {statsGlobales.pendientes}
-          </span>
-          <span className="text-[10px] text-slate-500 font-semibold block">
-            Pendientes de corte
-          </span>
-        </div>
-      </div>
-
       {/* ==================================================================== */}
       {/* TAB 1: CUADRO DE CONTROL MENSUAL & MATRIZ ANUAL INTERACTIVA          */}
       {/* ==================================================================== */}
@@ -1026,9 +856,14 @@ export default function IndicadoresView({
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
             {/* 12 Meses Ribbon */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
-              <span className="text-[11px] font-bold text-slate-400 font-mono uppercase mr-1 shrink-0 flex items-center gap-1">
-                <Calendar size={13} className="text-sky-600" /> Mes:
-              </span>
+              <label className="text-[11px] font-bold text-slate-700 font-mono uppercase mr-2 shrink-0 flex items-center gap-1.5">
+                <Calendar size={13} className="text-sky-600" /> Año
+                <select value={ejercicio} onChange={(e) => { setEjercicio(Number(e.target.value)); setPagina(1); }}
+                  className="px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900">
+                  {[hoy.getFullYear() - 2, hoy.getFullYear() - 1, hoy.getFullYear(), hoy.getFullYear() + 1].map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </label>
+              <span className="text-[11px] font-bold text-slate-700 font-mono uppercase mr-1 shrink-0">Mes:</span>
               {MESES.map((m, idx) => {
                 const esActivo = mesActivoIndex === idx && vistaModo === 'mensual';
                 const capturados = capturasPorMes[m] || 0;

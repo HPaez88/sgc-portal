@@ -1,7 +1,7 @@
 // Setup anual de indicadores: proyectos por área (normalmente uno; se permiten varios), con sus fichas, PEMS y avance.
 // Captura: encargado del área o SGC. Aprobación: administradores del SGC. Formatos oficiales: los genera el servidor.
 import React, { useMemo, useState } from 'react';
-import { FolderKanban, Plus, FileText, FileSpreadsheet, Send, CheckCircle2, Undo2, Save, X, Download, ClipboardList } from 'lucide-react';
+import { FolderKanban, Plus, RefreshCw, Lock, FileText, FileSpreadsheet, Send, CheckCircle2, Undo2, Save, X, Download, ClipboardList } from 'lucide-react';
 import { useLocalStorage } from '../../hooks';
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
@@ -11,7 +11,7 @@ import { puedeCapturarArea } from '../../constants/riesgos';
 import { descargarFormatoOficial } from '../../services/formatosOficiales';
 import {
   CLAVE_PROYECTOS, ESTADOS_PROYECTO, PILOTO_INFORMATICA_2027, OBJETIVO_INSTITUCIONAL_OOMAPASC,
-  nuevoProyecto, faltantesProyecto, totalesPresupuesto, CAPITULOS, TRIMESTRES,
+  nuevoProyecto, faltantesProyecto, totalesPresupuesto, CAPITULOS, TRIMESTRES, renovarProyecto, esTemporadaRenovacion,
 } from '../../constants/proyectosIndicadores';
 import BotonInformePDF from './BotonInformePDF';
 import { exportarInformeIndicadoresPDF } from '../../services/indicadoresExporter';
@@ -88,23 +88,47 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
   const lista = (proyectos || []).filter((p) => p.anio === anio && (!filtroArea || p.area === filtroArea) && (esAdmin || misAreas.includes(p.area)));
   const original = borrador && (proyectos || []).find((p) => p.id === borrador.id);
   const cambios = borrador && (!original || JSON.stringify(original) !== JSON.stringify(borrador));
-  const puedeEditar = borrador && puedeCapturarArea(usuarioLogueado, borrador.area, areasDetalle, esAdmin) && (esAdmin || borrador.estado !== 'EN_REVISION');
+  const puedeArea = borrador && puedeCapturarArea(usuarioLogueado, borrador.area, areasDetalle, esAdmin);
+  // Una vez aceptado, el proyecto se cierra para el área: solo el SGC edita o lo vuelve a abrir. El avance trimestral sí se captura.
+  const puedeEditar = puedeArea && (esAdmin || borrador.estado === 'BORRADOR');
+  const soloAvances = borrador && original && sinAvances(original) === sinAvances(borrador);
   const sinAreas = areas.filter((a) => !(proyectos || []).some((p) => p.anio === anio && p.area === a));
 
   const nota = (p, texto) => ({ ...p, historial: [...(p.historial || []), { fecha: new Date().toISOString(), usuario: usuarioLogueado?.nombre || usuarioLogueado?.email || '', texto }] });
   const bitacora = (accion, p, descripcion) => registrarMovimiento?.({ modulo: 'Indicadores', accion, descripcion, folio: `${p.area} ${p.anio}` });
 
   const guardar = (p = borrador) => {
-    let final = p;
-    // Cambios de un encargado a un proyecto ya aprobado regresan a revisión del SGC (los avances no).
-    if (!esAdmin && original?.estado === 'APROBADO' && sinAvances(original) !== sinAvances(p)) {
-      final = nota({ ...p, estado: 'EN_REVISION' }, 'Modificó el proyecto aprobado; pasa a revisión del SGC.');
-      toast.info('El proyecto estaba aprobado: tus cambios pasan a revisión del SGC.');
+    const final = p;
+    if (!esAdmin && original && original.estado !== 'BORRADOR' && sinAvances(original) !== sinAvances(p)) {
+      toast.error('El proyecto ya fue aceptado: solo el SGC puede abrirlo para modificarlo.');
+      return original;
     }
     setProyectos((prev) => (prev.some((x) => x.id === final.id) ? prev.map((x) => (x.id === final.id ? final : x)) : [...prev, final]));
     setBorrador(final);
     bitacora('GUARDAR_PROYECTO', final, `Guardó el proyecto "${final.nombre || 'sin nombre'}"`);
     return final;
+  };
+
+  // Temporada de renovación (octubre–diciembre): proyectos aceptados del año en curso que aún no tienen versión para el siguiente.
+  const anioSiguiente = hoy.getFullYear() + 1;
+  const porRenovar = esTemporadaRenovacion(hoy)
+    ? (proyectos || []).filter((p) => p.anio === hoy.getFullYear() && p.estado === 'APROBADO' && misAreas.includes(p.area)
+        && !(proyectos || []).some((x) => x.anio === anioSiguiente && x.area === p.area))
+    : [];
+  const renovar = async (p, sinCambios) => {
+    const nuevo = renovarProyecto(p, anioSiguiente, usuarioLogueado?.nombre || usuarioLogueado?.email || '');
+    if (sinCambios) {
+      const { ok } = await confirmar({ titulo: `Confirmar proyecto ${anioSiguiente}`, mensaje: `${p.area} seguirá en ${anioSiguiente} con el mismo proyecto, actividades, indicadores y metas de ${p.anio}. Se envía a aceptación del SGC.` });
+      if (!ok) return;
+      const listo = nota({ ...nuevo, estado: 'EN_REVISION' }, `Confirmó sin cambios para ${anioSiguiente}; enviado a aceptación del SGC.`);
+      setProyectos((prev) => [...prev, listo]);
+      bitacora('PROYECTO_RENOVADO', listo, `Confirmó sin cambios el proyecto ${anioSiguiente}`);
+      toast.success(`Proyecto ${anioSiguiente} de ${p.area} enviado a aceptación.`);
+      return;
+    }
+    setAnio(anioSiguiente);
+    setBorrador(nuevo);
+    toast.info(`Copia del proyecto ${p.anio} lista para actualizar. Guarda y envía a revisión cuando termines.`);
   };
 
   const crear = (area) => {
@@ -129,9 +153,10 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
     }
     let texto = { EN_REVISION: 'Envió el proyecto a revisión del SGC.', APROBADO: 'Aprobó el proyecto.' }[estado];
     if (estado === 'BORRADOR') {
-      const { ok, valor } = await solicitar({ titulo: 'Devolver al área', etiqueta: 'Observaciones para el área' });
+      const abrir = borrador.estado === 'APROBADO';
+      const { ok, valor } = await solicitar({ titulo: abrir ? 'Abrir proyecto aceptado' : 'Devolver al área', etiqueta: abrir ? 'Motivo de la apertura (el área podrá modificar y volverá a pasar por aceptación)' : 'Observaciones para el área' });
       if (!ok || !valor.trim()) return;
-      texto = `Devolvió con observaciones: ${valor.trim()}`;
+      texto = abrir ? `Abrió el proyecto aceptado para modificación: ${valor.trim()}` : `Devolvió con observaciones: ${valor.trim()}`;
     } else if (estado === 'APROBADO') {
       const { ok } = await confirmar({ titulo: 'Aprobar proyecto', mensaje: `Se aprueba el proyecto de ${borrador.area} ${borrador.anio}. Sus indicadores quedan como metas del año.` });
       if (!ok) return;
@@ -192,14 +217,17 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
               {ultimaNota && <span className="text-[11px] text-slate-600">{ultimaNota.texto} — {ultimaNota.usuario}</span>}</div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {puedeEditar && <button type="button" disabled={!cambios} onClick={() => { guardar(); toast.success('Proyecto guardado.'); }} className="px-3 py-1.5 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg disabled:opacity-40 inline-flex items-center gap-1.5"><Save size={14} /> Guardar</button>}
+            {(puedeEditar || (puedeArea && soloAvances)) && <button type="button" disabled={!cambios} onClick={() => { guardar(); toast.success('Proyecto guardado.'); }} className="px-3 py-1.5 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg disabled:opacity-40 inline-flex items-center gap-1.5"><Save size={14} /> Guardar</button>}
             {puedeEditar && borrador.estado === 'BORRADOR' && <button type="button" onClick={() => cambiarEstado('EN_REVISION')} className="px-3 py-1.5 text-xs font-bold text-marca-azul-oscuro border border-marca-azul-oscuro/40 rounded-lg hover:bg-sky-50 inline-flex items-center gap-1.5"><Send size={14} /> Enviar a revisión SGC</button>}
             {esAdmin && borrador.estado !== 'APROBADO' && <button type="button" onClick={() => cambiarEstado('APROBADO')} className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><CheckCircle2 size={14} /> Aprobar</button>}
-            {esAdmin && borrador.estado !== 'BORRADOR' && original && <button type="button" onClick={() => cambiarEstado('BORRADOR')} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><Undo2 size={14} /> Devolver al área</button>}
+            {esAdmin && borrador.estado !== 'BORRADOR' && original && <button type="button" onClick={() => cambiarEstado('BORRADOR')} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><Undo2 size={14} /> {borrador.estado === 'APROBADO' ? 'Abrir para que el área modifique' : 'Devolver al área'}</button>}
             <BotonInformePDF onClick={() => informeProyectosPDF([borrador], borrador.anio)} />
             <button type="button" onClick={cerrar} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><X size={14} /> Cerrar</button>
           </div>
         </header>
+        {original && !puedeEditar && puedeArea && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 inline-flex items-center gap-2"><Lock size={14} /> Proyecto {borrador.estado === 'APROBADO' ? 'aceptado' : 'en revisión'}: la información está cerrada. Solo puedes capturar el avance trimestral. Para modificarlo, pide al SGC que lo abra.</p>
+        )}
         {original && (
           <section aria-label="Formatos oficiales" className="bg-slate-50 rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-slate-800 inline-flex items-center gap-1.5 mr-1"><Download size={14} /> Formatos oficiales del Ayuntamiento (sin modificar):</span>
@@ -208,7 +236,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
             {(borrador.actividades || []).map((a, i) => <BotonDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList}>Ficha {i + 1}</BotonDescarga>)}
           </section>
         )}
-        <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} resultados={indicadoresData.resultados || {}} />
+        <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} editableAvance={Boolean(puedeArea)} resultados={indicadoresData.resultados || {}} />
       </div>
     );
   }
@@ -233,6 +261,28 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
             </select></label>}
         </div>
       </header>
+
+      {porRenovar.length > 0 && (
+        <section aria-label="Renovación anual" className="rounded-xl border-2 border-amber-300 bg-amber-50 p-3 space-y-2">
+          <h4 className="text-sm font-extrabold text-amber-950 inline-flex items-center gap-2"><RefreshCw size={16} /> Confirmación de proyectos {anioSiguiente}</h4>
+          <p className="text-xs text-amber-900">¿Seguirán en {anioSiguiente} con los mismos proyectos, actividades e indicadores, o se actualiza algo? Una vez aceptado por el SGC, el proyecto se cierra para modificaciones.</p>
+          <table className="w-full text-xs tablas-marcadas bg-white rounded-lg overflow-hidden">
+            <thead><tr><th scope="col" className="p-2 text-left">Área</th><th scope="col" className="p-2 text-left">Proyecto {hoy.getFullYear()}</th><th scope="col" className="p-2 text-right">Decisión para {anioSiguiente}</th></tr></thead>
+            <tbody>
+              {porRenovar.map((p) => (
+                <tr key={p.id}>
+                  <td className="p-2 font-semibold text-slate-900">{p.area}</td>
+                  <td className="p-2 text-slate-800">{p.nombre}</td>
+                  <td className="p-2 text-right whitespace-nowrap space-x-2">
+                    <button type="button" onClick={() => renovar(p, true)} className="px-2.5 py-1 rounded-md font-bold text-white bg-emerald-700 hover:opacity-90">Sigue igual</button>
+                    <button type="button" onClick={() => renovar(p, false)} className="px-2.5 py-1 rounded-md font-bold text-marca-azul-oscuro bg-sky-50 hover:bg-sky-100 border border-marca-azul-oscuro/30">Actualizar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {misAreas.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-end gap-2">
