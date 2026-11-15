@@ -25,4 +25,15 @@ describe('buscador global', () => {
     expect(buscarGlobal('paez', { ...fuentes, esAdmin: true })[0].grupo).toBe('Usuarios');
     expect(buscarGlobal('a', fuentes)).toEqual([]);
   });
+  it('con varias palabras prefiere la frase completa en un mismo campo', () => {
+    const f = { ...fuentes, esAdmin: true,
+      acciones: [{ id: 1, folio_codigo: 'AC#11/2026', area: 'Órgano de Control Interno', descripcion_no_conformidad_final: 'Al revisar los servicios del programa' },
+        { id: 2, folio_codigo: 'AC#18/2026', area: 'Control y Servicios', descripcion_no_conformidad_final: 'Órdenes de trabajo' }],
+      areas: [{ nombre: 'Control y Servicios', direccion: 'Dir. Comercial' }, { nombre: 'Órgano de Control Interno', direccion: 'Dir. General' }] };
+    const r = buscarGlobal('control y servicios', f);
+    expect(r.find((g) => g.grupo === 'Acciones correctivas').items.map((i) => i.titulo)).toEqual(['AC#18/2026']);
+    expect(r.find((g) => g.grupo === 'Áreas').items.map((i) => i.titulo)).toEqual(['Control y Servicios']);
+    // sin frase exacta en ningún campo, se buscan las palabras sueltas (comportamiento anterior)
+    expect(buscarGlobal('gestion calidad mejoras', fuentes)[0].items[0].titulo).toBe('AC#19/2026');
+  });
 });

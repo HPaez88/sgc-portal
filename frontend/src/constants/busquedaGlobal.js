@@ -4,9 +4,13 @@
 const sinAcentos = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 export const MAX_POR_GRUPO = 6;
 
-const coincide = (palabras, ...campos) => {
-  const texto = sinAcentos(campos.filter((c) => c != null).join(' '));
-  return palabras.every((p) => texto.includes(p));
+// Con varias palabras primero se busca la frase completa en un mismo campo ("control y servicios" → el área, no
+// "Órgano de Control Interno" + "servicios" en la descripción). Si ninguna ficha tiene la frase, se buscan las palabras sueltas.
+const coincide = (q, ...campos) => {
+  const limpios = campos.filter((c) => c != null).map((c) => sinAcentos(c));
+  if (q.frase) return limpios.some((c) => c.includes(q.frase));
+  const texto = limpios.join(' ');
+  return q.palabras.every((p) => texto.includes(p));
 };
 const corto = (t, n = 90) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 
@@ -14,9 +18,10 @@ export function buscarGlobal(texto, {
   modulos = [], acciones = [], planes = [], reportes = [], riesgos = [], indicadores = [], documentos = [], areas = [], usuarios = [],
   puedeTodasAreas = true, areaUsuario = '', esAdmin = false,
 } = {}) {
-  const palabras = sinAcentos(texto).split(/\s+/).filter(Boolean);
-  if (!palabras.length || sinAcentos(texto).trim().length < 2) return [];
+  const palabrasQ = sinAcentos(texto).split(/\s+/).filter(Boolean);
+  if (!palabrasQ.length || sinAcentos(texto).trim().length < 2) return [];
   const delAlcance = (r) => puedeTodasAreas || !areaUsuario || r.area === areaUsuario || r.gerencia_coordinacion === areaUsuario;
+  const armar = (palabras) => {
   const grupos = [
     ['Módulos', modulos.filter((m) => coincide(palabras, m.label)).map((m) => ({ titulo: m.label, detalle: 'Ir al módulo', destino: { tab: m.id } }))],
     ['Acciones correctivas', acciones.filter(delAlcance).filter((a) => coincide(palabras, a.folio_codigo, a.area, a.proceso, a.origen, a.descripcion_no_conformidad_final, a.descripcion_no_conformidad_original))
@@ -36,5 +41,9 @@ export function buscarGlobal(texto, {
       ['Usuarios', usuarios.filter((u) => coincide(palabras, u.nombre, u.email, u.area, u.rol)).map((u) => ({ titulo: u.nombre, detalle: `${u.email} · ${u.area || ''}`, destino: { tab: 'settings' } }))],
     ] : []),
   ];
+  return grupos;
+  };
+  const conFrase = palabrasQ.length > 1 ? armar({ frase: palabrasQ.join(' '), palabras: palabrasQ }) : [];
+  const grupos = conFrase.some(([, items]) => items.length) ? conFrase : armar({ frase: '', palabras: palabrasQ });
   return grupos.filter(([, items]) => items.length).map(([grupo, items]) => ({ grupo, total: items.length, items: items.slice(0, MAX_POR_GRUPO) }));
 }
