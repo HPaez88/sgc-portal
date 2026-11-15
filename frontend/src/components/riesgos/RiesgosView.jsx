@@ -195,7 +195,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
       {actual.id === 'informes' && (
         <InformeRiesgos lista={oficiales} enCaptura={enCaptura} planesMejora={planesMejora} areasDetalle={areasDetalle} matrices={listaMatrices}
           unidades={unidades} direccionesDetalle={direccionesDetalle} setDireccionesDetalle={setDireccionesDetalle} esAdmin={esAdmin}
-          sintesisOrganismo={sintesisOrganismo || {}} setSintesisOrganismo={setSintesisOrganismo} todosLosRiesgos={lista}
+          sintesisOrganismo={sintesisOrganismo || {}} setSintesisOrganismo={setSintesisOrganismo} todosLosRiesgos={oficiales}
           anio={anio} puedeTodasAreas={puedeTodasAreas} areaUsuario={areaUsuario} usuarioLogueado={usuarioLogueado} />
       )}
 

@@ -55,10 +55,10 @@ export function normalizarSugerencias(respuesta, { procesos = [], existentes = [
     const contexto = CONTEXTOS.find((c) => igualSinAcentos(c, s?.contexto));
     if (!descripcion || !contexto || vistas.has(clave)) continue;
     vistas.add(clave);
-    const impacto = masCercano(Number(s?.impacto) || 6, IMPACTOS);
+    const impacto = s?.impacto === '' || s?.impacto == null || !Number.isFinite(Number(s?.impacto)) ? 0 : masCercano(Number(s.impacto), IMPACTOS);
     const pr = Number(s?.probabilidad);
-    const probabilidad = Number.isFinite(pr) && s?.probabilidad !== '' && s?.probabilidad != null ? Math.min(5, Math.max(1, Math.round(pr))) : 3;
-    const tratamiento = TRATAMIENTOS[tipo].find((t) => igualSinAcentos(t, s?.tratamiento)) || TRATAMIENTOS[tipo][0];
+    const probabilidad = Number.isFinite(pr) && s?.probabilidad !== '' && s?.probabilidad != null ? Math.min(5, Math.max(1, Math.round(pr))) : 0;
+    const tratamiento = TRATAMIENTOS[tipo].find((t) => igualSinAcentos(t, s?.tratamiento)) || '';
     out.push({
       tipo, contexto, descripcion, impacto, probabilidad, tratamiento,
       contexto_resultado: recorta(s?.resultado, 400),

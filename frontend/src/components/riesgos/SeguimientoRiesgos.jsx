@@ -74,7 +74,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Mostrar</span>
-        {[['ACTIVOS', 'En curso'], ['PENDIENTE_DICTAMEN', 'Por dictaminar'], ['PM_NO_ENCONTRADO', 'Sin plan de mejora'], ['MONITOREO', 'En monitoreo'], ['CERRADO_EFICAZ', 'Eficaces'], ['CERRADO_NO_EFICAZ', 'No eficaces'], ['TODOS', 'Todos']]
+        {[['ACTIVOS', 'En curso'], ['PENDIENTE_DICTAMEN', 'Por dictaminar'], ['PM_NO_ENCONTRADO', 'Sin plan de mejora'], ['PM_RECHAZADO', 'Plan rechazado'], ['MONITOREO', 'En monitoreo'], ['CERRADO_EFICAZ', 'Eficaces'], ['CERRADO_NO_EFICAZ', 'No eficaces'], ['TODOS', 'Todos']]
           .map(([v, l]) => [v, l, todas.filter((f) => pasa(f, v)).length])
           .filter(([v, , n]) => n > 0 || ['ACTIVOS', 'TODOS', filtroEstado].includes(v)) // no mostrar filtros vacíos
           .map(([v, l, n]) => (
@@ -119,7 +119,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
                   {r.dictamen && <span className="block text-[10px] text-slate-500 mt-0.5">{formatearFecha(r.dictamen.fecha)} · nivel {puntaje(r)} → {puntaje(r.residual)}</span>}
                 </td>
                 <td className="p-3 text-right">
-                  {estado === 'CERRADO_NO_EFICAZ' && esAdmin && onReplantear && (
+                  {['CERRADO_NO_EFICAZ', 'PM_RECHAZADO'].includes(estado) && esAdmin && onReplantear && (
                     <button type="button" onClick={() => pedirReplanteo(r)} className="px-2.5 py-1 rounded-md font-bold text-rose-800 bg-rose-50 border border-rose-200 hover:bg-rose-100 inline-flex items-center gap-1"><RotateCcw size={12} /> Replantear</button>
                   )}
                   {['PENDIENTE_DICTAMEN', 'PM_NO_ENCONTRADO'].includes(estado) && esAdmin && (

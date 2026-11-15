@@ -2,7 +2,7 @@
 // Clic en una celda del mapa → lista de lo que cae ahí.
 import React, { useMemo, useState } from 'react';
 import MapaCalor from './MapaCalor';
-import { nivelDe, puntaje, estadoRiesgo, ESTADOS_RIESGO } from '../../constants/riesgos';
+import { nivelDe, puntaje, estadoRiesgo, ESTADOS_RIESGO, dictamenesDe } from '../../constants/riesgos';
 import { direccionDeRegistro } from '../../constants/areas';
 import { getVencimiento } from '../../constants/workflow';
 
@@ -26,12 +26,13 @@ export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio
     const pm = planesMejora.find((p) => String(p.id) === String(r.pm_id));
     return pm && getVencimiento(pm).nivel === 'vencido';
   });
-  const dictaminados = items.filter((r) => r.dictamen);
-  const eficaces = dictaminados.filter((r) => r.dictamen.resultado === 'EFICAZ');
+  const dictamenes = items.flatMap(dictamenesDe);
+  const dictaminados = items.filter((r) => dictamenesDe(r).length);
+  const eficaces = dictamenes.filter((d) => d.resultado === 'EFICAZ');
   const altosAntes = itemsAnioAnterior.filter((r) => r.tipo === 'Riesgo' && nivelDe(r)?.nivel === 'Alto').length;
   const evaluados = riesgos.map(puntaje).filter(Boolean);
   const promedio = evaluados.length ? (evaluados.reduce((n, v) => n + v, 0) / evaluados.length).toFixed(1) : '—';
-  const eficacia = dictaminados.length ? Math.round((eficaces.length / dictaminados.length) * 100) : null;
+  const eficacia = dictamenes.length ? Math.round((eficaces.length / dictamenes.length) * 100) : null;
 
   const porDireccion = useMemo(() => {
     const m = new Map();

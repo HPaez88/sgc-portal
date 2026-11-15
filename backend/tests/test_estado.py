@@ -189,3 +189,40 @@ def test_folios_atomicos(cliente, cab):
     # el contador ya no se escribe desde el navegador
     assert cliente.put("/api/v1/estado/sgc-config-folios", headers=cab, json={"valor": {"AC": {"2026": 1}}}).status_code == 409
     cliente.put("/api/v1/estado/sgc-acciones-correctivas", headers=cab, json={"valor": []})
+
+
+def test_reglas_matriz_de_riesgos_en_servidor():
+    from backend.services.flujo_reglas import validar_cambio, CLAVE_MATRICES, CLAVE_RIESGOS, CLAVE_PM
+    enc, adm = _usuario(), _usuario("Admin", "SGC")
+    m = {"id": "Plantas|2027", "area": "Plantas", "anio": 2027, "estado": "BORRADOR"}
+    v = lambda antes, despues, u: validar_cambio(CLAVE_MATRICES, antes, despues, u, [])
+    assert v([], [m], enc) is None
+    assert v([m], [{**m, "estado": "ENVIADA"}], enc) is None
+    env = {**m, "estado": "ENVIADA"}
+    assert "solo el SGC" in v([env], [{**env, "estado": "ACEPTADA"}], enc)
+    assert v([env], [{**env, "estado": "ACEPTADA", "observaciones": []}], adm) is None
+    acep = {**env, "estado": "ACEPTADA"}
+    assert "no se puede pasar" in v([acep], [{**acep, "estado": "ENVIADA"}], adm)
+    assert "ya no la modifica" in v([env], [{**env, "nota": "x"}], enc)
+    assert "no se eliminan" in v([{**env, "observaciones": [{"texto": "a"}]}], [{**env, "observaciones": []}], adm)
+    assert "no corresponde" in v([], [{**m, "id": "Otra|2027"}], adm)
+    # riesgos
+    r = {"id": 1, "area": "Plantas", "anio": 2027, "tipo": "Riesgo", "probabilidad": 3, "impacto": 6, "estado": "IDENTIFICADO"}
+    vr = lambda antes, despues, u, mats=(), pls=(): validar_cambio(CLAVE_RIESGOS, antes, despues, u, [], {"matrices": list(mats), "planes": list(pls)})
+    assert vr([], [r], enc) is None
+    assert "probabilidad" in vr([], [{**r, "probabilidad": 7}], enc)
+    assert "impacto" in vr([], [{**r, "impacto": 5}], enc)
+    assert "Tratamiento inválido" in vr([], [{**r, "tratamiento": "Aprovechar"}], enc)
+    assert "ya no la modifica" in vr([r], [{**r, "descripcion": "x"}], enc, [env])
+    assert vr([r], [{**r, "descripcion": "x"}], adm, [env]) is None
+    assert "solo el SGC" in vr([r], [{**r, "pm_id": 9}], enc)
+    assert "otra área" in vr([r], [{**r, "descripcion": "x"}], _usuario("Encargado", "Jurídico", "j@x.mx"))
+    trat = {**r, "estado": "EN_TRATAMIENTO", "pm_id": 9}
+    assert "sigue abierto" in vr([trat], [{**trat, "estado": "CERRADO_EFICAZ", "dictamen": {"resultado": "EFICAZ", "nota": "bajó el nivel claramente"}}], adm, [], [{"id": 9, "estado": "EN_SEGUIMIENTO"}])
+    assert vr([trat], [{**trat, "estado": "CERRADO_EFICAZ", "dictamen": {"resultado": "EFICAZ", "nota": "bajó el nivel claramente"}}], adm, [], [{"id": 9, "estado": "CERRADO_EFECTIVO"}]) is None
+    assert "nota" in vr([trat], [{**trat, "estado": "CERRADO_EFICAZ", "dictamen": {"resultado": "EFICAZ", "nota": "ok"}}], adm, [], [{"id": 9, "estado": "CERRADO_EFECTIVO"}])
+    # PM ligados a riesgo: solo el SGC y sin duplicados activos
+    pm = {"id": 1, "area": "Plantas", "estado": "EN_SEGUIMIENTO", "riesgo_id": 1, "folio_codigo": "OM#1/2027"}
+    assert "genera el SGC" in validar_cambio(CLAVE_PM, [], [{**pm, "folio_codigo": "Pendiente"}], enc, [])
+    assert "dos planes" in validar_cambio(CLAVE_PM, [pm], [pm, {**pm, "id": 2, "folio_codigo": "OM#2/2027"}], adm, [])
+    assert validar_cambio(CLAVE_PM, [pm], [{**pm, "estado": "CERRADO_NO_EFECTIVO"}, {**pm, "id": 2, "folio_codigo": "OM#2/2027"}], adm, []) is None

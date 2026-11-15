@@ -15,7 +15,8 @@ export function normalizarFoda(foda) {
   CUADRANTES.forEach(({ id }) => {
     const v = foda?.[id];
     const lista = Array.isArray(v) ? v : String(v || '').split('\n');
-    out[id] = lista.map((x) => String(x).replace(/^\s*[-•*·\d.)]+\s*/, '').trim()).filter(Boolean).slice(0, 15);
+    // Quita solo viñetas reales ("- ", "• ", "3. ", "3) "); "30% de pérdidas" o "2026: sequía" se respetan.
+    out[id] = lista.map((x) => String(x).replace(/^\s*(?:[-•*·]|\d{1,2}[.)])\s+/, '').trim()).filter(Boolean);
   });
   return out;
 }

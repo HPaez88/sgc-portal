@@ -9,7 +9,7 @@ import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionR
 import { useToast } from '../common/Toast';
 import { asignarFolios } from '../../services/folioService';
 import { formatearFecha } from '../../constants/workflow';
-import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, llevaPM, pmDesdeRiesgo, idMatriz } from '../../constants/riesgos';
+import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, llevaPM, pmDesdeRiesgo, idMatriz, faltante } from '../../constants/riesgos';
 
 export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, matrices, guardarMatriz, planesMejora, setPlanesMejora, usuarioLogueado, registrarMovimiento }) {
   const toast = useToast();
@@ -71,6 +71,8 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
     // Evita aceptar dos veces (doble clic u otro administrador con la pantalla abierta).
     const vigente = matrices.find((x) => x.id === idMatriz(fila.area, anio));
     if (aceptando || vigente?.estado !== 'ENVIADA') { toast.warning('Esta matriz ya no está en revisión.'); setConfirmar(false); return; }
+    const incompletos = fila.items.map((r) => ({ r, falta: faltante(r) })).filter((x) => x.falta);
+    if (incompletos.length) { toast.error(`No se puede aceptar: ${incompletos.length} registro(s) incompletos (${incompletos[0].falta}).`); setConfirmar(false); return; }
     setAceptando(true);
     const por = usuarioLogueado?.nombre || 'SGC';
     const ficha = areas.find((a) => a.nombre === fila.area) || {};
@@ -89,6 +91,8 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
       } else if (!r.pm_id) {
         cambios[r.id] = { estado: 'MONITOREO' };
       }
+      // Lo aceptado queda marcado como oficial aunque la matriz se reabra después.
+      cambios[r.id] = { ...(cambios[r.id] || {}), oficial: true, fecha_aceptacion: new Date().toISOString() };
     });
     if (nuevos.length) setPlanesMejora((prev) => [...prev, ...nuevos]);
     setRiesgos((prev) => prev.map((r) => (cambios[r.id] ? { ...r, ...cambios[r.id] } : r)));

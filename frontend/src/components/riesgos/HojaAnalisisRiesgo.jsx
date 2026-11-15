@@ -38,7 +38,7 @@ export default function HojaAnalisisRiesgo({ riesgo: r }) {
         <div>
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{CLAVE_MATRIZ} · Matriz {r.anio} · formato de identificación</p>
           <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2"><ShieldAlert size={18} className={esRiesgo ? 'text-rose-600' : 'text-emerald-600'} /> {r.tipo}: {r.descripcion}</h3>
-          <p className="text-xs text-slate-600">{[r.area, r.direccion].filter(Boolean).join(' · ')}{r.sugerido_ia && <span className="ml-2 inline-flex items-center gap-1 text-violet-700"><Sparkles size={12} /> propuesto con IA y revisado por el área</span>}</p>
+          <p className="text-xs text-slate-600">{[r.area, r.direccion].filter(Boolean).join(' · ')}{r.sugerido_ia && <span className="ml-2 inline-flex items-center gap-1 text-violet-700"><Sparkles size={12} /> propuesto con IA; la evaluación la confirmó el área al enviar la matriz</span>}</p>
         </div>
         <div className={`rounded-xl border px-4 py-2 text-center ${nivel ? nivel.suave : 'bg-white border-slate-200'}`}>
           <p className="text-[10px] font-bold uppercase tracking-wider">Nivel</p>
@@ -88,7 +88,7 @@ export default function HojaAnalisisRiesgo({ riesgo: r }) {
       {(r.dictamen || (r.historial_pm || []).length > 0) && (
         <Bloque titulo="5. Eficacia">
           {r.dictamen && <Fila etiqueta="Dictamen del SGC">{`${r.dictamen.resultado === 'EFICAZ' ? 'Eficaz' : 'No eficaz'} · ${formatearFecha(r.dictamen.fecha)} · ${r.dictamen.por}${r.residual ? ` · nivel ${puntaje(r)} → ${puntaje(r.residual)}` : ''}\n${r.dictamen.nota || ''}`}</Fila>}
-          {(r.historial_pm || []).length > 0 && <Fila etiqueta="Planes anteriores">{r.historial_pm.map((h) => `${h.pm_folio || 'PM'} · ${h.dictamen?.resultado === 'EFICAZ' ? 'eficaz' : 'no eficaz'} (${formatearFecha(h.fecha)})`).join('\n')}</Fila>}
+          {(r.historial_pm || []).length > 0 && <Fila etiqueta="Planes anteriores">{r.historial_pm.map((h) => `${h.pm_folio || h.folio || 'PM'} · ${h.dictamen?.resultado === 'EFICAZ' ? 'eficaz' : 'no eficaz'} (${formatearFecha(h.fecha)})`).join('\n')}</Fila>}
         </Bloque>
       )}
     </div>

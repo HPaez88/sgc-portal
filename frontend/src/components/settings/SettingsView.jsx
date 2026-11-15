@@ -348,7 +348,13 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
     const previa = modalArea.esEdicion ? areasDetalle.find((a) => a.id === modalArea.data.id) : null;
     const areasNuevas = modalArea.esEdicion ? areasDetalle.map((a) => (a.id === modalArea.data.id ? modalArea.data : a)) : [...areasDetalle, modalArea.data];
     if (modalArea.esEdicion) {
-      setAreasDetalle(prev => prev.map(a => a.id === modalArea.data.id ? { ...modalArea.data, ...(modalArea.data.foda ? { foda: normalizarFoda(modalArea.data.foda) } : {}) } : a));
+      // Propósito y FODA se editan también en Riesgos → FODA: si cambiaron mientras el modal estaba abierto, se respeta lo más reciente.
+      setAreasDetalle(prev => prev.map(a => {
+        if (a.id !== modalArea.data.id) return a;
+        const cambioFoda = JSON.stringify(previa?.foda || null) !== JSON.stringify(modalArea.data.foda || null) || (previa?.proposito || '') !== (modalArea.data.proposito || '');
+        const vivos = cambioFoda ? {} : { proposito: a.proposito, foda: a.foda, foda_estado: a.foda_estado, foda_revisado_por: a.foda_revisado_por, foda_fecha: a.foda_fecha };
+        return { ...modalArea.data, ...(modalArea.data.foda ? { foda: normalizarFoda(modalArea.data.foda) } : {}), ...Object.fromEntries(Object.entries(vivos).filter(([, v]) => v !== undefined)) };
+      }));
       notificar(`✓ Área "${nombre}" actualizada correctamente`);
     } else {
       setAreasDetalle(prev => [...prev, modalArea.data]);

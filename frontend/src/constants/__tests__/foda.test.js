@@ -16,4 +16,8 @@ describe('FODA', () => {
     expect(p).toContain('Debilidades: Equipo obsoleto');
     expect(fodaParaPrompt(null)).toContain('sin FODA');
   });
+  it('respeta los números que forman parte del texto', () => {
+    const f = normalizarFoda({ fortalezas: ['30% de pérdidas', '2026: sequía', '3. tercer punto', '- con guion', '5 pozos fuera'] });
+    expect(f.fortalezas).toEqual(['30% de pérdidas', '2026: sequía', 'tercer punto', 'con guion', '5 pozos fuera']);
+  });
 });

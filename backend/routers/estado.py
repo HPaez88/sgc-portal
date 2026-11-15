@@ -98,7 +98,15 @@ def guardar(
             areas_detalle = json.loads(areas.valor) if areas else []
         except ValueError:
             areas_detalle = []
-        motivo = validar_cambio(clave, actual, valor, usuario, areas_detalle if isinstance(areas_detalle, list) else [])
+        def _otra(c):
+            fila = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == organismo_id, EstadoPortal.clave == c)).first()
+            try:
+                v = json.loads(fila.valor) if fila else []
+            except ValueError:
+                v = []
+            return v if isinstance(v, list) else []
+        contexto = {"matrices": _otra("sgc-matrices-riesgos"), "planes": _otra("sgc-planes-mejora")} if clave == "sgc-riesgos" else None
+        motivo = validar_cambio(clave, actual, valor, usuario, areas_detalle if isinstance(areas_detalle, list) else [], contexto)
         if motivo:
             session.rollback()
             raise HTTPException(status_code=409, detail=motivo)

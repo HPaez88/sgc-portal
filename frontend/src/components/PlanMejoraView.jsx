@@ -325,7 +325,9 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     };
     setForm(f => ({ ...f, ...cambios }));
     guardarBorrador(cambios);
-    setTimeout(() => { setVista('lista'); setMensaje('✅ Folio asignado: ' + folioCodigo); }, 600);
+    // El riesgo ligado muestra el folio real del plan.
+    if (form.riesgo_id && setRiesgos) setRiesgos((prev) => (prev || []).map((r) => (String(r.id) === String(form.riesgo_id) && String(r.pm_id) === String(form.id) ? { ...r, pm_folio: folioCodigo } : r)));
+    setTimeout(() => { setVista('lista'); setMensaje('Folio asignado: ' + folioCodigo); }, 600);
   };
 
   const rechazarSGC = async () => {
@@ -497,7 +499,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         } : null;
       if (nueva && form.riesgo_id && setRiesgos) {
         setRiesgos((prev) => (prev || []).map((r) => (String(r.id) === String(form.riesgo_id)
-          ? { ...r, pm_id: nueva.id, pm_folio: nueva.folio_codigo, historial_pm: [...(r.historial_pm || []), { pm_id: form.id, folio: form.folio_codigo, resultado: 'NO_EFECTIVA', fecha: new Date().toISOString() }] }
+          ? { ...r, pm_id: nueva.id, pm_folio: null, historial_pm: [...(r.historial_pm || []), { pm_id: form.id, pm_folio: form.folio_codigo, dictamen: { resultado: 'NO_EFICAZ', por: usuarioLogueado?.nombre || '', nota: modalDictamen.conclusion.trim() }, fecha: new Date().toISOString() }] }
           : r)));
       }
 

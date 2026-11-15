@@ -155,6 +155,12 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
                 ))}
                 {!requierePlan(r) && <span className="text-[11px] text-slate-500">Nivel bajo: puede quedarse en monitoreo sin plan.</span>}
               </div>
+              {requierePlan(r) && ['Aceptar', 'Posponer'].includes(r.tratamiento) && (
+                <label className="block mt-2 text-xs font-bold text-slate-800">Justificación para {r.tratamiento.toLowerCase()} sin plan (nivel {nivelDe(r)?.nivel}) <span className="text-rose-600" aria-hidden="true">*</span>
+                  <textarea rows={2} disabled={soloLectura} value={r.justificacion_tratamiento || ''} onChange={(e) => set({ justificacion_tratamiento: e.target.value })}
+                    placeholder="Por qué el área decide no tratarlo ahora (mínimo 10 caracteres); la dirección lo verá en el informe" className="mt-1 w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg" />
+                </label>
+              )}
             </div>
 
             {conPlan && (

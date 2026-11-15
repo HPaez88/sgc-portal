@@ -30,7 +30,7 @@ describe('normalizarSugerencias', () => {
     expect(r).toHaveLength(2);
     expect(r[0]).toMatchObject({ tipo: 'Riesgo', contexto: 'Indicadores', proceso: 'Producción', impacto: 8, probabilidad: 5, tratamiento: 'Mitigar' });
     expect(r[0].plan).toHaveLength(1);
-    expect(r[1]).toMatchObject({ tipo: 'Oportunidad', impacto: 2, probabilidad: 1, tratamiento: 'Aprovechar', proceso: '' });
+    expect(r[1]).toMatchObject({ tipo: 'Oportunidad', impacto: 2, probabilidad: 1, tratamiento: '', proceso: '' }); // tratamiento no reconocido: queda vacío, no se inventa
   });
   it('tolera respuestas vacías y limita la cantidad', () => {
     expect(normalizarSugerencias(null)).toEqual([]);

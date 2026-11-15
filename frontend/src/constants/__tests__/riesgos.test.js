@@ -29,7 +29,10 @@ describe('qué falta para enviar', () => {
     expect(faltante({ ...base, tratamiento: 'Mitigar' })).toMatch(/plan/);
     expect(faltante({ ...base, tratamiento: 'Mitigar', plan: [{ actividad: 'x', responsable: '', fecha_termino_sugerida: '2027-01-01' }] })).toMatch(/incompletas/);
     expect(faltante({ ...base, tratamiento: 'Mitigar', plan })).toBeNull();
-    expect(faltante({ ...base, tratamiento: 'Aceptar' })).toBeNull();
+    expect(faltante({ ...base, tratamiento: 'Aceptar' })).toMatch(/justificar/);
+    expect(faltante({ ...base, tratamiento: 'Aceptar', justificacion_tratamiento: 'Costo mayor al beneficio esperado' })).toBeNull();
+    expect(faltante({ ...base, tratamiento: 'Mitigar', plan, probabilidad: 7 })).toMatch(/escala oficial/);
+    expect(faltante({ ...base, tratamiento: 'Aprovechar', plan })).toMatch(/no corresponde/);
   });
 });
 
@@ -61,14 +64,14 @@ describe('correcciones de la auditoría (2026-11-14)', () => {
     expect(new Set(ids).size).toBe(50);
   });
   it('un riesgo bajo con plan exige actividades completas (va a generar PM)', () => {
-    const r = { contexto: 'Indicadores', proceso: 'Producción', descripcion: 'x', probabilidad: 1, impacto: 2, tratamiento: 'Mitigar', plan: [{ actividad: 'a', responsable: '' }] };
+    const r = { contexto: 'Indicadores', proceso: 'Producción', descripcion: 'x', tipo: 'Riesgo', probabilidad: 1, impacto: 2, tratamiento: 'Mitigar', plan: [{ actividad: 'a', responsable: '' }] };
     expect(faltante(r)).toMatch(/incompletas/);
     expect(faltante({ ...r, plan: [{ actividad: 'a', responsable: 'Jefe', fecha_termino_sugerida: '2027-03-01' }] })).toBeNull();
   });
   it('si borraron el PM ligado, el estado lo avisa', () => {
     const r = { estado: 'EN_TRATAMIENTO', pm_id: 5 };
     expect(estadoRiesgo(r, [{ id: 9 }])).toBe('PM_NO_ENCONTRADO');
-    expect(estadoRiesgo(r, [{ id: 5, estado: 'RECHAZADO' }])).toBe('EN_TRATAMIENTO'); // un plan rechazado nunca se ejecutó: no hay nada que dictaminar
+    expect(estadoRiesgo(r, [{ id: 5, estado: 'RECHAZADO' }])).toBe('PM_RECHAZADO'); // un plan rechazado nunca se ejecutó: se replantea, no se dictamina
   });
   it('tablero e informes solo cuentan lo aceptado o con PM/dictamen', () => {
     const matrices = [{ id: idMatriz('A', 2026), estado: 'ACEPTADA' }, { id: idMatriz('B', 2026), estado: 'ENVIADA' }];

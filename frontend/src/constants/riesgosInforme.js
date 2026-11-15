@@ -1,6 +1,6 @@
 // Informes de riesgos y oportunidades por área, por dirección y del organismo (etapa 3, 2026-11-13).
 // Lógica pura: cifras, desglose, comparativo contra años anteriores y hallazgos para decidir.
-import { nivelDe, puntaje, estadoRiesgo } from './riesgos';
+import { nivelDe, puntaje, estadoRiesgo, dictamenesDe } from './riesgos';
 import { getVencimiento } from './workflow';
 
 const pct = (n, d) => (d ? Math.round((n / d) * 100) : null);
@@ -15,8 +15,10 @@ export function resumenRiesgos(items = [], planes = []) {
     const pm = planes.find((p) => String(p.id) === String(r.pm_id));
     return pm && getVencimiento(pm).nivel === 'vencido';
   });
-  const dictaminados = items.filter((r) => r.dictamen);
-  const eficaces = dictaminados.filter((r) => r.dictamen.resultado === 'EFICAZ');
+  // La eficacia cuenta todos los dictámenes, incluidos los no eficaces de planes replanteados (no se inflan las cifras).
+  const dictamenes = items.flatMap(dictamenesDe);
+  const dictaminados = items.filter((r) => dictamenesDe(r).length);
+  const eficaces = dictamenes.filter((d) => d.resultado === 'EFICAZ');
   const reducciones = riesgos.filter((r) => r.dictamen && r.residual).map((r) => puntaje(r) - puntaje(r.residual));
   return {
     total: items.length,
@@ -26,10 +28,10 @@ export function resumenRiesgos(items = [], planes = []) {
     nivelPromedio: prom(riesgos.map(puntaje).filter(Boolean)),
     conPM: conPM.length,
     vencidos: vencidos.length,
-    porDictaminar: items.filter((r) => estadoRiesgo(r, planes) === 'PENDIENTE_DICTAMEN').length,
+    porDictaminar: items.filter((r) => ['PENDIENTE_DICTAMEN', 'PM_NO_ENCONTRADO'].includes(estadoRiesgo(r, planes))).length,
     dictaminados: dictaminados.length,
     eficaces: eficaces.length,
-    eficacia: pct(eficaces.length, dictaminados.length),
+    eficacia: pct(eficaces.length, dictamenes.length),
     reduccionPromedio: prom(reducciones),
     // Riesgos altos que el área decidió aceptar (sin plan): la dirección debe conocerlos.
     altosAceptados: riesgos.filter((r) => nivelDe(r)?.nivel === 'Alto' && !r.pm_id && r.tratamiento === 'Aceptar').length,

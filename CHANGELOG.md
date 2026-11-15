@@ -1,6 +1,12 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Auditoría Matriz de Riesgos (OOMRSC-37), fase 1
+- Servidor valida `sgc-matrices-riesgos` y `sgc-riesgos`: transiciones de la matriz (captura→enviada→aceptada/observada→reabrir), solo el SGC acepta/devuelve/reabre, el área no toca matrices enviadas/aceptadas ni riesgos con plan, escala oficial (prob 1–5, impacto 2–10), tratamiento del tipo, dictamen solo SGC con nota y PM cerrado, observaciones no se borran. PM ligados a riesgo: solo el SGC los crea y un riesgo no tiene dos activos (evita la aceptación doble).
+- Eficacia del tablero e informe cuenta todos los dictámenes (incluidos los no eficaces replanteados); "por dictaminar" incluye PM no encontrado; la síntesis IA solo usa registros oficiales.
+- `normalizarFoda` ya no borra números del texto ("30% de pérdidas") ni trunca en silencio; la síntesis IA pide confirmación antes de reemplazar lo capturado; Configuración no pisa propósito/FODA editados en Riesgos.
+- Reenviar una matriz conserva observaciones e historial; aceptar revalida cada registro y marca lo aceptado como oficial; medio/alto con Aceptar/Posponer exige justificación; PM rechazado → estado "Plan rechazado" con Replantear; la IA no inventa evaluación ni tratamiento; el riesgo toma el folio real del PM al aprobarse.
+
 ## 2026-11-15 — Super Admin único e intocable; se elimina el rol "Director"
 - El rol Super Admin es único: nadie (ni él mismo) lo asigna desde el portal; su ficha solo la edita él; no se puede degradar ni desactivar (servidor + pantalla). Gladys conserva únicamente el restablecimiento de su contraseña.
 - Se retira el rol "Director" (nunca se acordó): roles válidos Super Admin, Admin, Auditor, Encargado, Usuario. El Manual lo publica el Super Admin. Los directores de dirección quedan como Encargados de su dirección (script `quitar_rol_director`).

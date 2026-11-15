@@ -8,6 +8,7 @@ import { useToast } from '../common/Toast';
 import { promptSintesis, normalizarSintesis, SINTESIS_VACIA } from '../../constants/sintesisIA';
 import { normalizarFoda, fodaVacio } from '../../constants/foda';
 import { formatearFecha } from '../../constants/workflow';
+import Dialogos, { useDialogos } from '../common/Dialogos';
 
 const campo = 'w-full px-2.5 py-1.5 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none disabled:bg-slate-50';
 const CONTEXTO_IA = 'Eres asesor experto en ISO 9001:2015 del SGC de OOMAPAS de Cajeme. Responde únicamente con JSON válido.';
@@ -33,11 +34,17 @@ export default function SintesisPanel({ nivel, nombre, anio, unidades, valor, on
   const [s, setS] = useState(valor || SINTESIS_VACIA);
   const [revisado, setRevisado] = useState(valor?.estado === 'revisado');
   const [pensando, setPensando] = useState(false);
+  const { confirmar, props: propsDialogos } = useDialogos();
   useEffect(() => { setS(valor || SINTESIS_VACIA); setRevisado(valor?.estado === 'revisado'); }, [valor, nombre, anio]);
   const conInfo = unidades.filter((u) => !fodaVacio(u.foda) || (u.registros || []).length);
   const unidad = nivel === 'organismo' ? 'direcciones' : 'áreas';
 
   const sugerir = async () => {
+    const hayContenido = !fodaVacio(s.foda) || (s.riesgos || []).length || (s.oportunidades || []).length || (s.plan || []).length || String(s.conclusion || '').trim();
+    if (hayContenido) {
+      const { ok } = await confirmar({ titulo: 'Reemplazar la síntesis', mensaje: 'Ya hay una síntesis capturada o revisada. La propuesta de la IA la reemplazará por completo (lo guardado se conserva hasta que pulses Guardar). ¿Continuar?', textoAceptar: 'Reemplazar', peligro: true });
+      if (!ok) return;
+    }
     setPensando(true);
     const r = await api.post('/api/v1/ai/generar-json', { prompt: promptSintesis({ nivel, nombre, anio, unidades }), context: CONTEXTO_IA }, { timeoutMs: 120000 });
     setPensando(false);
@@ -58,6 +65,7 @@ export default function SintesisPanel({ nivel, nombre, anio, unidades, valor, on
 
   return (
     <div className="space-y-4">
+      <Dialogos {...propsDialogos} />
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 p-4">
         <div>
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Síntesis {anio} · {conInfo.length} de {unidades.length} {unidad} con información</p>

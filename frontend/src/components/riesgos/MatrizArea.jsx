@@ -27,6 +27,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
   };
   const actualizar = (r) => setRiesgos((prev) => prev.map((x) => (x.id === r.id ? r : x)));
   const quitar = async (r) => {
+    if ((r.historial_pm || []).length) { toast.warning('Este registro ya tuvo planes de mejora; no se quita, se replantea.'); return; }
     const { ok } = await pedirConfirmacion({ titulo: `Quitar ${r.tipo.toLowerCase()}`, mensaje: `¿Quitar "${r.descripcion || 'sin descripción'}" de la matriz ${anio}?`, textoAceptar: 'Quitar', peligro: true });
     if (!ok) return;
     setRiesgos((prev) => prev.filter((x) => x.id !== r.id));
@@ -59,6 +60,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
 
   const enviar = (ratificacion) => {
     guardarMatriz({
+      ...(matriz || {}),
       id: idMatriz(area, anio), area, anio, direccion, estado: 'ENVIADA',
       enviado_por: usuarioLogueado?.nombre || '', fecha_envio: new Date().toISOString(), ratificacion_envio: ratificacion,
     });

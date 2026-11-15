@@ -96,6 +96,7 @@ export const ESTADOS_RIESGO = {
   EN_TRATAMIENTO: { label: 'En tratamiento', color: 'bg-sky-100 text-sky-800 border-sky-200' },
   PENDIENTE_DICTAMEN: { label: 'Por dictaminar SGC', color: 'bg-violet-100 text-violet-800 border-violet-200' },
   PM_NO_ENCONTRADO: { label: 'Plan de mejora no encontrado', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  PM_RECHAZADO: { label: 'Plan de mejora rechazado', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   CERRADO_EFICAZ: { label: 'Eficaz', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   CERRADO_NO_EFICAZ: { label: 'No eficaz', color: 'bg-rose-100 text-rose-800 border-rose-200' },
 };
@@ -120,6 +121,8 @@ export const estadoRiesgo = (r, planes = []) => {
     // Si borraron el PM ligado, el SGC debe saberlo y poder dictaminar o replantear.
     if (!pm && r.pm_id && planes.length) return 'PM_NO_ENCONTRADO';
     if (pm && /^CERRADO/.test(String(pm.estado || ''))) return 'PENDIENTE_DICTAMEN';
+    // Un plan rechazado por el SGC nunca se ejecutó: el riesgo debe replantearse, no dictaminarse.
+    if (pm && String(pm.estado || '') === 'RECHAZADO') return 'PM_RECHAZADO';
   }
   return r.estado || 'IDENTIFICADO';
 };
@@ -187,14 +190,20 @@ export const nuevoRiesgo = ({ tipo = 'Riesgo', area, direccion, anio, por }) => 
 });
 
 // Qué le falta a un riesgo para poder enviar la matriz (null = completo).
+export const PROBABILIDADES_VALIDAS = [1, 2, 3, 4, 5];
+export const IMPACTOS_VALIDOS = [2, 4, 6, 8, 10];
 export const faltante = (r) => {
   if (!r.contexto) return 'falta el contexto (de dónde se identificó)';
   if (!r.proceso) return 'falta el proceso';
   if (!r.descripcion?.trim()) return 'falta la descripción';
   if (!r.probabilidad || !r.impacto) return 'falta evaluarlo';
+  if (!PROBABILIDADES_VALIDAS.includes(Number(r.probabilidad)) || !IMPACTOS_VALIDOS.includes(Number(r.impacto))) return 'la evaluación no usa la escala oficial';
+  if (r.tratamiento && !(TRATAMIENTOS[r.tipo] || []).includes(r.tratamiento)) return 'el tratamiento no corresponde al tipo';
   if (requierePlan(r)) {
     if (!r.tratamiento) return 'falta el tratamiento';
     if (!['Aceptar', 'Posponer'].includes(r.tratamiento) && !(r.plan || []).length) return 'falta el plan de acción';
+    // Un riesgo medio o alto que se acepta (o una oportunidad que se pospone) requiere decirlo por escrito.
+    if (['Aceptar', 'Posponer'].includes(r.tratamiento) && String(r.justificacion_tratamiento || '').trim().length < 10) return `falta justificar por qué se decide ${r.tratamiento.toLowerCase()} sin plan`;
   }
   // Todo plan que generará un Plan de Mejora debe tener actividad, responsable y fecha (aunque el nivel sea bajo).
   if (llevaPM(r) && (r.plan || []).some((a) => !a.actividad?.trim() || !a.responsable?.trim() || !a.fecha_termino_sugerida)) {
@@ -209,8 +218,11 @@ export const llevaPM = (r) => (r.plan || []).length > 0 && !['Aceptar', 'Pospone
 // Para tablero e informes solo cuenta lo validado: matriz aceptada por el SGC, o registros que ya
 // tienen plan de mejora o dictamen. Lo que está en captura o revisión se informa aparte.
 export const esOficial = (r, matrices = []) => Boolean(
-  r.pm_id || r.dictamen || matrices.find((m) => m.id === idMatriz(r.area, r.anio))?.estado === 'ACEPTADA',
+  r.oficial || r.pm_id || r.dictamen || (r.historial_pm || []).length || matrices.find((m) => m.id === idMatriz(r.area, r.anio))?.estado === 'ACEPTADA',
 );
+
+// Todos los dictámenes del registro (el vigente y los de planes anteriores replanteados): la eficacia se mide con todos.
+export const dictamenesDe = (r) => [...(r?.historial_pm || []).map((h) => h?.dictamen).filter(Boolean), r?.dictamen].filter((d) => d && d.resultado);
 
 // El área (o sus encargados del SGC) puede capturar su matriz; el SGC puede todas.
 export const puedeCapturarArea = (usuario, area, areasDetalle = [], esAdmin = false) => {

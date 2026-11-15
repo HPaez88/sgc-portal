@@ -15,7 +15,9 @@ CLAVE_AC = "sgc-acciones-correctivas"
 CLAVE_PM = "sgc-planes-mejora"
 CLAVE_RC = "sgc-reportes-correccion"
 CLAVE_FOLIOS = "sgc-config-folios"
-CLAVES_CON_REGLAS = (CLAVE_AC, CLAVE_PM, CLAVE_RC)
+CLAVE_RIESGOS = "sgc-riesgos"
+CLAVE_MATRICES = "sgc-matrices-riesgos"
+CLAVES_CON_REGLAS = (CLAVE_AC, CLAVE_PM, CLAVE_RC, CLAVE_RIESGOS, CLAVE_MATRICES)
 
 # Estados heredados → flujo canónico (mismo mapa que normalizarEstado en constants/workflow.js)
 LEGADO = {"GENERADO_IA": "BORRADOR", "FOLIO_ASIGNADO": "APROBADO", "ENVIADO_SGC": "EN_REVISION",
@@ -132,7 +134,11 @@ def _validar_ac_pm(anterior: list, nuevo: list, usuario, areas: list) -> Optiona
                 motivo = falta_evidencia(r)
                 if motivo:
                     return f"{_nombre(viejo)}: no se puede pasar a {e1}, {motivo}."
+    activos_por_riesgo: dict = {}
     for k, r in despues.items():
+        rid = r.get("riesgo_id")
+        if rid not in (None, "") and estado_de(r) not in CERRADOS:
+            activos_por_riesgo.setdefault(str(rid), []).append(_nombre(r))
         if k in antes:
             continue
         if _sin_acceso(usuario, r, areas):
@@ -141,6 +147,11 @@ def _validar_ac_pm(anterior: list, nuevo: list, usuario, areas: list) -> Optiona
             return "Solo el SGC asigna folios."
         if estado_de(r) in CERRADOS and not admin:
             return "No se puede crear un registro ya cerrado."
+        if rid not in (None, "") and not admin:
+            return "Los planes de mejora ligados a un riesgo los genera el SGC al aceptar la matriz."
+    repetidos = [v for v in activos_por_riesgo.values() if len(v) > 1]
+    if repetidos:
+        return f"Un riesgo no puede tener dos planes de mejora activos ({', '.join(repetidos[0])})."
     return None
 
 
@@ -178,7 +189,105 @@ def _validar_rc(anterior: list, nuevo: list, usuario, areas: list) -> Optional[s
     return None
 
 
-def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list) -> Optional[str]:
+# ───────────── Matriz de riesgos y oportunidades (OOMRSC-37) ─────────────
+MATRIZ_ESTADOS = ("BORRADOR", "ENVIADA", "OBSERVADA", "ACEPTADA")
+MATRIZ_TRANSICIONES = {"BORRADOR": ("ENVIADA",), "OBSERVADA": ("ENVIADA",), "ENVIADA": ("OBSERVADA", "ACEPTADA"), "ACEPTADA": ("OBSERVADA",)}
+MATRIZ_SOLO_ADMIN = {("ENVIADA", "OBSERVADA"), ("ENVIADA", "ACEPTADA"), ("ACEPTADA", "OBSERVADA")}
+RIESGO_TIPOS = ("Riesgo", "Oportunidad")
+RIESGO_TRATAMIENTOS = {"Riesgo": ("Mitigar", "Evitar", "Transferir", "Aceptar"), "Oportunidad": ("Aprovechar", "Posponer")}
+RIESGO_IMPACTOS = (2, 4, 6, 8, 10)
+RIESGO_ESTADOS_ADMIN = ("EN_TRATAMIENTO", "MONITOREO", "CERRADO_EFICAZ", "CERRADO_NO_EFICAZ")
+
+
+def _id_matriz(r: dict) -> str:
+    return f"{r.get('area')}|{r.get('anio')}"
+
+
+def _validar_matrices(anterior: list, nuevo: list, usuario, areas: list) -> Optional[str]:
+    antes, despues = _por_id(anterior), _por_id(nuevo)
+    admin = es_admin(usuario)
+    for k, m in despues.items():
+        if not isinstance(m, dict):
+            continue
+        if str(m.get("id")) != _id_matriz(m):
+            return f"La matriz {m.get('id')} no corresponde a su área y año."
+        e1 = str(m.get("estado") or "BORRADOR")
+        if e1 not in MATRIZ_ESTADOS:
+            return f"Estado de matriz inválido: {e1}."
+        viejo = antes.get(k)
+        e0 = str(viejo.get("estado") or "BORRADOR") if viejo else None
+        if viejo and m != viejo and _sin_acceso(usuario, viejo, areas):
+            return f"La matriz de {viejo.get('area')} pertenece a otra área."
+        if not viejo and _sin_acceso(usuario, m, areas):
+            return "No puedes crear la matriz de otra área."
+        if e0 is None and e1 not in ("BORRADOR", "ENVIADA"):
+            return f"Una matriz nueva no puede nacer en {e1}."
+        if e0 is not None and e1 != e0:
+            if e1 not in MATRIZ_TRANSICIONES.get(e0, ()):
+                return f"Matriz de {m.get('area')}: no se puede pasar de {e0} a {e1}."
+            if (e0, e1) in MATRIZ_SOLO_ADMIN and not admin:
+                return f"Matriz de {m.get('area')}: solo el SGC puede pasar a {e1}."
+        if viejo and e0 == e1 and e0 in ("ENVIADA", "ACEPTADA") and m != viejo and not admin:
+            return f"La matriz de {m.get('area')} está en revisión o aceptada; el área ya no la modifica."
+        # las observaciones del SGC no se borran
+        if viejo and len(m.get("observaciones") or []) < len(viejo.get("observaciones") or []):
+            return "Las observaciones de la matriz no se eliminan."
+    for k, viejo in antes.items():
+        if k not in despues and not admin:
+            return f"Solo el SGC puede eliminar matrices ({viejo.get('area')})."
+    return None
+
+
+def _validar_riesgos(anterior: list, nuevo: list, usuario, areas: list, matrices: list, planes: list) -> Optional[str]:
+    antes, despues = _por_id(anterior), _por_id(nuevo)
+    admin = es_admin(usuario)
+    estado_matriz = {str(m.get("id")): str(m.get("estado") or "BORRADOR") for m in matrices if isinstance(m, dict)}
+    pm_por_id = {str(p.get("id")): p for p in planes if isinstance(p, dict)}
+    for k, viejo in antes.items():
+        if k not in despues:
+            if not admin:
+                return "Solo el SGC puede quitar un riesgo de una matriz enviada o aceptada." if estado_matriz.get(_id_matriz(viejo)) in ("ENVIADA", "ACEPTADA") else (None if not _sin_acceso(usuario, viejo, areas) else "No puedes quitar riesgos de otra área.")
+            continue
+    for k, r in despues.items():
+        if not isinstance(r, dict):
+            continue
+        viejo = antes.get(k)
+        if viejo == r:
+            continue
+        if (viejo and _sin_acceso(usuario, viejo, areas)) or (not viejo and _sin_acceso(usuario, r, areas)):
+            return "Este riesgo pertenece a otra área."
+        if r.get("tipo") not in RIESGO_TIPOS:
+            return f"Tipo inválido: {r.get('tipo')}."
+        pr, im = r.get("probabilidad"), r.get("impacto")
+        if pr not in (None, "", 0) and int(pr) not in range(1, 6):
+            return "La probabilidad debe ser de 1 a 5."
+        if im not in (None, "", 0) and int(im) not in RIESGO_IMPACTOS:
+            return "El impacto debe ser 2, 4, 6, 8 o 10."
+        if r.get("tratamiento") and r.get("tratamiento") not in RIESGO_TRATAMIENTOS[r["tipo"]]:
+            return f"Tratamiento inválido para {r['tipo']}: {r.get('tratamiento')}."
+        if not admin:
+            em = estado_matriz.get(_id_matriz(r), "BORRADOR")
+            if em in ("ENVIADA", "ACEPTADA"):
+                return f"La matriz {r.get('anio')} de {r.get('area')} está en revisión o aceptada; el área ya no la modifica."
+            if viejo and viejo.get("pm_id") not in (None, ""):
+                return "Un riesgo con plan de mejora ya no se modifica desde la matriz."
+            for campo in ("pm_id", "pm_folio", "dictamen", "residual", "oficial"):
+                if r.get(campo) != (viejo or {}).get(campo):
+                    return "Plan de mejora, dictamen y aceptación los registra solo el SGC."
+            if str(r.get("estado") or "IDENTIFICADO") != str((viejo or {}).get("estado") or "IDENTIFICADO") and r.get("estado") in RIESGO_ESTADOS_ADMIN:
+                return "Ese estado del riesgo lo asigna solo el SGC."
+        e1 = str(r.get("estado") or "IDENTIFICADO")
+        if e1.startswith("CERRADO"):
+            d = r.get("dictamen") or {}
+            if not d.get("resultado") or len(str(d.get("nota") or "")) < 10:
+                return "El dictamen requiere resultado y una nota de al menos 10 caracteres."
+            pm = pm_por_id.get(str(r.get("pm_id"))) if r.get("pm_id") not in (None, "") else None
+            if pm and not str(pm.get("estado") or "").startswith("CERRADO"):
+                return "No se dictamina un riesgo cuyo plan de mejora sigue abierto."
+    return None
+
+
+def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list, contexto: Optional[dict] = None) -> Optional[str]:
     """Motivo de rechazo o None. Solo actúa sobre las claves con reglas y cuando ambos valores son listas."""
     if clave == CLAVE_FOLIOS:
         return "Los folios se asignan desde el servidor (POST /api/v1/folios)."
@@ -187,4 +296,9 @@ def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list) ->
     anterior = anterior if isinstance(anterior, list) else []
     if clave == CLAVE_RC:
         return _validar_rc(anterior, nuevo, usuario, areas_detalle)
+    if clave == CLAVE_MATRICES:
+        return _validar_matrices(anterior, nuevo, usuario, areas_detalle)
+    if clave == CLAVE_RIESGOS:
+        ctx = contexto or {}
+        return _validar_riesgos(anterior, nuevo, usuario, areas_detalle, ctx.get("matrices") or [], ctx.get("planes") or [])
     return _validar_ac_pm(anterior, nuevo, usuario, areas_detalle)
