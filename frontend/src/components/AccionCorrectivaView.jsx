@@ -303,8 +303,9 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     setVista('nuevo');
   };
 
-  const aprobarSGC = () => {
-    const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('AC', accionesCorrectivas);
+  const aprobarSGC = async () => {
+    let folioNumero, anio, folioCodigo;
+    try { ({ numero: folioNumero, anio, codigo: folioCodigo } = await asignarFolio('AC')); } catch (e) { toast.error(e.message); return; }
     const cambios = {
       estado: 'EN_SEGUIMIENTO', folio_numero: folioNumero, folio_codigo: folioCodigo,
       anio_folio: anio, fecha_aprobacion_sgc: new Date().toISOString(), fecha_apertura: new Date().toISOString(),

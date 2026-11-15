@@ -24,7 +24,7 @@ from backend.models import (
     AREAS, DIRECCIONES, PROCESOS, ORIGENES_AC, ORIGENES_PM,
     CATEGORIAS_MEJORA, PERIODOS, ESTADOS_SGC, TRANSICIONES
 )
-from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth, documentos, estado, notificaciones, buzon, formatos_indicadores
+from backend.routers import acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth, documentos, estado, notificaciones, buzon, formatos_indicadores, folios
 
 load_dotenv()
 
@@ -68,7 +68,7 @@ PROTEGIDO = [Depends(auth_lib.usuario_actual)]
 app.include_router(auth.router)
 app.include_router(buzon.router)  # webhook firmado + endpoints con su propia validación de rol
 for r in (acciones, planes, ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, documentos, estado, notificaciones,
-          formatos_indicadores):
+          formatos_indicadores, folios):
     app.include_router(r.router, dependencies=PROTEGIDO)
 
 

@@ -14,6 +14,7 @@ from backend.auth import usuario_actual
 from backend.database import get_session
 from backend.models import EstadoPortal, Usuario
 from backend.services import formatos_indicadores as fmt
+from backend.services.permisos import puede_area
 from backend.tenant import get_organismo_id
 
 router = APIRouter(prefix="/api/v1/indicadores/formatos", tags=["Indicadores"])
@@ -43,19 +44,6 @@ def _archivo(contenido: bytes, tipo: str, nombre: str, formato: str = "original"
         tipo, nombre = PDF, nombre.rsplit(".", 1)[0] + ".pdf"
     limpio = re.sub(r"[^\w\- .]", "", nombre).strip() or "formato"
     return Response(contenido, media_type=tipo, headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(limpio)}"})
-
-
-def puede_area(usuario, area: str, areas_detalle: list) -> bool:
-    """Misma regla que puedeCapturarArea del portal: admin SGC, el área propia, su correo o sus encargados del SGC."""
-    if usuario.rol in ("Super Admin", "Admin"):
-        return True
-    if not area:
-        return False
-    correo = (usuario.email or "").lower()
-    ficha = next((a for a in areas_detalle if isinstance(a, dict) and a.get("nombre") == area), {})
-    return usuario.area == area or bool(correo) and (
-        str(ficha.get("correo") or "").lower() == correo
-        or correo in [str(c).lower() for c in ficha.get("encargados_sgc") or []])
 
 
 def cumplimiento_mensual(datos_ind: dict, indicador_id, anio) -> list[str]:

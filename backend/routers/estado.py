@@ -19,6 +19,7 @@ from backend.auth import usuario_actual
 from backend.database import get_session
 from backend.models import BitacoraServidor, EstadoPortal, Usuario
 from backend.services import auditoria
+from backend.services.flujo_reglas import CLAVES_CON_REGLAS, CLAVE_FOLIOS, validar_cambio
 from backend.services.fusion_estado import fusionar, fusionar_sin_base
 from backend.tenant import get_organismo_id
 
@@ -89,6 +90,18 @@ def guardar(
     else:
         actual = json.loads(f.valor)
         valor = fusionar(datos.base, datos.valor, actual) if datos.tiene_base else fusionar_sin_base(datos.valor, actual)
+    # Reglas de negocio de AC, PM y RC (transiciones, rol, área, evidencia, folios): antes solo las aplicaba la pantalla.
+    if clave in CLAVES_CON_REGLAS or clave == CLAVE_FOLIOS:
+        areas = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == organismo_id,
+                                                         EstadoPortal.clave == "sgc-config-areas-detalle")).first()
+        try:
+            areas_detalle = json.loads(areas.valor) if areas else []
+        except ValueError:
+            areas_detalle = []
+        motivo = validar_cambio(clave, actual, valor, usuario, areas_detalle if isinstance(areas_detalle, list) else [])
+        if motivo:
+            session.rollback()
+            raise HTTPException(status_code=409, detail=motivo)
     texto = json.dumps(valor, ensure_ascii=False)
     if len(texto.encode("utf-8")) > MAX_BYTES_VALOR:
         raise HTTPException(status_code=413, detail="El valor excede 8 MB; usa archivos para contenido pesado.")

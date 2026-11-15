@@ -53,7 +53,7 @@ def test_clave_invalida_y_valor_string(cliente, cab):
 
 
 def test_pestana_vieja_no_borra_lo_que_otro_agrego(cliente, cab):
-    url = "/api/v1/estado/sgc-planes-mejora"
+    url = "/api/v1/estado/sgc-prueba-fusion"
     base = [{"id": 1, "estado": "EN_SEGUIMIENTO"}]
     cliente.put(url, headers=cab, json={"valor": base})
     # otra persona agrega un registro
@@ -107,9 +107,85 @@ def test_formatos_indicadores(cliente, cab):
 
 def test_formatos_solo_area_o_sgc():
     from types import SimpleNamespace as U
-    from backend.routers.formatos_indicadores import puede_area
+    from backend.services.permisos import puede_area
     areas = [{"nombre": "Informática", "correo": "inf@x.mx", "encargados_sgc": ["Enc@x.mx"]}]
     assert puede_area(U(rol="Admin", email="a@x.mx", area="Otra"), "Informática", areas)
     assert puede_area(U(rol="Usuario", email="z@x.mx", area="Informática"), "Informática", areas)
     assert puede_area(U(rol="Encargado", email="enc@x.mx", area="Otra"), "Informática", areas)
     assert not puede_area(U(rol="Encargado", email="otro@x.mx", area="Otra"), "Informática", areas)
+
+
+def _usuario(rol="Encargado", area="Plantas", email="enc@x.mx"):
+    from types import SimpleNamespace
+    return SimpleNamespace(rol=rol, area=area, email=email)
+
+
+def test_reglas_ac_pm_en_servidor():
+    from backend.services.flujo_reglas import validar_cambio, CLAVE_AC
+    enc, adm, aud = _usuario(), _usuario("Admin", "SGC"), _usuario("Auditor", "SGC", "aud@x.mx")
+    ac = {"id": 1, "area": "Plantas", "estado": "EN_REVISION", "folio_codigo": "Pendiente de aprobación",
+          "actividades_json": '[{"actividad": "A", "evidencia_real": ""}]'}
+    con_ev = {**ac, "actividades_json": '[{"actividad": "A", "evidencia_real": "f.pdf"}]'}
+    v = lambda antes, despues, u: validar_cambio(CLAVE_AC, antes, despues, u, [])
+    # el área no aprueba ni asigna folio
+    assert "solo el SGC" in v([ac], [{**ac, "estado": "EN_SEGUIMIENTO"}], enc)
+    assert "folios" in v([ac], [{**ac, "folio_codigo": "AC#99/2026"}], enc)
+    # el SGC sí; y un folio oficial ya no cambia
+    assert v([ac], [{**ac, "estado": "EN_SEGUIMIENTO", "folio_codigo": "AC#28/2026"}], adm) is None
+    ofi = {**ac, "estado": "EN_SEGUIMIENTO", "folio_codigo": "AC#28/2026"}
+    assert "no se puede cambiar" in v([ofi], [{**ofi, "folio_codigo": "AC#29/2026"}], adm)
+    # transición inválida y cierre sin evidencia
+    assert "no se puede pasar" in v([ofi], [{**ofi, "estado": "CERRADO_EFECTIVO"}], adm)
+    assert "falta evidencia" in v([ofi], [{**ofi, "estado": "SOLICITUD_CIERRE"}], enc)
+    assert v([{**con_ev, "estado": "EN_SEGUIMIENTO"}], [{**con_ev, "estado": "SOLICITUD_CIERRE"}], enc) is None
+    # asignar auditor exige evidencia aunque sea admin; el dictamen lo da auditor o SGC
+    assert "falta evidencia" in v([ofi], [{**ofi, "estado": "REVISION_AUDITOR"}], adm)
+    rev = {**con_ev, "estado": "REVISION_AUDITOR", "folio_codigo": "AC#28/2026"}
+    assert "auditor" in v([rev], [{**rev, "estado": "CERRADO_EFECTIVO"}], enc)
+    assert v([rev], [{**rev, "estado": "CERRADO_EFECTIVO"}], aud) is None
+    # cerrado efectivo es terminal; no eficaz lo reabre solo el SGC
+    cer = {**rev, "estado": "CERRADO_EFECTIVO"}
+    assert "no se puede pasar" in v([cer], [{**cer, "estado": "EN_SEGUIMIENTO"}], adm)
+    noef = {**rev, "estado": "CERRADO_NO_EFECTIVO"}
+    assert "solo el SGC" in v([noef], [{**noef, "estado": "EN_SEGUIMIENTO"}], aud)
+    assert v([noef], [{**noef, "estado": "EN_SEGUIMIENTO"}], adm) is None
+    # otra área y eliminación
+    otra = _usuario("Encargado", "Jurídico", "j@x.mx")
+    assert "otra área" in v([ac], [{**ac, "descripcion": "x"}], otra)
+    assert "eliminar" in v([ac], [], enc)
+    assert v([ac], [], adm) is None
+    # encargado SGC del catálogo de áreas sí puede
+    assert validar_cambio(CLAVE_AC, [ac], [{**ac, "descripcion": "x"}], otra, [{"nombre": "Plantas", "encargados_sgc": ["J@x.mx"]}]) is None
+    # el SGC dictamina no eficaz desde seguimiento (replanteos agotados)
+    assert v([ofi], [{**ofi, "estado": "CERRADO_NO_EFECTIVO"}], adm) is None
+    assert "no se puede pasar" in v([ofi], [{**ofi, "estado": "CERRADO_NO_EFECTIVO"}], enc)
+
+
+def test_reglas_rc_en_servidor():
+    from backend.services.flujo_reglas import validar_cambio, CLAVE_RC
+    enc, adm = _usuario(), _usuario("Admin", "SGC")
+    rc = {"id": 1, "folio": "RC 1-Oct/2026", "area": "Plantas", "estado": "ABIERTA"}
+    v = lambda antes, despues, u: validar_cambio(CLAVE_RC, antes, despues, u, [])
+    assert "repetido" in v([rc], [rc, {**rc, "id": 2}], adm)
+    assert "dictaminan" in v([rc], [{**rc, "estado": "CERRADO_EFECTIVO"}], enc)
+    assert v([rc], [{**rc, "estado": "CERRADO_EFECTIVO"}], adm) is None
+    assert v([rc], [{**rc, "accion": "se corrigió"}], enc) is None
+    cer = {**rc, "estado": "CERRADO_EFECTIVO"}
+    assert "no se puede pasar" in v([cer], [{**cer, "estado": "EN_ATENCION"}], adm)
+    assert "no se puede cambiar" in v([rc], [{**rc, "folio": "RC 2-Oct/2026"}], adm)
+
+
+def test_folios_atomicos(cliente, cab):
+    r0 = cliente.put("/api/v1/estado/sgc-acciones-correctivas", headers=cab, json={"valor": [{"id": 1, "folio_codigo": "AC#27/2026", "estado": "EN_SEGUIMIENTO", "area": "X"}]})
+    assert r0.status_code == 200, r0.text
+    anio = __import__("datetime").date.today().year
+    r = cliente.post("/api/v1/folios/AC", headers=cab).json()
+    primero = r["folios"][0]["numero"]
+    assert primero >= 28 or anio != 2026
+    r2 = cliente.post("/api/v1/folios/AC?cantidad=2", headers=cab).json()
+    assert [f["numero"] for f in r2["folios"]] == [primero + 1, primero + 2]
+    assert r2["folios"][0]["codigo"] == f"AC#{primero + 1}/{anio}"
+    assert cliente.post("/api/v1/folios/XX", headers=cab).status_code == 422
+    # el contador ya no se escribe desde el navegador
+    assert cliente.put("/api/v1/estado/sgc-config-folios", headers=cab, json={"valor": {"AC": {"2026": 1}}}).status_code == 409
+    cliente.put("/api/v1/estado/sgc-acciones-correctivas", headers=cab, json={"valor": []})

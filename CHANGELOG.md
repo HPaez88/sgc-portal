@@ -1,6 +1,12 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-15 — Auditoría AC / RC / PM, fase 1: reglas en el servidor y folios atómicos
+- `PUT /api/v1/estado` valida AC, PM y RC antes de guardar (services/flujo_reglas.py): transiciones del flujo, quién puede aprobar/asignar auditor/dictaminar/reabrir, alcance por área (área propia, correo o encargados SGC), evidencia obligatoria para solicitar cierre, revisión de auditor y cierre efectivo, folio oficial intocable, eliminación solo SGC; RC: folio único, dictamen solo SGC/auditor, sin regresar un RC cerrado. Rechazo = 409 con el motivo.
+- Folios AC#/OM#: nuevo `POST /api/v1/folios/{AC|PM}` con bloqueo de fila (sin duplicados ni saltos); el navegador ya no escribe `sgc-config-folios` (el servidor lo rechaza).
+- Cliente: un cambio rechazado por regla de negocio no se reintenta; se revierte a lo del servidor y se avisa con el motivo.
+- Pendiente (fases 2–5): integridad de RC en pantalla, cierres/evidencia en UI, alcance por área en listas, API REST vieja, fechas locales, IA que no pisa textos, avisos para PM.
+
 ## 2026-11-14 — Aviso por correo de renovación anual del proyecto
 - Tarea diaria de avisos: de octubre a diciembre, un correo al mes (aviso, recordatorio, urgente) a cada área con proyecto aceptado del año en curso que no ha confirmado el del siguiente. Va al correo del área y a sus encargados del SGC, con copia a los administradores. Respeta AVISOS_MODO.
 

@@ -23,7 +23,7 @@ const setters = new Map();      // clave -> set de setters React para aplicar va
 const pendientes = new Map();   // clave -> valor por enviar
 const timers = new Map();
 let reintento = null;
-let estadoSync = { pendientes: 0, ultimoError: null, ultimaSync: null, cargado: false };
+let estadoSync = { pendientes: 0, ultimoError: null, ultimaSync: null, cargado: false, ultimoRechazo: null };
 const suscriptores = new Set();
 
 function notificar() {
@@ -85,6 +85,16 @@ async function enviar(clave) {
     }
     // ponytail: si hubo otro cambio local en vuelo, la base se queda como estaba y el próximo envío vuelve a fusionar.
     actualizarEstado({ pendientes: pendientes.size, ultimoError: null, ultimaSync: new Date().toISOString() });
+  } else if ([403, 409, 422].includes(r.status)) {
+    // El servidor rechazó el cambio por una regla de negocio: no se reintenta. Se vuelve a lo que tiene el servidor y se avisa.
+    pendientes.delete(clave);
+    const g = await api.get(`/api/v1/estado/${clave}`);
+    if (g.ok && g.data && 'valor' in g.data) {
+      servidor?.set(clave, g.data.valor);
+      escribirCache(clave, g.data.valor);
+      setters.get(clave)?.forEach((fn) => fn(g.data.valor));
+    }
+    actualizarEstado({ pendientes: pendientes.size, ultimoRechazo: { clave, mensaje: r.error?.message || 'El servidor no aceptó el cambio.', en: Date.now() } });
   } else {
     actualizarEstado({ pendientes: pendientes.size, ultimoError: r.error?.message || r.error?.detail || 'Sin conexión con el servidor' });
     programarReintento();

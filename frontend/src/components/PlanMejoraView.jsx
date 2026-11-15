@@ -303,8 +303,9 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     setTimeout(() => { setVista('lista'); setMensaje('📤 Enviado a SGC para revisión con supervisión humana validada'); }, 600);
   };
 
-  const aprobarSGC = () => {
-    const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('PM', planesMejora);
+  const aprobarSGC = async () => {
+    let folioNumero, anio, folioCodigo;
+    try { ({ numero: folioNumero, anio, codigo: folioCodigo } = await asignarFolio('PM')); } catch (e) { toast.error(e.message); return; }
     const cambios = {
       estado: 'EN_SEGUIMIENTO',
       folio: folioCodigo,

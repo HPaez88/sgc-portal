@@ -7,7 +7,7 @@ import { api } from '../../services/apiClient';
 import { TIPOS_UNIDAD } from '../../constants/unidades';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
 import { useToast } from '../common/Toast';
-import { asignarFolio } from '../../services/folioService';
+import { asignarFolios } from '../../services/folioService';
 import { formatearFecha } from '../../constants/workflow';
 import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, llevaPM, pmDesdeRiesgo, idMatriz } from '../../constants/riesgos';
 
@@ -67,7 +67,7 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
     toast.success('Matriz devuelta al área con observaciones.');
   };
 
-  const aceptar = (ratificacion) => {
+  const aceptar = async (ratificacion) => {
     // Evita aceptar dos veces (doble clic u otro administrador con la pantalla abierta).
     const vigente = matrices.find((x) => x.id === idMatriz(fila.area, anio));
     if (aceptando || vigente?.estado !== 'ENVIADA') { toast.warning('Esta matriz ya no está en revisión.'); setConfirmar(false); return; }
@@ -75,14 +75,15 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
     const por = usuarioLogueado?.nombre || 'SGC';
     const ficha = areas.find((a) => a.nombre === fila.area) || {};
     const correos = [...new Set([ficha.correo, ...(ficha.encargados_sgc || [])].filter(Boolean))];
-    let lista = [...planesMejora];
+    const conPlan = fila.items.filter((r) => llevaPM(r) && !r.pm_id);
+    let folios = [];
+    try { if (conPlan.length) folios = await asignarFolios('PM', conPlan.length); } catch (e) { toast.error(e.message); setAceptando(false); return; }
     const nuevos = [];
     const cambios = {};
     fila.items.forEach((r) => {
       if (llevaPM(r) && !r.pm_id) {
-        const folio = asignarFolio('PM', lista);
+        const folio = folios.shift();
         const pm = pmDesdeRiesgo(r, { folio, por, correos });
-        lista = [...lista, pm];
         nuevos.push(pm);
         cambios[r.id] = { estado: 'EN_TRATAMIENTO', pm_id: pm.id, pm_folio: pm.folio_codigo };
       } else if (!r.pm_id) {

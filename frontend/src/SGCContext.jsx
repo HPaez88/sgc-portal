@@ -26,6 +26,7 @@ import {
   vaciarColas,
 } from './services/syncService';
 import { suscribirEstadoSync, cargarDesdeServidor, limpiarSesionSync } from './services/estadoService';
+import { useToast } from './components/common/Toast';
 import { api, setOrganismoActivo, getToken, setToken, EVENTO_SESION_EXPIRADA } from './services/apiClient';
 import { compararPorNombre } from './constants/titulos';
 
@@ -199,6 +200,11 @@ export const SGCProvider = ({ children }) => {
   // Estado de sincronización visible para el usuario (badge del Header)
   const [estadoSync, setEstadoSync] = useState({ pendientes: 0, ultimoError: null, ultimaSync: null });
   useEffect(() => suscribirEstadoSync(setEstadoSync), []);
+  // Un cambio rechazado por el servidor (regla de negocio) se revierte en pantalla y se explica al usuario.
+  const toastRechazo = useToast();
+  useEffect(() => {
+    if (estadoSync?.ultimoRechazo) toastRechazo.error(`No se guardó el cambio: ${estadoSync.ultimoRechazo.mensaje}`);
+  }, [estadoSync?.ultimoRechazo?.en]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Vacia las colas pendientes al cerrar la pestaña para no perder cambios.
   useEffect(() => {

@@ -198,7 +198,8 @@ export default function GestorAprobacionesView({
     if (!confirma) return;
 
     if (app.tipo === 'Acción Correctiva') {
-      const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('AC', accionesCorrectivas);
+      let folioNumero, anio, folioCodigo;
+      try { ({ numero: folioNumero, anio, codigo: folioCodigo } = await asignarFolio('AC')); } catch (e) { mostrarMensaje(`❌ ${e.message}`); return; }
 
       const nuevoObj = {
         ...app.objeto_original,
@@ -224,7 +225,8 @@ export default function GestorAprobacionesView({
       });
 
     } else if (app.tipo === 'Plan de Mejora') {
-      const { numero: folioNumero, anio, codigo: folioCodigo } = asignarFolio('PM', planesMejora);
+      let folioNumero, anio, folioCodigo;
+      try { ({ numero: folioNumero, anio, codigo: folioCodigo } = await asignarFolio('PM')); } catch (e) { mostrarMensaje(`❌ ${e.message}`); return; }
 
       const nuevoObj = {
         ...app.objeto_original,
