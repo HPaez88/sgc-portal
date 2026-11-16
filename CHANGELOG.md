@@ -5,6 +5,7 @@
 ## 2026-11-16 — Riesgos: "Matriz por área" ordenada por nivel
 
 - La lista única de 40+ unidades se separa en pestañas **Direcciones**, **Subdirecciones** y **Áreas**. Las subdirecciones y áreas se agrupan por dirección; cada dirección se despliega y muestra su resumen (unidades, riesgos, oportunidades, sin iniciar). Al buscar o filtrar, los grupos se abren solos.
+- **Cada riesgo u oportunidad se captura en ventana emergente** (antes se desplegaba dentro de la lista): cabecera con tipo, matriz y área; cuerpo con los bloques numerados; pie con "Quitar", lo pendiente y "Listo". La matriz queda solo como lista. Regla del portal: lo que se captura o trabaja se abre en ventana.
 - Sin cambio para los encargados: siguen viendo solo "Mi matriz".
 
 ## 2026-11-16 — Histórico de auditorías internas (informes OOMRSC-16 de 2023 a 2026)
