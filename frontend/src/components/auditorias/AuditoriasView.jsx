@@ -8,6 +8,7 @@ import { api } from '../../services/apiClient';
 import { recargarClave } from '../../services/estadoService';
 import { useToast } from '../common/Toast';
 import Dialogos, { useDialogos } from '../common/Dialogos';
+import ModalBase from '../common/ModalBase';
 import { esAdminSGC, formatearFecha } from '../../constants/workflow';
 import { puedeCapturarArea } from '../../constants/riesgos';
 import { getDireccionDeArea } from '../../constants/direcciones';
@@ -189,11 +190,14 @@ export default function AuditoriasView() {
       return <ListaVerificacion lista={listaAbierta} auditoria={a} onCambio={guardarLista} onEntregar={entregarLista} onReabrir={reabrirLista} onCerrar={() => setListaId(null)}
         editable={(esAdmin || esMiLista(listaAbierta)) && a?.estado === 'EN_EJECUCION'} esAdmin={esAdmin} previos={previosDe(listaAbierta)} usuarioLogueado={usuarioLogueado} />;
     }
-    if (abierta) {
+    return null;
+  };
+  const ventanaAuditoria = () => {
       const suyas = listas.filter((l) => l.auditoria_id === abierta.id);
-      return <EditorAuditoria auditoria={abierta} onCambio={guardarAuditoria} onCerrar={() => setAbiertaId(null)} editable={esAdmin} areas={areas} auditores={auditores} antecedentes={antecedentes}
+      return <EditorAuditoria auditoria={abierta} onCambio={guardarAuditoria} editable={esAdmin} areas={areas} auditores={auditores} antecedentes={antecedentes}
         usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} listasEntregadas={{ total: suyas.length, entregadas: suyas.filter((l) => l.estado === 'ENTREGADA').length }} onEmitirInforme={emitirInforme} />;
-    }
+  };
+  const cuerpoPestana = () => {
     if (pestana === 'calendario') return <CalendarioPanel areas={areas.filter(veArea)} auditorias={auditorias} listas={listas} hallazgos={hallazgos} historico={historico} anio={anio} onAbrir={setAbiertaId} />;
     if (pestana === 'hallazgos') return <HallazgosPanel hallazgos={hallazgosVisibles} auditorias={auditorias} acciones={accionesCorrectivas} puedeFirmar={(h) => !esAdmin && esMiArea(h.area)} onFirmar={firmar} />;
     if (pestana === 'resultados') return <ResultadosPanel auditorias={auditorias} listas={listas} hallazgos={hallazgos} areasVisibles={puedeTodasAreas || esAdmin || puedeAuditar ? null : areas.filter(esMiArea)} />;
@@ -266,13 +270,19 @@ export default function AuditoriasView() {
             : <button type="button" disabled={ocupado} onClick={() => responder(a, 'confirmar')} className="px-3 py-1.5 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg">Confirmar mi participación</button>}
         </div>); })}
 
-      {!abierta && !listaAbierta && (
+      {!listaAbierta && (
         <nav className="flex flex-wrap gap-1.5" aria-label="Secciones de auditorías">
           {PESTANAS.map(([id, t]) => (
             <button key={id} type="button" aria-pressed={pestana === id} onClick={() => setPestana(id)}
               className={`px-3 py-1.5 rounded-lg border text-xs font-bold ${pestana === id ? 'bg-marca-azul-oscuro text-white border-marca-azul-oscuro' : 'bg-white text-slate-700 border-slate-200 hover:border-marca-azul'}`}>{t}</button>))}
         </nav>)}
-      {cuerpo()}
+      {cuerpo() || cuerpoPestana()}
+      {abierta && !listaAbierta && (
+        <ModalBase isOpen onClose={() => setAbiertaId(null)} size="3xl" closeOnBackdrop={false} icono={<ClipboardCheck size={20} />} bodyClassName="tablas-marcadas p-4 bg-slate-50"
+          titulo={tituloAuditoria(abierta)} subtitulo={`${esAdmin && abierta.estado !== 'CERRADA' ? 'Gestión de la auditoría' : 'Consulta'} · los cambios se guardan al capturar`}>
+          {ventanaAuditoria()}
+        </ModalBase>
+      )}
     </div>
   );
 }

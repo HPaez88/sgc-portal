@@ -22,7 +22,7 @@ async function esperarSync(maxMs = 6000) {
   return getEstadoSync().pendientes === 0;
 }
 
-export default function EditorAuditoria({ auditoria: a, onCambio, onCerrar, editable, areas = [], auditores = [], antecedentes = {}, usuarioLogueado, registrarMovimiento, listasEntregadas = { total: 0, entregadas: 0 }, onEmitirInforme }) {
+export default function EditorAuditoria({ auditoria: a, onCambio, editable, areas = [], auditores = [], antecedentes = {}, usuarioLogueado, registrarMovimiento, listasEntregadas = { total: 0, entregadas: 0 }, onEmitirInforme }) {
   const toast = useToast();
   const { confirmar, solicitar, props: dialogos } = useDialogos();
   const [seccion, setSeccion] = useState('programa');
@@ -111,7 +111,6 @@ export default function EditorAuditoria({ auditoria: a, onCambio, onCerrar, edit
             <button type="button" disabled={ocupado} onClick={avanzar} className="px-3 py-1.5 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg disabled:opacity-50 inline-flex items-center gap-1.5">
               {a.estado === 'PLANEACION' ? <Mail size={14} /> : <ArrowRight size={14} />} {ocupado ? 'Enviando…' : ESTADOS_AUDITORIA[a.estado].sig}</button>
           )}
-          <button type="button" onClick={onCerrar} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><X size={14} /> Cerrar</button>
         </div>
       </header>
 
