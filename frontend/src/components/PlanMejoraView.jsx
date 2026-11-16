@@ -8,6 +8,7 @@ import ModalConfirmacionEliminar from './common/ModalConfirmacionEliminar';
 import { useToast } from './common/Toast';
 import { useDialogos, Dialogos } from './common/Dialogos';
 import ContenedorModal from './common/ContenedorModal';
+import ModalBase from './common/ModalBase';
 import ModalConfirmacionResponsabilidadHumana from './common/ModalConfirmacionResponsabilidadHumana';
 import { getEstadoColor, getEstadoLabel } from '../constants';
 import { asignarFolio } from '../services/folioService';
@@ -771,9 +772,33 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     );
   }
 
-  if (vista === 'lista') {
+  if (vista === 'lista' || vista === 'nuevo') {
     return (
       <>
+        {vista === 'nuevo' && (
+        <ModalBase isOpen onClose={() => setVista('lista')} size="3xl" closeOnBackdrop={false} closeOnEscape={false} reiniciarScroll={step} bodyClassName="p-4 sm:p-6 bg-slate-50"
+          titulo="Plan de mejora · OOMRSC-21"
+          subtitulo={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' ? `Editando ${form.folio_codigo}` : 'Nuevo registro'}>
+          <PlanesForm 
+            step={step}
+            setStep={setStep}
+            form={form}
+            setForm={setForm}
+            error={error}
+            setError={setError}
+            mensaje={mensaje}
+            setMensaje={setMensaje}
+            equipo={equipo}
+            setEquipo={setEquipo}
+            actividades={actividades}
+            setActividades={setActividades}
+            loading={loading}
+            guardarBorrador={guardarBorrador}
+            setVista={setVista}
+            getBotonesWorkflow={getBotonesWorkflow}
+          />
+        </ModalBase>
+        )}
         <Dialogos {...propsDialogos} />
         {modalConfirmarEnvioJSX}
         <ModalConfirmacionEliminar
@@ -797,33 +822,6 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
           usuarioLogueado={usuarioLogueado}
           getEstadoColor={getEstadoColor}
           getEstadoLabel={getEstadoLabel}
-        />
-      </>
-    );
-  }
-
-  if (vista === 'nuevo') {
-    return (
-      <>
-        <BarraRegreso onVolver={() => setVista('lista')} texto="Volver a Planes de Mejora" detalle={form.folio_codigo && form.folio_codigo !== 'Pendiente de aprobación' ? `Editando ${form.folio_codigo}` : 'Nuevo registro'} />
-        {modalConfirmarEnvioJSX}
-        <PlanesForm 
-          step={step}
-          setStep={setStep}
-          form={form}
-          setForm={setForm}
-          error={error}
-          setError={setError}
-          mensaje={mensaje}
-          setMensaje={setMensaje}
-          equipo={equipo}
-          setEquipo={setEquipo}
-          actividades={actividades}
-          setActividades={setActividades}
-          loading={loading}
-          guardarBorrador={guardarBorrador}
-          setVista={setVista}
-          getBotonesWorkflow={getBotonesWorkflow}
         />
       </>
     );

@@ -4,7 +4,7 @@
 // Resuelve de raíz: scroll interno, bloqueo de fondo, Escape, clic en backdrop,
 // posicionamiento fijo respecto al viewport (no a la posición de scroll).
 // ═══════════════════════════
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -53,7 +53,10 @@ export default function ModalBase({
   closeOnEscape = true,
   lockScroll = true,
   ariaLabel,
+  reiniciarScroll, // al cambiar este valor (p. ej. el paso de un asistente) el cuerpo vuelve arriba
 }) {
+  const cuerpoRef = useRef(null);
+  useEffect(() => { if (cuerpoRef.current) cuerpoRef.current.scrollTop = 0; }, [reiniciarScroll]);
   const claseAncho = anchoMaximo || (typeof size === 'string' && size.startsWith('max-w-') 
     ? size 
     : (TAMANOS[size] || TAMANOS.lg));
@@ -147,7 +150,7 @@ export default function ModalBase({
           </div>
 
           {/* Cuerpo: es lo único que hace scroll cuando el contenido es largo */}
-          <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain ${bodyClassName}`}>{children}</div>
+          <div ref={cuerpoRef} className={`min-h-0 flex-1 overflow-y-auto overscroll-contain ${bodyClassName}`}>{children}</div>
 
           {/* Pie de acciones: siempre visible y anclado, sin scroll */}
           {footer && (

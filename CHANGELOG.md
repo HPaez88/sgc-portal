@@ -6,6 +6,7 @@
 
 Las listas solo enlistan; todo lo que se captura o modifica abre en ventana (`ModalBase`) con cabecera informativa, campos rotulados y acciones en el pie.
 
+- **Acciones correctivas y Planes de mejora:** el alta y la edición (asistente OOMRSC-20 y formulario OOMRSC-21) abren en ventana sobre la lista, que conserva sus filtros; no se cierra con Escape ni con clic fuera para no perder captura. Al cambiar de paso el cuerpo vuelve arriba (`reiniciarScroll` en `ModalBase`).
 - **Acciones correctivas:** el cambio rápido de fecha de cierre (antes se editaba dentro de la celda).
 - **Riesgos · Revisión SGC:** revisar una matriz, devolverla con observaciones, aceptarla o reabrirla.
 - **Configuración · Catálogos documentales:** agregar o renombrar tipo de documento y estado normativo (una sola ventana para los cuatro casos).
