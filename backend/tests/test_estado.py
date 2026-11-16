@@ -234,6 +234,9 @@ def test_auditorias_reglas_y_confirmacion_en_orden(cliente, cab):
     aud = _usuario("Auditor", "Jurídico", "aud@x.mx")
     a = {"id": 1, "anio": 2026, "numero": 6, "estado": "PLANEACION", "areas": [{"area": "Plantas"}], "confirmaciones": []}
     assert "administra el SGC" in validar_cambio(CLAVE_AUDITORIAS, [], [a], aud, [])
+    from backend.services.flujo_reglas import CLAVE_AUD_HISTORICO
+    assert "administra el SGC" in validar_cambio(CLAVE_AUD_HISTORICO, [], [{"anio": 2025, "numero": 1}], aud, [])
+    assert validar_cambio(CLAVE_AUD_HISTORICO, [], [{"anio": 2025, "numero": 1}], adm, []) is None
     assert validar_cambio(CLAVE_AUDITORIAS, [], [a], adm, []) is None
     assert "no se puede pasar" in validar_cambio(CLAVE_AUDITORIAS, [a], [{**a, "estado": "EN_EJECUCION"}], adm, [])
     inv = {**a, "estado": "INVITACION"}
@@ -281,3 +284,16 @@ def test_auditorias_reglas_y_confirmacion_en_orden(cliente, cab):
     assert [c["email"] for c in c2.json()["auditoria"]["confirmaciones"]] == ["auditor1@oomapasc.gob.mx", "hpaez@oomapasc.gob.mx"]
     assert len(cliente.post("/api/v1/auditorias/77/retirar", headers=cab).json()["auditoria"]["confirmaciones"]) == 1
     assert cliente.post("/api/v1/auditorias/999/confirmar", headers=cab).status_code == 404
+
+
+def test_carga_historica_valida_antes_de_guardar():
+    from backend.scripts.cargar_informes_auditoria import referencia_de, validar
+    bueno = {"anio": 2025, "numero": 3, "proceso": "Producción", "nc": [], "om": []}
+    assert referencia_de(bueno) == "2025-03"
+    assert validar([bueno]) == []
+    assert "repetido" in validar([bueno, dict(bueno)])[0]
+    assert "falta proceso" in validar([{"anio": 2025, "numero": 1}])[0]
+    assert "listas" in validar([{**bueno, "nc": "ninguna"}])[0]
+    from backend.scripts.cargar_informes_auditoria import areas_fuera_de_catalogo
+    con_areas = {**bueno, "nc": [{"area": "Padrón de Usuarios"}, {"area": "PP"}], "areas_conformes": ["Contabilidad"]}
+    assert areas_fuera_de_catalogo([con_areas], [{"nombre": "Padrón de Usuarios"}, {"nombre": "Contabilidad"}]) == ["PP"]

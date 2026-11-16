@@ -2,6 +2,13 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-16 — Histórico de auditorías internas (informes OOMRSC-16 de 2023 a 2026)
+
+- **Pestaña "Histórico"** en Auditorías: resultado por año, informes con su PDF para ver o descargar, cumplimiento por proceso y año, no conformidades por capítulo, cláusulas y áreas reincidentes, informe PDF y análisis con IA (solo sugiere). La ven el SGC, los auditores y quien ve todas las áreas.
+- **Clave nueva `sgc-auditorias-historico`**: solo la administra el SGC (`flujo_reglas.py`). Se carga con `backend/scripts/cargar_informes_auditoria.py`, que sube cada PDF al almacén de archivos (antivirus y saneado) y se puede repetir sin duplicar.
+- **Áreas unificadas al catálogo**: las variantes que escribió cada auditor ("Gerencia de…", mayúsculas, abreviaturas) se guardan con el nombre del catálogo; el texto original queda en `area_original`. El rango se calcula con la regla vigente (menos de 80% es crítico), no con el que anotó cada informe.
+- **Portal ligado**: el Panel y la Revisión por la Dirección leen el resultado anual de estos informes, y el calendario (OOMRSC-12) toma el último informe histórico de cada área como antecedente para la frecuencia cuando aún no hay auditoría del área en el portal.
+
 ## 2026-11-16 — Módulo de Auditorías internas (ISO 9001:2015, procedimiento OOMPSC-08)
 
 Se reemplaza el prototipo por el proceso completo dentro del portal.

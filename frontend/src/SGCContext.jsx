@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { CLAVE_AUDITORIAS, CLAVE_LISTAS, CLAVE_HALLAZGOS, resumenParaPortal } from './constants/auditorias';
+import { CLAVE_AUDITORIAS, CLAVE_LISTAS, CLAVE_HALLAZGOS, CLAVE_HISTORICO, resumenParaPortal, historicoParaPortal } from './constants/auditorias';
 import { isSupabaseConfigured, supabase } from './supabase';
 import { 
   AREAS as defaultAreas, 
@@ -198,7 +198,8 @@ export const SGCProvider = ({ children }) => {
   const [audInternas] = useLocalStorage(CLAVE_AUDITORIAS, []);
   const [audListas] = useLocalStorage(CLAVE_LISTAS, []);
   const [audHallazgos] = useLocalStorage(CLAVE_HALLAZGOS, []);
-  const auditoriasPortal = useMemo(() => resumenParaPortal({ auditorias: audInternas || [], listas: audListas || [], hallazgos: audHallazgos || [] }), [audInternas, audListas, audHallazgos]);
+  const [audHistorico] = useLocalStorage(CLAVE_HISTORICO, []);
+  const auditoriasPortal = useMemo(() => [...historicoParaPortal(audHistorico || []), ...resumenParaPortal({ auditorias: audInternas || [], listas: audListas || [], hallazgos: audHallazgos || [] })], [audHistorico, audInternas, audListas, audHallazgos]);
   const [evidencias, setEvidencias] = useLocalStorage('sgc-evidencias', []);
   const [bitacora, setBitacora] = useLocalStorage('sgc-bitacora-movimientos', BITACORA_INICIAL);
   const [usuariosActividad, setUsuariosActividad] = useLocalStorage('sgc-usuarios-actividad', {});

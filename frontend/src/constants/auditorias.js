@@ -213,13 +213,24 @@ export const faltantePlan = (a) => {
 };
 
 // ───────────── Calendario anual (OOMRSC-12) ─────────────
+/** Sin auditoría del área en el portal: se toma el último informe histórico donde aparece (sus áreas ya vienen con el nombre del catálogo). */
+function antecedenteHistorico(nombre, historico) {
+  const del = (i, campo) => (i[campo] || []).filter((h) => h.area === nombre);
+  const ultimo = historico.filter((i) => i.fecha_fin && (del(i, 'nc').length || del(i, 'om').length || del(i, 'correcciones').length || (i.areas_conformes || []).includes(nombre)))
+    .sort((a, b) => String(b.fecha_fin).localeCompare(String(a.fecha_fin)))[0];
+  if (!ultimo) return { area: nombre, ultima: null, nc: null, om: null, c: null, cumplimiento: null, eficiencia: null, rango: null, frecuencia: 12, proxima: '' };
+  const nc = del(ultimo, 'nc').length;
+  // ponytail: el % del informe histórico es del proceso, no del área; por eso cumplimiento y rango quedan vacíos.
+  return { area: nombre, ultima: { numero: ultimo.numero, anio: ultimo.anio, historico: true }, fecha: ultimo.fecha_fin, nc, om: del(ultimo, 'om').length, c: null,
+    cumplimiento: null, eficiencia: null, rango: null, frecuencia: frecuenciaMeses(nc), proxima: sumarMeses(ultimo.fecha_fin, frecuenciaMeses(nc)) };
+}
 /** Última auditoría cerrada de cada área con sus resultados, frecuencia y fecha tentativa de la siguiente. */
-export function calendarioAnual({ areas = [], auditorias = [], listas = [], hallazgos = [] }) {
+export function calendarioAnual({ areas = [], auditorias = [], listas = [], hallazgos = [], historico = [] }) {
   return areas.map((nombre) => {
     const previas = auditorias.filter((a) => ['INFORME', 'CERRADA'].includes(a.estado) && (a.areas || []).some((x) => x.area === nombre))
       .sort((a, b) => String(b.fecha_fin || b.fecha_inicio).localeCompare(String(a.fecha_fin || a.fecha_inicio)));
     const ultima = previas[0] || null;
-    if (!ultima) return { area: nombre, ultima: null, nc: null, om: null, c: null, cumplimiento: null, eficiencia: null, rango: null, frecuencia: 12, proxima: '' };
+    if (!ultima) return antecedenteHistorico(nombre, historico);
     const preguntas = listas.filter((l) => l.auditoria_id === ultima.id && l.area === nombre).flatMap((l) => l.preguntas || []);
     const r = resumenPreguntas(preguntas);
     const delArea = hallazgos.filter((h) => h.auditoria_id === ultima.id && h.area === nombre);
@@ -270,3 +281,41 @@ export const promedioAuditorias = (resumen = [], anio) => {
   const pct = v.length ? Math.round((v.reduce((s, n) => s + n, 0) / v.length) * 10) / 10 : null;
   return { pct, rango: rangoDe(pct), total: v.length };
 };
+
+// ───────────── Histórico: informes OOMRSC-16 anteriores al portal (se cargan por script; solo lectura) ─────────────
+export const CLAVE_HISTORICO = 'sgc-auditorias-historico';
+const sinAcentos = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const capituloDe = (clausula) => { const n = Number(String(clausula || '').trim().split('.')[0]); return CAPITULOS[n] ? n : null; };
+// "7.5.3.2 C" y "7.5.3.2" son la misma cláusula; "Gerencia de Plantas Potabilizadoras" y "Plantas potabilizadoras", la misma área.
+const numeroClausula = (c) => (String(c || '').match(/\d+(\.\d+)*/) || [''])[0];
+const claveArea = (a) => sinAcentos(a).replace(/^(gerencia|subgerencia|coordinacion|departamento|direccion|area)( de la| del| de)? /, '');
+const promedio = (v) => (v.length ? Math.round((v.reduce((s, n) => s + n, 0) / v.length) * 10) / 10 : null);
+const contar = (lista, claveDe, nombreDe = claveDe) => {
+  const m = new Map();
+  lista.forEach((x) => { const k = claveDe(x); if (!k) return; const r = m.get(k) || { clave: k, nombre: nombreDe(x), nc: 0, om: 0, anios: new Set() }; r[x.tipo === 'NC' ? 'nc' : 'om'] += 1; r.anios.add(x.anio); m.set(k, r); });
+  return [...m.values()].map((r) => ({ ...r, anios: [...r.anios].sort() })).sort((a, b) => (b.nc - a.nc) || (b.om - a.om) || String(a.nombre).localeCompare(String(b.nombre)));
+};
+/** Lo que se puede analizar con los informes: por año, por proceso, por capítulo y cláusula, y por área. */
+export function analisisHistorico(informes = []) {
+  const anios = [...new Set(informes.map((i) => i.anio))].sort();
+  const hallazgos = informes.flatMap((i) => [...(i.nc || []).map((h) => ({ ...h, tipo: 'NC' })), ...(i.om || []).map((h) => ({ ...h, tipo: 'OM' }))].map((h) => ({ ...h, anio: i.anio, proceso: i.proceso_grupo || i.proceso })));
+  const porAnio = anios.map((anio) => {
+    const del = informes.filter((i) => i.anio === anio); const pct = del.map((i) => i.porcentaje).filter((p) => p != null);
+    const cuenta = (r) => pct.filter((p) => rangoDe(p) === r).length;
+    return { anio, informes: del.length, conPorcentaje: pct.length, promedio: promedio(pct), rango: rangoDe(promedio(pct)), nc: del.reduce((s, i) => s + (i.nc || []).length, 0), om: del.reduce((s, i) => s + (i.om || []).length, 0),
+      correcciones: del.reduce((s, i) => s + (i.correcciones || []).reduce((t, c) => t + (Number(c.cantidad) || 0), 0), 0), aceptable: cuenta('ACEPTABLE'), riesgo: cuenta('RIESGO'), critico: cuenta('CRITICO') };
+  });
+  const procesos = [...new Set(informes.map((i) => i.proceso_grupo || i.proceso))].sort();
+  const porProceso = procesos.map((proceso) => ({ proceso, anios: Object.fromEntries(anios.map((anio) => {
+    const del = informes.filter((i) => (i.proceso_grupo || i.proceso) === proceso && i.anio === anio);
+    return [anio, del.length ? { promedio: promedio(del.map((i) => i.porcentaje).filter((p) => p != null)), nc: del.reduce((s, i) => s + (i.nc || []).length, 0), informes: del.length } : null];
+  })) }));
+  const porCapitulo = Object.keys(CAPITULOS).map(Number).map((cap) => ({ capitulo: cap, nombre: CAPITULOS[cap], total: hallazgos.filter((h) => h.tipo === 'NC' && capituloDe(h.clausula) === cap).length,
+    anios: Object.fromEntries(anios.map((anio) => [anio, hallazgos.filter((h) => h.tipo === 'NC' && h.anio === anio && capituloDe(h.clausula) === cap).length])) }));
+  return { anios, porAnio, porProceso, porCapitulo, hallazgos,
+    porClausula: contar(hallazgos, (h) => numeroClausula(h.clausula)),
+    porArea: contar(hallazgos, (h) => claveArea(h.area), (h) => h.area) };
+}
+/** Los informes históricos también cuentan para el Panel y la Revisión por la Dirección. */
+export const historicoParaPortal = (informes = []) => informes.map((i) => ({ id: `H-${i.anio}-${i.numero}`, numero: `AUD-${i.numero}/${i.anio}`, anio: i.anio, tipo: 'Interna', area: i.proceso, fecha_inicio: i.fecha_inicio, fecha_fin: i.fecha_fin,
+  estado: 'COMPLETADA', hallazgos: (i.nc || []).length + (i.om || []).length, no_conformidades: (i.nc || []).length, cumplimiento: i.porcentaje ?? null, rango: rangoDe(i.porcentaje) }));

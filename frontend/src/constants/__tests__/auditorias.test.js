@@ -119,3 +119,31 @@ describe('enlace con Panel y Revisión por la Dirección', () => {
     expect(promedioAuditorias(r, 2025).pct).toBeNull();
   });
 });
+
+describe('histórico de informes', () => {
+  const informes = [
+    { anio: 2025, numero: 1, proceso: 'Comercialización', porcentaje: 94, nc: [{ area: 'Padrón', clausula: '8.5.1', texto: 'x' }], om: [{ area: 'Gerencia de Padrón', clausula: '4.3', texto: 'y' }], correcciones: [{ area: 'A', cantidad: 2 }] },
+    { anio: 2026, numero: 1, proceso: 'Comercialización', porcentaje: 80, nc: [{ area: 'Padrón', clausula: '8.5.1 a)', texto: 'z' }, { area: 'Caja', clausula: '7.5', texto: 'w' }], om: [] },
+    { anio: 2026, numero: 2, proceso: 'Producción', porcentaje: null, nc: [], om: [] },
+  ];
+  it('resume por año, proceso, capítulo, cláusula y área', async () => {
+    const { analisisHistorico, historicoParaPortal, promedioAuditorias } = await import('../auditorias');
+    const a = analisisHistorico(informes);
+    expect(a.porAnio.map((x) => [x.anio, x.promedio, x.nc, x.correcciones])).toEqual([[2025, 94, 1, 2], [2026, 80, 2, 0]]);
+    expect(a.porAnio[1]).toMatchObject({ informes: 2, conPorcentaje: 1, riesgo: 1 });
+    expect(a.porProceso.find((p) => p.proceso === 'Comercialización').anios[2026]).toMatchObject({ promedio: 80, nc: 2 });
+    expect(a.porCapitulo.find((c) => c.capitulo === 8).total).toBe(2);
+    expect(a.porClausula[0]).toMatchObject({ clave: '8.5.1', nc: 2, anios: [2025, 2026] });
+    expect(a.porArea[0]).toMatchObject({ nombre: 'Padrón', nc: 2, om: 1 });   // "Padrón" y "Gerencia de Padrón" son la misma área; "8.5.1 a)" cuenta en 8.5.1
+    expect(promedioAuditorias(historicoParaPortal(informes), 2026)).toMatchObject({ pct: 80, total: 1 });
+  });
+  it('el calendario toma como antecedente el último informe histórico del área', async () => {
+    const { calendarioAnual } = await import('../auditorias');
+    const historico = [{ anio: 2025, numero: 3, fecha_fin: '2025-03-10', nc: [{ area: 'Caja' }, { area: 'Caja' }, { area: 'Caja' }, { area: 'Caja' }], om: [] },
+      { anio: 2026, numero: 2, fecha_fin: '2026-04-20', nc: [{ area: 'Caja' }], om: [{ area: 'Caja' }], areas_conformes: ['Padrón'] }];
+    const [caja, padron, nueva] = calendarioAnual({ areas: ['Caja', 'Padrón', 'Nueva'], historico });
+    expect(caja).toMatchObject({ nc: 1, om: 1, frecuencia: 8, proxima: '2026-12-20', ultima: { numero: 2, anio: 2026, historico: true } });
+    expect(padron).toMatchObject({ nc: 0, frecuencia: 12, proxima: '2027-04-20' });
+    expect(nueva).toMatchObject({ ultima: null, frecuencia: 12, proxima: '' });
+  });
+});

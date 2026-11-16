@@ -8,12 +8,12 @@ import { BIMESTRES, FORMATOS, RANGOS, TIPOS_HALLAZGO, calendarioAnual, resumenPo
 import { Bloque, ENTRADA, EstadoAuditoria, Rango, tituloAuditoria } from './ui';
 import { AnalisisIA } from './Evaluaciones';
 
-const ref = (a) => (a ? `#${a.numero}/${a.anio}` : '—');
+const ref = (a) => (a ? `${a.historico ? 'Informe ' : '#'}${a.numero}/${a.anio}` : '—');
 const etiquetaRango = (r, pct) => (r ? `${pct}% ${RANGOS[r].label}` : 'Sin datos');
 
 // ───────────── Calendario anual y cronograma bimestral ─────────────
-export function CalendarioPanel({ areas, auditorias, listas, hallazgos, anio, onAbrir }) {
-  const filas = calendarioAnual({ areas, auditorias, listas, hallazgos });
+export function CalendarioPanel({ areas, auditorias, listas, hallazgos, historico = [], anio, onAbrir }) {
+  const filas = calendarioAnual({ areas, auditorias, listas, hallazgos, historico });
   const delAnio = auditorias.filter((a) => Number(a.anio) === Number(anio));
   const pdf = () => exportarInformeIndicadoresPDF({
     titulo: `Calendario anual de auditorías internas ${anio}`, subtitulo: `${FORMATOS.calendario} · ISO 9001:2015`, derecha: [`Auditorías del año: ${delAnio.length}`],

@@ -15,7 +15,7 @@ import { siguienteHabil } from '../../constants/fechasHabiles';
 import { CLAVE_RC, enDiasISO, folioRC, hoyISO } from '../../constants/reportesCorreccion';
 import { acDesdeAuditoria } from '../../services/flujoService';
 import {
-  CLAVE_AUDITORIAS, CLAVE_LISTAS, CLAVE_HALLAZGOS, CLAVE_EVALUACIONES, BIMESTRES, FORMATOS, bimestreDe, calendarioAnual, hallazgosDeLista,
+  CLAVE_AUDITORIAS, CLAVE_LISTAS, CLAVE_HALLAZGOS, CLAVE_EVALUACIONES, CLAVE_HISTORICO, BIMESTRES, FORMATOS, bimestreDe, calendarioAnual, hallazgosDeLista,
   listaAutomatica, nuevaAuditoria, numeroSiguiente, plazoApertura, resumenPreguntas, auditoresRequeridos,
 } from '../../constants/auditorias';
 import { Bloque, ENTRADA, EstadoAuditoria, Rango, tituloAuditoria } from './ui';
@@ -23,6 +23,7 @@ import EditorAuditoria from './EditorAuditoria';
 import ListaVerificacion from './ListaVerificacion';
 import { CalendarioPanel, HallazgosPanel, ResultadosPanel } from './Paneles';
 import EvaluacionesPanel from './Evaluaciones';
+import HistoricoPanel from './Historico';
 
 const minus = (t) => String(t || '').toLowerCase();
 const folioAud = (a) => `AUD-${a.numero}/${a.anio}`;
@@ -36,6 +37,7 @@ export default function AuditoriasView() {
   const [hallazgos, setHallazgos] = useLocalStorage(CLAVE_HALLAZGOS, []);
   const [reportesRC, setReportesRC] = useLocalStorage(CLAVE_RC, []);
   const [evaluaciones, setEvaluaciones] = useLocalStorage(CLAVE_EVALUACIONES, []);
+  const [historico] = useLocalStorage(CLAVE_HISTORICO, []);   // informes anteriores al portal: solo lectura
   const [pestana, setPestana] = useState('programa');
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [abiertaId, setAbiertaId] = useState(null);
@@ -59,7 +61,7 @@ export default function AuditoriasView() {
 
   const abierta = auditorias.find((x) => String(x.id) === String(abiertaId));
   const listaAbierta = listas.find((l) => l.id === listaId);
-  const antecedentes = useMemo(() => Object.fromEntries(calendarioAnual({ areas, auditorias, listas, hallazgos }).map((f) => [f.area, f])), [areas, auditorias, listas, hallazgos]);
+  const antecedentes = useMemo(() => Object.fromEntries(calendarioAnual({ areas, auditorias, listas, hallazgos, historico }).map((f) => [f.area, f])), [areas, auditorias, listas, hallazgos, historico]);
   const delAnio = auditorias.filter((x) => Number(x.anio) === Number(anio)).sort((x, y) => x.numero - y.numero);
   const anios = [...new Set([new Date().getFullYear(), new Date().getFullYear() + 1, ...auditorias.map((x) => Number(x.anio))])].sort((x, y) => y - x);
   const invitaciones = puedeAuditar ? auditorias.filter((x) => x.estado === 'INVITACION') : [];
@@ -175,8 +177,11 @@ export default function AuditoriasView() {
   const previosDe = (l) => hallazgos.filter((h) => h.area === l.area && h.auditoria_id !== l.auditoria_id && h.tipo !== 'OM')
     .map((h) => { const a = auditorias.find((x) => x.id === h.auditoria_id); return { ...h, ref: a ? `Auditoría #${a.numero}/${a.anio}` : 'Auditoría anterior' }; });
 
+  // Los informes anteriores traen hallazgos de todas las áreas: los consulta el SGC, los auditores y quien ve todas las áreas.
+  const veHistorico = esAdmin || puedeTodasAreas || puedeAuditar;
   const PESTANAS = [['programa', 'Programa'], ['calendario', 'Calendario anual'], ...(esAdmin || listasVisibles.length ? [['listas', `Listas de verificación (${listasVisibles.length})`]] : []),
-    ['hallazgos', `Hallazgos (${hallazgosVisibles.length})`], ['resultados', 'Resultados'], ['evaluaciones', `Evaluaciones${pendientesEval.length ? ` (${pendientesEval.length} pendiente)` : ''}`]];
+    ['hallazgos', `Hallazgos (${hallazgosVisibles.length})`], ['resultados', 'Resultados'], ['evaluaciones', `Evaluaciones${pendientesEval.length ? ` (${pendientesEval.length} pendiente)` : ''}`],
+    ...(veHistorico ? [['historico', `Histórico (${(historico || []).length})`]] : [])];
 
   const cuerpo = () => {
     if (listaAbierta) {
@@ -189,10 +194,11 @@ export default function AuditoriasView() {
       return <EditorAuditoria auditoria={abierta} onCambio={guardarAuditoria} onCerrar={() => setAbiertaId(null)} editable={esAdmin} areas={areas} auditores={auditores} antecedentes={antecedentes}
         usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} listasEntregadas={{ total: suyas.length, entregadas: suyas.filter((l) => l.estado === 'ENTREGADA').length }} onEmitirInforme={emitirInforme} />;
     }
-    if (pestana === 'calendario') return <CalendarioPanel areas={areas.filter(veArea)} auditorias={auditorias} listas={listas} hallazgos={hallazgos} anio={anio} onAbrir={setAbiertaId} />;
+    if (pestana === 'calendario') return <CalendarioPanel areas={areas.filter(veArea)} auditorias={auditorias} listas={listas} hallazgos={hallazgos} historico={historico} anio={anio} onAbrir={setAbiertaId} />;
     if (pestana === 'hallazgos') return <HallazgosPanel hallazgos={hallazgosVisibles} auditorias={auditorias} acciones={accionesCorrectivas} puedeFirmar={(h) => !esAdmin && esMiArea(h.area)} onFirmar={firmar} />;
     if (pestana === 'resultados') return <ResultadosPanel auditorias={auditorias} listas={listas} hallazgos={hallazgos} areasVisibles={puedeTodasAreas || esAdmin || puedeAuditar ? null : areas.filter(esMiArea)} />;
     if (pestana === 'evaluaciones') return <EvaluacionesPanel auditorias={auditorias} evaluaciones={evaluaciones.filter((e) => esAdmin || puedeTodasAreas || (e.tipo === 'AUDITADO' && esMiArea(e.area)))} pendientes={pendientesEval} onGuardar={guardarEvaluacion} esAdmin={esAdmin} usuarios={usuarios} />;
+    if (pestana === 'historico' && veHistorico) return <HistoricoPanel informes={historico || []} />;
     if (pestana === 'listas') return (
       <Bloque titulo={`Listas de verificación (${FORMATOS.lista})`} ayuda="Se generan al iniciar la auditoría: una pregunta por cláusula tomada del banco. El auditor puede cambiarla por otra del banco y agregar las suyas.">
         <div className="overflow-x-auto">

@@ -21,8 +21,9 @@ CLAVE_AUDITORIAS = "sgc-auditorias-internas"
 CLAVE_AUD_LISTAS = "sgc-auditorias-listas"
 CLAVE_AUD_HALLAZGOS = "sgc-auditorias-hallazgos"
 CLAVE_AUD_EVALUACIONES = "sgc-auditorias-evaluaciones"
+CLAVE_AUD_HISTORICO = "sgc-auditorias-historico"   # informes anteriores al portal: se cargan por script
 CLAVES_CON_REGLAS = (CLAVE_AC, CLAVE_PM, CLAVE_RC, CLAVE_RIESGOS, CLAVE_MATRICES,
-                     CLAVE_AUDITORIAS, CLAVE_AUD_LISTAS, CLAVE_AUD_HALLAZGOS, CLAVE_AUD_EVALUACIONES)
+                     CLAVE_AUDITORIAS, CLAVE_AUD_LISTAS, CLAVE_AUD_HALLAZGOS, CLAVE_AUD_EVALUACIONES, CLAVE_AUD_HISTORICO)
 
 # Estados heredados → flujo canónico (mismo mapa que normalizarEstado en constants/workflow.js)
 LEGADO = {"GENERADO_IA": "BORRADOR", "FOLIO_ASIGNADO": "APROBADO", "ENVIADO_SGC": "EN_REVISION",
@@ -401,6 +402,8 @@ def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list, co
     anterior = anterior if isinstance(anterior, list) else []
     if clave == CLAVE_RC:
         return _validar_rc(anterior, nuevo, usuario, areas_detalle)
+    if clave == CLAVE_AUD_HISTORICO:
+        return None if es_admin(usuario) or nuevo == anterior else "El histórico de auditorías lo administra el SGC."
     if clave == CLAVE_AUDITORIAS:
         return _validar_auditorias(anterior, nuevo, usuario)
     if clave == CLAVE_AUD_LISTAS:
