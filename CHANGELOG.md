@@ -2,6 +2,15 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-16 — Regla del portal: capturar y trabajar en ventana emergente
+
+Las listas solo enlistan; todo lo que se captura o modifica abre en ventana (`ModalBase`) con cabecera informativa, campos rotulados y acciones en el pie.
+
+- **Acciones correctivas:** el cambio rápido de fecha de cierre (antes se editaba dentro de la celda).
+- **Riesgos · Revisión SGC:** revisar una matriz, devolverla con observaciones, aceptarla o reabrirla.
+- **Configuración · Catálogos documentales:** agregar o renombrar tipo de documento y estado normativo (una sola ventana para los cuatro casos).
+- Se quedan como pantalla propia de trabajo, por ser tareas largas: la lista de verificación del auditor y el editor del Manual de la Calidad.
+
 ## 2026-11-16 — Riesgos: "Matriz por área" ordenada por nivel
 
 - La lista única de 40+ unidades se separa en pestañas **Direcciones**, **Subdirecciones** y **Áreas**. Las subdirecciones y áreas se agrupan por dirección; cada dirección se despliega y muestra su resumen (unidades, riesgos, oportunidades, sin iniciar). Al buscar o filtrar, los grupos se abren solos.

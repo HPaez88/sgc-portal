@@ -5,6 +5,7 @@ import { api } from '../../services/apiClient';
 import { useToast } from '../common/Toast';
 import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import ContenedorModal from '../common/ContenedorModal';
+import ModalBase from '../common/ModalBase';
 import EncargadosSGC from './EncargadosSGC';
 import AccesibilidadPanel from './AccesibilidadPanel';
 import FodaEditor from '../riesgos/FodaEditor';
@@ -69,6 +70,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
 
   // Estados para catálogos documentales
   const [nuevoTipoDoc, setNuevoTipoDoc] = useState('');
+  const [agregandoCat, setAgregandoCat] = useState(null); // 'tipo' | 'estado'
   const [tipoDocEditando, setTipoDocEditando] = useState(null);
   const [tipoDocNuevoNombre, setTipoDocNuevoNombre] = useState('');
 
@@ -125,6 +127,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       detalles: 'Agregado al catálogo de información documentada ISO 9001:2015',
       folio: 'CAT-DOC-TIPO'
     });
+    setAgregandoCat(null);
   };
 
   const guardarEdicionTipoDoc = (tipoOriginal) => {
@@ -195,6 +198,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       detalles: 'Agregado al flujo de información documentada ISO 9001:2015',
       folio: 'CAT-DOC-ESTADO'
     });
+    setAgregandoCat(null);
   };
 
   const guardarEdicionEstadoNormativo = (estadoOriginal) => {
@@ -222,6 +226,18 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       folio: 'CAT-DOC-ESTADO'
     });
   };
+
+  // Ventana única para agregar o renombrar en los dos catálogos documentales.
+  const NOTA_RENOMBRAR = 'El cambio se aplica a todos los documentos que lo usan.';
+  const catModal = agregandoCat === 'tipo'
+    ? { titulo: 'Nuevo tipo de documento', etiqueta: 'Nombre del tipo de documento', ejemplo: 'Ej. Instructivo de Trabajo, Catálogo', nota: 'Quedará disponible al registrar documentos.', valor: nuevoTipoDoc, set: setNuevoTipoDoc, guardar: agregarTipoDoc, cerrar: () => { setAgregandoCat(null); setNuevoTipoDoc(''); } }
+    : agregandoCat === 'estado'
+      ? { titulo: 'Nuevo estado normativo', etiqueta: 'Nombre del estado (en mayúsculas)', ejemplo: 'Ej. EN_VALIDACION, SUSPENDIDO', nota: 'Quedará disponible en el flujo documental.', valor: nuevoEstadoNormativo, set: (v) => setNuevoEstadoNormativo(v.toUpperCase()), guardar: agregarEstadoNormativo, cerrar: () => { setAgregandoCat(null); setNuevoEstadoNormativo(''); } }
+      : tipoDocEditando !== null
+        ? { titulo: 'Renombrar tipo de documento', subtitulo: `Nombre actual: ${tipoDocEditando}`, etiqueta: 'Nuevo nombre', nota: NOTA_RENOMBRAR, valor: tipoDocNuevoNombre, set: setTipoDocNuevoNombre, guardar: () => guardarEdicionTipoDoc(tipoDocEditando), cerrar: () => setTipoDocEditando(null) }
+        : estadoNormativoEditando !== null
+          ? { titulo: 'Renombrar estado normativo', subtitulo: `Nombre actual: ${estadoNormativoEditando}`, etiqueta: 'Nuevo nombre (en mayúsculas)', nota: NOTA_RENOMBRAR, valor: estadoNormativoNuevoNombre, set: (v) => setEstadoNormativoNuevoNombre(v.toUpperCase()), guardar: () => guardarEdicionEstadoNormativo(estadoNormativoEditando), cerrar: () => setEstadoNormativoEditando(null) }
+          : null;
 
   const eliminarEstadoNormativo = (estado) => {
     if (!puedeEliminarCatalogo) {
@@ -1687,62 +1703,22 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
             </div>
 
             <div className="p-5 space-y-4">
-              {/* Formulario Agregar Tipo */}
-              <div className="flex gap-2 max-w-md">
-                <input
-                  type="text"
-                  value={nuevoTipoDoc}
-                  onChange={(e) => setNuevoTipoDoc(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') agregarTipoDoc(); }}
-                  placeholder="Nuevo tipo de documento (ej. Instructivo de Trabajo, Catálogo)..."
-                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
-                />
-                <button
-                  onClick={agregarTipoDoc}
-                  disabled={!nuevoTipoDoc.trim()}
-                  className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] disabled:opacity-50 text-white rounded-lg text-xs font-extrabold flex items-center gap-1 shadow-sm transition-all"
-                >
-                  <Plus size={14} /> Agregar Tipo
-                </button>
-              </div>
+              <button type="button" onClick={() => setAgregandoCat('tipo')}
+                className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-lg text-xs font-extrabold inline-flex items-center gap-1 shadow-sm transition-all">
+                <Plus size={14} /> Agregar tipo
+              </button>
 
               {/* Grid / Lista de Tipos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {tiposDocumento.map((tipo) => {
                   const countDocs = (documentos || []).filter(d => d.tipo === tipo).length;
-                  const enEdicion = tipoDocEditando === tipo;
 
                   return (
                     <div
                       key={tipo}
                       className="p-3 bg-white border border-slate-200/90 rounded-xl hover:shadow-xs transition-all flex flex-col justify-between"
                     >
-                      {enEdicion ? (
-                        <div className="space-y-2">
-                          <input
-                            type="text"
-                            value={tipoDocNuevoNombre}
-                            onChange={(e) => setTipoDocNuevoNombre(e.target.value)}
-                            className="w-full p-1.5 bg-slate-50 border border-sky-400 rounded text-xs font-bold outline-none"
-                            autoFocus
-                          />
-                          <div className="flex gap-1 justify-end">
-                            <button
-                              onClick={() => setTipoDocEditando(null)}
-                              className="px-2 py-0.5 text-[10px] font-bold text-slate-500 hover:text-slate-800"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              onClick={() => guardarEdicionTipoDoc(tipo)}
-                              className="px-2.5 py-0.5 bg-sky-600 text-white rounded text-[10px] font-bold shadow-2xs"
-                            >
-                              Guardar
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
+                      <>
                           <div className="flex justify-between items-start">
                             <span className="font-extrabold text-slate-900 text-xs">
                               {tipo}
@@ -1771,7 +1747,6 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                             )}
                           </div>
                         </>
-                      )}
                     </div>
                   );
                 })}
@@ -1801,62 +1776,22 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
             </div>
 
             <div className="p-5 space-y-4">
-              {/* Formulario Agregar Estado */}
-              <div className="flex gap-2 max-w-md">
-                <input
-                  type="text"
-                  value={nuevoEstadoNormativo}
-                  onChange={(e) => setNuevoEstadoNormativo(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => { if (e.key === 'Enter') agregarEstadoNormativo(); }}
-                  placeholder="Nuevo estado (ej. EN_VALIDACION, SUSPENDIDO)..."
-                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
-                />
-                <button
-                  onClick={agregarEstadoNormativo}
-                  disabled={!nuevoEstadoNormativo.trim()}
-                  className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] disabled:opacity-50 text-white rounded-lg text-xs font-extrabold flex items-center gap-1 shadow-sm transition-all"
-                >
-                  <Plus size={14} /> Agregar Estado
-                </button>
-              </div>
+              <button type="button" onClick={() => setAgregandoCat('estado')}
+                className="px-3.5 py-2 bg-[#0B192C] hover:bg-[#152e4d] text-white rounded-lg text-xs font-extrabold inline-flex items-center gap-1 shadow-sm transition-all">
+                <Plus size={14} /> Agregar estado
+              </button>
 
               {/* Grid / Lista de Estados */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {estadosNormativos.map((estado) => {
                   const countDocs = (documentos || []).filter(d => d.estado === estado).length;
-                  const enEdicion = estadoNormativoEditando === estado;
 
                   return (
                     <div
                       key={estado}
                       className="p-3 bg-white border border-slate-200/90 rounded-xl hover:shadow-xs transition-all flex flex-col justify-between"
                     >
-                      {enEdicion ? (
-                        <div className="space-y-2">
-                          <input
-                            type="text"
-                            value={estadoNormativoNuevoNombre}
-                            onChange={(e) => setEstadoNormativoNuevoNombre(e.target.value.toUpperCase())}
-                            className="w-full p-1.5 bg-slate-50 border border-emerald-400 rounded text-xs font-mono font-bold outline-none"
-                            autoFocus
-                          />
-                          <div className="flex gap-1 justify-end">
-                            <button
-                              onClick={() => setEstadoNormativoEditando(null)}
-                              className="px-2 py-0.5 text-[10px] font-bold text-slate-500 hover:text-slate-800"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              onClick={() => guardarEdicionEstadoNormativo(estado)}
-                              className="px-2.5 py-0.5 bg-emerald-600 text-white rounded text-[10px] font-bold shadow-2xs"
-                            >
-                              Guardar
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
+                      <>
                           <div className="flex justify-between items-start">
                             <span className="font-mono font-black text-slate-800 text-xs px-2 py-0.5 bg-slate-100 border border-slate-200 rounded">
                               {estado}
@@ -1885,7 +1820,6 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                             )}
                           </div>
                         </>
-                      )}
                     </div>
                   );
                 })}
@@ -1893,6 +1827,22 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
             </div>
           </div>
         </div>
+      )}
+
+      {catModal && (
+        <ModalBase isOpen onClose={catModal.cerrar} size="sm" closeOnBackdrop={false} icono={<Edit size={20} />} bodyClassName="p-5 space-y-3"
+          titulo={catModal.titulo} subtitulo={catModal.subtitulo}
+          footer={<>
+            <button type="button" onClick={catModal.cerrar} className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="button" disabled={!catModal.valor.trim()} onClick={catModal.guardar} className="px-3.5 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 disabled:opacity-40 rounded-lg">Guardar</button>
+          </>}>
+          <label className="block text-xs font-bold text-slate-700">{catModal.etiqueta}
+            <input type="text" autoFocus value={catModal.valor} onChange={(e) => catModal.set(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') catModal.guardar(); }} placeholder={catModal.ejemplo}
+              className="mt-1 w-full p-2 bg-white border border-slate-300 rounded-lg text-sm font-normal" />
+          </label>
+          <p className="text-xs text-slate-600">{catModal.nota}</p>
+        </ModalBase>
       )}
 
       {/* ============================================================ */}

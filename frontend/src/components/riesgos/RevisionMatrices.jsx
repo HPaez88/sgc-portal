@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Undo2, Eye, RotateCcw, Search, Mail } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
+import ModalBase from '../common/ModalBase';
 import { api } from '../../services/apiClient';
 import { TIPOS_UNIDAD } from '../../constants/unidades';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
@@ -153,11 +154,17 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
       </div>
 
       {fila && (
-        <section className="bg-white rounded-xl border-2 border-sky-200 p-4 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-base font-extrabold text-slate-900">{fila.area} · {CLAVE_MATRIZ} {anio}</h3>
-            <button type="button" onClick={() => setAbierta(null)} className="text-xs text-slate-600 hover:underline">Cerrar</button>
-          </div>
+        <ModalBase isOpen onClose={() => setAbierta(null)} size="2xl" closeOnBackdrop={false} icono={<Eye size={20} />} bodyClassName="p-5 space-y-4"
+          titulo={fila.area} subtitulo={`Matriz ${CLAVE_MATRIZ} ${anio} · ${ESTADOS_MATRIZ[fila.estado]?.label || 'Sin iniciar'}`}
+          footer={<>
+            <button type="button" onClick={() => setAbierta(null)} className="mr-auto px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cerrar</button>
+            {fila.estado === 'ACEPTADA' && <button type="button" onClick={reabrir} className="px-4 py-2 text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1"><RotateCcw size={14} /> Reabrir</button>}
+            {fila.estado === 'ENVIADA' && <>
+              <button type="button" onClick={devolver} className="px-4 py-2 text-xs font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 inline-flex items-center gap-1"><Undo2 size={14} /> Devolver con observaciones</button>
+              <button type="button" disabled={aceptando} onClick={() => setConfirmar(true)} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 disabled:opacity-40 rounded-lg hover:bg-emerald-800 inline-flex items-center gap-1"><CheckCircle2 size={14} /> Aceptar matriz</button>
+            </>}
+          </>}>
+          <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">A. Registros de la matriz (solo lectura)</h3>
           <div className="overflow-x-auto border border-slate-200 rounded-lg">
             <table className="w-full text-xs">
               <caption className="sr-only">Registros de la matriz de {fila.area}</caption>
@@ -195,25 +202,16 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
             </p>
           )}
           {fila.estado === 'ACEPTADA' && (
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
-              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Motivo para reabrir la matriz
-                <textarea rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)} className="mt-1 w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs normal-case font-normal tracking-normal" />
-              </label>
-              <button type="button" onClick={reabrir} className="px-4 py-2 text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1"><RotateCcw size={14} /> Reabrir</button>
-            </div>
+            <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">B. Motivo para reabrir la matriz (mínimo 10 caracteres)
+              <textarea rows={3} value={observacion} onChange={(e) => setObservacion(e.target.value)} className="mt-1 w-full p-2 bg-white border border-slate-300 rounded-lg text-sm normal-case font-normal tracking-normal" />
+            </label>
           )}
           {fila.estado === 'ENVIADA' && (
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
-              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Observaciones para el área (si se devuelve)
-                <textarea rows={3} value={observacion} onChange={(e) => setObservacion(e.target.value)} className="mt-1 w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs normal-case font-normal tracking-normal" />
-              </label>
-              <div className="flex md:flex-col gap-2">
-                <button type="button" onClick={devolver} className="px-4 py-2 text-xs font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 inline-flex items-center gap-1"><Undo2 size={14} /> Devolver</button>
-                <button type="button" disabled={aceptando} onClick={() => setConfirmar(true)} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 disabled:opacity-40 rounded-lg hover:bg-emerald-800 inline-flex items-center gap-1"><CheckCircle2 size={14} /> Aceptar</button>
-              </div>
-            </div>
+            <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">B. Observaciones para el área (solo si se devuelve; mínimo 10 caracteres)
+              <textarea rows={3} value={observacion} onChange={(e) => setObservacion(e.target.value)} className="mt-1 w-full p-2 bg-white border border-slate-300 rounded-lg text-sm normal-case font-normal tracking-normal" />
+            </label>
           )}
-        </section>
+        </ModalBase>
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
@@ -234,7 +232,7 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
                 <td className="p-3 text-slate-600">{f.m?.fecha_envio ? formatearFecha(f.m.fecha_envio) : '—'}</td>
                 <td className="p-3 text-right">
                   {f.items.length > 0 && (
-                    <button type="button" onClick={() => { setAbierta(f.area); setObservacion(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-sky-700 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-md font-bold inline-flex items-center gap-1"><Eye size={12} /> {f.estado === 'ENVIADA' ? 'Revisar' : 'Ver'}</button>
+                    <button type="button" onClick={() => { setAbierta(f.area); setObservacion(''); }} className="text-sky-700 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-md font-bold inline-flex items-center gap-1"><Eye size={12} /> {f.estado === 'ENVIADA' ? 'Revisar' : 'Ver'}</button>
                   )}
                 </td>
               </tr>

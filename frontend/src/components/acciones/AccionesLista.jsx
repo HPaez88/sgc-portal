@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye, Mail, CalendarClock, Check, X } from 'lucide-react';
+import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye, Mail, CalendarClock } from 'lucide-react';
 import { ORIGENES_AC, FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
 import { getFechaCompromiso, formatearFecha, esPorAbrir, etiquetaOrigen, correosDe, puedeMoverFechas, ajustarFechaSeguimiento, fechaISO, parseFecha, esCerrado, normalizarEstado } from '../../constants/workflow';
 import { useSGC } from '../../SGCContext';
@@ -10,6 +10,7 @@ import ReportesCorreccionPanel from './ReportesCorreccionPanel';
 import { useLocalStorage } from '../../hooks';
 import { CLAVE_RC } from '../../constants/reportesCorreccion';
 import CampoFecha from '../common/CampoFecha';
+import ModalBase from '../common/ModalBase';
 
 const noConformidadDe = (ac) => ac.descripcion_no_conformidad_final || ac.descripcion_no_conformidad_original || ac.descripcion_problema || '';
 
@@ -50,7 +51,7 @@ export default function AccionesLista({
   // Cambio rápido de la fecha de seguimiento (Super Admin y gescobar@); no cuenta como replanteo.
   const { registrarMovimiento } = useSGC();
   const toast = useToast();
-  const [fechaEdit, setFechaEdit] = useState(null); // { id, fecha }
+  const [fechaEdit, setFechaEdit] = useState(null); // { ac, fecha }
   const moverFechas = puedeMoverFechas(usuarioLogueado);
   const guardarFecha = (ac) => {
     const f = parseFecha(fechaEdit?.fecha);
@@ -452,28 +453,17 @@ export default function AccionesLista({
                         </span>
                       </td>
                       <td className="p-3 text-slate-500 font-medium whitespace-nowrap">
-                        {fechaEdit?.id === ac.id ? (
-                          <span className="inline-flex items-center gap-1">
-                            <CampoFecha envoltura="w-36" value={fechaEdit.fecha} autoFocus aria-label="Nueva fecha de cierre"
-                              onChange={(e) => setFechaEdit({ id: ac.id, fecha: e.target.value })}
-                              onKeyDown={(e) => { if (e.key === 'Enter') guardarFecha(ac); if (e.key === 'Escape') setFechaEdit(null); }}
-                              className="p-1 border border-sky-300 rounded text-xs" />
-                            <button onClick={() => guardarFecha(ac)} title="Guardar" className="p-1 text-emerald-700 hover:bg-emerald-50 rounded"><Check size={14} /></button>
-                            <button onClick={() => setFechaEdit(null)} title="Cancelar" className="p-1 text-slate-500 hover:bg-slate-100 rounded"><X size={14} /></button>
-                          </span>
-                        ) : (
                           <span className="inline-flex items-center gap-1.5">
                             <span title={`Apertura: ${formatearFecha(ac.fecha_apertura || ac.fecha_creacion_borrador)}`}>
                               {formatearFecha(ac.fecha_cierre || getFechaCompromiso(ac))}
                             </span>
                             {moverFechas && !esCerrado(normalizarEstado(ac.estado)) && (
-                              <button onClick={() => setFechaEdit({ id: ac.id, fecha: fechaISO(getFechaCompromiso(ac)) || '' })}
+                              <button onClick={() => setFechaEdit({ ac, fecha: fechaISO(getFechaCompromiso(ac)) || '' })}
                                 title="Cambiar fecha de cierre" className="p-1 text-slate-400 hover:text-sky-700 hover:bg-sky-50 rounded">
                                 <CalendarClock size={13} />
                               </button>
                             )}
                           </span>
-                        )}
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-1.5 justify-center">
@@ -504,6 +494,25 @@ export default function AccionesLista({
         </>
       )}
       </>)}
+      {fechaEdit && (
+        <ModalBase isOpen onClose={() => setFechaEdit(null)} size="sm" closeOnBackdrop={false} icono={<CalendarClock size={20} />} bodyClassName="p-5 space-y-4"
+          titulo="Cambiar fecha de cierre" subtitulo={`${fechaEdit.ac.folio_codigo || 'Acción correctiva'} · ${fechaEdit.ac.area || ''}`}
+          footer={<>
+            <button type="button" onClick={() => setFechaEdit(null)} className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="button" disabled={!fechaEdit.fecha} onClick={() => guardarFecha(fechaEdit.ac)} className="px-3.5 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 disabled:opacity-40 rounded-lg">Guardar fecha</button>
+          </>}>
+          <dl className="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+            <div className="flex gap-2"><dt className="font-bold text-slate-700">Fecha actual:</dt><dd className="text-slate-800">{formatearFecha(getFechaCompromiso(fechaEdit.ac))}</dd></div>
+            <div className="text-slate-600">Ajuste del SGC: no cuenta como replanteo. Debe caer en día hábil (lunes a viernes).</div>
+          </dl>
+          <label className="block text-xs font-bold text-slate-700">Nueva fecha de cierre
+            <CampoFecha envoltura="w-full mt-1" value={fechaEdit.fecha} autoFocus
+              onChange={(e) => setFechaEdit({ ...fechaEdit, fecha: e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter') guardarFecha(fechaEdit.ac); }}
+              className="w-full p-2 border border-slate-300 rounded-lg text-sm font-normal" />
+          </label>
+        </ModalBase>
+      )}
       <ModalCorreo abierto={Boolean(correoPara)} onClose={() => setCorreoPara(null)}
         inicial={correoPara ? correoInicial(correoPara) : {}} folio={correoPara?.folio_codigo || ''} />
     </div>
