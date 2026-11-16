@@ -215,7 +215,7 @@ export const faltantePlan = (a) => {
 // ───────────── Calendario anual (OOMRSC-12) ─────────────
 /** Sin auditoría del área en el portal: se toma el último informe histórico donde aparece (sus áreas ya vienen con el nombre del catálogo). */
 function antecedenteHistorico(nombre, historico) {
-  const del = (i, campo) => (i[campo] || []).filter((h) => h.area === nombre);
+  const del = (i, campo) => (i[campo] || []).filter((h) => (h.areas || [h.area]).includes(nombre));
   const ultimo = historico.filter((i) => i.fecha_fin && (del(i, 'nc').length || del(i, 'om').length || del(i, 'correcciones').length || (i.areas_conformes || []).includes(nombre)))
     .sort((a, b) => String(b.fecha_fin).localeCompare(String(a.fecha_fin)))[0];
   if (!ultimo) return { area: nombre, ultima: null, nc: null, om: null, c: null, cumplimiento: null, eficiencia: null, rango: null, frecuencia: 12, proxima: '' };
@@ -314,7 +314,7 @@ export function analisisHistorico(informes = []) {
     anios: Object.fromEntries(anios.map((anio) => [anio, hallazgos.filter((h) => h.tipo === 'NC' && h.anio === anio && capituloDe(h.clausula) === cap).length])) }));
   return { anios, porAnio, porProceso, porCapitulo, hallazgos,
     porClausula: contar(hallazgos, (h) => numeroClausula(h.clausula)),
-    porArea: contar(hallazgos, (h) => claveArea(h.area), (h) => h.area) };
+    porArea: contar(hallazgos.flatMap((h) => (h.areas || [h.area]).map((area) => ({ ...h, area }))), (h) => claveArea(h.area), (h) => h.area) };   // un hallazgo compartido cuenta en cada una de sus áreas
 }
 /** Los informes históricos también cuentan para el Panel y la Revisión por la Dirección. */
 export const historicoParaPortal = (informes = []) => informes.map((i) => ({ id: `H-${i.anio}-${i.numero}`, numero: `AUD-${i.numero}/${i.anio}`, anio: i.anio, tipo: 'Interna', area: i.proceso, fecha_inicio: i.fecha_inicio, fecha_fin: i.fecha_fin,

@@ -45,7 +45,7 @@ def validar(informes: list) -> list[str]:
 def areas_fuera_de_catalogo(informes: list, catalogo: list) -> list[str]:
     """Áreas de los informes que no están en el catálogo vivo del portal (solo avisa; no impide cargar)."""
     nombres = {a.get("nombre") for a in catalogo}
-    usadas = {h.get("area") for i in informes for c in ("nc", "om", "correcciones") for h in i.get(c) or []} | {a for i in informes for a in i.get("areas_conformes") or []}
+    usadas = {a for i in informes for c in ("nc", "om", "correcciones") for h in i.get(c) or [] for a in (h.get("areas") or [h.get("area")])} | {a for i in informes for a in i.get("areas_conformes") or []}
     return sorted(a for a in usadas if a and a not in nombres)
 
 
