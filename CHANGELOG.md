@@ -1,6 +1,22 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+
+## 2026-11-16 — Módulo de Auditorías internas (ISO 9001:2015, procedimiento OOMPSC-08)
+
+Se reemplaza el prototipo por el proceso completo dentro del portal.
+
+- **Programa (OOMRSC-13) y calendario anual (OOMRSC-12):** auditorías por bimestre, cronograma del año y frecuencia por área según las no conformidades de la auditoría anterior (0 NC = 12 meses; 1 a 3 = 8; 4 a 8 = 6; 9 o más = 4).
+- **Equipo auditor:** invitación por correo con botón de confirmar (`POST /api/v1/auditorias/{id}/invitar|confirmar|retirar`). El servidor registra el orden de confirmación; el equipo se propone en ese orden y nadie audita su área ni su dirección.
+- **Plan (OOMRSC-14):** agenda por área, reuniones de apertura y de entrega del informe.
+- **Lista de verificación (OOMRSC-15):** se genera al iniciar la auditoría con una pregunta por cláusula tomada del banco (33 cláusulas, 128 preguntas). El auditor puede cambiarla por otra del banco, agregar las suyas y adjuntar evidencia. Calificación vigente C / NC / OM; los puntos 0 a 10 quedan preparados (`USAR_PUNTOS`).
+- **Hallazgos (OOMRSC-17):** se generan al entregar la lista. El área firma de enterado. Al emitir el informe, cada NC crea su acción correctiva en "Por abrir" con límite de 5 días hábiles y cada corrección menor su reporte de corrección.
+- **Resultados (OOMRSC-16):** cumplimiento y rango por área y por capítulo, comparativo con auditorías anteriores, informes PDF institucionales y análisis con IA (solo sugiere).
+- **Evaluaciones:** del auditado (OOMRSC-19) y de auditores para el bono (OOMRSC-34).
+- **Portal ligado:** el Panel y la Revisión por la Dirección leen el resultado real de las auditorías (se retira el dato fijo de 92%).
+- **Reglas en servidor** (`flujo_reglas.py`): solo el SGC administra el programa, una etapa a la vez, auditoría cerrada inmutable, listas solo de su auditor, hallazgo firmado inmutable.
+- Pendiente: llenado de los formatos originales en Word, carga de auditorías históricas e ISO/IEC 17025.
+
 ## 2026-11-16 — Matriz de riesgos: cierre de pendientes menores
 - Cobertura del informe cuenta todas las unidades que entregan matriz (áreas, direcciones y subdirecciones); el PDF indica cuántos registros siguen en captura y no se incluyen; "Dar de alta" respeta el permiso de edición; al replantear, el plan anterior queda en el historial del riesgo.
 - Prueba de punta a punta contra el servidor (alta → envío → aceptación → PM ligado → dictamen) con las reglas nuevas.

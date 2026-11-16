@@ -17,7 +17,12 @@ CLAVE_RC = "sgc-reportes-correccion"
 CLAVE_FOLIOS = "sgc-config-folios"
 CLAVE_RIESGOS = "sgc-riesgos"
 CLAVE_MATRICES = "sgc-matrices-riesgos"
-CLAVES_CON_REGLAS = (CLAVE_AC, CLAVE_PM, CLAVE_RC, CLAVE_RIESGOS, CLAVE_MATRICES)
+CLAVE_AUDITORIAS = "sgc-auditorias-internas"
+CLAVE_AUD_LISTAS = "sgc-auditorias-listas"
+CLAVE_AUD_HALLAZGOS = "sgc-auditorias-hallazgos"
+CLAVE_AUD_EVALUACIONES = "sgc-auditorias-evaluaciones"
+CLAVES_CON_REGLAS = (CLAVE_AC, CLAVE_PM, CLAVE_RC, CLAVE_RIESGOS, CLAVE_MATRICES,
+                     CLAVE_AUDITORIAS, CLAVE_AUD_LISTAS, CLAVE_AUD_HALLAZGOS, CLAVE_AUD_EVALUACIONES)
 
 # Estados heredados → flujo canónico (mismo mapa que normalizarEstado en constants/workflow.js)
 LEGADO = {"GENERADO_IA": "BORRADOR", "FOLIO_ASIGNADO": "APROBADO", "ENVIADO_SGC": "EN_REVISION",
@@ -287,6 +292,106 @@ def _validar_riesgos(anterior: list, nuevo: list, usuario, areas: list, matrices
     return None
 
 
+# ───────────── Auditorías internas (OOMPSC-08) ─────────────
+AUD_ESTADOS = ("PLANEACION", "INVITACION", "PROGRAMADA", "EN_EJECUCION", "INFORME", "CERRADA")
+
+
+def _correo(usuario) -> str:
+    return (usuario.email or "").lower()
+
+
+def _validar_auditorias(anterior: list, nuevo: list, usuario) -> Optional[str]:
+    """El programa de auditorías lo lleva el SGC. Los auditores confirman por su endpoint, no escribiendo esta clave."""
+    if not es_admin(usuario) and nuevo != anterior:
+        return "El programa de auditorías lo administra el SGC."
+    antes = _por_id(anterior)
+    for k, a in _por_id(nuevo).items():
+        e1 = str(a.get("estado") or "PLANEACION")
+        if e1 not in AUD_ESTADOS:
+            return f"Estado de auditoría inválido: {e1}."
+        viejo = antes.get(k)
+        if viejo:
+            e0 = str(viejo.get("estado") or "PLANEACION")
+            if e0 == "CERRADA" and a != viejo:
+                return f"La auditoría #{viejo.get('numero')} está cerrada y ya no se modifica."
+            if abs(AUD_ESTADOS.index(e1) - AUD_ESTADOS.index(e0)) > 1:
+                return f"Auditoría #{a.get('numero')}: no se puede pasar de {e0} a {e1}."
+            # las confirmaciones (orden de llegada) solo cambian por el servidor
+            if e1 == "INVITACION" and e0 == "INVITACION" and [c.get("email") for c in a.get("confirmaciones") or []] != [c.get("email") for c in viejo.get("confirmaciones") or []]:
+                return "Las confirmaciones de auditores se registran solas en el orden en que llegan."
+    numeros = [(a.get("anio"), a.get("numero")) for a in nuevo if isinstance(a, dict)]
+    if len(numeros) != len(set(numeros)):
+        return "Hay dos auditorías con el mismo número en el año."
+    return None
+
+
+def _auditor_de_lista(usuario, lista: dict) -> bool:
+    return _correo(usuario) != "" and _correo(usuario) in [str(lista.get("auditor_email") or "").lower(), *[str(c).lower() for c in lista.get("coauditores") or []]]
+
+
+def _validar_aud_listas(anterior: list, nuevo: list, usuario) -> Optional[str]:
+    antes, despues = _por_id(anterior), _por_id(nuevo)
+    admin = es_admin(usuario)
+    for k, viejo in antes.items():
+        if k not in despues and not admin:
+            return "Solo el SGC puede eliminar una lista de verificación."
+    for k, l in despues.items():
+        viejo = antes.get(k)
+        if viejo == l or admin:
+            continue
+        if not viejo:
+            return "Las listas de verificación se generan cuando el SGC inicia la auditoría."
+        if not _auditor_de_lista(usuario, viejo):
+            return "Solo el auditor asignado captura esta lista de verificación."
+        if viejo and viejo.get("estado") == "ENTREGADA":
+            return "La lista ya fue entregada; solo el SGC puede reabrirla."
+    return None
+
+
+def _validar_aud_hallazgos(anterior: list, nuevo: list, usuario, areas: list) -> Optional[str]:
+    antes, despues = _por_id(anterior), _por_id(nuevo)
+    admin = es_admin(usuario)
+    del_auditado = ("aceptado_por", "fecha_aceptacion", "comentario_auditado")
+    for k, viejo in antes.items():
+        # el auditor puede retirar un hallazgo suyo que aún no firma el área (lista reabierta y corregida)
+        suyo = _correo(usuario) != "" and _correo(usuario) == str(viejo.get("auditor_email") or "").lower() and not viejo.get("aceptado_por")
+        if k not in despues and not admin and not suyo:
+            return "Un reporte de hallazgo no se elimina; si no procede, se concilia con el SGC."
+    for k, h in despues.items():
+        viejo = antes.get(k)
+        if viejo == h or admin:
+            continue
+        es_auditor = _correo(usuario) != "" and _correo(usuario) == str((viejo or h).get("auditor_email") or "").lower()
+        if es_auditor:
+            if viejo and viejo.get("aceptado_por") and any(h.get(c) != viejo.get(c) for c in ("tipo", "hallazgo", "clausula", "requisito")):
+                return "El hallazgo ya fue firmado por el auditado y no se modifica."
+            continue
+        # el área auditada solo firma de enterado y comenta
+        if viejo and not _sin_acceso(usuario, viejo, areas) and all(h.get(c) == viejo.get(c) for c in {*h, *viejo} if c not in del_auditado):
+            continue
+        return "Solo el auditor que levantó el hallazgo puede modificarlo."
+    return None
+
+
+def _validar_aud_evaluaciones(anterior: list, nuevo: list, usuario, areas: list) -> Optional[str]:
+    antes, despues = _por_id(anterior), _por_id(nuevo)
+    admin = es_admin(usuario)
+    for k, viejo in antes.items():
+        if k not in despues and not admin:
+            return "Las evaluaciones no se eliminan."
+    for k, ev in despues.items():
+        viejo = antes.get(k)
+        if viejo == ev or admin:
+            continue
+        if ev.get("tipo") == "BONO":
+            return "La evaluación de auditores para el bono la registra el auditor líder de calidad."
+        if viejo:
+            return "La evaluación ya fue entregada y no se modifica."
+        if _sin_acceso(usuario, ev, areas):
+            return "Solo el área auditada evalúa su auditoría."
+    return None
+
+
 def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list, contexto: Optional[dict] = None) -> Optional[str]:
     """Motivo de rechazo o None. Solo actúa sobre las claves con reglas y cuando ambos valores son listas."""
     if clave == CLAVE_FOLIOS:
@@ -296,6 +401,14 @@ def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list, co
     anterior = anterior if isinstance(anterior, list) else []
     if clave == CLAVE_RC:
         return _validar_rc(anterior, nuevo, usuario, areas_detalle)
+    if clave == CLAVE_AUDITORIAS:
+        return _validar_auditorias(anterior, nuevo, usuario)
+    if clave == CLAVE_AUD_LISTAS:
+        return _validar_aud_listas(anterior, nuevo, usuario)
+    if clave == CLAVE_AUD_HALLAZGOS:
+        return _validar_aud_hallazgos(anterior, nuevo, usuario, areas_detalle)
+    if clave == CLAVE_AUD_EVALUACIONES:
+        return _validar_aud_evaluaciones(anterior, nuevo, usuario, areas_detalle)
     if clave == CLAVE_MATRICES:
         return _validar_matrices(anterior, nuevo, usuario, areas_detalle)
     if clave == CLAVE_RIESGOS:

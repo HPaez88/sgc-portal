@@ -1,3 +1,4 @@
+import { promedioAuditorias, RANGOS } from '../../constants/auditorias';
 import React, { useState, useMemo } from 'react';
 import { 
   FileText, 
@@ -422,10 +423,10 @@ export default function RevisionDireccionView({
             />
             <StatCard
               title="Eficacia SGC en Auditorías"
-              value={`${revisionActual.auditoriasInternas?.promedioSGC || 92}%`}
-              subtitle={revisionActual.auditoriasInternas?.rango || 'Rango Aceptable'}
+              value={promedioAuditorias(auditorias, ejercicio).pct != null ? `${promedioAuditorias(auditorias, ejercicio).pct}%` : 'Sin datos'}
+              subtitle={promedioAuditorias(auditorias, ejercicio).pct != null ? `Rango ${RANGOS[promedioAuditorias(auditorias, ejercicio).rango].label} · ${promedioAuditorias(auditorias, ejercicio).total} auditoría(s)` : 'Sin auditorías concluidas en el año'}
               icon={ShieldCheck}
-              trend={{ positive: true, label: 'Auditorías 2026' }}
+              trend={{ positive: promedioAuditorias(auditorias, ejercicio).rango !== 'CRITICO', label: `Auditorías ${ejercicio}` }}
             />
             <StatCard
               title="Acciones Correctivas"

@@ -19,7 +19,7 @@ from backend import auth as auth_lib
 from backend.seed_usuarios import sembrar_usuarios
 from backend.seed_documentos import sembrar_documentos
 from backend.tenant import get_organismo_id
-from backend.routers import ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth, documentos, estado, notificaciones, buzon, formatos_indicadores, folios
+from backend.routers import ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, auth, documentos, estado, notificaciones, buzon, formatos_indicadores, folios, auditorias
 
 load_dotenv()
 
@@ -63,7 +63,7 @@ PROTEGIDO = [Depends(auth_lib.usuario_actual)]
 app.include_router(auth.router)
 app.include_router(buzon.router)  # webhook firmado + endpoints con su propia validación de rol
 for r in (ai, catalogo, organismos, iso_agent, fichas_ayuntamiento, manual, archivos, documentos, estado, notificaciones,
-          formatos_indicadores, folios):
+          formatos_indicadores, folios, auditorias):
     app.include_router(r.router, dependencies=PROTEGIDO)
 
 

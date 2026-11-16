@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { CLAVE_AUDITORIAS, CLAVE_LISTAS, CLAVE_HALLAZGOS, resumenParaPortal } from './constants/auditorias';
 import { isSupabaseConfigured, supabase } from './supabase';
 import { 
   AREAS as defaultAreas, 
@@ -193,6 +194,11 @@ export const SGCProvider = ({ children }) => {
   const [auditorias, setAuditorias] = useLocalStorage('sgc-auditorias', [
     { id: 1, numero: 'AUD-2026-001', tipo: 'Interna', area: 'Sistema de Gestión de Calidad', fecha_inicio: '2026-01-15', fecha_fin: '2026-01-17', estado: 'COMPLETADA', hallazgos: 3, no_conformidades: 1 },
   ]);
+  // Auditorías reales (módulo de Auditorías): el Panel y la Revisión por la Dirección solo leen este resumen.
+  const [audInternas] = useLocalStorage(CLAVE_AUDITORIAS, []);
+  const [audListas] = useLocalStorage(CLAVE_LISTAS, []);
+  const [audHallazgos] = useLocalStorage(CLAVE_HALLAZGOS, []);
+  const auditoriasPortal = useMemo(() => resumenParaPortal({ auditorias: audInternas || [], listas: audListas || [], hallazgos: audHallazgos || [] }), [audInternas, audListas, audHallazgos]);
   const [evidencias, setEvidencias] = useLocalStorage('sgc-evidencias', []);
   const [bitacora, setBitacora] = useLocalStorage('sgc-bitacora-movimientos', BITACORA_INICIAL);
   const [usuariosActividad, setUsuariosActividad] = useLocalStorage('sgc-usuarios-actividad', {});
@@ -631,7 +637,7 @@ export const SGCProvider = ({ children }) => {
     setRiesgos: setRiesgosSync,
     documentos: documentos || [],
     setDocumentos: setDocumentosSync,
-    auditorias: auditorias || [],
+    auditorias: auditoriasPortal,
     setAuditorias: setAuditoriasSync,
     evidencias: evidencias || [],
     setEvidencias: setEvidenciasSync,

@@ -226,3 +226,58 @@ def test_reglas_matriz_de_riesgos_en_servidor():
     assert "genera el SGC" in validar_cambio(CLAVE_PM, [], [{**pm, "folio_codigo": "Pendiente"}], enc, [])
     assert "dos planes" in validar_cambio(CLAVE_PM, [pm], [pm, {**pm, "id": 2, "folio_codigo": "OM#2/2027"}], adm, [])
     assert validar_cambio(CLAVE_PM, [pm], [{**pm, "estado": "CERRADO_NO_EFECTIVO"}, {**pm, "id": 2, "folio_codigo": "OM#2/2027"}], adm, []) is None
+
+
+def test_auditorias_reglas_y_confirmacion_en_orden(cliente, cab):
+    from backend.services.flujo_reglas import validar_cambio, CLAVE_AUDITORIAS, CLAVE_AUD_LISTAS, CLAVE_AUD_HALLAZGOS, CLAVE_AUD_EVALUACIONES
+    enc, adm = _usuario(), _usuario("Admin", "SGC")
+    aud = _usuario("Auditor", "Jurídico", "aud@x.mx")
+    a = {"id": 1, "anio": 2026, "numero": 6, "estado": "PLANEACION", "areas": [{"area": "Plantas"}], "confirmaciones": []}
+    assert "administra el SGC" in validar_cambio(CLAVE_AUDITORIAS, [], [a], aud, [])
+    assert validar_cambio(CLAVE_AUDITORIAS, [], [a], adm, []) is None
+    assert "no se puede pasar" in validar_cambio(CLAVE_AUDITORIAS, [a], [{**a, "estado": "EN_EJECUCION"}], adm, [])
+    inv = {**a, "estado": "INVITACION"}
+    assert "se registran solas" in validar_cambio(CLAVE_AUDITORIAS, [inv], [{**inv, "confirmaciones": [{"email": "x@x.mx"}]}], adm, [])
+    assert "mismo número" in validar_cambio(CLAVE_AUDITORIAS, [a], [a, {**a, "id": 2}], adm, [])
+    cer = {**a, "estado": "CERRADA"}
+    assert "cerrada" in validar_cambio(CLAVE_AUDITORIAS, [cer], [{**cer, "objetivo": "x"}], adm, [])
+    # listas: solo su auditor; entregada ya no se toca
+    l = {"id": "L1", "auditoria_id": 1, "area": "Plantas", "auditor_email": "aud@x.mx", "estado": "EN_CAPTURA", "preguntas": []}
+    assert "se generan cuando el SGC" in validar_cambio(CLAVE_AUD_LISTAS, [], [l], aud, [])
+    assert validar_cambio(CLAVE_AUD_LISTAS, [], [l], adm, []) is None
+    assert validar_cambio(CLAVE_AUD_LISTAS, [l], [{**l, "preguntas": [1]}], aud, []) is None
+    assert "auditor asignado" in validar_cambio(CLAVE_AUD_LISTAS, [l], [{**l, "preguntas": [1]}], enc, [])
+    ent = {**l, "estado": "ENTREGADA"}
+    assert "entregada" in validar_cambio(CLAVE_AUD_LISTAS, [ent], [{**ent, "preguntas": [1]}], aud, [])
+    assert validar_cambio(CLAVE_AUD_LISTAS, [ent], [{**ent, "estado": "EN_CAPTURA"}], adm, []) is None
+    # hallazgos: el auditor los levanta; el área solo firma; firmado no cambia
+    h = {"id": "H1", "area": "Plantas", "auditor_email": "aud@x.mx", "tipo": "NC", "hallazgo": "No se encontró evidencia", "clausula": "7.5"}
+    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [], [h], aud, []) is None
+    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [h], [{**h, "aceptado_por": "Jefe", "fecha_aceptacion": "2026-11-20"}], enc, []) is None
+    assert "Solo el auditor" in validar_cambio(CLAVE_AUD_HALLAZGOS, [h], [{**h, "tipo": "OM"}], enc, [])
+    fir = {**h, "aceptado_por": "Jefe"}
+    assert "firmado" in validar_cambio(CLAVE_AUD_HALLAZGOS, [fir], [{**fir, "tipo": "OM"}], aud, [])
+    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [h], [], aud, []) is None  # suyo y sin firma: lo puede retirar
+    assert "no se elimina" in validar_cambio(CLAVE_AUD_HALLAZGOS, [{**h, "aceptado_por": "X"}], [], aud, [])
+    assert "no se elimina" in validar_cambio(CLAVE_AUD_HALLAZGOS, [h], [], enc, [])
+    # evaluaciones
+    ev = {"id": "E1", "tipo": "AUDITADO", "area": "Plantas"}
+    assert validar_cambio(CLAVE_AUD_EVALUACIONES, [], [ev], enc, []) is None
+    assert "no se modifica" in validar_cambio(CLAVE_AUD_EVALUACIONES, [ev], [{**ev, "x": 1}], enc, [])
+    assert "auditor líder" in validar_cambio(CLAVE_AUD_EVALUACIONES, [], [{"id": "B1", "tipo": "BONO"}], enc, [])
+    # endpoint: invitación y confirmación con orden del servidor
+    cliente.put("/api/v1/estado/sgc-auditorias-internas", headers=cab, json={"valor": [{**a, "id": 77, "fecha_inicio": "2026-11-17", "fecha_fin": "2026-11-28"}]})
+    r = cliente.post("/api/v1/auth/usuarios", headers=cab, json={"nombre": "Auditor Uno", "email": "auditor1@oomapasc.gob.mx", "area": "Jurídico", "rol": "Auditor", "activo": True})
+    assert r.status_code == 201
+    assert cliente.post("/api/v1/auditorias/77/confirmar", headers=cab).status_code == 409   # aún no hay invitación
+    inv_r = cliente.post("/api/v1/auditorias/77/invitar", headers=cab, json={"mensaje": "Favor de confirmar", "enviar_correo": False})
+    assert inv_r.status_code == 200 and inv_r.json()["auditoria"]["estado"] == "INVITACION" and inv_r.json()["auditores"] >= 1
+    t = cliente.post("/api/v1/auth/login", json={"email": "auditor1@oomapasc.gob.mx", "password": r.json()["password_temporal"]}).json()["token"]
+    c1 = cliente.post("/api/v1/auditorias/77/confirmar", headers={"Authorization": f"Bearer {t}"})
+    assert c1.status_code == 200 and c1.json()["orden"] == 1
+    c2 = cliente.post("/api/v1/auditorias/77/confirmar", headers=cab)
+    assert c2.json()["orden"] == 2
+    assert cliente.post("/api/v1/auditorias/77/confirmar", headers={"Authorization": f"Bearer {t}"}).json()["orden"] == 1  # no se duplica
+    assert [c["email"] for c in c2.json()["auditoria"]["confirmaciones"]] == ["auditor1@oomapasc.gob.mx", "hpaez@oomapasc.gob.mx"]
+    assert len(cliente.post("/api/v1/auditorias/77/retirar", headers=cab).json()["auditoria"]["confirmaciones"]) == 1
+    assert cliente.post("/api/v1/auditorias/999/confirmar", headers=cab).status_code == 404

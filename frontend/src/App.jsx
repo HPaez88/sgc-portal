@@ -44,7 +44,7 @@ function App() {
     mq.addEventListener('change', alCambiar);
     return () => mq.removeEventListener('change', alCambiar);
   }, []);
-  const [activeTabEstado, setActiveTabEstado] = useState('dashboard');
+  const [activeTabEstado, setActiveTabEstado] = useState(() => (new URLSearchParams(window.location.search).has('auditoria') ? 'audits' : 'dashboard'));
   const [navNonce, setNavNonce] = useState(0);
   const activeTab = activeTabEstado;
   // Cada clic en el menú remonta el módulo: si estabas dentro de una ficha, vuelves a su lista.

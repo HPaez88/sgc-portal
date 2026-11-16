@@ -106,6 +106,19 @@ function programarReintento() {
   reintento = setTimeout(() => { reintento = null; [...pendientes.keys()].forEach(enviar); }, REINTENTO_MS);
 }
 
+/** Vuelve a leer una clave del servidor (después de una operación que el servidor aplicó directo, p. ej. confirmar una auditoría). */
+export async function recargarClave(clave) {
+  if (!getToken()) return false;
+  const r = await api.get(`/api/v1/estado/${clave}`);
+  if (!r.ok || !r.data || !('valor' in r.data)) return false;
+  pendientes.delete(clave);
+  servidor?.set(clave, r.data.valor);
+  escribirCache(clave, r.data.valor);
+  setters.get(clave)?.forEach((fn) => fn(r.data.valor));
+  actualizarEstado({ pendientes: pendientes.size });
+  return true;
+}
+
 /** Descarga el estado del organismo y lo aplica. Llamar al iniciar sesión (y al recargar con sesión vigente). */
 export async function cargarDesdeServidor() {
   if (!getToken()) return false;
