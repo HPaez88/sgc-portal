@@ -9,6 +9,9 @@ Las listas solo enlistan; todo lo que se captura o modifica abre en ventana (`Mo
 - **Acciones correctivas y Planes de mejora:** el alta y la edición (asistente OOMRSC-20 y formulario OOMRSC-21) abren en ventana sobre la lista, que conserva sus filtros; no se cierra con Escape ni con clic fuera para no perder captura. Al cambiar de paso el cuerpo vuelve arriba (`reiniciarScroll` en `ModalBase`).
 - **Acciones correctivas:** el cambio rápido de fecha de cierre (antes se editaba dentro de la celda).
 - **Auditorías:** el programa de cada auditoría (áreas, equipo, plan) se gestiona en ventana sobre el programa anual; la evaluación del auditado (OOMRSC-19) y los puntos del bono por auditor (OOMRSC-34) se capturan en ventana, y la tabla del bono queda de solo lectura con botón "Capturar".
+- **Indicadores · Proyecto anual:** el proyecto (datos, actividades, fichas, PEMS, avance, presupuesto) se trabaja en ventana sobre la lista de proyectos; pide confirmación si hay cambios sin guardar.
+- **Riesgos · FODA y propósito, y Síntesis del informe:** la página queda de solo lectura y el botón "Editar" abre la captura en ventana; "Cancelar" descarta lo no guardado.
+- **Revisión por la Dirección · Salidas 9.3.3:** la pestaña muestra lo capturado en a) a d) y "Capturar salidas" abre la ventana.
 - **Riesgos · Revisión SGC:** revisar una matriz, devolverla con observaciones, aceptarla o reabrirla.
 - **Configuración · Catálogos documentales:** agregar o renombrar tipo de documento y estado normativo (una sola ventana para los cuatro casos).
 - Se quedan como pantalla propia de trabajo, por ser tareas largas: la lista de verificación del auditor y el editor del Manual de la Calidad.

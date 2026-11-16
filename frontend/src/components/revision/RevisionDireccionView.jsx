@@ -42,6 +42,14 @@ import FormularioComplementarioModal from './FormularioComplementarioModal';
 import AsignacionResponsablesModal from './AsignacionResponsablesModal';
 import { exportarRevisionDireccionOOMRSC04 } from '../../services/revisionExporter';
 import { useToast } from '../common/Toast';
+import ModalBase from '../common/ModalBase';
+
+const SALIDAS_DIRECCION = [
+  ['oportunidadesMejora', 'a) Oportunidades de Mejora Dictadas por la Dirección:', 'Acciones de mejora continua instruidas...'],
+  ['cambiosSGC', 'b) Cualquier Necesidad de Cambio en el Sistema de Gestión de Calidad:', 'Actualizaciones a manuales, procesos o matrices de riesgo...'],
+  ['recursosNecesarios', 'c) Necesidades de Recursos Asignados / Presupuestados:', 'Presupuestos aprobados, infraestructura o personal...'],
+  ['acuerdosFinales', 'd) Acuerdos Finales y Compromiso de la Alta Dirección:', 'Acuerdos institucionales y ratificación del SGC...'],
+];
 import { leerEstadoTexto, escribirEstadoTexto } from '../../services/estadoService';
 
 const MESES = [
@@ -68,6 +76,7 @@ export default function RevisionDireccionView({
 
   const [ejercicio, setEjercicio] = useState(2026);
   const [mesSeleccionado, setMesSeleccionado] = useState('Julio');
+  const [editandoSalidas, setEditandoSalidas] = useState(false);
   const [tabActiva, setTabActiva] = useState('resumen'); // 'resumen' | 'entradas' | 'salidas' | 'formularios'
 
   // Almacén de Revisiones por la Dirección (con persistencia local en memoria / contexto)
@@ -678,60 +687,35 @@ export default function RevisionDireccionView({
               )}
             </div>
 
-            {/* Formulario de Salidas */}
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
-                  a) Oportunidades de Mejora Dictadas por la Dirección:
-                </label>
-                <textarea
-                  rows={3}
-                  value={revisionActual.salidasDireccion?.oportunidadesMejora || ''}
-                  onChange={(e) => handleActualizarSalidas('oportunidadesMejora', e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-900"
-                  placeholder="Acciones de mejora continua instruidas..."
-                />
+            {/* Salidas: la página muestra lo capturado; se capturan en ventana */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-slate-600">Lo capturado se guarda al escribir y pasa al acta OOMRSC-04.</p>
+                <button type="button" onClick={() => setEditandoSalidas(true)} className="px-4 py-2 text-xs font-bold text-white bg-[#0B192C] hover:bg-[#152e4d] rounded-xl inline-flex items-center gap-2">
+                  <Edit3 size={14} /> Capturar salidas
+                </button>
               </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
-                  b) Cualquier Necesidad de Cambio en el Sistema de Gestión de Calidad:
-                </label>
-                <textarea
-                  rows={2}
-                  value={revisionActual.salidasDireccion?.cambiosSGC || ''}
-                  onChange={(e) => handleActualizarSalidas('cambiosSGC', e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-900"
-                  placeholder="Actualizaciones a manuales, procesos o matrices de riesgo..."
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
-                  c) Necesidades de Recursos Asignados / Presupuestados:
-                </label>
-                <textarea
-                  rows={2}
-                  value={revisionActual.salidasDireccion?.recursosNecesarios || ''}
-                  onChange={(e) => handleActualizarSalidas('recursosNecesarios', e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-900"
-                  placeholder="Presupuestos aprobados, infraestructura o personal..."
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
-                  d) Acuerdos Finales y Compromiso de la Alta Dirección:
-                </label>
-                <textarea
-                  rows={2}
-                  value={revisionActual.salidasDireccion?.acuerdosFinales || ''}
-                  onChange={(e) => handleActualizarSalidas('acuerdosFinales', e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-900"
-                  placeholder="Acuerdos institucionales y ratificación del SGC..."
-                />
-              </div>
+              <dl className="divide-y divide-slate-100 border border-slate-200 rounded-xl">
+                {SALIDAS_DIRECCION.map(([campo, etiqueta]) => (
+                  <div key={campo} className="p-3">
+                    <dt className="text-xs font-bold text-slate-700">{etiqueta}</dt>
+                    <dd className="mt-1 text-sm text-slate-900 whitespace-pre-wrap">{revisionActual.salidasDireccion?.[campo] || <span className="text-slate-400">Sin capturar</span>}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
+            {editandoSalidas && (
+              <ModalBase isOpen onClose={() => setEditandoSalidas(false)} size="md" closeOnBackdrop={false} bodyClassName="p-5 space-y-4"
+                titulo="Salidas de la Revisión por la Dirección" subtitulo="ISO 9001:2015 § 9.3.3 · se guarda al escribir"
+                footer={<button type="button" onClick={() => setEditandoSalidas(false)} className="px-4 py-2 text-xs font-bold text-white bg-[#0B192C] hover:bg-[#152e4d] rounded-lg">Listo</button>}>
+                {SALIDAS_DIRECCION.map(([campo, etiqueta, ejemplo]) => (
+                  <label key={campo} className="block text-xs font-bold text-slate-700">{etiqueta}
+                    <textarea rows={3} value={revisionActual.salidasDireccion?.[campo] || ''} onChange={(e) => handleActualizarSalidas(campo, e.target.value)} placeholder={ejemplo}
+                      className="mt-1 w-full px-3 py-2 text-sm font-normal bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-900" />
+                  </label>
+                ))}
+              </ModalBase>
+            )}
 
             {/* Firmas Institucionales */}
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">

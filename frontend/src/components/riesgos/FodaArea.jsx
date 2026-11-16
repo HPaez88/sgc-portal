@@ -1,7 +1,8 @@
 // Riesgos → FODA y propósito: para revisar con cada área en reunión el propósito y su FODA.
 // Se guarda en la ficha del área del catálogo (lo mismo que se ve en Configuración) y la IA lo usa.
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Save, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Save, CheckCircle2, AlertTriangle, Pencil } from 'lucide-react';
+import ModalBase from '../common/ModalBase';
 import FodaEditor from './FodaEditor';
 import { useToast } from '../common/Toast';
 import { normalizarFoda, fodaVacio, FODA_VACIO } from '../../constants/foda';
@@ -23,9 +24,11 @@ export default function FodaArea({ areas, areaInicial, areasDetalle, setAreasDet
   const [area, setArea] = useState(areaInicial || areas[0]?.nombre || '');
   const ficha = areasDetalle.find((a) => a.nombre === area) || {};
   const [borrador, setBorrador] = useState(null);
-  useEffect(() => {
+  const [editando, setEditando] = useState(false);
+  const reiniciar = () => {
     setBorrador({ proposito: ficha.proposito || '', foda: { ...FODA_VACIO, ...(ficha.foda || {}) }, revisado: ficha.foda_estado === 'revisado' });
-  }, [area, ficha.proposito, ficha.foda, ficha.foda_estado]); // eslint-disable-line react-hooks/exhaustive-deps
+  };
+  useEffect(reiniciar, [area, ficha.proposito, ficha.foda, ficha.foda_estado]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!borrador) return null;
 
   const guardar = () => {
@@ -40,7 +43,28 @@ export default function FodaArea({ areas, areaInicial, areasDetalle, setAreasDet
     })));
     registrarMovimiento?.({ modulo: 'RIESGOS', accion: 'FODA_AREA', descripcion: `FODA y propósito de ${area} ${borrador.revisado ? 'revisados con el área' : 'actualizados (borrador)'}`, folio: 'FODA' });
     toast.success(`FODA y propósito de ${area} guardados en el catálogo.`);
+    setEditando(false);
   };
+
+  const campos = (editable) => (
+    <>
+      <section className="bg-white rounded-xl border border-slate-200 p-4 space-y-2">
+        <h4 className="text-sm font-extrabold text-slate-900">Propósito del área</h4>
+        <p className="text-[11px] text-slate-600">Para qué existe el área, qué entrega y a quién.</p>
+        <TextoAuto value={borrador.proposito} disabled={!editable} onChange={(e) => setBorrador({ ...borrador, proposito: e.target.value })} />
+      </section>
+
+      <section className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h4 className="text-sm font-extrabold text-slate-900">Análisis FODA</h4>
+          <p className="text-[11px] text-slate-600">La IA lo toma como referencia para sugerir riesgos y oportunidades.</p>
+        </div>
+        {fodaVacio(ficha.foda) && !editable
+          ? <p className="text-sm text-slate-500">El SGC aún no captura el FODA de esta área.</p>
+          : <FodaEditor foda={borrador.foda} soloLectura={!editable} onChange={(foda) => setBorrador({ ...borrador, foda })} />}
+      </section>
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -54,6 +78,7 @@ export default function FodaArea({ areas, areaInicial, areasDetalle, setAreasDet
               : <span className="inline-flex items-center gap-1 text-amber-700 font-semibold"><AlertTriangle size={13} /> Borrador: falta revisarlo con el área</span>}
           </p>
         </div>
+        {puedeEditar && <button type="button" onClick={() => setEditando(true)} className="px-4 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><Pencil size={15} /> Editar propósito y FODA</button>}
         {puedeElegirArea && (
           <label className="flex items-center gap-2 text-xs font-bold text-slate-700">Área
             <select value={area} onChange={(e) => setArea(e.target.value)} className="p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold max-w-xs">
@@ -63,30 +88,20 @@ export default function FodaArea({ areas, areaInicial, areasDetalle, setAreasDet
         )}
       </div>
 
-      <section className="bg-white rounded-xl border border-slate-200 p-4 space-y-2">
-        <h4 className="text-sm font-extrabold text-slate-900">Propósito del área</h4>
-        <p className="text-[11px] text-slate-600">Para qué existe el área, qué entrega y a quién.</p>
-        <TextoAuto value={borrador.proposito} disabled={!puedeEditar} onChange={(e) => setBorrador({ ...borrador, proposito: e.target.value })} />
-      </section>
-
-      <section className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h4 className="text-sm font-extrabold text-slate-900">Análisis FODA</h4>
-          <p className="text-[11px] text-slate-600">La IA lo toma como referencia para sugerir riesgos y oportunidades.</p>
-        </div>
-        {fodaVacio(ficha.foda) && !puedeEditar
-          ? <p className="text-sm text-slate-500">El SGC aún no captura el FODA de esta área.</p>
-          : <FodaEditor foda={borrador.foda} soloLectura={!puedeEditar} onChange={(foda) => setBorrador({ ...borrador, foda })} />}
-      </section>
-
-      {puedeEditar && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 p-4">
-          <label className="flex items-start gap-2 text-sm text-slate-800">
-            <input type="checkbox" className="mt-1" checked={borrador.revisado} onChange={(e) => setBorrador({ ...borrador, revisado: e.target.checked })} />
-            <span><strong>Revisado con el área en reunión</strong><span className="block text-[11px] text-slate-600">Marca cuando el propósito y el FODA ya se acordaron con el área.</span></span>
-          </label>
-          <button type="button" onClick={guardar} className="px-4 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><Save size={15} /> Guardar en el catálogo</button>
-        </div>
+      {campos(false)}
+      {editando && (
+        <ModalBase isOpen onClose={() => { reiniciar(); setEditando(false); }} size="xl" closeOnBackdrop={false} closeOnEscape={false} icono={<Pencil size={20} />} bodyClassName="p-5 space-y-4 bg-slate-50"
+          titulo="Propósito y análisis FODA" subtitulo={`${area} · se guarda en la ficha del área del catálogo`}
+          footer={<>
+            <label className="mr-auto flex items-start gap-2 text-xs text-slate-800">
+              <input type="checkbox" className="mt-0.5" checked={borrador.revisado} onChange={(e) => setBorrador({ ...borrador, revisado: e.target.checked })} />
+              <span><strong>Revisado con el área en reunión</strong><span className="block text-[11px] text-slate-600">Marca cuando el propósito y el FODA ya se acordaron con el área.</span></span>
+            </label>
+            <button type="button" onClick={() => { reiniciar(); setEditando(false); }} className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="button" onClick={guardar} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><Save size={14} /> Guardar en el catálogo</button>
+          </>}>
+          {campos(true)}
+        </ModalBase>
       )}
     </div>
   );

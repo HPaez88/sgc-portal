@@ -1,7 +1,8 @@
 // Síntesis estratégica de una dirección o del organismo: FODA consolidado, riesgos y oportunidades
 // prioritarios (de todos los niveles) y plan con líneas de acción. La IA propone, el SGC edita y guarda.
 import React, { useEffect, useState } from 'react';
-import { Sparkles, Save, Plus, X, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Sparkles, Save, Plus, X, CheckCircle2, AlertTriangle, Pencil } from 'lucide-react';
+import ModalBase from '../common/ModalBase';
 import FodaEditor from './FodaEditor';
 import { api } from '../../services/apiClient';
 import { useToast } from '../common/Toast';
@@ -34,6 +35,8 @@ export default function SintesisPanel({ nivel, nombre, anio, unidades, valor, on
   const [s, setS] = useState(valor || SINTESIS_VACIA);
   const [revisado, setRevisado] = useState(valor?.estado === 'revisado');
   const [pensando, setPensando] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const cerrar = () => { setS(valor || SINTESIS_VACIA); setRevisado(valor?.estado === 'revisado'); setEditando(false); };
   const { confirmar, props: propsDialogos } = useDialogos();
   useEffect(() => { setS(valor || SINTESIS_VACIA); setRevisado(valor?.estado === 'revisado'); }, [valor, nombre, anio]);
   const conInfo = unidades.filter((u) => !fodaVacio(u.foda) || (u.registros || []).length);
@@ -51,40 +54,21 @@ export default function SintesisPanel({ nivel, nombre, anio, unidades, valor, on
     if (!r.ok) return toast.error('La IA no respondió. Intenta de nuevo en un momento.');
     setS(normalizarSintesis(r.data));
     setRevisado(false);
+    setEditando(true);
     toast.success('Propuesta lista: revísala, ajústala y guarda.');
   };
 
   const guardar = () => {
     onGuardar({ ...s, foda: normalizarFoda(s.foda), estado: revisado ? 'revisado' : 'borrador', actualizado: new Date().toISOString(), por: usuarioLogueado?.nombre || '' });
     toast.success('Síntesis guardada.');
+    setEditando(false);
   };
 
   const editarLista = (clave, i, patch) => setS({ ...s, [clave]: s[clave].map((x, k) => (k === i ? { ...x, ...patch } : x)) });
   const quitar = (clave, i) => setS({ ...s, [clave]: s[clave].filter((_, k) => k !== i) });
-  const ro = !puedeEditar;
-
-  return (
+  // Los mismos bloques se muestran en la página (solo lectura) y en la ventana de edición.
+  const bloques = (puedeEditar, ro = !puedeEditar) => (
     <div className="space-y-4">
-      <Dialogos {...propsDialogos} />
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 p-4">
-        <div>
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Síntesis {anio} · {conInfo.length} de {unidades.length} {unidad} con información</p>
-          <h3 className="text-lg font-extrabold text-slate-900">{nombre}</h3>
-          <p className="text-xs mt-0.5">
-            {valor?.estado === 'revisado'
-              ? <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold"><CheckCircle2 size={13} /> Revisada · {formatearFecha(valor.actualizado)}</span>
-              : valor ? <span className="inline-flex items-center gap-1 text-amber-700 font-semibold"><AlertTriangle size={13} /> Borrador · {formatearFecha(valor.actualizado)}</span>
-                : <span className="text-slate-500">Aún no se arma la síntesis de {anio}.</span>}
-          </p>
-        </div>
-        {puedeEditar && (
-          <button type="button" onClick={sugerir} disabled={pensando || !conInfo.length}
-            className="px-4 py-2 text-sm font-bold text-violet-800 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 disabled:opacity-50 inline-flex items-center gap-1.5">
-            <Sparkles size={15} /> {pensando ? 'Armando la síntesis…' : `Proponer con IA desde sus ${unidad}`}
-          </button>
-        )}
-      </div>
-
       <Bloque titulo="FODA consolidado" nota="Solo lo de mayor peso (máx. 5 por cuadrante)">
         <FodaEditor foda={s.foda} soloLectura={ro} onChange={(foda) => setS({ ...s, foda })} />
       </Bloque>
@@ -151,15 +135,46 @@ export default function SintesisPanel({ nivel, nombre, anio, unidades, valor, on
       <Bloque titulo="Conclusión para el informe">
         <textarea rows={3} value={s.conclusion} disabled={ro} onChange={(e) => setS({ ...s, conclusion: e.target.value })} className={campo} />
       </Bloque>
+    </div>
+  );
 
-      {puedeEditar && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 p-4">
-          <label className="flex items-start gap-2 text-sm text-slate-800">
-            <input type="checkbox" className="mt-1" checked={revisado} onChange={(e) => setRevisado(e.target.checked)} />
-            <span><strong>Revisada y lista para el informe</strong><span className="block text-[11px] text-slate-600">Mientras sea borrador, el informe la muestra marcada como preliminar.</span></span>
-          </label>
-          <button type="button" onClick={guardar} className="px-4 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><Save size={15} /> Guardar síntesis {anio}</button>
+  return (
+    <div className="space-y-4">
+      <Dialogos {...propsDialogos} />
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 p-4">
+        <div>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Síntesis {anio} · {conInfo.length} de {unidades.length} {unidad} con información</p>
+          <h3 className="text-lg font-extrabold text-slate-900">{nombre}</h3>
+          <p className="text-xs mt-0.5">
+            {valor?.estado === 'revisado'
+              ? <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold"><CheckCircle2 size={13} /> Revisada · {formatearFecha(valor.actualizado)}</span>
+              : valor ? <span className="inline-flex items-center gap-1 text-amber-700 font-semibold"><AlertTriangle size={13} /> Borrador · {formatearFecha(valor.actualizado)}</span>
+                : <span className="text-slate-500">Aún no se arma la síntesis de {anio}.</span>}
+          </p>
         </div>
+        {puedeEditar && (<span className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setEditando(true)} className="px-4 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><Pencil size={15} /> Editar síntesis</button>
+          <button type="button" onClick={sugerir} disabled={pensando || !conInfo.length}
+            className="px-4 py-2 text-sm font-bold text-violet-800 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 disabled:opacity-50 inline-flex items-center gap-1.5">
+            <Sparkles size={15} /> {pensando ? 'Armando la síntesis…' : `Proponer con IA desde sus ${unidad}`}
+          </button>
+        </span>)}
+      </div>
+
+      {bloques(false)}
+      {editando && (
+        <ModalBase isOpen onClose={cerrar} size="3xl" closeOnBackdrop={false} closeOnEscape={false} icono={<Pencil size={20} />} bodyClassName="p-5 bg-slate-50"
+          titulo={`Síntesis ${anio} · ${nombre}`} subtitulo="FODA consolidado, riesgos y oportunidades prioritarios, plan y conclusión para el informe"
+          footer={<>
+            <label className="mr-auto flex items-start gap-2 text-xs text-slate-800">
+              <input type="checkbox" className="mt-0.5" checked={revisado} onChange={(e) => setRevisado(e.target.checked)} />
+              <span><strong>Revisada y lista para el informe</strong><span className="block text-[11px] text-slate-600">Mientras sea borrador, el informe la muestra marcada como preliminar.</span></span>
+            </label>
+            <button type="button" onClick={cerrar} className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="button" onClick={guardar} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><Save size={14} /> Guardar síntesis {anio}</button>
+          </>}>
+          {bloques(true)}
+        </ModalBase>
       )}
     </div>
   );

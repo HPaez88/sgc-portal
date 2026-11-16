@@ -1,11 +1,12 @@
 // Setup anual de indicadores: proyectos por área (normalmente uno; se permiten varios), con sus fichas, PEMS y avance.
 // Captura: encargado del área o SGC. Aprobación: administradores del SGC. Formatos oficiales: los genera el servidor.
 import React, { useMemo, useState } from 'react';
-import { FolderKanban, Plus, RefreshCw, Lock, FileText, FileSpreadsheet, Send, CheckCircle2, Undo2, Save, X, Download, ClipboardList } from 'lucide-react';
+import { FolderKanban, Plus, RefreshCw, Lock, FileText, FileSpreadsheet, Send, CheckCircle2, Undo2, Save, Download, ClipboardList } from 'lucide-react';
 import { useLocalStorage } from '../../hooks';
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import Dialogos, { useDialogos } from '../common/Dialogos';
+import ModalBase from '../common/ModalBase';
 import { esAdminSGC } from '../../constants/workflow';
 import { puedeCapturarArea } from '../../constants/riesgos';
 import { descargarFormatoOficial } from '../../services/formatosOficiales';
@@ -192,6 +193,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
     setBorrador(null);
   };
 
+  let ventanaProyecto = null;
   if (borrador) {
     // Formato oficial: se descarga en su archivo original (Word/Excel) o en PDF; el diseño no se toca.
     const BotonDescarga = ({ tipo, actividad = 0, children, Icono }) => (
@@ -206,14 +208,12 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
       </span>
     );
     const ultimaNota = (borrador.historial || []).slice(-1)[0];
-    return (
-      <div className="space-y-3">
-        <Dialogos {...dialogos} />
-        <header className="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-start justify-between gap-3">
+    ventanaProyecto = (
+      <ModalBase isOpen onClose={cerrar} size="4xl" closeOnBackdrop={false} closeOnEscape={false} icono={<FolderKanban size={20} />} bodyClassName="p-4 space-y-3 bg-slate-50"
+        titulo={borrador.nombre || 'Proyecto sin nombre'} subtitulo={`Proyecto ${borrador.anio} · ${borrador.area}`}>
+        <header className="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-marca-azul-oscuro">Proyecto {borrador.anio} · {borrador.area}</p>
-            <h3 className="text-base font-extrabold text-slate-900">{borrador.nombre || 'Proyecto sin nombre'}</h3>
-            <div className="flex flex-wrap items-center gap-2 mt-1"><Estado estado={borrador.estado} />
+            <div className="flex flex-wrap items-center gap-2"><Estado estado={borrador.estado} />
               {ultimaNota && <span className="text-[11px] text-slate-600">{ultimaNota.texto} — {ultimaNota.usuario}</span>}</div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -222,7 +222,6 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
             {esAdmin && borrador.estado !== 'APROBADO' && <button type="button" onClick={() => cambiarEstado('APROBADO')} className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:opacity-90 inline-flex items-center gap-1.5"><CheckCircle2 size={14} /> Aprobar</button>}
             {esAdmin && borrador.estado !== 'BORRADOR' && original && <button type="button" onClick={() => cambiarEstado('BORRADOR')} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><Undo2 size={14} /> {borrador.estado === 'APROBADO' ? 'Abrir para que el área modifique' : 'Devolver al área'}</button>}
             <BotonInformePDF onClick={() => informeProyectosPDF([borrador], borrador.anio)} />
-            <button type="button" onClick={cerrar} className="px-3 py-1.5 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><X size={14} /> Cerrar</button>
           </div>
         </header>
         {original && !puedeEditar && puedeArea && (
@@ -237,12 +236,13 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
           </section>
         )}
         <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} editableAvance={Boolean(puedeArea)} resultados={indicadoresData.resultados || {}} />
-      </div>
+      </ModalBase>
     );
   }
 
   return (
     <div className="space-y-4">
+      {ventanaProyecto}
       <Dialogos {...dialogos} />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
