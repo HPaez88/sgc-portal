@@ -1,6 +1,10 @@
 # CHANGELOG — SGC Portal OOMAPASC de Cajeme
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
+## 2026-11-16 — Matriz de riesgos: cierre de pendientes menores
+- Cobertura del informe cuenta todas las unidades que entregan matriz (áreas, direcciones y subdirecciones); el PDF indica cuántos registros siguen en captura y no se incluyen; "Dar de alta" respeta el permiso de edición; al replantear, el plan anterior queda en el historial del riesgo.
+- Prueba de punta a punta contra el servidor (alta → envío → aceptación → PM ligado → dictamen) con las reglas nuevas.
+
 ## 2026-11-15 — Auditoría Matriz de Riesgos (OOMRSC-37), fase 1
 - Servidor valida `sgc-matrices-riesgos` y `sgc-riesgos`: transiciones de la matriz (captura→enviada→aceptada/observada→reabrir), solo el SGC acepta/devuelve/reabre, el área no toca matrices enviadas/aceptadas ni riesgos con plan, escala oficial (prob 1–5, impacto 2–10), tratamiento del tipo, dictamen solo SGC con nota y PM cerrado, observaciones no se borran. PM ligados a riesgo: solo el SGC los crea y un riesgo no tiene dos activos (evita la aceptación doble).
 - Eficacia del tablero e informe cuenta todos los dictámenes (incluidos los no eficaces replanteados); "por dictaminar" incluye PM no encontrado; la síntesis IA solo usa registros oficiales.

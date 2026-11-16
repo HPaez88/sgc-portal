@@ -68,7 +68,9 @@ export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, are
   const [porNombre, claveDesglose] = tipoAlc === 'ORG' ? ['Dirección', (r) => sinDir(dirDe(r))] : tipoAlc === 'D' ? ['Área', (r) => r.area] : ['Proceso', (r) => r.proceso];
   const desglose = desgloseRiesgos(items, planesMejora, claveDesglose);
 
-  const areasDelAlcance = tipoAlc === 'A' ? [valorAlc] : areasDetalle.filter((a) => tipoAlc === 'ORG' || normalizarDireccion(a.direccion) === valorAlc).map((a) => a.nombre);
+  // Cobertura: todas las unidades que entregan matriz (áreas, direcciones y subdirecciones), como en Revisión SGC.
+  const fuenteUnidades = unidades.length ? unidades : areasDetalle;
+  const areasDelAlcance = tipoAlc === 'A' ? [valorAlc] : fuenteUnidades.filter((a) => tipoAlc === 'ORG' || normalizarDireccion(a.direccion) === valorAlc || normalizarDireccion(a.nombre) === valorAlc).map((a) => a.nombre);
   const cobertura = { total: areasDelAlcance.length, aceptadas: areasDelAlcance.filter((a) => matrices.find((m) => m.id === idMatriz(a, anio))?.estado === 'ACEPTADA').length };
   const hallazgos = hallazgosRiesgos({ actual, anterior, desglose, cobertura, anio });
 
@@ -96,7 +98,7 @@ export default function InformeRiesgos({ lista, enCaptura = 0, planesMejora, are
 
   const descargar = () => {
     try {
-      const archivo = exportarInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario: usuarioLogueado?.nombre, sintesis, fodaAlcance });
+      const archivo = exportarInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario: usuarioLogueado?.nombre, sintesis, fodaAlcance, enCaptura });
       toast.success(`Informe descargado: ${archivo}`);
       registrarMovimiento?.({ modulo: 'RIESGOS', accion: 'CONSULTA_INFORME', descripcion: `Descarga del informe de riesgos ${anio} · ${nombreAlcance}`, folio: 'OOMRSC-37' });
     } catch (e) {

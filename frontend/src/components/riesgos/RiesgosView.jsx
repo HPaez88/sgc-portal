@@ -74,7 +74,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
   const replantear = (r, motivo) => {
     setRiesgos((prev) => prev.map((x) => (x.id !== r.id ? x : {
       ...x, estado: 'IDENTIFICADO', pm_id: null, pm_folio: null, dictamen: null, residual: null, plan: [],
-      historial_pm: [...(x.historial_pm || []), { pm_id: x.pm_id, pm_folio: x.pm_folio, dictamen: x.dictamen, residual: x.residual, fecha: new Date().toISOString() }],
+      historial_pm: [...(x.historial_pm || []), { pm_id: x.pm_id, pm_folio: x.pm_folio, dictamen: x.dictamen, residual: x.residual, plan: x.plan || [], fecha: new Date().toISOString() }],
     })));
     const m = listaMatrices.find((x) => x.id === idMatriz(r.area, r.anio));
     guardarMatriz({
@@ -162,7 +162,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
 
       {actual.id === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} enCaptura={enCaptura} />}
 
-      {actual.id === 'seguimiento' && (puedeTodasAreas ? esAdmin : puedeCapturarArea(usuarioLogueado, areaUsuario, areasDetalle)) && (
+      {actual.id === 'seguimiento' && (puedeTodasAreas ? esAdmin : (puedeCapturarArea(usuarioLogueado, areaUsuario, areasDetalle) && can(usuarioLogueado, 'editar'))) && (
         <section aria-label="Dar de alta" className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 border-l-4 border-l-marca-verde rounded-xl px-4 py-3">
           <p className="text-sm font-bold text-slate-800 mr-1">Dar de alta en la matriz {anioMatriz}</p>
           {puedeTodasAreas && (

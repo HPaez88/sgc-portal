@@ -33,7 +33,7 @@ function mapa(doc, x, y, tipo, items) {
   doc.text('Prob.', x, y - 2 + 5 * celda + 10);
 }
 
-export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario, sintesis = null, fodaAlcance = null }) {
+export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, comparativo, desglose, porNombre, hallazgos, altos, items, usuario, sintesis = null, fodaAlcance = null, enCaptura = 0 }) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -119,6 +119,9 @@ export function construirInformeRiesgosPDF({ nombreAlcance, anio, actual, compar
     tabla('Conclusión', ['Para la toma de decisiones'], [[sintesis.conclusion]]);
   }
 
+  if (enCaptura > 0) {
+    tabla('Nota', ['Alcance del informe'], [[`Solo incluye lo aceptado por el SGC. ${enCaptura} registro(s) de ${anio} siguen en captura o revisión y no se consideran.`]]);
+  }
   piePDF(doc, `OOMAPAS de Cajeme · Informe ${CLAVE_MATRIZ} ${anio} · ${nombreAlcance}`);
   return doc;
 }
