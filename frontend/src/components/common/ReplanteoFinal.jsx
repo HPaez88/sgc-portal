@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { CalendarClock } from 'lucide-react';
 import ModalCorreo from './ModalCorreo';
+import ModalBase from './ModalBase';
 import { useSGC } from '../../SGCContext';
 import {
   MAX_REPLANTEOS, esAdminSGC, esCerrado, normalizarEstado, leerActividades, formatearFecha,
@@ -120,26 +121,27 @@ export default function ReplanteoFinal({ registro, guardar, modulo, folio, onNoE
       )}
 
       {abierto && (
-        <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-3 border-t border-slate-100 pt-3">
-          <label className="text-xs font-bold text-slate-700">Nueva fecha final
+        <ModalBase isOpen onClose={() => { setAbierto(false); setError(''); }} size="sm" closeOnBackdrop={false} icono={<CalendarClock size={20} />} bodyClassName="p-5 space-y-4"
+          titulo={modo === 'ajuste' ? 'Ajustar fecha final' : `Replanteo ${usados + 1} de ${MAX_REPLANTEOS}`} subtitulo={`${folio || 'Registro'} · fecha actual: ${formatearFecha(getFechaCompromiso(registro))}`}
+          footer={<>
+            <button type="button" onClick={() => { setAbierto(false); setError(''); }}
+              className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="button" onClick={confirmar}
+              className="px-3.5 py-2 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 rounded-lg">
+              {modo === 'ajuste' ? 'Guardar fecha' : `Guardar replanteo ${usados + 1}/${MAX_REPLANTEOS}`}
+            </button>
+          </>}>
+          <label className="block text-xs font-bold text-slate-700">Nueva fecha final
             <CampoFecha value={fecha} onChange={(e) => setFecha(e.target.value)}
               className="mt-1 w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
           </label>
-          <label className="text-xs font-bold text-slate-700">{modo === 'ajuste' ? 'Nota (opcional)' : 'Justificación'}
-            <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} maxLength={1000}
+          <label className="block text-xs font-bold text-slate-700">{modo === 'ajuste' ? 'Nota (opcional)' : 'Justificación'}
+            <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={4} maxLength={1000}
               placeholder="Motivo del replanteo (queda en la bitácora)"
               className="mt-1 w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
           </label>
-          {error && <p className="sm:col-span-2 text-xs font-semibold text-rose-700">{error}</p>}
-          <div className="sm:col-span-2 flex justify-end gap-2">
-            <button type="button" onClick={() => { setAbierto(false); setError(''); }}
-              className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
-            <button type="button" onClick={confirmar}
-              className="px-3.5 py-1.5 text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 rounded-lg">
-              {modo === 'ajuste' ? 'Guardar fecha' : `Guardar replanteo ${usados + 1}/${MAX_REPLANTEOS}`}
-            </button>
-          </div>
-        </div>
+          {error && <p role="alert" className="text-xs font-semibold text-rose-700">{error}</p>}
+        </ModalBase>
       )}
       <ModalCorreo
         abierto={correoAbierto}

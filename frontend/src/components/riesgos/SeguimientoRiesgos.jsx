@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Gavel, RotateCcw } from 'lucide-react';
 import Dialogos, { useDialogos } from '../common/Dialogos';
+import ModalBase from '../common/ModalBase';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
 import { useToast } from '../common/Toast';
 import { getVencimiento, formatearFecha, esAdminSGC } from '../../constants/workflow';
@@ -133,8 +134,13 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
       </div>
 
       {dictamen && (
-        <section className="bg-white rounded-xl border-2 border-violet-200 p-4 space-y-3">
-          <h3 className="text-sm font-extrabold text-slate-900">Dictamen de eficacia · {dictamen.r.descripcion}</h3>
+        <ModalBase isOpen onClose={() => setDictamen(null)} size="md" closeOnBackdrop={false} icono={<Gavel size={20} />} bodyClassName="p-5 space-y-4"
+          titulo="Dictamen de eficacia" subtitulo={`${dictamen.r.tipo} · ${dictamen.r.area} · ${dictamen.r.descripcion}`}
+          footer={<>
+            <button type="button" onClick={() => setDictamen(null)} className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="button" disabled={!(dictamen.resultado || sugerido) || dictamen.nota.trim().length < 10}
+              onClick={() => setConfirmar(true)} className="px-4 py-2 text-xs font-bold text-white bg-violet-700 hover:bg-violet-800 disabled:opacity-40 rounded-lg">Registrar dictamen</button>
+          </>}>
           <p className="text-xs text-slate-600">El auditor cerró el plan de mejora. {dictamen.r.tipo === 'Riesgo' ? 'Reevalúa el riesgo después de las acciones: si su nivel bajó, el tratamiento fue eficaz.' : 'Indica si la oportunidad se aprovechó.'}</p>
           <div className="flex flex-wrap items-end gap-4">
             <Chips titulo={ESCALAS[dictamen.r.tipo].ejeY + ' (ahora)'} opciones={ESCALAS[dictamen.r.tipo].probabilidad} valor={dictamen.probabilidad} onElegir={(n) => setDictamen({ ...dictamen, probabilidad: n })} />
@@ -147,13 +153,10 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
                 className={`px-4 py-1.5 rounded-lg border text-xs font-bold ${(dictamen.resultado || sugerido) === v ? (v === 'EFICAZ' ? 'bg-emerald-700 text-white border-emerald-700' : 'bg-rose-700 text-white border-rose-700') : 'bg-white text-slate-700 border-slate-200'}`}>{l}</button>
             ))}
           </div>
-          <textarea rows={2} value={dictamen.nota} onChange={(e) => setDictamen({ ...dictamen, nota: e.target.value })} placeholder="Fundamento del dictamen (evidencia revisada, resultado del auditor)" className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs" />
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setDictamen(null)} className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
-            <button type="button" disabled={!(dictamen.resultado || sugerido) || dictamen.nota.trim().length < 10}
-              onClick={() => setConfirmar(true)} className="px-4 py-1.5 text-xs font-bold text-white bg-violet-700 hover:bg-violet-800 disabled:opacity-40 rounded-lg">Registrar dictamen</button>
-          </div>
-        </section>
+          <label className="block text-xs font-bold text-slate-800">Fundamento del dictamen (mínimo 10 caracteres)
+            <textarea rows={3} value={dictamen.nota} onChange={(e) => setDictamen({ ...dictamen, nota: e.target.value })} placeholder="Evidencia revisada, resultado del auditor" className="mt-1 w-full p-2 font-normal bg-white border border-slate-300 rounded-lg text-sm" />
+          </label>
+        </ModalBase>
       )}
 
       <Dialogos {...propsDialogos} />

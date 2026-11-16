@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Inbox, RefreshCw, Send, Archive, Sparkles, AlertTriangle, CheckCircle2, UserX } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { useToast } from '../common/Toast';
+import ModalBase from '../common/ModalBase';
 import { formatearFecha } from '../../constants/workflow';
 import AvisosAutomaticos from './AvisosAutomaticos';
 
@@ -77,36 +78,29 @@ export default function BuzonView() {
       </div>
 
       {abierto && (
-        <section className="bg-white rounded-xl border-2 border-marca-azul-oscuro/30 p-4 space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900">{abierto.asunto || '(sin asunto)'}</h3>
-              <p className="text-xs text-slate-600">{abierto.de_nombre ? `${abierto.de_nombre} · ` : ''}{abierto.de} · {hora(abierto.recibido)}</p>
-            </div>
-            <div className="flex items-center gap-2"><Etiqueta clasificacion={abierto.clasificacion} /><button type="button" onClick={() => setAbierto(null)} className="text-xs text-slate-600 hover:underline">Cerrar</button></div>
-          </div>
+        <ModalBase isOpen onClose={() => setAbierto(null)} size="md" closeOnBackdrop={abierto.estado !== 'PENDIENTE'} icono={<Inbox size={20} />} bodyClassName="p-5 space-y-3"
+          titulo={abierto.asunto || '(sin asunto)'} subtitulo={`${abierto.de_nombre ? `${abierto.de_nombre} · ` : ''}${abierto.de} · ${hora(abierto.recibido)}`}
+          footer={abierto.estado === 'PENDIENTE' ? <>
+            <button type="button" disabled={enviando} onClick={() => accion('descartar')} className="mr-auto px-3 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><Archive size={14} /> Archivar sin responder</button>
+            <button type="button" disabled={enviando || borrador.trim().length < 5} onClick={() => accion('responder')} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 disabled:opacity-40 inline-flex items-center gap-1.5"><Send size={14} /> {enviando ? 'Enviando…' : 'Enviar respuesta'}</button>
+          </> : <button type="button" onClick={() => setAbierto(null)} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90">Cerrar</button>}>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">Mensaje recibido <Etiqueta clasificacion={abierto.clasificacion} /></div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 whitespace-pre-wrap">{abierto.texto || '(sin texto)'}</div>
           {(abierto.resumen || abierto.motivo_escalar) && (
             <p className="text-xs text-slate-700"><strong>IA:</strong> {abierto.resumen}{abierto.motivo_escalar ? ` — ${abierto.motivo_escalar}` : ''}</p>
           )}
           {abierto.estado === 'PENDIENTE' ? (
-            <>
               <label className="block">
                 <span className="block text-xs font-bold text-slate-800 mb-1">{abierto.respuesta_propuesta ? 'Respuesta propuesta por la IA (revísala y edítala)' : 'Tu respuesta'}</span>
                 <textarea rows={6} value={borrador} onChange={(e) => setBorrador(e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none" />
               </label>
-              <div className="flex flex-wrap justify-end gap-2">
-                <button type="button" disabled={enviando} onClick={() => accion('descartar')} className="px-3 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 inline-flex items-center gap-1.5"><Archive size={14} /> Archivar sin responder</button>
-                <button type="button" disabled={enviando || borrador.trim().length < 5} onClick={() => accion('responder')} className="px-4 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 disabled:opacity-40 inline-flex items-center gap-1.5"><Send size={14} /> {enviando ? 'Enviando…' : 'Enviar respuesta'}</button>
-              </div>
-            </>
           ) : (
             <p className="text-xs text-slate-700 flex items-start gap-1.5"><CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
               {abierto.estado === 'RESPONDIDO' ? `Respondido por ${abierto.respondido_por} el ${hora(abierto.respondido_en)}:` : `Archivado por ${abierto.respondido_por || 'el sistema'}.`}
               {abierto.respuesta_enviada && <span className="block whitespace-pre-wrap text-slate-900 mt-1">{abierto.respuesta_enviada}</span>}
             </p>
           )}
-        </section>
+        </ModalBase>
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
