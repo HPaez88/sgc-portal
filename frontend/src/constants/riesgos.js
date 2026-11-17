@@ -171,6 +171,44 @@ export const pmDesdeRiesgo = (r, { folio, por, correos = [], ahora = new Date().
   };
 };
 
+// Lo que produce aceptar una matriz (igual en Revisión SGC y cuando el SGC acepta desde la captura):
+// cada registro con plan y sin PM recibe su Plan de Mejora; el resto queda en monitoreo; todo queda oficial.
+export const aceptacionDe = (items, { folios = [], por, correos = [], ahora = new Date().toISOString() }) => {
+  const cola = [...folios];
+  const nuevos = [];
+  const cambios = {};
+  items.forEach((r) => {
+    if (llevaPM(r) && !r.pm_id) {
+      const pm = pmDesdeRiesgo(r, { folio: cola.shift(), por, correos, ahora });
+      nuevos.push(pm);
+      cambios[r.id] = { estado: 'EN_TRATAMIENTO', pm_id: pm.id, pm_folio: pm.folio_codigo };
+    } else if (!r.pm_id) {
+      cambios[r.id] = { estado: 'MONITOREO' };
+    }
+    cambios[r.id] = { ...(cambios[r.id] || {}), oficial: true, fecha_aceptacion: ahora };
+  });
+  return { nuevos, cambios };
+};
+
+// Actividades de un plan de mejora (se guardan como texto JSON; algunos planes viejos las traen como lista).
+export const actividadesPM = (pm) => {
+  if (Array.isArray(pm?.actividades)) return pm.actividades;
+  try { const a = JSON.parse(pm?.actividades || '[]'); return Array.isArray(a) ? a : []; } catch { return []; }
+};
+
+// Cuando el SGC ajusta un registro que ya tiene plan de mejora, el plan refleja el cambio y conserva evidencias.
+// ponytail: empata por posición, por eso con PM no se quitan actividades (solo editar o agregar al final).
+export const pmSincronizado = (pm, r) => {
+  const previas = actividadesPM(pm);
+  const actividades = (r.plan || []).map((a, i) => ({
+    id: i + 1, indicador: '', indicador_progreso: '', evidencia_cargada: '', estatus: 'PENDIENTE', ...(previas[i] || {}),
+    actividad: a.actividad, responsable: a.responsable, fecha_termino_sugerida: a.fecha_termino_sugerida, evidencia_esperada: a.evidencia_esperada || '',
+  }));
+  const fechas = actividades.map((a) => a.fecha_termino_sugerida).filter(Boolean).sort();
+  return { ...pm, titulo_mejora: r.descripcion, proceso: r.proceso || '', actividades: JSON.stringify(actividades),
+    ...(fechas.length ? { fecha_limite: fechas[fechas.length - 1] } : {}) };
+};
+
 // Dictamen del SGC: en riesgos reevalúa (residual) y sugiere eficaz si el nivel bajó; el SGC confirma o corrige.
 export const sugerirEficacia = (r, residual) => {
   const antes = puntaje(r);

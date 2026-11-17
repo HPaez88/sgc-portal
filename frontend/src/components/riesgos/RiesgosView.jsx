@@ -136,7 +136,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
               <Icono size={16} aria-hidden="true" />
               {label}
               {cuenta != null && cuenta !== '' && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${alerta ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-700'}`}>{cuenta}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-extrabold ${alerta ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-700'}`}>{cuenta}</span>
               )}
             </button>
           ))}
@@ -149,14 +149,16 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
           areaInicial={accionAlta ? area : null} accionInicial={accionAlta} onAccionHecha={() => setAccionAlta(null)}
           propsMatriz={(a) => ({
             riesgos: lista, setRiesgos, guardarMatriz, procesos, usuarioLogueado, registrarMovimiento, onVerPM: verPM,
-            direccion: a.direccion || '', ...permisosDe(a.nombre),
+            direccion: a.direccion || '', ...permisosDe(a.nombre), esAdmin, setPlanesMejora,
+            correos: [...new Set([a.correo, ...(a.encargados_sgc || [])].filter(Boolean))],
           })} />
       )}
 
       {actual.id === 'matriz' && !puedeTodasAreas && (area ? (
         <MatrizArea area={area} direccion={direccion} anio={anio} riesgos={lista} setRiesgos={setRiesgos} matriz={matriz}
           guardarMatriz={guardarMatriz} procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento}
-          puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} onVerPM={verPM}
+          puedeEditar={puedeEditar} puedeEnviar={puedeEnviar} onVerPM={verPM} esAdmin={esAdmin} setPlanesMejora={setPlanesMejora}
+          correos={[...new Set([unidades.find((u) => u.nombre === area)?.correo, ...(unidades.find((u) => u.nombre === area)?.encargados_sgc || [])].filter(Boolean))]}
           accionInicial={accionAlta} onAccionHecha={() => setAccionAlta(null)} />
       ) : <p className="text-sm text-slate-600">Tu usuario no tiene un área asignada. Pide al SGC que te la asigne.</p>)}
 
@@ -185,7 +187,8 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
         </section>
       )}
 
-      {actual.id === 'seguimiento' && <SeguimientoRiesgos items={enSeguimiento} setRiesgos={setRiesgos} planesMejora={planesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} onVerPM={verPM} onReplantear={replantear} />}
+      {actual.id === 'seguimiento' && <SeguimientoRiesgos items={enSeguimiento} setRiesgos={setRiesgos} planesMejora={planesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} onVerPM={verPM} onReplantear={replantear}
+        enCaptura={visibles.filter((r) => Number(r.anio) === Number(anioMatriz) && !esOficial(r, listaMatrices)).length} anioMatriz={anioMatriz} onIrMatriz={() => setTab('matriz')} />}
 
       {actual.id === 'foda' && (
         <FodaArea areas={areasCatalogo} areaInicial={puedeTodasAreas ? area : areaUsuario} areasDetalle={areasDetalle} setAreasDetalle={setAreasDetalle}
@@ -201,7 +204,7 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
 
       {actual.id === 'revision' && esAdmin && (
         <RevisionMatrices anio={anio} areas={unidades} riesgos={lista} setRiesgos={setRiesgos} matrices={listaMatrices}
-          guardarMatriz={guardarMatriz} planesMejora={planesMejora} setPlanesMejora={setPlanesMejora} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />
+          guardarMatriz={guardarMatriz} planesMejora={planesMejora} setPlanesMejora={setPlanesMejora} procesos={procesos} onVerPM={verPM} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} />
       )}
     </div>
   );

@@ -28,23 +28,32 @@ function Campo({ etiqueta, requerido, ayuda, children, className = '' }) {
         {etiqueta}{requerido && <span className="text-rose-600" aria-hidden="true"> *</span>}
       </span>
       {children}
-      {ayuda && <span className="block text-[11px] text-slate-500 mt-1">{ayuda}</span>}
+      {ayuda && <span className="block text-xs text-slate-500 mt-1">{ayuda}</span>}
     </label>
   );
 }
 
+// Cada sección tiene su color para ubicar de un vistazo qué se está llenando.
+const COLOR_SECCION = {
+  1: ['bg-sky-50 border-l-sky-700', 'bg-sky-700'],
+  2: ['bg-indigo-50 border-l-indigo-700', 'bg-indigo-700'],
+  3: ['bg-amber-50 border-l-amber-600', 'bg-amber-600'],
+  4: ['bg-emerald-50 border-l-emerald-700', 'bg-emerald-700'],
+};
+
 function Seccion({ n, titulo, ayuda, completo, children }) {
+  const [franja, circulo] = COLOR_SECCION[n] || COLOR_SECCION[1];
   return (
     <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <header className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200 border-l-4 border-l-marca-azul-oscuro">
-        <span className="w-6 h-6 rounded-full bg-marca-azul-oscuro text-white text-xs font-black flex items-center justify-center shrink-0">{n}</span>
+      <header className={`flex flex-wrap items-center gap-3 px-4 py-2.5 border-b border-slate-200 border-l-4 ${franja}`}>
+        <span className={`w-7 h-7 rounded-full text-white text-sm font-black flex items-center justify-center shrink-0 ${circulo}`}>{n}</span>
         <div className="flex-1 min-w-0">
-          <h5 className="text-sm font-extrabold text-slate-900">{titulo}</h5>
-          {ayuda && <p className="text-[11px] text-slate-500">{ayuda}</p>}
+          <h5 className="text-base font-extrabold text-slate-900">{titulo}</h5>
+          {ayuda && <p className="text-xs text-slate-500">{ayuda}</p>}
         </div>
         {completo != null && (completo
-          ? <span className="text-[11px] font-bold text-emerald-700 inline-flex items-center gap-1"><CheckCircle2 size={14} /> Completo</span>
-          : <span className="text-[11px] font-bold text-amber-700 inline-flex items-center gap-1"><CircleDashed size={14} /> Por llenar</span>)}
+          ? <span className="text-xs font-bold text-emerald-700 inline-flex items-center gap-1"><CheckCircle2 size={14} /> Completo</span>
+          : <span className="text-xs font-bold text-amber-700 inline-flex items-center gap-1"><CircleDashed size={14} /> Por llenar</span>)}
       </header>
       <div className="p-4 space-y-4">{children}</div>
     </section>
@@ -64,7 +73,7 @@ function Escala({ titulo, opciones, valor, onElegir, deshabilitado }) {
           </button>
         ))}
       </div>
-      <p className="text-[11px] text-slate-500 mt-1 min-h-[1rem]">{elegido ? elegido[2] : 'Elige una opción'}</p>
+      <p className="text-xs text-slate-500 mt-1 min-h-[1rem]">{elegido ? elegido[2] : 'Elige una opción'}</p>
     </fieldset>
   );
 }
@@ -131,10 +140,10 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
           <Escala titulo={escala.ejeY} opciones={escala.probabilidad} valor={Number(r.probabilidad)} deshabilitado={soloLectura} onElegir={(n) => set({ probabilidad: n })} />
           <Escala titulo={escala.ejeX} opciones={escala.impacto} valor={Number(r.impacto)} deshabilitado={soloLectura} onElegir={(n) => set({ impacto: n })} />
           <div className={`rounded-xl border p-3 text-center ${nivel ? nivel.suave : 'bg-white text-slate-600 border-slate-200'}`} aria-live="polite">
-            <p className="text-[11px] font-bold uppercase tracking-wider">Nivel</p>
+            <p className="text-xs font-bold uppercase tracking-wider">Nivel</p>
             <p className="text-3xl font-black">{puntaje(r) || '—'}</p>
             <p className="text-xs font-bold">{nivel?.nivel || 'Sin evaluar'}</p>
-            {nivel && <p className="text-[10px] leading-snug mt-1">{nivel.importancia[r.tipo]}</p>}
+            {nivel && <p className="text-[11px] leading-snug mt-1">{nivel.importancia[r.tipo]}</p>}
           </div>
         </div>
       </Seccion>
@@ -153,7 +162,7 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
                     {t}
                   </button>
                 ))}
-                {!requierePlan(r) && <span className="text-[11px] text-slate-500">Nivel bajo: puede quedarse en monitoreo sin plan.</span>}
+                {!requierePlan(r) && <span className="text-xs text-slate-500">Nivel bajo: puede quedarse en monitoreo sin plan.</span>}
               </div>
               {requierePlan(r) && ['Aceptar', 'Posponer'].includes(r.tratamiento) && (
                 <label className="block mt-2 text-xs font-bold text-slate-800">Justificación para {r.tratamiento.toLowerCase()} sin plan (nivel {nivelDe(r)?.nivel}) <span className="text-rose-600" aria-hidden="true">*</span>
@@ -167,45 +176,41 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
               <div className="space-y-2">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-xs font-bold text-slate-800">Plan de acción{llevaPM(r) || requierePlan(r) ? <span className="text-rose-600" aria-hidden="true"> *</span> : ''}</p>
-                  <p className="text-[11px] text-slate-500">Actividad, responsable y fecha son obligatorios</p>
+                  <p className="text-xs text-slate-500">Actividad, responsable y fecha son obligatorios</p>
                 </div>
-                <div className="overflow-x-auto rounded-lg border border-slate-200">
-                  <table className="w-full min-w-[52rem] text-sm">
-                    <caption className="sr-only">Plan de acción</caption>
-                    <thead className="bg-slate-100 text-slate-700 text-left text-[11px] uppercase tracking-wider">
-                      <tr>
-                        <th scope="col" className="p-2 w-8 text-center">#</th>
-                        <th scope="col" className="p-2 min-w-[16rem]">Actividad *</th>
-                        <th scope="col" className="p-2 min-w-[11rem]">Responsable (puesto) *</th>
-                        <th scope="col" className="p-2 w-40 min-w-[10rem]">Fecha de término *</th>
-                        <th scope="col" className="p-2 min-w-[12rem]">Evidencia esperada</th>
-                        {!soloLectura && <th scope="col" className="p-2 w-8"><span className="sr-only">Quitar</span></th>}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 align-top">
-                      {plan.length === 0 && (
-                        <tr><td colSpan={6} className="p-4 text-center text-sm text-amber-800 bg-amber-50/50">Agrega al menos una actividad.</td></tr>
-                      )}
-                      {plan.map((a, i) => (
-                        <tr key={i}>
-                          <td className="p-2 text-center text-xs font-bold text-slate-500 pt-4">{i + 1}</td>
-                          <td className="p-2"><TextoAuto aria-label={`Actividad ${i + 1}`} value={a.actividad} falta={pide && !a.actividad?.trim()} disabled={soloLectura} onChange={(e) => setAct(i, { actividad: e.target.value })} /></td>
-                          <td className="p-2"><TextoAuto aria-label={`Responsable de la actividad ${i + 1}`} value={a.responsable} falta={pide && !a.responsable?.trim()} disabled={soloLectura} onChange={(e) => setAct(i, { responsable: e.target.value })} /></td>
-                          <td className="p-2"><CampoFecha aria-label={`Fecha de término de la actividad ${i + 1}`} className={`${base} ${borde(pide && !a.fecha_termino_sugerida)}`} value={a.fecha_termino_sugerida || ''} disabled={soloLectura} onChange={(e) => setAct(i, { fecha_termino_sugerida: e.target.value })} /></td>
-                          <td className="p-2"><TextoAuto aria-label={`Evidencia esperada de la actividad ${i + 1}`} value={a.evidencia_esperada} disabled={soloLectura} onChange={(e) => setAct(i, { evidencia_esperada: e.target.value })} /></td>
-                          {!soloLectura && (
-                            <td className="p-2 pt-3">
-                              <button type="button" onClick={() => set({ plan: plan.filter((_, k) => k !== i) })} aria-label={`Quitar actividad ${i + 1}`} className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50"><X size={15} /></button>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {plan.length === 0 && <p className="p-4 text-center text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">Agrega al menos una actividad.</p>}
+                <ol className="space-y-3">
+                  {plan.map((a, i) => (
+                    <li key={i} className="rounded-lg border border-emerald-200 bg-white overflow-hidden">
+                      <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-emerald-50 border-b border-emerald-200">
+                        <span className="text-sm font-extrabold text-emerald-900">Actividad {i + 1}</span>
+                        {/* Con plan de mejora ya generado no se quitan actividades: las evidencias se ligan por posición. */}
+                        {!soloLectura && !r.pm_id && (
+                          <button type="button" onClick={() => set({ plan: plan.filter((_, k) => k !== i) })} aria-label={`Quitar actividad ${i + 1}`} className="px-2 py-1 rounded-md text-xs font-semibold text-rose-700 hover:bg-rose-50 inline-flex items-center gap-1"><X size={14} /> Quitar</button>
+                        )}
+                      </div>
+                      <div className="p-3 space-y-3">
+                        <Campo etiqueta="Qué se va a hacer" requerido>
+                          <TextoAuto value={a.actividad} falta={pide && !a.actividad?.trim()} disabled={soloLectura} onChange={(e) => setAct(i, { actividad: e.target.value })} />
+                        </Campo>
+                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_12rem] gap-3">
+                          <Campo etiqueta="Responsable (puesto)" requerido>
+                            <TextoAuto value={a.responsable} falta={pide && !a.responsable?.trim()} disabled={soloLectura} onChange={(e) => setAct(i, { responsable: e.target.value })} />
+                          </Campo>
+                          <Campo etiqueta="Fecha de término" requerido>
+                            <CampoFecha className={`${base} ${borde(pide && !a.fecha_termino_sugerida)}`} value={a.fecha_termino_sugerida || ''} disabled={soloLectura} onChange={(e) => setAct(i, { fecha_termino_sugerida: e.target.value })} />
+                          </Campo>
+                        </div>
+                        <Campo etiqueta="Evidencia esperada" ayuda="Con qué documento o registro se comprobará que se hizo.">
+                          <TextoAuto value={a.evidencia_esperada} disabled={soloLectura} onChange={(e) => setAct(i, { evidencia_esperada: e.target.value })} />
+                        </Campo>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
                 {!soloLectura && (
                   <button type="button" onClick={() => set({ plan: [...plan, { actividad: '', responsable: '', fecha_termino_sugerida: '', evidencia_esperada: '' }] })}
-                    className="text-xs font-bold text-marca-azul-oscuro bg-white hover:bg-sky-50 px-3 py-1.5 rounded-lg border border-marca-azul/40 inline-flex items-center gap-1">
+                    className="text-sm font-bold text-marca-azul-oscuro bg-white hover:bg-sky-50 px-3 py-2 rounded-lg border border-marca-azul/40 inline-flex items-center gap-1">
                     <Plus size={14} /> Agregar actividad
                   </button>
                 )}
@@ -214,7 +219,7 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
 
             {r.pm_id ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3">
-                <p className="text-xs text-sky-900">Este plan ya es el <strong>Plan de Mejora {r.pm_folio}</strong>. El avance, las evidencias y el cierre se registran ahí.</p>
+                <p className="text-sm text-sky-900">Este plan ya es el <strong>Plan de Mejora {r.pm_folio}</strong>. El avance, las evidencias y el cierre se registran ahí.{!soloLectura && ' Lo que ajustes aquí se refleja en ese plan.'}</p>
                 {onVerPM && (
                   <button type="button" onClick={() => onVerPM({ id: r.pm_id })} className="px-3 py-1.5 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1">
                     Ir al plan de mejora <ArrowRight size={14} />
@@ -222,7 +227,7 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
                 )}
               </div>
             ) : conPlan && (
-              <p className="flex gap-2 items-start text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+              <p className="flex gap-2 items-start text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
                 <Info size={14} className="shrink-0 mt-0.5 text-marca-azul" />
                 Cuando el SGC acepte la matriz, estas actividades se convierten en un Plan de Mejora ya aprobado (con folio, responsables y fechas). No hay que capturarlo otra vez; desde aquí habrá un botón para ir a él.
               </p>

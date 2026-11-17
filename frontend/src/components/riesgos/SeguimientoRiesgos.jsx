@@ -1,19 +1,19 @@
 // Seguimiento de riesgos y oportunidades: su plan de mejora ligado, vencimiento y estado.
 // Cuando el auditor cierra el PM, el SGC dictamina la eficacia reevaluando el riesgo (segunda confirmación).
 import React, { useState } from 'react';
-import { Gavel, RotateCcw } from 'lucide-react';
+import { Gavel, RotateCcw, ListChecks, ArrowRight, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import Dialogos, { useDialogos } from '../common/Dialogos';
 import ModalBase from '../common/ModalBase';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
 import { useToast } from '../common/Toast';
 import { getVencimiento, formatearFecha, esAdminSGC } from '../../constants/workflow';
 import { getEstadoLabel } from '../../constants';
-import { ESCALAS, ESTADOS_RIESGO, nivelDe, puntaje, estadoRiesgo, sugerirEficacia } from '../../constants/riesgos';
+import { ESCALAS, ESTADOS_RIESGO, nivelDe, puntaje, estadoRiesgo, sugerirEficacia, actividadesPM } from '../../constants/riesgos';
 
 function Chips({ titulo, opciones, valor, onElegir }) {
   return (
     <div>
-      <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">{titulo}</p>
+      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">{titulo}</p>
       <div className="flex gap-1">
         {opciones.map(([n, nombre]) => (
           <button key={n} type="button" title={nombre} onClick={() => onElegir(n)}
@@ -24,7 +24,7 @@ function Chips({ titulo, opciones, valor, onElegir }) {
   );
 }
 
-export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, usuarioLogueado, registrarMovimiento, onVerPM, onReplantear }) {
+export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, usuarioLogueado, registrarMovimiento, onVerPM, onReplantear, enCaptura = 0, anioMatriz, onIrMatriz }) {
   const toast = useToast();
   const { solicitar, props: propsDialogos } = useDialogos();
   const pedirReplanteo = async (r) => {
@@ -37,11 +37,14 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
   const [filtroEstado, setFiltroEstado] = useState('ACTIVOS');
   const [dictamen, setDictamen] = useState(null); // { r, probabilidad, impacto, resultado, nota }
   const [confirmar, setConfirmar] = useState(false);
+  const [avance, setAvance] = useState(null); // id del registro cuyo avance se consulta
+  const hoy = new Date().toISOString().slice(0, 10);
   const esAdmin = esAdminSGC(usuarioLogueado);
 
   const todas = items.map((r) => {
     const pm = planesMejora.find((p) => String(p.id) === String(r.pm_id));
-    return { r, pm, estado: estadoRiesgo(r, planesMejora), venc: pm ? getVencimiento(pm) : null };
+    const acts = actividadesPM(pm);
+    return { r, pm, acts, hechas: acts.filter((a) => a.evidencia_real).length, estado: estadoRiesgo(r, planesMejora), venc: pm ? getVencimiento(pm) : null };
   }).filter((f) => f.estado !== 'IDENTIFICADO'); // lo que sigue en captura vive en la matriz, no aquí
   const pasa = (f, filtro) => {
     if (filtro === 'ACTIVOS') return !String(f.estado).startsWith('CERRADO') && f.estado !== 'MONITOREO';
@@ -71,10 +74,18 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
     toast.success('Dictamen registrado.');
   };
 
+  const enAvance = todas.find((f) => f.r.id === avance) || null;
+
   return (
     <div className="space-y-3">
+      {enCaptura > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 rounded-xl px-4 py-3">
+          <p className="text-sm text-amber-900"><strong>{enCaptura} registro(s) de la matriz {anioMatriz} siguen en captura.</strong> Sus actividades todavía no son plan de mejora: aparecen aquí cuando la matriz se acepta.</p>
+          {onIrMatriz && <button type="button" onClick={onIrMatriz} className="px-3 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1">Ir a la matriz <ArrowRight size={15} /></button>}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Mostrar</span>
+        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Mostrar</span>
         {[['ACTIVOS', 'En curso'], ['PENDIENTE_DICTAMEN', 'Por dictaminar'], ['PM_NO_ENCONTRADO', 'Sin plan de mejora'], ['PM_RECHAZADO', 'Plan rechazado'], ['MONITOREO', 'En monitoreo'], ['CERRADO_EFICAZ', 'Eficaces'], ['CERRADO_NO_EFICAZ', 'No eficaces'], ['TODOS', 'Todos']]
           .map(([v, l]) => [v, l, todas.filter((f) => pasa(f, v)).length])
           .filter(([v, , n]) => n > 0 || ['ACTIVOS', 'TODOS', filtroEstado].includes(v)) // no mostrar filtros vacíos
@@ -82,19 +93,19 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
           <button key={v} type="button" onClick={() => setFiltroEstado(v)}
             aria-pressed={filtroEstado === v}
             className={`px-3 py-1 rounded-full border text-xs font-semibold inline-flex items-center gap-1.5 ${filtroEstado === v ? 'bg-marca-azul-oscuro text-white border-marca-azul-oscuro' : 'bg-white text-slate-700 border-slate-200 hover:border-marca-azul'}`}>
-            {l}<span className={`text-[10px] font-extrabold ${filtroEstado === v ? 'text-white/80' : 'text-slate-500'}`}>{n}</span>
+            {l}<span className={`text-[11px] font-extrabold ${filtroEstado === v ? 'text-white/80' : 'text-slate-500'}`}>{n}</span>
           </button>
         ))}
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-50 text-slate-700 text-left border-b border-slate-200">
-            <tr><th scope="col" className="p-3">Nivel</th><th scope="col" className="p-3">Riesgo / oportunidad</th><th scope="col" className="p-3">Área</th><th scope="col" className="p-3">Plan de mejora</th><th scope="col" className="p-3">Vencimiento</th><th scope="col" className="p-3">Estado</th><th scope="col" className="p-3 text-right">Acción</th></tr>
+        <table className="w-full text-sm">
+          <thead className="bg-slate-100 text-slate-700 text-left text-xs uppercase tracking-wide border-b border-slate-200">
+            <tr><th scope="col" className="p-3">Nivel</th><th scope="col" className="p-3">Riesgo / oportunidad</th><th scope="col" className="p-3">Área</th><th scope="col" className="p-3">Plan de mejora</th><th scope="col" className="p-3">Avance</th><th scope="col" className="p-3">Vencimiento</th><th scope="col" className="p-3">Estado</th><th scope="col" className="p-3 text-right">Acción</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filas.length === 0 && (
-              <tr><td colSpan={7} className="p-8 text-center">
+              <tr><td colSpan={8} className="p-8 text-center">
                 {todas.length === 0 ? (
                   <>
                     <p className="text-sm font-semibold text-slate-700">Todavía no hay riesgos ni oportunidades en seguimiento.</p>
@@ -103,23 +114,35 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
                 ) : <p className="text-sm text-slate-500">No hay registros con este filtro.</p>}
               </td></tr>
             )}
-            {filas.map(({ r, pm, estado, venc }) => (
+            {filas.map(({ r, pm, acts, hechas, estado, venc }) => (
               <tr key={r.id} className={estado === 'PENDIENTE_DICTAMEN' ? 'bg-violet-50/50' : ''}>
-                <td className="p-3"><span className={`inline-block w-14 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(r)?.suave || ''}`}>{puntaje(r)}<span className="block text-[9px] font-bold">{nivelDe(r)?.nivel || ''}</span></span></td>
-                <td className="p-3 max-w-md"><span className="text-[10px] font-bold uppercase text-slate-500">{r.tipo}</span><br /><span className="text-slate-900 font-medium">{r.descripcion}</span></td>
-                <td className="p-3 text-slate-700">{r.area}<span className="block text-[11px] text-slate-500">{r.anio}</span></td>
+                <td className="p-3"><span className={`inline-block w-14 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(r)?.suave || ''}`}>{puntaje(r)}<span className="block text-[11px] font-bold">{nivelDe(r)?.nivel || ''}</span></span></td>
+                <td className="p-3 max-w-md"><span className="text-[11px] font-bold uppercase text-slate-500">{r.tipo}</span><br /><span className="text-slate-900 font-medium">{r.descripcion}</span></td>
+                <td className="p-3 text-slate-700">{r.area}<span className="block text-xs text-slate-500">{r.anio}</span></td>
                 <td className="p-3">
                   {pm ? (
                     <button type="button" onClick={() => onVerPM?.(pm)} className="font-mono font-bold text-sky-700 hover:underline text-left">
-                      {pm.folio_codigo}<br /><span className="font-sans font-normal text-[11px] text-slate-600">{getEstadoLabel(pm.estado)}{pm.resultado_cierre ? ` · auditor: ${pm.resultado_cierre}` : ''}</span>
+                      {pm.folio_codigo}<br /><span className="font-sans font-normal text-xs text-slate-600">{getEstadoLabel(pm.estado)}{pm.resultado_cierre ? ` · auditor: ${pm.resultado_cierre}` : ''}</span>
                     </button>
                   ) : <span className="text-slate-500">{r.tratamiento || '—'}</span>}
                 </td>
-                <td className="p-3">{venc && venc.nivel !== 'cerrado' ? <span className={`whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-bold border ${venc.color}`}>{venc.label}</span> : <span className="text-slate-400">—</span>}</td>
-                <td className="p-3"><span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-bold border ${ESTADOS_RIESGO[estado]?.color || ''}`}>{ESTADOS_RIESGO[estado]?.label || estado}</span>
-                  {r.dictamen && <span className="block text-[10px] text-slate-500 mt-0.5">{formatearFecha(r.dictamen.fecha)} · nivel {puntaje(r)} → {puntaje(r.residual)}</span>}
+                <td className="p-3">
+                  {pm && acts.length ? (
+                    <button type="button" onClick={() => setAvance(r.id)} aria-haspopup="dialog" className="text-left hover:underline">
+                      <span className="font-bold text-slate-900 whitespace-nowrap">{hechas} de {acts.length}</span>
+                      <span className="block text-xs text-slate-500">actividades con evidencia</span>
+                      <span className="block mt-1 h-1.5 w-24 rounded-full bg-slate-200 overflow-hidden"><span className="block h-full bg-emerald-600" style={{ width: `${Math.round((hechas / acts.length) * 100)}%` }} /></span>
+                    </button>
+                  ) : <span className="text-slate-400">—</span>}
                 </td>
-                <td className="p-3 text-right">
+                <td className="p-3">{venc && venc.nivel !== 'cerrado' ? <span className={`whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-bold border ${venc.color}`}>{venc.label}</span> : <span className="text-slate-400">—</span>}</td>
+                <td className="p-3"><span className={`inline-block whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-bold border ${ESTADOS_RIESGO[estado]?.color || ''}`}>{ESTADOS_RIESGO[estado]?.label || estado}</span>
+                  {r.dictamen && <span className="block text-[11px] text-slate-500 mt-0.5">{formatearFecha(r.dictamen.fecha)} · nivel {puntaje(r)} → {puntaje(r.residual)}</span>}
+                </td>
+                <td className="p-3 text-right space-y-1">
+                  {pm && acts.length > 0 && (
+                    <button type="button" onClick={() => setAvance(r.id)} aria-haspopup="dialog" className="px-2.5 py-1 rounded-md text-xs font-bold text-white bg-marca-azul-oscuro hover:opacity-90 inline-flex items-center gap-1 whitespace-nowrap"><ListChecks size={13} /> Ver actividades</button>
+                  )}
                   {['CERRADO_NO_EFICAZ', 'PM_RECHAZADO'].includes(estado) && esAdmin && onReplantear && (
                     <button type="button" onClick={() => pedirReplanteo(r)} className="px-2.5 py-1 rounded-md font-bold text-rose-800 bg-rose-50 border border-rose-200 hover:bg-rose-100 inline-flex items-center gap-1"><RotateCcw size={12} /> Replantear</button>
                   )}
@@ -132,6 +155,52 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
           </tbody>
         </table>
       </div>
+
+      {enAvance && (
+        <ModalBase isOpen onClose={() => setAvance(null)} size="xl" icono={<ListChecks size={20} />} bodyClassName="p-5 space-y-4 bg-slate-50"
+          titulo={`Seguimiento del plan ${enAvance.pm.folio_codigo || ''}`} subtitulo={`${enAvance.r.tipo} · ${enAvance.r.area} · ${enAvance.hechas} de ${enAvance.acts.length} actividades con evidencia`}
+          footer={<>
+            <button type="button" onClick={() => setAvance(null)} className="mr-auto px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cerrar</button>
+            <button type="button" onClick={() => onVerPM?.(enAvance.pm)} className="px-4 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90 inline-flex items-center gap-1">Abrir el plan de mejora para cargar evidencia <ArrowRight size={15} /></button>
+          </>}>
+          <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <h3 className="px-4 py-2 text-sm font-extrabold text-white bg-marca-azul-oscuro">A. {enAvance.r.tipo} que se atiende</h3>
+            <div className="p-4 flex flex-wrap items-start gap-3">
+              <span className={`inline-block w-16 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(enAvance.r)?.suave || ''}`}>{puntaje(enAvance.r)}<span className="block text-xs font-bold">{nivelDe(enAvance.r)?.nivel || ''}</span></span>
+              <p className="flex-1 min-w-[14rem] text-sm text-slate-900">{enAvance.r.descripcion}<span className="block text-xs text-slate-500 mt-1">Tratamiento: {enAvance.r.tratamiento || '—'} · Proceso: {enAvance.r.proceso || '—'}</span></p>
+            </div>
+          </section>
+          <section className="bg-white rounded-xl border border-emerald-200 overflow-hidden">
+            <h3 className="px-4 py-2 text-sm font-extrabold text-white bg-emerald-700">B. Actividades del plan y su avance</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <caption className="sr-only">Actividades del plan de mejora</caption>
+                <thead className="bg-slate-100 text-slate-700 text-left text-xs uppercase tracking-wide">
+                  <tr><th scope="col" className="px-3 py-2 w-8">#</th><th scope="col" className="px-3 py-2">Actividad</th><th scope="col" className="px-3 py-2">Responsable</th><th scope="col" className="px-3 py-2">Fecha de término</th><th scope="col" className="px-3 py-2">Avance</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 align-top">
+                  {enAvance.acts.map((a, i) => {
+                    const vencida = !a.evidencia_real && a.fecha_termino_sugerida && a.fecha_termino_sugerida < hoy;
+                    return (
+                      <tr key={i}>
+                        <td className="px-3 py-2.5 font-bold text-slate-500">{i + 1}</td>
+                        <td className="px-3 py-2.5 text-slate-900 min-w-[14rem]">{a.actividad}{a.evidencia_esperada && <span className="block text-xs text-slate-500 mt-0.5">Evidencia esperada: {a.evidencia_esperada}</span>}</td>
+                        <td className="px-3 py-2.5 text-slate-700">{a.responsable || '—'}</td>
+                        <td className="px-3 py-2.5 text-slate-700 whitespace-nowrap">{a.fecha_termino_sugerida ? formatearFecha(a.fecha_termino_sugerida) : '—'}</td>
+                        <td className="px-3 py-2.5">{a.evidencia_real
+                          ? <span className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-bold border bg-emerald-100 text-emerald-800 border-emerald-200"><CheckCircle2 size={13} /> Con evidencia</span>
+                          : vencida
+                            ? <span className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-bold border bg-rose-100 text-rose-800 border-rose-200"><AlertTriangle size={13} /> Vencida sin evidencia</span>
+                            : <span className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-bold border bg-slate-100 text-slate-700 border-slate-200"><Clock size={13} /> Pendiente</span>}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </ModalBase>
+      )}
 
       {dictamen && (
         <ModalBase isOpen onClose={() => setDictamen(null)} size="md" closeOnBackdrop={false} icono={<Gavel size={20} />} bodyClassName="p-5 space-y-4"

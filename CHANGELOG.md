@@ -2,6 +2,16 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-17 — Riesgos y oportunidades: seguimiento visible, aceptación directa del SGC y ajuste de registros
+
+Revisión del módulo a petición de @human: el trabajo capturado no llegaba a plan de mejora y los registros no se podían corregir.
+
+- **Aceptación directa:** cuando captura el SGC, el botón "Aceptar y generar planes" acepta la matriz en un solo paso (una confirmación) y genera los planes de mejora; el área sigue enviando al SGC. El servidor permite al SGC pasar una matriz a ACEPTADA sin el paso de envío (`flujo_reglas.py`). La lógica de aceptación quedó en `aceptacionDe` (compartida con Revisión SGC).
+- **Ajuste por el SGC:** el SGC puede ajustar cualquier registro no dictaminado, también en revisión, aceptado o con plan de mejora; si ya tiene plan, el plan refleja el cambio y conserva evidencias (`pmSincronizado`). Con plan generado no se quitan actividades (se editan o se agregan). En Revisión SGC cada registro se abre y se ajusta en ventana.
+- **Seguimiento:** columna de avance (actividades con evidencia) y ventana "Ver actividades" con responsable, fecha y estado de cada una; aviso de los registros que siguen en captura con acceso a la matriz.
+- **Sin registros en blanco:** "+ Riesgo / + Oportunidad" ya no guarda nada hasta que se captura algo.
+- **Legibilidad:** "Matriz por área" es una sola lista con buscador (sin pestañas de nivel ni grupos por dirección; empieza por las unidades con registros); los registros se muestran en tabla con títulos; el formulario tiene secciones de color y el plan de acción va en bloques por actividad, sin desplazamiento lateral; letra más grande.
+
 ## 2026-11-16 — Regla del portal: capturar y trabajar en ventana emergente
 
 Las listas solo enlistan; todo lo que se captura o modifica abre en ventana (`ModalBase`) con cabecera informativa, campos rotulados y acciones en el pie.

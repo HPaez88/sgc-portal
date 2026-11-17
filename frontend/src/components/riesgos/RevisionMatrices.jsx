@@ -1,7 +1,8 @@
 // Bandeja del SGC: estado de la matriz de cada área en el año; revisar, devolver con observaciones o aceptar.
 // Al aceptar, cada riesgo/oportunidad con plan genera su Plan de Mejora ligado (con folio y actividades).
 import React, { useState } from 'react';
-import { CheckCircle2, Undo2, Eye, RotateCcw, Search, Mail } from 'lucide-react';
+import { CheckCircle2, Undo2, Eye, RotateCcw, Search, Mail, Pencil, ShieldAlert, Lightbulb } from 'lucide-react';
+import FormRiesgo from './FormRiesgo';
 import ContenedorModal from '../common/ContenedorModal';
 import ModalBase from '../common/ModalBase';
 import { api } from '../../services/apiClient';
@@ -10,14 +11,21 @@ import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionR
 import { useToast } from '../common/Toast';
 import { asignarFolios } from '../../services/folioService';
 import { formatearFecha } from '../../constants/workflow';
-import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, llevaPM, pmDesdeRiesgo, idMatriz, faltante } from '../../constants/riesgos';
+import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, llevaPM, aceptacionDe, pmSincronizado, idMatriz, faltante } from '../../constants/riesgos';
 
-export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, matrices, guardarMatriz, planesMejora, setPlanesMejora, usuarioLogueado, registrarMovimiento }) {
+export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, matrices, guardarMatriz, planesMejora, setPlanesMejora, procesos = [], usuarioLogueado, registrarMovimiento, onVerPM }) {
   const toast = useToast();
   const [abierta, setAbierta] = useState(null); // nombre del área
   const [observacion, setObservacion] = useState('');
   const [confirmar, setConfirmar] = useState(false);
   const [aceptando, setAceptando] = useState(false);
+  const [registro, setRegistro] = useState(null); // id del registro abierto en ventana
+  // El SGC ajusta cualquier registro no dictaminado; si ya tiene plan de mejora, el plan refleja el ajuste.
+  const ajustable = (r) => !String(r.estado || '').startsWith('CERRADO');
+  const actualizar = (r) => {
+    setRiesgos((prev) => prev.map((x) => (x.id === r.id ? r : x)));
+    if (r.pm_id) setPlanesMejora((prev) => prev.map((p) => (String(p.id) === String(r.pm_id) ? pmSincronizado(p, r) : p)));
+  };
   // Filtros: estado (al tocar una tarjeta), búsqueda, dirección y tipo de unidad.
   const [filtroEstado, setFiltroEstado] = useState('TODAS');
   const [busqueda, setBusqueda] = useState('');
@@ -81,20 +89,7 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
     const conPlan = fila.items.filter((r) => llevaPM(r) && !r.pm_id);
     let folios = [];
     try { if (conPlan.length) folios = await asignarFolios('PM', conPlan.length); } catch (e) { toast.error(e.message); setAceptando(false); return; }
-    const nuevos = [];
-    const cambios = {};
-    fila.items.forEach((r) => {
-      if (llevaPM(r) && !r.pm_id) {
-        const folio = folios.shift();
-        const pm = pmDesdeRiesgo(r, { folio, por, correos });
-        nuevos.push(pm);
-        cambios[r.id] = { estado: 'EN_TRATAMIENTO', pm_id: pm.id, pm_folio: pm.folio_codigo };
-      } else if (!r.pm_id) {
-        cambios[r.id] = { estado: 'MONITOREO' };
-      }
-      // Lo aceptado queda marcado como oficial aunque la matriz se reabra después.
-      cambios[r.id] = { ...(cambios[r.id] || {}), oficial: true, fecha_aceptacion: new Date().toISOString() };
-    });
+    const { nuevos, cambios } = aceptacionDe(fila.items, { folios, por, correos });
     if (nuevos.length) setPlanesMejora((prev) => [...prev, ...nuevos]);
     setRiesgos((prev) => prev.map((r) => (cambios[r.id] ? { ...r, ...cambios[r.id] } : r)));
     guardarMatriz({ ...fila.m, estado: 'ACEPTADA', aceptado_por: por, fecha_aceptacion: new Date().toISOString(), ratificacion_aceptacion: ratificacion });
@@ -124,7 +119,7 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
           <button key={id} type="button" aria-pressed={filtroEstado === id} onClick={() => setFiltroEstado(id)}
             className={`text-left rounded-xl border-2 p-3 transition-colors ${filtroEstado === id ? 'border-marca-azul-oscuro bg-sky-50' : 'border-slate-200 bg-white hover:border-marca-azul'}`}>
             <p className="text-2xl font-black text-slate-900">{id === 'TODAS' ? base.length : conteo(e)}</p>
-            <p className="text-[11px] font-semibold text-slate-600">{l}</p>
+            <p className="text-xs font-semibold text-slate-600">{l}</p>
           </button>
         ))}
       </div>
@@ -164,38 +159,43 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
               <button type="button" disabled={aceptando} onClick={() => setConfirmar(true)} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 disabled:opacity-40 rounded-lg hover:bg-emerald-800 inline-flex items-center gap-1"><CheckCircle2 size={14} /> Aceptar matriz</button>
             </>}
           </>}>
-          <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">A. Registros de la matriz (solo lectura)</h3>
-          <div className="overflow-x-auto border border-slate-200 rounded-lg">
-            <table className="w-full text-xs">
-              <caption className="sr-only">Registros de la matriz de {fila.area}</caption>
-              <thead className="bg-slate-50 text-slate-700 text-left border-b border-slate-200">
-                <tr>
-                  <th scope="col" className="p-2">Nivel</th><th scope="col" className="p-2">Tipo</th><th scope="col" className="p-2">Descripción</th>
-                  <th scope="col" className="p-2">Proceso</th><th scope="col" className="p-2">Contexto</th><th scope="col" className="p-2">Causa / consecuencia</th>
-                  <th scope="col" className="p-2">Tratamiento</th><th scope="col" className="p-2">Plan (responsable, fecha)</th><th scope="col" className="p-2">Plan de mejora</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 align-top">
-                {[...fila.items].sort((a, b) => puntaje(b) - puntaje(a)).map((r) => (
-                  <tr key={r.id}>
-                    <td className="p-2"><span className={`inline-block w-14 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(r)?.suave || 'bg-white text-slate-600 border-slate-200'}`}>{puntaje(r) || '—'}<span className="block text-[9px] font-bold">{nivelDe(r)?.nivel || ''}</span></span></td>
-                    <td className="p-2 font-semibold">{r.tipo}{r.sugerido_ia && <span className="block text-[10px] font-normal text-violet-700">sugerido IA</span>}</td>
-                    <td className="p-2 text-slate-900 min-w-[12rem]">{r.descripcion}</td>
-                    <td className="p-2 text-slate-700">{r.proceso || '—'}</td>
-                    <td className="p-2 text-slate-700">{r.contexto || '—'}{r.contexto_resultado && <span className="block text-slate-500">{r.contexto_resultado}</span>}</td>
-                    <td className="p-2 text-slate-700 min-w-[10rem]">{r.causa || '—'}{r.consecuencia && <span className="block text-slate-500">{r.tipo === 'Riesgo' ? 'Consecuencia' : 'Beneficio'}: {r.consecuencia}</span>}</td>
-                    <td className="p-2 text-slate-700">{r.tratamiento || '—'}</td>
-                    <td className="p-2 text-slate-700 min-w-[12rem]">{(r.plan || []).length ? <ul className="list-disc pl-4">{r.plan.map((a, k) => <li key={k}>{a.actividad} ({a.responsable || <span className="font-bold text-amber-700">sin responsable</span>}, {a.fecha_termino_sugerida ? formatearFecha(a.fecha_termino_sugerida) : <span className="font-bold text-amber-700">sin fecha</span>})</li>)}</ul> : '—'}</td>
-                    <td className="p-2">{r.pm_folio
-                      ? <span className="font-mono font-bold text-sky-700">{r.pm_folio}</span>
-                      : llevaPM(r)
-                        ? <span className="text-[11px] font-semibold text-slate-700">Se genera con folio al aceptar la matriz</span>
-                        : <span className="text-[11px] text-slate-500">No lleva (monitoreo)</span>}</td>
+          <section className="rounded-xl border border-slate-200 overflow-hidden">
+            <h3 className="px-4 py-2 text-sm font-extrabold text-white bg-marca-azul-oscuro">A. Registros de la matriz <span className="font-normal opacity-90">· abre cada uno para verlo completo o ajustarlo</span></h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <caption className="sr-only">Registros de la matriz de {fila.area}</caption>
+                <thead className="bg-slate-100 text-slate-700 text-left text-xs uppercase tracking-wide border-b border-slate-200">
+                  <tr>
+                    <th scope="col" className="px-3 py-2">Nivel</th><th scope="col" className="px-3 py-2">Descripción</th>
+                    <th scope="col" className="px-3 py-2">Proceso y contexto</th>
+                    <th scope="col" className="px-3 py-2">Tratamiento y plan</th><th scope="col" className="px-3 py-2">Plan de mejora</th><th scope="col" className="px-3 py-2 text-right">Acción</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 align-top">
+                  {[...fila.items].sort((a, b) => puntaje(b) - puntaje(a)).map((r) => (
+                    <tr key={r.id} className={r.tipo === 'Riesgo' ? 'border-l-4 border-l-rose-400' : 'border-l-4 border-l-emerald-400'}>
+                      <td className="px-3 py-2.5"><span className={`inline-block w-16 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(r)?.suave || 'bg-white text-slate-600 border-slate-200'}`}>{puntaje(r) || '—'}<span className="block text-xs font-bold">{nivelDe(r)?.nivel || 'Sin evaluar'}</span></span></td>
+                      <td className="px-3 py-2.5 text-slate-900 min-w-[14rem]"><span className={`block text-xs font-bold uppercase ${r.tipo === 'Riesgo' ? 'text-rose-700' : 'text-emerald-700'}`}>{r.tipo}{r.sugerido_ia && <span className="normal-case font-normal text-violet-700"> · sugerido IA</span>}</span>{r.descripcion || <span className="text-slate-400">Sin descripción</span>}
+                        {faltante(r) && <span className="block text-xs font-semibold text-amber-700 mt-0.5">Pendiente: {faltante(r)}</span>}</td>
+                      <td className="px-3 py-2.5 text-slate-700">{r.proceso || '—'}<span className="block text-xs text-slate-500">{r.contexto || 'Sin contexto'}</span></td>
+                      <td className="px-3 py-2.5 text-slate-700 min-w-[14rem]">{r.tratamiento || '—'}
+                        {(r.plan || []).length > 0 && <ol className="list-decimal pl-4 mt-1 text-xs text-slate-600 space-y-0.5">{r.plan.map((a, k) => <li key={k}>{a.actividad} ({a.responsable || <span className="font-bold text-amber-700">sin responsable</span>}, {a.fecha_termino_sugerida ? formatearFecha(a.fecha_termino_sugerida) : <span className="font-bold text-amber-700">sin fecha</span>})</li>)}</ol>}</td>
+                      <td className="px-3 py-2.5">{r.pm_folio
+                        ? <span className="font-mono font-bold text-sky-700">{r.pm_folio}</span>
+                        : llevaPM(r)
+                          ? <span className="text-xs font-semibold text-slate-700">Se genera al aceptar</span>
+                          : <span className="text-xs text-slate-500">No lleva (monitoreo)</span>}</td>
+                      <td className="px-3 py-2.5 text-right">
+                        <button type="button" onClick={() => setRegistro(r.id)} aria-haspopup="dialog" className="px-3 py-1.5 rounded-md text-xs font-bold text-white bg-marca-azul-oscuro hover:opacity-90 inline-flex items-center gap-1 whitespace-nowrap">
+                          {ajustable(r) ? <><Pencil size={13} /> Ajustar</> : <><Eye size={13} /> Ver</>}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
           {['BORRADOR', 'OBSERVADA'].includes(fila.estado) && (
             <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
               Esta matriz sigue en captura del área: los planes son la propuesta. Cuando el área la envíe y el SGC la acepte, cada plan se convierte en un Plan de Mejora con folio para su seguimiento.
@@ -215,24 +215,24 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-50 text-slate-700 text-left border-b border-slate-200">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-100 text-slate-700 text-left text-xs uppercase tracking-wide border-b border-slate-200">
             <tr><th scope="col" className="p-3">Unidad</th><th scope="col" className="p-3">Dirección</th><th scope="col" className="p-3">Estado</th><th scope="col" className="p-3 text-center">Riesgos</th><th scope="col" className="p-3 text-center">Oportunidades</th><th scope="col" className="p-3 text-center">Altos</th><th scope="col" className="p-3">Enviada</th><th scope="col" className="p-3 text-right">Acción</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {visibles.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-slate-500">Ninguna unidad coincide con los filtros.</td></tr>}
             {visibles.map((f) => (
               <tr key={f.area} className={f.estado === 'ENVIADA' ? 'bg-sky-50/40' : ''}>
-                <td className="p-3 font-semibold text-slate-900">{f.area}<span className="block text-[11px] font-normal text-slate-500">{TIPOS_UNIDAD[f.tipo] || 'Área'}</span></td>
+                <td className="p-3 font-semibold text-slate-900">{f.area}<span className="block text-xs font-normal text-slate-500">{TIPOS_UNIDAD[f.tipo] || 'Área'}</span></td>
                 <td className="p-3 text-slate-600">{(f.direccion || '').replace(/^Dir\.\s*/, '')}</td>
-                <td className="p-3">{f.estado ? <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${ESTADOS_MATRIZ[f.estado].color}`}>{ESTADOS_MATRIZ[f.estado].label}</span> : <span className="text-slate-500">Sin iniciar</span>}</td>
+                <td className="p-3">{f.estado ? <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${ESTADOS_MATRIZ[f.estado].color}`}>{ESTADOS_MATRIZ[f.estado].label}</span> : <span className="text-slate-500">Sin iniciar</span>}</td>
                 <td className="p-3 text-center">{f.items.filter((r) => r.tipo === 'Riesgo').length}</td>
                 <td className="p-3 text-center">{f.items.filter((r) => r.tipo === 'Oportunidad').length}</td>
                 <td className="p-3 text-center font-bold text-rose-700">{f.items.filter((r) => r.tipo === 'Riesgo' && nivelDe(r)?.nivel === 'Alto').length || ''}</td>
                 <td className="p-3 text-slate-600">{f.m?.fecha_envio ? formatearFecha(f.m.fecha_envio) : '—'}</td>
                 <td className="p-3 text-right">
                   {f.items.length > 0 && (
-                    <button type="button" onClick={() => { setAbierta(f.area); setObservacion(''); }} className="text-sky-700 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-md font-bold inline-flex items-center gap-1"><Eye size={12} /> {f.estado === 'ENVIADA' ? 'Revisar' : 'Ver'}</button>
+                    <button type="button" onClick={() => { setAbierta(f.area); setObservacion(''); }} className="text-sky-700 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-md font-bold inline-flex items-center gap-1 whitespace-nowrap"><Eye size={12} /> {f.estado === 'ENVIADA' ? 'Revisar' : 'Ver y ajustar'}</button>
                   )}
                 </td>
               </tr>
@@ -241,6 +241,22 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
         </table>
       </div>
 
+      {fila && (() => {
+        const r = fila.items.find((x) => x.id === registro);
+        if (!r) return null;
+        return (
+          <ModalBase isOpen onClose={() => setRegistro(null)} size="2xl" closeOnBackdrop={false} bodyClassName="p-4 sm:p-6 bg-slate-50"
+            icono={r.tipo === 'Riesgo' ? <ShieldAlert size={20} /> : <Lightbulb size={20} />}
+            titulo={`${r.tipo}: ${r.descripcion || 'sin descripción'}`}
+            subtitulo={`${CLAVE_MATRIZ} ${anio} · ${fila.area} · ${!ajustable(r) ? 'Solo consulta (ya dictaminado)' : r.pm_id ? `Ajuste del SGC: los cambios se reflejan en el Plan de Mejora ${r.pm_folio || ''}` : 'Ajuste del SGC: los cambios se guardan al escribir'}`}
+            footer={<>
+              {ajustable(r) && faltante(r) && <span className="mr-auto self-center text-xs font-semibold text-amber-800">Pendiente: {faltante(r)}</span>}
+              <button type="button" onClick={() => setRegistro(null)} className="px-5 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90">Listo, volver a la revisión</button>
+            </>}>
+            <FormRiesgo valor={r} onChange={actualizar} procesos={procesos} soloLectura={!ajustable(r)} onVerPM={onVerPM} />
+          </ModalBase>
+        );
+      })()}
 
       {fila && (
         <ModalConfirmacionResponsabilidadHumana

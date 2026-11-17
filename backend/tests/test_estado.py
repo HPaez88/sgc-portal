@@ -206,6 +206,11 @@ def test_reglas_matriz_de_riesgos_en_servidor():
     assert "ya no la modifica" in v([env], [{**env, "nota": "x"}], enc)
     assert "no se eliminan" in v([{**env, "observaciones": [{"texto": "a"}]}], [{**env, "observaciones": []}], adm)
     assert "no corresponde" in v([], [{**m, "id": "Otra|2027"}], adm)
+    # el SGC acepta directo lo que él capturó; el área no
+    assert v([m], [{**m, "estado": "ACEPTADA"}], adm) is None
+    assert v([], [{**m, "estado": "ACEPTADA"}], adm) is None
+    assert v([m], [{**m, "estado": "ACEPTADA"}], enc) is not None
+    assert v([], [{**m, "estado": "ACEPTADA"}], enc) is not None
     # riesgos
     r = {"id": 1, "area": "Plantas", "anio": 2027, "tipo": "Riesgo", "probabilidad": 3, "impacto": 6, "estado": "IDENTIFICADO"}
     vr = lambda antes, despues, u, mats=(), pls=(): validar_cambio(CLAVE_RIESGOS, antes, despues, u, [], {"matrices": list(mats), "planes": list(pls)})

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { puntaje, nivelDe, requierePlan, estadoRiesgo, pmDesdeRiesgo, sugerirEficacia, faltante, llevaPM, ORIGEN_PM_RIESGOS, idUnico, idMatriz, esOficial, puedeCapturarArea } from '../riesgos';
+import { puntaje, nivelDe, requierePlan, estadoRiesgo, pmDesdeRiesgo, sugerirEficacia, aceptacionDe, pmSincronizado, actividadesPM, faltante, llevaPM, ORIGEN_PM_RIESGOS, idUnico, idMatriz, esOficial, puedeCapturarArea } from '../riesgos';
 
 const base = { id: 7, tipo: 'Riesgo', area: 'Plantas Potabilizadoras', anio: 2027, contexto: 'Indicadores', proceso: 'Producción', descripcion: 'Falla en bombas', causa: 'Sin mantenimiento', probabilidad: 4, impacto: 8 };
 const plan = [{ actividad: 'Programa de mantenimiento', responsable: 'Gerente', fecha_termino_sugerida: '2027-03-31' }, { actividad: 'Bitácora', responsable: 'Supervisor', fecha_termino_sugerida: '2027-06-30', evidencia_esperada: 'Bitácora firmada' }];
@@ -89,5 +89,27 @@ describe('correcciones de la auditoría (2026-11-14)', () => {
   it('el PM nace con responsable y correos del área', () => {
     const pm = pmDesdeRiesgo({ id: 1, tipo: 'Riesgo', area: 'A', anio: 2027, probabilidad: 3, impacto: 8, plan: [{ actividad: 'a', responsable: 'Jefe de planta', fecha_termino_sugerida: '2027-03-01' }] }, { folio: { codigo: 'PM#1/2027', numero: 1, anio: 2027 }, por: 'SGC', correos: ['jefe@x.mx'] });
     expect(pm).toMatchObject({ responsable: 'Jefe de planta', correos_responsables: ['jefe@x.mx'] });
+  });
+  it('aceptar la matriz genera un PM por registro con plan y deja el resto en monitoreo', () => {
+    const act = { actividad: 'a', responsable: 'Jefe', fecha_termino_sugerida: '2027-03-01' };
+    const items = [
+      { id: 1, tipo: 'Riesgo', area: 'A', anio: 2027, probabilidad: 3, impacto: 8, tratamiento: 'Mitigar', plan: [act] },
+      { id: 2, tipo: 'Riesgo', area: 'A', anio: 2027, probabilidad: 1, impacto: 2, plan: [] },
+      { id: 3, tipo: 'Riesgo', area: 'A', anio: 2027, pm_id: 77, estado: 'EN_TRATAMIENTO', tratamiento: 'Mitigar', plan: [act] },
+    ];
+    const { nuevos, cambios } = aceptacionDe(items, { folios: [{ codigo: 'PM#1/2027', numero: 1, anio: 2027 }], por: 'SGC', ahora: 'x' });
+    expect(nuevos).toHaveLength(1);
+    expect(cambios[1]).toMatchObject({ estado: 'EN_TRATAMIENTO', pm_id: nuevos[0].id, pm_folio: 'PM#1/2027', oficial: true });
+    expect(cambios[2]).toMatchObject({ estado: 'MONITOREO', oficial: true });
+    expect(cambios[3]).toEqual({ oficial: true, fecha_aceptacion: 'x' }); // el que ya tenía PM no se duplica
+  });
+  it('ajustar un registro con PM actualiza el plan y conserva la evidencia cargada', () => {
+    const pm = { id: 9, actividades: JSON.stringify([{ id: 1, actividad: 'vieja', responsable: 'Jefe', fecha_termino_sugerida: '2027-03-01', evidencia_real: 'u.pdf' }]) };
+    const r = { descripcion: 'd', proceso: 'P', plan: [{ actividad: 'nueva', responsable: 'Jefe', fecha_termino_sugerida: '2027-04-01' }, { actividad: 'otra', responsable: 'Aux', fecha_termino_sugerida: '2027-05-01' }] };
+    const out = pmSincronizado(pm, r);
+    const acts = actividadesPM(out);
+    expect(acts[0]).toMatchObject({ actividad: 'nueva', evidencia_real: 'u.pdf', fecha_termino_sugerida: '2027-04-01' });
+    expect(acts[1]).toMatchObject({ id: 2, actividad: 'otra', estatus: 'PENDIENTE' });
+    expect(out).toMatchObject({ titulo_mejora: 'd', fecha_limite: '2027-05-01' });
   });
 });

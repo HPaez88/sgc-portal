@@ -226,10 +226,11 @@ def _validar_matrices(anterior: list, nuevo: list, usuario, areas: list) -> Opti
             return f"La matriz de {viejo.get('area')} pertenece a otra área."
         if not viejo and _sin_acceso(usuario, m, areas):
             return "No puedes crear la matriz de otra área."
-        if e0 is None and e1 not in ("BORRADOR", "ENVIADA"):
+        directo = admin and e1 == "ACEPTADA"  # el SGC acepta sin el paso de envío cuando él captura
+        if e0 is None and e1 not in ("BORRADOR", "ENVIADA") and not directo:
             return f"Una matriz nueva no puede nacer en {e1}."
         if e0 is not None and e1 != e0:
-            if e1 not in MATRIZ_TRANSICIONES.get(e0, ()):
+            if e1 not in MATRIZ_TRANSICIONES.get(e0, ()) and not directo:
                 return f"Matriz de {m.get('area')}: no se puede pasar de {e0} a {e1}."
             if (e0, e1) in MATRIZ_SOLO_ADMIN and not admin:
                 return f"Matriz de {m.get('area')}: solo el SGC puede pasar a {e1}."
