@@ -120,7 +120,7 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 border-l-4 border-l-marca-azul-oscuro p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 p-4">
         <div>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{CLAVE_MATRIZ} · {anio}</p>
           <h3 className="text-lg font-extrabold text-slate-900">{area}</h3>
