@@ -229,10 +229,11 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
         )}
         {original && (
           <section aria-label="Formatos oficiales" className="bg-slate-50 rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-slate-800 inline-flex items-center gap-1.5 mr-1"><Download size={14} /> Formatos oficiales del Ayuntamiento (sin modificar):</span>
+            <span className="text-xs font-bold text-slate-800 inline-flex items-center gap-1.5 mr-1"><Download size={14} /> Descargar formatos oficiales del Ayuntamiento (ya llenos, sin modificar):</span>
             <BotonDescarga tipo="proyecto" Icono={FileText}>Presentación de proyecto</BotonDescarga>
             <BotonDescarga tipo="pems" Icono={FileSpreadsheet}>PEMS (PEM-1 y PEM-2)</BotonDescarga>
-            {(borrador.actividades || []).map((a, i) => <BotonDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList}>Ficha {i + 1}</BotonDescarga>)}
+            {(borrador.actividades || []).map((a, i) => <BotonDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList}>Ficha {i + 1}{a.indicador ? `: ${String(a.indicador).slice(0, 28)}${String(a.indicador).length > 28 ? '…' : ''}` : ''}</BotonDescarga>)}
+            <span className="basis-full text-xs text-slate-600">Estos botones solo descargan. Para llenar cada ficha entra a la sección <strong>3. Fichas técnicas</strong> de abajo y elige la ficha.</span>
           </section>
         )}
         <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} editableAvance={Boolean(puedeArea)} resultados={indicadoresData.resultados || {}} />

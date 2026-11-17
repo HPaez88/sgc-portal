@@ -2,6 +2,16 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-17 — Indicadores: ficha del proyecto más clara, catálogos y datos del indicador bloqueados
+
+A petición de @human (caso Informática, 3 fichas): no se distinguía qué ficha se estaba llenando ni qué datos ya estaban definidos.
+
+- **Fichas técnicas (sección 3 del proyecto):** selector de fichas como pestañas grandes (la elegida dice "la que estás llenando" y cada una muestra cuántos campos lleva); bloque "Indicador de esta ficha" de solo lectura (indicador, actividad, unidad, meta, metas T1–T4, frecuencia) con acceso a la sección 2, donde se modifican; campos agrupados en bloques B2 a B4.
+- **Catálogos:** tipo de indicador, dimensión, sentido, tipo de objetivo y unidad de medida ahora son listas (un valor ya capturado fuera de la lista se conserva).
+- **Secciones 1 y 4:** datos del proyecto y PEMS/firmas separados en bloques con título de color.
+- **Descargas:** los botones "Ficha N" de la cabecera indican que solo descargan y a dónde ir para llenar.
+- **Cuadro de Control:** en un indicador que viene de un proyecto, nombre, unidad, periodicidad, metas, ficha PMD y CREMAA quedan bloqueados (antes se podían escribir y el cambio no se aplicaba).
+
 ## 2026-11-17 — Riesgos y oportunidades: seguimiento visible, aceptación directa del SGC y ajuste de registros
 
 Revisión del módulo a petición de @human: el trabajo capturado no llegaba a plan de mejora y los registros no se podían corregir.

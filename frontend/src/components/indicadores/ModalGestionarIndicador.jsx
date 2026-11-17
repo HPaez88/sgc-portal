@@ -42,7 +42,7 @@ import { useSGC } from '../../SGCContext';
 import { esAdminSGC } from '../../constants/workflow';
 
 const PERIODICIDADES = ['Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
-const UNIDADES = [
+export const UNIDADES = [
   'Porcentaje',
   'Cantidad',
   'Días',
@@ -370,6 +370,8 @@ export default function ModalGestionarIndicador({
   // Ficha oficial del Ayuntamiento: plantilla original llena con el Proyecto anual (Word o PDF), sin diseño propio.
   const [proyectos] = useLocalStorage(CLAVE_PROYECTOS, []);
   const origen = origenFicha(indicadorAEditar, proyectos);
+  // Indicador nacido de un proyecto: sus datos se definen allá y aquí solo se consultan.
+  const deProyecto = Boolean(indicadorAEditar?.proyecto);
   const descargarFicha = async (formato) => {
     if (!origen) return toast.error('La ficha oficial se llena en el Proyecto anual del área.');
     setDescargandoDocx(true);
@@ -514,7 +516,7 @@ export default function ModalGestionarIndicador({
           {indicadorAEditar?.proyecto && (
             <p role="note" className="text-sm text-sky-900 bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
               <strong>Este indicador viene del proyecto {indicadorAEditar.proyecto.anio} de {indicadorAEditar.proyecto.area}</strong> ({indicadorAEditar.proyecto.nombre}).
-              Nombre, unidad, meta, metas T1–T4, periodicidad, impacto y ficha técnica se capturan en <strong>Proyectos y fichas</strong>; lo que cambies aquí de esos datos no se aplica.
+              Nombre, unidad, meta, metas T1–T4, periodicidad, impacto y ficha técnica se definen en <strong>Proyectos y fichas</strong>; aquí aparecen bloqueados para no tener dos versiones. Para cambiarlos, abre el proyecto del área.
             </p>
           )}
 
@@ -559,6 +561,7 @@ export default function ModalGestionarIndicador({
                 <select
                   value={periodicidad}
                   onChange={(e) => setPeriodicidad(e.target.value)}
+                  disabled={deProyecto}
                   className="w-full px-3 py-2 text-xs font-semibold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
                 >
                   {PERIODICIDADES.map(p => (
@@ -576,6 +579,7 @@ export default function ModalGestionarIndicador({
                 <select
                   value={unidad}
                   onChange={(e) => setUnidad(e.target.value)}
+                  disabled={deProyecto}
                   className="w-full px-3 py-2 text-xs font-semibold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
                 >
                   {UNIDADES.map(u => (
@@ -682,6 +686,7 @@ export default function ModalGestionarIndicador({
                 minRows={2}
                 value={nombre}
                 onChange={setNombre}
+                disabled={deProyecto}
                 placeholder="Escribe el nombre completo y descriptivo del indicador oficial..."
                 className="text-xs sm:text-sm font-bold text-slate-900 border-slate-300"
               />
@@ -692,7 +697,8 @@ export default function ModalGestionarIndicador({
           </div>
 
           {/* SECCIÓN II: METAS TRIMESTRALES (T1-T4) Y REGLAS SGC (OOMRSC-05) */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            {deProyecto && <p className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">Sección bloqueada: estos datos vienen del proyecto del área y se modifican en Proyectos y fichas.</p>}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -810,7 +816,7 @@ export default function ModalGestionarIndicador({
                 ))}
               </div>
             </div>
-          </div>
+          </fieldset>
 
           {/* SECCIÓN III: FÓRMULA OFICIAL Y OBSERVACIÓN DEFAULT */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
@@ -855,7 +861,8 @@ export default function ModalGestionarIndicador({
           </div>
 
           {/* SECCIÓN IV: ALINEACIÓN Y DATOS FICHA PMD (AYUNTAMIENTO DE CAJEME) */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            {deProyecto && <p className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">Sección bloqueada: estos datos vienen del proyecto del área y se modifican en Proyectos y fichas.</p>}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#2A78B0]"></span>
@@ -1078,10 +1085,11 @@ export default function ModalGestionarIndicador({
               </p>
             </div>
 
-          </div>
+          </fieldset>
 
           {/* SECCIÓN V: CRITERIOS DE EVALUACIÓN CREMAA (AYUNTAMIENTO DE CAJEME) */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            {deProyecto && <p className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">Sección bloqueada: estos datos vienen del proyecto del área y se modifican en Proyectos y fichas.</p>}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#2A78B0]"></span>
@@ -1173,7 +1181,7 @@ export default function ModalGestionarIndicador({
               </div>
 
             </div>
-          </div>
+          </fieldset>
 
         </form>
 
