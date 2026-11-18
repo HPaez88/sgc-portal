@@ -9,6 +9,7 @@ import { useToast } from '../common/Toast';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import ContenedorModal from '../common/ContenedorModal';
 import ReplanteoFinal from '../common/ReplanteoFinal';
+import SolicitudCambio from '../common/SolicitudCambio';
 import CampoFecha from '../common/CampoFecha';
 
 export default function PlanesDetalle({
@@ -408,6 +409,7 @@ export default function PlanesDetalle({
       )}
 
       <ReplanteoFinal registro={form} guardar={guardarBorrador} modulo="PLANES_MEJORA" folio={form.folio_codigo || form.folio || ''} onNoEficaz={abrirDictamenNoEficaz} />
+      <SolicitudCambio registro={form} guardar={guardarBorrador} conIndicador={true} />
 
       {/* Datos Generales - Tarjetas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

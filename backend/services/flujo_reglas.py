@@ -5,6 +5,7 @@ aplicadas en el servidor al guardar el estado (PUT /api/v1/estado). Hasta ahora 
 Devuelve el motivo del rechazo (texto para el usuario) o None si el cambio es válido.
 Se compara registro por registro el valor anterior del servidor contra el valor ya fusionado.
 """
+import json
 import re
 from typing import Optional
 
@@ -108,6 +109,53 @@ def _sin_acceso(usuario, r: dict, areas: list) -> bool:
     return not puede_area(usuario, r.get("area") or r.get("gerencia_coordinacion") or "", areas)
 
 
+# Registro aprobado: su contenido lo cambia el SGC (directo o aprobando una solicitud de cambio del área).
+VIGENTES = ("APROBADO", "EN_SEGUIMIENTO", "SOLICITUD_CIERRE", "REVISION_AUDITOR")
+CONTENIDO = ("descripcion_no_conformidad_original", "descripcion_no_conformidad_final", "causas_json", "equipo_json",
+             "accion_contenedora", "actividad_inmediata", "proceso", "origen",
+             "descripcion_situacion_actual", "situacion_deseada", "titulo_mejora", "beneficios", "integrantes",
+             "categoria_mejora")
+CAMPOS_ACTIVIDAD = ("actividad", "responsable", "fecha_termino_sugerida", "evidencia_esperada", "indicador")
+SIN_PERMISO_CONTENIDO = "el contenido de un registro aprobado solo lo cambia el SGC; usa «Solicitar cambio»"
+
+
+def _valor(v):
+    """Compara contenido, no texto: el navegador re-escribe el JSON sin espacios y '' / [] / None valen lo mismo."""
+    if isinstance(v, str) and v.strip()[:1] in ("[", "{"):
+        try:
+            v = json.loads(v)
+        except ValueError:
+            pass
+    if isinstance(v, str):
+        v = v.strip()
+    return "" if v in (None, "", [], {}) else v
+
+
+def _clave_actividad(a: dict) -> str:
+    return str(a["id"]) if a.get("id") not in (None, "") else str(a.get("actividad") or "")
+
+
+def _cambio_de_contenido(viejo: dict, r: dict, e0: str, admin: bool) -> Optional[str]:
+    a0 = [a for a in _actividades(viejo) if isinstance(a, dict)]
+    a1 = [a for a in _actividades(r) if isinstance(a, dict)]
+    quedan = {_clave_actividad(a) for a in a1}
+    for a in a0:  # la evidencia es registro (ISO 9001 §7.5.3): ni el SGC la desaparece
+        if a.get("evidencia_real") and _clave_actividad(a) not in quedan:
+            return f"la actividad «{a.get('actividad') or a.get('id')}» ya tiene evidencia y no se puede quitar"
+    if admin:
+        return None
+    s0, s1 = _valor(viejo.get("solicitudes_cambio")) or [], _valor(r.get("solicitudes_cambio")) or []
+    if not isinstance(s0, list) or not isinstance(s1, list) or s1[:len(s0)] != s0             or any(not isinstance(x, dict) or x.get("estado") != "PENDIENTE" for x in s1[len(s0):]):
+        return "las solicitudes de cambio solo las resuelve el SGC"
+    if e0 not in VIGENTES:
+        return None
+    if any(_valor(viejo.get(k)) != _valor(r.get(k)) for k in CONTENIDO):
+        return SIN_PERMISO_CONTENIDO
+    if len(a0) != len(a1) or any(_valor(x.get(c)) != _valor(y.get(c)) for x, y in zip(a0, a1) for c in CAMPOS_ACTIVIDAD):
+        return SIN_PERMISO_CONTENIDO
+    return None
+
+
 def _validar_ac_pm(anterior: list, nuevo: list, usuario, areas: list) -> Optional[str]:
     antes, despues = _por_id(anterior), _por_id(nuevo)
     admin = es_admin(usuario)
@@ -124,6 +172,9 @@ def _validar_ac_pm(anterior: list, nuevo: list, usuario, areas: list) -> Optiona
         e0, e1 = estado_de(viejo), estado_de(r)
         if e0 in CERRADOS and e1 == e0 and not admin:
             return f"{_nombre(viejo)} está cerrado; solo el SGC puede modificarlo."
+        motivo = _cambio_de_contenido(viejo, r, e0, admin)
+        if motivo:
+            return f"{_nombre(viejo)}: {motivo}."
         f0, f1 = _folio(viejo), _folio(r)
         if f0 != f1:
             if FOLIO_OFICIAL.match(f0):

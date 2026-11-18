@@ -5,6 +5,7 @@ import { getEstadoColor, getEstadoLabel, getVencimiento, can } from '../../const
 import { fechaSeguimientoInicial, formatearFecha, leerActividades } from '../../constants/workflow';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import { LISTA_FILTRO } from '../common/estilosCampos';
+import { TIPOS_CAMBIO, solicitudesPendientes, aprobarSolicitud, rechazarSolicitud } from '../../constants/solicitudesCambio';
 import { asignarFolio } from '../../services/folioService';
 
 export default function GestorAprobacionesView({
@@ -30,27 +31,32 @@ export default function GestorAprobacionesView({
   const accionesPendientes = accionesCorrectivas
     .filter(ac => {
       if (ac.estado === 'EN_REVISION' || ac.estado === 'SOLICITUD_CIERRE' || ac.estado === 'REVISION_AUDITOR') return true;
+      if (solicitudesPendientes(ac).length) return true;
       const acts = leerActividades(ac);
       return acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
     })
     .map(ac => {
       const acts = leerActividades(ac);
       const tieneReplanteo = acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
+      const cambio = !tieneReplanteo ? solicitudesPendientes(ac)[0] || null : null;
       const subtipo = ac.estado === 'SOLICITUD_CIERRE' 
         ? 'Solicitud de Cierre' 
         : tieneReplanteo 
           ? 'Prórroga de Actividad' 
-          : 'Aprobación de Folio';
+          : cambio
+            ? 'Solicitud de Cambio'
+            : 'Aprobación de Folio';
       return {
         id_original: ac.id,
         documento: ac.folio_codigo || 'Borrador',
         tipo: 'Acción Correctiva',
         subtipo,
         area: ac.area,
-        fecha: ac.fecha_solicitud_cierre || ac.fecha_envio_sgc || ac.fecha_creacion_borrador,
+        fecha: cambio?.fecha_solicitud || ac.fecha_solicitud_cierre || ac.fecha_envio_sgc || ac.fecha_creacion_borrador,
         estado: ac.estado,
         prioridad: 'Alta',
         tieneReplanteo,
+        cambio,
         objeto_original: ac
       };
     });
@@ -59,27 +65,32 @@ export default function GestorAprobacionesView({
   const planesPendientes = planesMejora
     .filter(pm => {
       if (pm.estado === 'ENVIADO_SGC' || pm.estado === 'EN_REVISION' || pm.estado === 'SOLICITUD_CIERRE' || pm.estado === 'REVISION_AUDITOR') return true;
+      if (solicitudesPendientes(pm).length) return true;
       const acts = leerActividades(pm);
       return acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
     })
     .map(pm => {
       const acts = leerActividades(pm);
       const tieneReplanteo = acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
+      const cambio = !tieneReplanteo ? solicitudesPendientes(pm)[0] || null : null;
       const subtipo = pm.estado === 'SOLICITUD_CIERRE' 
         ? 'Solicitud de Cierre' 
         : tieneReplanteo 
           ? 'Prórroga de Actividad' 
-          : 'Aprobación de Folio';
+          : cambio
+            ? 'Solicitud de Cambio'
+            : 'Aprobación de Folio';
       return {
         id_original: pm.id,
         documento: pm.folio_codigo || pm.folio || 'Borrador',
         tipo: 'Plan de Mejora',
         subtipo,
         area: pm.area || pm.gerencia_coordinacion,
-        fecha: pm.fecha_solicitud_cierre || pm.fecha_envio_sgc || pm.created_at,
+        fecha: cambio?.fecha_solicitud || pm.fecha_solicitud_cierre || pm.fecha_envio_sgc || pm.created_at,
         estado: pm.estado,
         prioridad: 'Media',
         tieneReplanteo,
+        cambio,
         objeto_original: pm
       };
     });
@@ -95,6 +106,42 @@ export default function GestorAprobacionesView({
   const getPrioridadColor = (p) => {
     const colors = { 'Alta': 'bg-red-100 text-red-700 border-red-200', 'Media': 'bg-amber-100 text-amber-700 border-amber-200', 'Baja': 'bg-emerald-100 text-emerald-700 border-emerald-200' };
     return colors[p] || 'bg-slate-100 text-slate-700 border-slate-200';
+  };
+
+  // Solicitud de cambio del área sobre una AC/PM aprobada: el SGC la aplica o la rechaza.
+  const guardarRegistro = (app, nuevoObj) => {
+    if (app.tipo === 'Acción Correctiva') setAccionesCorrectivas(accionesCorrectivas.map(a => a.id === app.id_original ? nuevoObj : a));
+    else setPlanesMejora(planesMejora.map(p => p.id === app.id_original ? nuevoObj : p));
+  };
+  const moduloDe = (app) => (app.tipo === 'Acción Correctiva' ? 'ACCIONES_CORRECTIVAS' : 'PLANES_MEJORA');
+
+  const aprobarCambio = async (app) => {
+    const c = app.cambio;
+    const { ok } = await confirmar({
+      titulo: `Aprobar: ${TIPOS_CAMBIO[c.tipo]}`,
+      mensaje: `${app.documento}${c.actividad_actual ? ` · Actividad: ${c.actividad_actual}` : ''}${c.propuesta?.actividad ? ` · Queda: ${c.propuesta.actividad} (${c.propuesta.responsable}, ${formatearFecha(c.propuesta.fecha_termino_sugerida)})` : ''} · Justificación: ${c.justificacion}`,
+      textoAceptar: 'Aprobar cambio',
+    });
+    if (!ok) return;
+    const { registro, error } = aprobarSolicitud(app.objeto_original, c.id, usuarioLogueado?.nombre || 'SGC');
+    if (error) { mostrarMensaje(`No se aplicó: ${error}`); return; }
+    guardarRegistro(app, registro);
+    mostrarMensaje(`✓ Cambio aprobado y aplicado en ${app.documento}`);
+    registrarMovimiento({ modulo: moduloDe(app), accion: 'APROBACION_CAMBIO', descripcion: `${TIPOS_CAMBIO[c.tipo]} aprobado en ${app.documento}`,
+      detalles: `Solicitó ${c.solicitante}. Justificación: ${c.justificacion}`, folio: app.documento });
+  };
+
+  const rechazarCambio = async (app) => {
+    const c = app.cambio;
+    const { ok, valor: motivo } = await solicitar({
+      titulo: `Rechazar: ${TIPOS_CAMBIO[c.tipo]}`, subtitulo: app.documento, etiqueta: 'Motivo del rechazo',
+      placeholder: 'Indica al área por qué no procede el cambio...', textoAceptar: 'Rechazar', peligro: true,
+    });
+    if (!ok || !motivo) return;
+    guardarRegistro(app, rechazarSolicitud(app.objeto_original, c.id, usuarioLogueado?.nombre || 'SGC', motivo));
+    mostrarMensaje(`✕ Solicitud de cambio rechazada en ${app.documento}`);
+    registrarMovimiento({ modulo: moduloDe(app), accion: 'RECHAZO_CAMBIO', descripcion: `${TIPOS_CAMBIO[c.tipo]} rechazado en ${app.documento}`,
+      detalles: `Motivo: ${motivo}`, folio: app.documento });
   };
 
   const aprobarDocumento = async (app) => {
@@ -375,11 +422,19 @@ export default function GestorAprobacionesView({
                               ? 'bg-amber-50 text-amber-700 border-amber-200'
                               : app.subtipo === 'Solicitud de Cierre'
                                 ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                : 'bg-slate-50 text-slate-600 border-slate-200'
+                                : app.subtipo === 'Solicitud de Cambio'
+                                  ? 'bg-sky-50 text-sky-800 border-sky-200'
+                                  : 'bg-slate-50 text-slate-600 border-slate-200'
                           }`}>
                             {app.subtipo === 'Prórroga de Actividad' && '🕒 '}
                             {app.subtipo === 'Solicitud de Cierre' && '🚀 '}
                             {app.subtipo}
+                          </span>
+                        )}
+                        {app.cambio && (
+                          <span className="mt-1 max-w-xs font-sans text-xs font-normal text-slate-700 whitespace-normal">
+                            <strong>{TIPOS_CAMBIO[app.cambio.tipo]}</strong>{app.cambio.actividad_actual ? `: ${app.cambio.actividad_actual}` : app.cambio.propuesta?.actividad ? `: ${app.cambio.propuesta.actividad}` : ''}
+                            <span className="block text-slate-600">“{app.cambio.justificacion}” · {app.cambio.solicitante}</span>
                           </span>
                         )}
                       </div>
@@ -428,6 +483,15 @@ export default function GestorAprobacionesView({
                             </button>
                           </div>
                           <span className="text-[10px] text-amber-700 font-medium">Solicitud de prórroga</span>
+                        </div>
+                      ) : app.cambio && puedeAprobar ? (
+                        <div className="flex gap-2 justify-center">
+                          <button onClick={() => aprobarCambio(app)} className="bg-sky-700 hover:bg-sky-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-sm">
+                            <Check size={14} strokeWidth={3} /> Aprobar cambio
+                          </button>
+                          <button onClick={() => rechazarCambio(app)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-2 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-sm">
+                            <X size={14} strokeWidth={3} /> Rechazar
+                          </button>
                         </div>
                       ) : (app.estado === 'ENVIADO_SGC' || app.estado === 'EN_REVISION') && puedeAprobar ? (
                         <div className="flex gap-2 justify-center">

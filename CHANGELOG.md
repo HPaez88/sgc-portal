@@ -2,6 +2,15 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-19T04:00Z · @claude-code · [FEATURE] · Solicitudes de cambio del área (F2) y contenido protegido en el servidor (F3)
+- F2: en una AC/PM aprobada, el área usa "Solicitar cambio" (agregar, corregir o quitar una actividad, con justificación). La solicitud llega a Aprobaciones como "Solicitud de Cambio"; el SGC la aprueba (se aplica a las actividades) o la rechaza con motivo. Todo queda en la bitácora y en el historial del registro.
+- F3 (servidor): en AC/PM aprobadas solo el SGC cambia el contenido (descripción, equipo, causas, análisis y los datos de las actividades); el área sigue subiendo evidencia y pidiendo prórrogas. Las solicitudes de cambio solo las resuelve el SGC. Una actividad con evidencia no se puede quitar (ni el SGC).
+- La comparación es por contenido, no por texto: verificado contra los 25 AC y 8 PM de producción (0 guardados normales rechazados).
+- Pruebas: backend/tests/test_estado.py::test_contenido_de_ac_pm_vigente_solo_lo_cambia_el_sgc; frontend/src/constants/__tests__/solicitudesCambio.test.js. Flujo completo probado en copia local (Encargado solicita, Super Admin aprueba).
+- Archivos: backend/services/flujo_reglas.py, frontend/src/constants/solicitudesCambio.js, components/common/SolicitudCambio.jsx, acciones/AccionesDetalle.jsx, planes/PlanesDetalle.jsx, aprobaciones/GestorAprobacionesView.jsx
+- Tareas STATE: F2, F3
+- Deploy: SÍ
+
 ## 2026-11-19T02:00Z · @claude-code · [FEATURE] · AC/PM vigentes: edición por sección y completar los precargados del Control 6
 Causa: las 23 AC y 6 PM del Control 6 no traen equipo completo ni actividades, y el asistente de edición las validaba como registro nuevo (AC pedía 3 integrantes para llegar a actividades), así que no se podían completar.
 - Al editar un formato vigente (no borrador), se entra directo a la sección elegida; lo que falta se muestra como "Pendiente por completar" y no bloquea; solo se valida que las actividades capturadas estén completas.

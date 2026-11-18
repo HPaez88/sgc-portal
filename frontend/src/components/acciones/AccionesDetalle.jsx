@@ -9,6 +9,7 @@ import { useToast } from '../common/Toast';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import ContenedorModal from '../common/ContenedorModal';
 import ReplanteoFinal from '../common/ReplanteoFinal';
+import SolicitudCambio from '../common/SolicitudCambio';
 import CampoFecha from '../common/CampoFecha';
 
 export default function AccionesDetalle({
@@ -414,6 +415,7 @@ export default function AccionesDetalle({
       )}
 
       <ReplanteoFinal registro={form} guardar={guardarBorrador} modulo="ACCIONES_CORRECTIVAS" folio={form.folio_codigo || form.folio || ''} onNoEficaz={abrirDictamenNoEficaz} />
+      <SolicitudCambio registro={form} guardar={guardarBorrador} conIndicador={false} />
 
       {/* ═══════════════ DATOS GENERALES ═══════════════ */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

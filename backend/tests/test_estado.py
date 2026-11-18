@@ -361,3 +361,45 @@ def test_catalogos_de_configuracion_solo_los_cambia_el_sgc(cliente, cab):
     assert validar_cambio("sgc-config-direcciones-detalle", [], [{"nombre": "X"}], enc, []) is not None
     assert validar_cambio("sgc-config-areas-detalle", viejo, nuevo, adm, []) is None
     assert validar_cambio("sgc-config-areas-detalle", viejo, viejo, enc, []) is None  # sin cambio, no estorba
+
+
+def test_contenido_de_ac_pm_vigente_solo_lo_cambia_el_sgc():
+    import json
+    from backend.services.flujo_reglas import validar_cambio, CLAVE_AC, CLAVE_PM
+    enc, adm = _usuario(), _usuario("Admin", "SGC")
+    acts = [{"id": 1, "actividad": "A", "responsable": "R", "fecha_termino_sugerida": "2026-12-01",
+             "evidencia_esperada": "minuta", "evidencia_real": "f.pdf"},
+            {"id": 2, "actividad": "B", "responsable": "R", "fecha_termino_sugerida": "2026-12-05",
+             "evidencia_esperada": "foto", "evidencia_real": ""}]
+    # JSON con espacios (como lo guardó la importación del Control 6)
+    ac = {"id": 1, "area": "Plantas", "estado": "EN_SEGUIMIENTO", "folio_codigo": "AC#28/2026",
+          "descripcion_no_conformidad_final": "NC", "equipo_json": json.dumps([{"id": 1, "nombre": "X"}]),
+          "actividades_json": json.dumps(acts)}
+    v = lambda antes, despues, u, clave=CLAVE_AC: validar_cambio(clave, antes, despues, u, [])
+    js = lambda x: json.dumps(x, separators=(",", ":"))  # como lo escribe el navegador
+    # el área sube evidencia y la pantalla re-escribe el JSON sin espacios: válido
+    nuevas = [acts[0], {**acts[1], "evidencia_real": "g.pdf"}]
+    assert v([ac], [{**ac, "equipo_json": js([{"id": 1, "nombre": "X"}]), "actividades_json": js(nuevas)}], enc) is None
+    # el área no cambia el contenido ni las actividades de una AC vigente
+    assert "SGC" in v([ac], [{**ac, "descripcion_no_conformidad_final": "otra"}], enc)
+    assert "SGC" in v([ac], [{**ac, "actividades_json": js(acts + [{"id": 3, "actividad": "C"}])}], enc)
+    assert "SGC" in v([ac], [{**ac, "actividades_json": js([acts[0], {**acts[1], "actividad": "B2"}])}], enc)
+    # en borrador sí la edita su área; el SGC siempre
+    bor = {**ac, "estado": "BORRADOR", "folio_codigo": "Pendiente de aprobación"}
+    assert v([bor], [{**bor, "descripcion_no_conformidad_final": "otra"}], enc) is None
+    assert v([ac], [{**ac, "actividades_json": js(acts + [{"id": 3, "actividad": "C"}])}], adm) is None
+    # una actividad con evidencia no se borra, ni el SGC
+    assert "evidencia" in v([ac], [{**ac, "actividades_json": js([acts[1]])}], adm)
+    assert v([ac], [{**ac, "actividades_json": js([acts[0]])}], adm) is None
+    # solicitudes de cambio: el área solo agrega pendientes; resolverlas es del SGC
+    sol = {"id": "s1", "tipo": "AGREGAR", "estado": "PENDIENTE", "justificacion": "falta una actividad"}
+    assert v([ac], [{**ac, "solicitudes_cambio": [sol]}], enc) is None
+    assert "SGC" in v([ac], [{**ac, "solicitudes_cambio": [{**sol, "estado": "APROBADA"}]}], enc)
+    con = {**ac, "solicitudes_cambio": [sol]}
+    assert "SGC" in v([con], [{**con, "solicitudes_cambio": [{**sol, "estado": "APROBADA"}]}], enc)
+    assert v([con], [{**con, "solicitudes_cambio": [{**sol, "estado": "APROBADA"}]}], adm) is None
+    # plan de mejora: mismas reglas sobre sus campos (actividades como texto)
+    pm = {"id": 7, "area": "Plantas", "estado": "EN_SEGUIMIENTO", "folio_codigo": "OM#2/2026",
+          "titulo_mejora": "T", "actividades": json.dumps(acts)}
+    assert "SGC" in v([pm], [{**pm, "titulo_mejora": "T2"}], enc, CLAVE_PM)
+    assert v([pm], [{**pm, "actividades": js(nuevas)}], enc, CLAVE_PM) is None
