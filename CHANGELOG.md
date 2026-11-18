@@ -2,6 +2,16 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-19T02:00Z · @claude-code · [FEATURE] · AC/PM vigentes: edición por sección y completar los precargados del Control 6
+Causa: las 23 AC y 6 PM del Control 6 no traen equipo completo ni actividades, y el asistente de edición las validaba como registro nuevo (AC pedía 3 integrantes para llegar a actividades), así que no se podían completar.
+- Al editar un formato vigente (no borrador), se entra directo a la sección elegida; lo que falta se muestra como "Pendiente por completar" y no bloquea; solo se valida que las actividades capturadas estén completas.
+- El estado y folio se conservan (también si se usa la IA durante la edición, que antes regresaba el registro a BORRADOR).
+- Botones por sección en el detalle: AC (Detección / Equipo / Análisis y actividades), PM (Diagnóstico / Plan y actividades). Se ocultan los botones de flujo mientras se edita.
+- Aviso en el detalle de los precargados; la marca `pendiente_formato` se quita sola al completar el formato.
+- Archivos: frontend/src/components/AccionCorrectivaView.jsx, PlanMejoraView.jsx, acciones/AccionesWizard.jsx, planes/PlanesForm.jsx
+- Tareas STATE: F1 (F2 y F3 pendientes)
+- Deploy: SÍ
+
 ## 2026-11-19T00:30Z · @claude-code · [REFACTOR] · Aprobaciones: lectura única de actividades y filtro con estilo de lista
 - Las 8 copias que leían las actividades de AC/PM (y descartaban el error) ahora usan `leerActividades` de constants/workflow.js; un texto dañado da lista vacía en lugar de romper la bandeja.
 - Prueba nueva: constants/__tests__/leerActividades.test.js (AC, PM como texto y como lista, texto dañado).

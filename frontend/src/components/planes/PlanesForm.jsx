@@ -27,6 +27,8 @@ export default function PlanesForm({
   const { areas, procesos, usuarioLogueado, puedeTodasAreas, areasDetalle = [] } = useSGC();
   const [generandoIA, setGenerandoIA] = useState(false);
   const [descripcionSA, setDescripcionSA] = useState(form.descripcion_situacion_actual || '');
+  // Plan ya aprobado (o importado del Control 6) que el SGC corrige o completa: estado y folio se conservan.
+  const enEdicion = !!form.id && !['BORRADOR', 'GENERADO_IA', 'RECHAZADO'].includes(form.estado);
 
   // Si el usuario es Encargado o Usuario, fijar obligatoriamente su área
   useEffect(() => {
@@ -109,8 +111,22 @@ export default function PlanesForm({
     return null;
   };
 
+  // Solo las actividades capturadas deben ir completas (al editar un plan vigente).
+  const validarActividades = () => {
+    for (let i = 0; i < actividades.length; i++) {
+      const act = actividades[i];
+      if (!act.actividad?.trim()) return `La actividad #${i + 1} debe tener descripción.`;
+      if (!act.responsable?.trim()) return `La actividad #${i + 1} debe tener responsable asignado.`;
+      if (!act.indicador?.trim()) return `La actividad #${i + 1} debe tener indicador de logro.`;
+      if (!act.fecha_termino_sugerida?.trim()) return `La actividad #${i + 1} debe tener fecha compromiso.`;
+      if (!act.evidencia_esperada?.trim()) return `La actividad #${i + 1} debe tener evidencia esperada.`;
+    }
+    return null;
+  };
+  const pendientes = enEdicion ? [...new Set([validarPaso1(), validarPaso2()].filter(Boolean))] : [];
+
   const handleAvanzarPaso2Manual = () => {
-    const errorP1 = validarPaso1();
+    const errorP1 = enEdicion ? null : validarPaso1();
     if (errorP1) {
       setError(errorP1);
       return;
@@ -142,8 +158,8 @@ export default function PlanesForm({
         descripcion_situacion_actual: descFinal,
         situacion_deseada: f.situacion_deseada?.trim() || iaData.situacion_deseada || '',
         beneficios: f.beneficios?.trim() || iaData.beneficios || '',
-        estado: 'BORRADOR',
-        fecha_creacion: new Date().toISOString()
+        estado: enEdicion ? f.estado : 'BORRADOR',
+        fecha_creacion: f.fecha_creacion || new Date().toISOString()
       }));
       
       if (iaData.integrantes && iaData.integrantes.length > 0 && !(equipo || []).some((e) => String(e?.nombre || '').trim())) {
@@ -181,17 +197,29 @@ export default function PlanesForm({
   };
 
   const handleGuardarValidado = () => {
-    const errorP2 = validarPaso2();
+    const errorP2 = enEdicion ? validarActividades() : validarPaso2();
     if (errorP2) {
       setError(errorP2);
       return;
     }
     setError('');
-    guardarBorrador();
+    // La marca del Control 6 se quita sola cuando el plan queda completo.
+    guardarBorrador(null, enEdicion ? { pendiente_formato: pendientes.length > 0 } : {});
   };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {enEdicion && (
+        <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 space-y-1.5">
+          <p className="font-extrabold">Editando un formato vigente ({form.folio_codigo || 'sin folio'}): el estado y el folio no cambian. Puedes ir a cualquier sección y guardar por partes.</p>
+          {pendientes.length > 0 ? (
+            <>
+              <p className="font-bold">Pendiente por completar ({pendientes.length}):</p>
+              <ul className="list-disc pl-5 space-y-0.5">{pendientes.map((t) => <li key={t}>{t}</li>)}</ul>
+            </>
+          ) : <p className="font-bold text-emerald-800">El formato está completo.</p>}
+        </div>
+      )}
       {/* Header Stepper */}
       <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-card-subtle">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -240,10 +268,10 @@ export default function PlanesForm({
           <button
             type="button"
             onClick={() => {
-              if (paso1Completo) setStep(2);
+              if (paso1Completo || enEdicion) setStep(2);
               else setError('Debe completar todos los datos del Paso 1 para continuar.');
             }}
-            disabled={!paso1Completo}
+            disabled={!paso1Completo && !enEdicion}
             className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
               step === 2 
                 ? 'bg-emerald-50/80 border-emerald-400 text-emerald-950 shadow-2xs ring-2 ring-emerald-500/10' 
@@ -403,7 +431,7 @@ export default function PlanesForm({
               <button 
                 type="button" 
                 onClick={handleAvanzarPaso2Manual}
-                disabled={!paso1Completo}
+                disabled={!paso1Completo && !enEdicion}
                 className={`px-4 py-3 text-xs font-semibold rounded-xl border transition-colors ${
                   paso1Completo 
                     ? 'bg-white/10 hover:bg-white/15 text-white border-white/15 cursor-pointer' 
@@ -421,7 +449,7 @@ export default function PlanesForm({
             </button>
             <button 
               onClick={handleAvanzarPaso2Manual}
-              disabled={!paso1Completo}
+              disabled={!paso1Completo && !enEdicion}
               className={`px-6 py-2.5 text-xs font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 ${
                 paso1Completo 
                   ? 'bg-[#0B192C] hover:bg-[#152e4d] text-white cursor-pointer' 
@@ -620,9 +648,9 @@ export default function PlanesForm({
                 disabled={loading} 
                 className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors"
               >
-                {loading ? 'Guardando...' : 'Guardar Borrador'}
+                {loading ? 'Guardando...' : enEdicion ? 'Guardar cambios' : 'Guardar Borrador'}
               </button>
-              {getBotonesWorkflow()}
+              {!enEdicion && getBotonesWorkflow()}
             </div>
           </div>
         </div>

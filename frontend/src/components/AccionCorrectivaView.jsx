@@ -107,7 +107,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     setMensaje('');
   };
 
-  const guardarBorrador = async (overrideData = null) => {
+  const guardarBorrador = async (overrideData = null, extra = {}) => {
     setLoading(true);
     setError('');
 
@@ -128,7 +128,8 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
       equipo_json: JSON.stringify(equipo),
       causas_json: JSON.stringify(causas),
       // Lo que está en pantalla manda; solo se usa el override cuando viene explícito (replanteos).
-      actividades_json: overrideData?.actividades_json ?? JSON.stringify(actividades)
+      actividades_json: overrideData?.actividades_json ?? JSON.stringify(actividades),
+      ...extra,
     };
 
     // Guardado seguro: se parte de la versión más reciente de la lista (puede traer cambios de otros usuarios o del SGC).
@@ -162,7 +163,7 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
       setMensaje('⚠️ Borrador guardado exitosamente');
     }
 
-    setForm({ ...datosActuales, id: nuevoId });
+    setForm({ ...datosActuales, ...extra, id: nuevoId });
     setLoading(false);
     setTimeout(() => setMensaje(''), 3000);
   };
@@ -299,13 +300,13 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
   };
 
   // El SGC puede corregir el contenido de un formato vigente sin cambiar su estado ni su folio.
-  const editarFormatoSGC = () => {
+  const editarFormatoSGC = (seccion = 1) => {
     registrarMovimiento({
       modulo: 'ACCIONES_CORRECTIVAS', accion: 'EDICION_SGC',
       descripcion: `Edición del formato ${form.folio_codigo || ''} (OOMRSC-20) por el SGC`,
       detalles: `Estado conservado: ${form.estado} | Área: ${form.area}`, folio: form.folio_codigo || ''
     });
-    setStep(1);
+    setStep(seccion);
     setVista('nuevo');
   };
 
@@ -630,9 +631,12 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
         );
       } else if (form.estado === 'EN_SEGUIMIENTO' || form.estado === 'APROBADO') {
         botones.push(
-          <button key="editar_sgc" onClick={editarFormatoSGC} className="px-5 py-2.5 bg-white border border-slate-300 text-slate-800 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
-            ✏️ Editar formato (SGC)
-          </button>,
+          ...[[1, 'Detección'], [2, 'Equipo'], [3, 'Análisis y actividades']].map(([n, t]) => (
+            <button key={`editar_sgc_${n}`} onClick={() => editarFormatoSGC(n)} title={`Editar la sección ${n} del formato (SGC)`}
+              className="px-4 py-2.5 bg-white border border-slate-300 text-slate-800 font-medium rounded-lg hover:bg-slate-50 hover:border-sky-500 transition-colors shadow-sm">
+              ✏️ {t}
+            </button>
+          )),
           <button key="solicitar_cierre" onClick={solicitarCierre} className="px-5 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1.5">
             <span>🚀</span> Solicitar Cierre al SGC
           </button>
@@ -958,6 +962,12 @@ export default function AccionCorrectivaView({ accionesCorrectivas, setAccionesC
     return (
       <>
         <BarraRegreso onVolver={() => setVista('lista')} texto="Volver a Acciones Correctivas" detalle={form.folio_codigo || ''} />
+        {(form.pendiente_formato === true || form.pendiente_formato === 'true') && (
+          <p className="mb-3 rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-950">
+            Registro precargado del Control 6: el formato está incompleto (equipo, análisis o actividades).
+            {['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) ? ' Usa los botones de edición por sección para completarlo.' : ' El SGC lo completará.'}
+          </p>
+        )}
         <Dialogos {...propsDialogos} />
         {modalConfirmarEnvioJSX}
         {modalAuditor}

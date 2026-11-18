@@ -146,7 +146,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   }, []);
 
 
-  const guardarBorrador = async (overrideData = null) => {
+  const guardarBorrador = async (overrideData = null, extra = {}) => {
     setLoading(true);
     setError('');
 
@@ -167,7 +167,8 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       created_at: datosActuales.created_at || new Date().toISOString(),
       integrantes: JSON.stringify(equipo),
       // Lo que está en pantalla manda; solo se usa el override cuando viene explícito (replanteos).
-      actividades: overrideData?.actividades ?? JSON.stringify(actividades)
+      actividades: overrideData?.actividades ?? JSON.stringify(actividades),
+      ...extra,
     };
 
     // Guardado seguro: parte de la versión más reciente de la lista; un cambio de flujo solo aplica sus campos.
@@ -199,7 +200,7 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
       setMensaje('⚠️ Borrador guardado exitosamente');
     }
 
-    setForm({ ...datosActuales, id: nuevoId });
+    setForm({ ...datosActuales, ...extra, id: nuevoId });
     setLoading(false);
     setTimeout(() => setMensaje(''), 3000);
   };
@@ -632,13 +633,13 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
   };
 
   // El SGC puede corregir el contenido de un plan vigente sin cambiar su estado ni su folio.
-  const editarFormatoSGC = () => {
+  const editarFormatoSGC = (seccion = 1) => {
     registrarMovimiento({
       modulo: 'PLANES_MEJORA', accion: 'EDICION_SGC',
       descripcion: `Edición del formato ${form.folio_codigo || ''} (OOMRSC-21) por el SGC`,
       detalles: `Estado conservado: ${form.estado} | Área: ${form.area}`, folio: form.folio_codigo || ''
     });
-    setStep(1);
+    setStep(seccion);
     setVista('nuevo');
   };
 
@@ -693,9 +694,12 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
         if (esAdmin) {
           if (vista !== 'nuevo') {
             botones.push(
-              <button key="editar_sgc" onClick={editarFormatoSGC} className="px-6 py-2.5 bg-white border border-slate-300 text-slate-800 font-medium rounded-lg hover:bg-slate-50 transition-colors ml-2 shadow-sm">
-                ✏️ Editar formato (SGC)
-              </button>
+              ...[[1, 'Diagnóstico'], [2, 'Plan y actividades']].map(([n, t]) => (
+                <button key={`editar_sgc_${n}`} onClick={() => editarFormatoSGC(n)} title={`Editar la sección ${n} del formato (SGC)`}
+                  className="px-4 py-2.5 bg-white border border-slate-300 text-slate-800 font-medium rounded-lg hover:bg-slate-50 hover:border-emerald-600 transition-colors ml-2 shadow-sm">
+                  ✏️ {t}
+                </button>
+              ))
             );
           }
         }
@@ -999,6 +1003,12 @@ export default function PlanMejoraView({ planesMejora, setPlanesMejora, usuarios
     return (
       <>
         <BarraRegreso onVolver={() => setVista('lista')} texto="Volver a Planes de Mejora" detalle={form.folio_codigo || ''} />
+        {(form.pendiente_formato === true || form.pendiente_formato === 'true') && (
+          <p className="mb-3 rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-950">
+            Registro precargado del Control 6: el plan está incompleto (diagnóstico, equipo o actividades).
+            {['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) ? ' Usa los botones de edición por sección para completarlo.' : ' El SGC lo completará.'}
+          </p>
+        )}
         {modalConfirmarEnvioJSX}
         {modalAuditor}
         {modalDictamenJSX}

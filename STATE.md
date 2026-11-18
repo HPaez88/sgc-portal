@@ -22,6 +22,9 @@
 - [x] S1 — Auditoría run-1 cerrada: 16 de 17 corregidos con prueba; buzón queda como riesgo aceptado mientras BUZON_MODO=aprobacion
 - [x] S2 — Cabeceras de seguridad (CSP sin violaciones en prueba local), sin /docs en producción, límite de intentos fallidos en /login
 - [x] H3 — Revisión de diseño con hp-design-harness (design-review-gate): gate aprobado, promedio 8 (docs/design/review.md)
+- [x] F1 — AC/PM vigentes: el SGC edita por sección y completa los precargados del Control 6 (pendientes no bloquean)
+- [ ] F2 — Solicitud de cambio del área (agregar/corregir/quitar actividad) con aprobación del SGC en la bandeja
+- [ ] F3 — Regla en servidor: contenido de AC/PM aprobada solo lo cambia el SGC o una solicitud aprobada; actividad con evidencia no se borra
 - [x] U1 — Llevar el estilo de formularios (`common/estilosCampos.jsx`) a Auditorías, Revisión por la Dirección y Configuración
 
 ## Módulo Manual de la Calidad (consulta) 2026-10-13

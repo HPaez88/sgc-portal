@@ -29,6 +29,9 @@ export default function AccionesWizard({
 }) {
   const { areas, procesos, usuarioLogueado, puedeTodasAreas, areasDetalle = [] } = useSGC();
   const [generandoIA, setGenerandoIA] = useState(false);
+  // Formato ya aprobado (o importado del Control 6) que el SGC corrige o completa: el estado y folio se conservan,
+  // lo que falta se muestra como pendiente y no impide moverse entre secciones ni guardar.
+  const enEdicion = !!form.id && !['BORRADOR', 'GENERADO_IA', 'RECHAZADO'].includes(form.estado);
 
   // Si el usuario es Encargado o Usuario, fijar obligatoriamente su área
   React.useEffect(() => {
@@ -140,8 +143,21 @@ export default function AccionesWizard({
     return null;
   };
 
+  // Solo las actividades capturadas deben ir completas (al editar un formato vigente).
+  const validarActividades = () => {
+    for (let i = 0; i < actividades.length; i++) {
+      const act = actividades[i];
+      if (!act.actividad?.trim()) return `La actividad #${i + 1} debe tener descripción.`;
+      if (!act.responsable?.trim()) return `La actividad #${i + 1} debe tener responsable asignado.`;
+      if (!act.fecha_termino_sugerida?.trim()) return `La actividad #${i + 1} debe tener fecha compromiso.`;
+      if (!act.evidencia_esperada?.trim()) return `La actividad #${i + 1} debe tener evidencia esperada.`;
+    }
+    return null;
+  };
+  const pendientes = enEdicion ? [...new Set([validarPaso1(), validarPaso2(), validarPaso3()].filter(Boolean))] : [];
+
   const handleAvanzarPaso2 = () => {
-    const errorP1 = validarPaso1();
+    const errorP1 = enEdicion ? null : validarPaso1();
     if (errorP1) {
       setError(errorP1);
       return;
@@ -151,7 +167,7 @@ export default function AccionesWizard({
   };
 
   const handleAvanzarPaso3Manual = () => {
-    const errorP2 = validarPaso2();
+    const errorP2 = enEdicion ? null : validarPaso2();
     if (errorP2) {
       setError(errorP2);
       return;
@@ -189,7 +205,7 @@ export default function AccionesWizard({
         requiere_actualizar_matriz_riesgos: f.requiere_actualizar_matriz_riesgos || iaData.analisis?.requiere_actualizar_matriz_riesgos || 'NO',
         descripcion_riesgo_oportunidad: f.descripcion_riesgo_oportunidad?.trim() || iaData.analisis?.descripcion_riesgo_oportunidad || '',
         requiere_cambio_sgc: f.requiere_cambio_sgc || iaData.actividades?.requiere_cambio_sgc || 'NO',
-        estado: 'BORRADOR',
+        estado: enEdicion ? f.estado : 'BORRADOR',
         fecha_generacion_ia: new Date().toISOString()
       }));
       
@@ -229,13 +245,14 @@ export default function AccionesWizard({
   };
 
   const handleGuardarValidado = () => {
-    const errorP3 = validarPaso3();
+    const errorP3 = enEdicion ? validarActividades() : validarPaso3();
     if (errorP3) {
       setError(errorP3);
       return;
     }
     setError('');
-    guardarBorrador();
+    // La marca del Control 6 se quita sola cuando el formato queda completo.
+    guardarBorrador(null, enEdicion ? { pendiente_formato: pendientes.length > 0 } : {});
   };
 
   const pasos = [
@@ -269,12 +286,24 @@ export default function AccionesWizard({
           </div>
         </div>
 
+        {enEdicion && (
+          <div className="mt-4 rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 space-y-1.5">
+            <p className="font-extrabold">Editando un formato vigente ({form.folio_codigo || 'sin folio'}): el estado y el folio no cambian. Puedes ir a cualquier sección y guardar por partes.</p>
+            {pendientes.length > 0 ? (
+              <>
+                <p className="font-bold">Pendiente por completar ({pendientes.length}):</p>
+                <ul className="list-disc pl-5 space-y-0.5">{pendientes.map((t) => <li key={t}>{t}</li>)}</ul>
+              </>
+            ) : <p className="font-bold text-emerald-800">El formato está completo.</p>}
+          </div>
+        )}
+
         {/* Stepper Tabs */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4">
           {pasos.map((p) => {
             const isCompleted = step > p.num;
             const isCurrent = step === p.num;
-            const canNavigate = p.num === 1 || (p.num === 2 && paso1Completo) || (p.num === 3 && paso1Completo && paso2Completo);
+            const canNavigate = enEdicion || p.num === 1 || (p.num === 2 && paso1Completo) || (p.num === 3 && paso1Completo && paso2Completo);
             return (
               <button
                 key={p.num}
@@ -506,9 +535,9 @@ export default function AccionesWizard({
             <div className="flex items-center gap-3">
               <button 
                 onClick={handleAvanzarPaso2}
-                disabled={!paso1Completo}
+                disabled={!enEdicion && !paso1Completo}
                 className={`px-6 py-2.5 text-xs font-bold rounded-lg shadow-sm transition-all flex items-center gap-2 ${
-                  paso1Completo 
+                  paso1Completo || enEdicion 
                     ? 'bg-[#0B192C] hover:bg-[#152e4d] text-white cursor-pointer' 
                     : 'bg-slate-200 text-slate-500 cursor-not-allowed'
                 }`}
@@ -670,9 +699,9 @@ export default function AccionesWizard({
               <button 
                 type="button" 
                 onClick={handleAvanzarPaso3Manual}
-                disabled={!paso2Completo}
+                disabled={!enEdicion && !paso2Completo}
                 className={`px-4 py-3 text-xs font-semibold rounded-xl border transition-colors ${
-                  paso2Completo 
+                  paso2Completo || enEdicion 
                     ? 'bg-white/10 hover:bg-white/15 text-white border-white/15 cursor-pointer' 
                     : 'bg-white/5 text-slate-500 border-white/5 cursor-not-allowed'
                 }`}
@@ -863,9 +892,9 @@ export default function AccionesWizard({
                 disabled={loading} 
                 className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors"
               >
-                {loading ? 'Guardando...' : 'Guardar Borrador'}
+                {loading ? 'Guardando...' : enEdicion ? 'Guardar cambios' : 'Guardar Borrador'}
               </button>
-              {getBotonesWorkflow()}
+              {!enEdicion && getBotonesWorkflow()}
             </div>
           </div>
         </div>
