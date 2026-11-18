@@ -1,0 +1,84 @@
+# SkillSpector baseline — findings listed here are suppressed on future scans.
+# Edit 'reason' fields and add glob 'rules' as needed. See docs/SUPPRESSION.md.
+version: 2
+scanner_version: 2.12.0
+rules: []
+fingerprints:
+- hash: sha256:cef13339f6c198664b8937ea5106ee4eece6f1af2eac0ccffc27213cb8dd443b
+  rule_id: EA2
+  file: references/DESKTOP-MOBILE-AND-LOCAL-IPC.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:7f6ecbc512de996f1266c242e3821bac1d4c83b6964adda6e0faae32cf1069b3
+  rule_id: EA2
+  file: references/METHODOLOGY.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:07f6cbfff5e37104406f89d6981c063ad029e346164ff22f7f4fc1c9a13be431
+  rule_id: MP3
+  file: references/AI-AND-LLM.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:4459f51606dfc965984706af1878d5fc381860cea48c1802e6bcbcaf65f854e2
+  rule_id: PE1
+  file: references/ATTACK-CLASSES.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:ea18e697a0b006e3c471aaf807752c1ad1cb9d993c4f680cc77bb9dcd8a7c610
+  rule_id: PE3
+  file: references/ATTACK-CLASSES.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:a3a000a828e0afd7f8f56dcdc3baf98243db44bd7158a22d2e37a1eed1a9915a
+  rule_id: PE3
+  file: references/DESKTOP-MOBILE-AND-LOCAL-IPC.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:a1b0f4ce64d9c15dc43781e3012f313710baf24fe5602b749b7e04c08c5d94c2
+  rule_id: PE3
+  file: references/validate-coverage-ledger.test.cjs
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:efe58e67428ed29a18993b1ef34d2078630ea279f4db5a120ca257ec566612c2
+  rule_id: PE3
+  file: references/validate-findings.test.cjs
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:b4d908851779a6d19a02d1dcdbb44cfe3cc7809ffccd64534df84a4813c6d31b
+  rule_id: PE3
+  file: references/validate-findings.test.cjs
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:eb8c4573923886d4e107e05b8577da195e7080ead6793716d79ad8ad750b756b
+  rule_id: TM3
+  file: references/DESKTOP-MOBILE-AND-LOCAL-IPC.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:5fad7a69a2cfa30971c426b2e5473732d84247be43b12146a05b44c28274af70
+  rule_id: AE1
+  file: SKILL.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:2bbfe81f15cd9b89bb2aac0da6a3d4c036c812890893eead78967b6aaff8633e
+  rule_id: AE1
+  file: SKILL.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'
+- hash: sha256:0b405b40b94cea26e0d23381d3a28c12641d72603cca24e08d7cec5cef86a522
+  rule_id: AE1
+  file: SKILL.md
+  reason: 'False positives: this skill documents attack classes/security vocabulary;
+    reviewed and approved by @human (2026-10-23). Upstream Cloudflare security-audit
+    skill, MIT.'

@@ -3,9 +3,23 @@
 > Fuente de verdad del avance. El tracker interno del agente no cuenta: **lo que está en disco es lo que vale**.
 > Regla de 3 archivos: cada tarea tocada actualiza el código + `STATE.md` + `CHANGELOG.md`.
 
-**Última actualización:** 2026-10-09 · @claude-code
+**Última actualización:** 2026-11-17 · @claude-code
 
 ---
+
+## Riesgos, Indicadores, AC/PM y harness v0.17 — 2026-11-17
+
+- [x] R1 — Riesgos: aceptación directa del SGC ("Aceptar y generar planes"), `aceptacionDe` compartida, regla de servidor para ACEPTADA directa
+- [x] R2 — Riesgos: ajuste por el SGC con sincronía al PM (`pmSincronizado`); con plan de mejora solo Super Admin y gescobar@ (pantalla + `flujo_reglas.py`)
+- [x] R3 — Riesgos: Seguimiento con avance de actividades y ventana "Ver actividades"; sin registros en blanco; matriz en lista plana y tablas
+- [x] R4 — Datos: 3 riesgos en blanco quitados en producción (`backend/scripts/quitar_riesgos_vacios.py`, respaldo en bitácora)
+- [x] I1 — Indicadores: ficha del proyecto con selector de fichas, datos del indicador bloqueados, catálogos en listas
+- [x] I2 — Indicadores: ventana del indicador por temas/subtemas, leyenda Lista/Texto/Bloqueado, sentido e impacto como botones, CREMAA con conteo real
+- [x] I3 — Proyecto: descargas en tabla, actividades separadas, firmas y titular ligados al catálogo, presupuesto con formato de moneda
+- [x] A1 — AC y PM: actividades en bloques (`common/ActividadesPlan.jsx`), sugerencia de responsable del catálogo, sin mutación
+- [x] H1 — hpaez-harness v0.17 instalado (`skills/`, `AGENT-SURFACES.md`); la carpeta `hpaez-harness/` (v0.7) queda por retirar con visto bueno de @human
+- [ ] H2 — Auditoría con el harness: `security-audit` (6 fases), `prelaunch-guard` (sondas pasivas, requiere URL autorizada por @human), revisión de diseño
+- [ ] U1 — Llevar el estilo de formularios (`common/estilosCampos.jsx`) a Auditorías, Revisión por la Dirección y Configuración
 
 ## Módulo Manual de la Calidad (consulta) 2026-10-13
 
