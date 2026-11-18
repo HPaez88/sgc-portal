@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Check, X, Eye } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { getEstadoColor, getEstadoLabel, getVencimiento, can } from '../../constants';
-import { fechaSeguimientoInicial, formatearFecha } from '../../constants/workflow';
+import { fechaSeguimientoInicial, formatearFecha, leerActividades } from '../../constants/workflow';
 import { useDialogos, Dialogos } from '../common/Dialogos';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import { asignarFolio } from '../../services/folioService';
 
 export default function GestorAprobacionesView({
@@ -29,13 +30,11 @@ export default function GestorAprobacionesView({
   const accionesPendientes = accionesCorrectivas
     .filter(ac => {
       if (ac.estado === 'EN_REVISION' || ac.estado === 'SOLICITUD_CIERRE' || ac.estado === 'REVISION_AUDITOR') return true;
-      let acts = [];
-      try { acts = JSON.parse(ac.actividades_json || '[]'); } catch(e){}
+      const acts = leerActividades(ac);
       return acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
     })
     .map(ac => {
-      let acts = [];
-      try { acts = JSON.parse(ac.actividades_json || '[]'); } catch(e){}
+      const acts = leerActividades(ac);
       const tieneReplanteo = acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
       const subtipo = ac.estado === 'SOLICITUD_CIERRE' 
         ? 'Solicitud de Cierre' 
@@ -60,13 +59,11 @@ export default function GestorAprobacionesView({
   const planesPendientes = planesMejora
     .filter(pm => {
       if (pm.estado === 'ENVIADO_SGC' || pm.estado === 'EN_REVISION' || pm.estado === 'SOLICITUD_CIERRE' || pm.estado === 'REVISION_AUDITOR') return true;
-      let acts = [];
-      try { acts = typeof pm.actividades === 'string' ? JSON.parse(pm.actividades || '[]') : (pm.actividades || []); } catch(e){}
+      const acts = leerActividades(pm);
       return acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
     })
     .map(pm => {
-      let acts = [];
-      try { acts = typeof pm.actividades === 'string' ? JSON.parse(pm.actividades || '[]') : (pm.actividades || []); } catch(e){}
+      const acts = leerActividades(pm);
       const tieneReplanteo = acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
       const subtipo = pm.estado === 'SOLICITUD_CIERRE' 
         ? 'Solicitud de Cierre' 
@@ -109,8 +106,7 @@ export default function GestorAprobacionesView({
     if (app.tieneReplanteo) {
       // Aprobar replanteamiento de fecha de actividad
       if (app.tipo === 'Acción Correctiva') {
-        let acts = [];
-        try { acts = JSON.parse(app.objeto_original.actividades_json || '[]'); } catch(e){}
+        const acts = leerActividades(app.objeto_original);
         const updatedActs = acts.map(a => {
           if (a.solicitud_replanteo?.estado === 'PENDIENTE') {
             const req = a.solicitud_replanteo;
@@ -148,8 +144,7 @@ export default function GestorAprobacionesView({
           folio: app.documento
         });
       } else {
-        let acts = [];
-        try { acts = typeof app.objeto_original.actividades === 'string' ? JSON.parse(app.objeto_original.actividades || '[]') : (app.objeto_original.actividades || []); } catch(e){}
+        const acts = leerActividades(app.objeto_original);
         const updatedActs = acts.map(a => {
           if (a.solicitud_replanteo?.estado === 'PENDIENTE') {
             const req = a.solicitud_replanteo;
@@ -279,8 +274,7 @@ export default function GestorAprobacionesView({
     if (app.tieneReplanteo) {
       // Rechazar prórroga
       if (app.tipo === 'Acción Correctiva') {
-        let acts = [];
-        try { acts = JSON.parse(app.objeto_original.actividades_json || '[]'); } catch(e){}
+        const acts = leerActividades(app.objeto_original);
         const updatedActs = acts.map(a => {
           if (a.solicitud_replanteo?.estado === 'PENDIENTE') {
             return { ...a, solicitud_replanteo: null };
@@ -291,8 +285,7 @@ export default function GestorAprobacionesView({
         setAccionesCorrectivas(accionesCorrectivas.map(a => a.id === app.id_original ? nuevoObj : a));
         mostrarMensaje(`✕ Prórroga rechazada para ${app.documento}`);
       } else {
-        let acts = [];
-        try { acts = typeof app.objeto_original.actividades === 'string' ? JSON.parse(app.objeto_original.actividades || '[]') : (app.objeto_original.actividades || []); } catch(e){}
+        const acts = leerActividades(app.objeto_original);
         const updatedActs = acts.map(a => {
           if (a.solicitud_replanteo?.estado === 'PENDIENTE') {
             return { ...a, solicitud_replanteo: null };
@@ -335,7 +328,7 @@ export default function GestorAprobacionesView({
             <p className="text-sm text-slate-500 font-medium">Bandeja de entrada del SGC</p>
           </div>
         </div>
-        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 outline-none transition-all">
+        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} aria-label="Filtrar por tipo" className={LISTA_FILTRO}>
           <option value="">Todos los tipos</option>
           <option value="Acción Correctiva">Acciones Correctivas</option>
           <option value="Plan de Mejora">Planes de Mejora</option>
@@ -360,14 +353,14 @@ export default function GestorAprobacionesView({
             <table className="w-full text-left">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="p-4 text-sm font-bold text-slate-700">Documento</th>
-                  <th className="p-4 text-sm font-bold text-slate-700">Tipo</th>
-                  <th className="p-4 text-sm font-bold text-slate-700">Área</th>
-                  <th className="p-4 text-sm font-bold text-slate-700">Fecha Envío</th>
-                  <th className="p-4 text-sm font-bold text-slate-700">Prioridad</th>
-                  <th className="p-4 text-sm font-bold text-slate-700">Estado</th>
-                  <th className="p-4 text-sm font-bold text-slate-700">Vencimiento</th>
-                  <th className="p-4 text-sm font-bold text-slate-700 text-center">Acciones SGC</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700">Documento</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700">Tipo</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700">Área</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700">Fecha Envío</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700">Prioridad</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700">Estado</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700">Vencimiento</th>
+                  <th scope="col" className="p-4 text-sm font-bold text-slate-700 text-center">Acciones SGC</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

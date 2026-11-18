@@ -2,6 +2,13 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-19T00:30Z · @claude-code · [REFACTOR] · Aprobaciones: lectura única de actividades y filtro con estilo de lista
+- Las 8 copias que leían las actividades de AC/PM (y descartaban el error) ahora usan `leerActividades` de constants/workflow.js; un texto dañado da lista vacía en lugar de romper la bandeja.
+- Prueba nueva: constants/__tests__/leerActividades.test.js (AC, PM como texto y como lista, texto dañado).
+- Filtro por tipo con el estilo de lista; encabezados de tabla marcados para lectores de pantalla. Lint de Aprobaciones: 0 errores (antes 8).
+- Archivos: frontend/src/components/aprobaciones/GestorAprobacionesView.jsx, frontend/src/constants/__tests__/leerActividades.test.js
+- Deploy: SÍ
+
 ## 2026-11-18T23:00Z · @claude-code · [UI] · Indicadores: todos los formularios con el mismo estilo y por pasos
 - Captura mensual en 4 pasos con franja de color: 1 Datos del indicador (bloqueados), 2 Resultado del mes, 3 Evaluación automática, 4 Observación (opcional, ya no escondida).
 - Ratificación y justificación de cambio (SGC) con el mismo estilo.
