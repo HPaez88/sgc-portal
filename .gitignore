@@ -28,4 +28,5 @@ Thumbs.db
 
 # Evidencias y artefactos locales
 qa-*.png
-*.zipbackups/
+*.zip
+backups/
