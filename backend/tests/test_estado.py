@@ -223,6 +223,11 @@ def test_reglas_matriz_de_riesgos_en_servidor():
     assert "solo el SGC" in vr([r], [{**r, "pm_id": 9}], enc)
     assert "otra área" in vr([r], [{**r, "descripcion": "x"}], _usuario("Encargado", "Jurídico", "j@x.mx"))
     trat = {**r, "estado": "EN_TRATAMIENTO", "pm_id": 9}
+    # con plan de mejora: el Admin no lo ajusta; el Super Admin y gescobar@ sí; replantear (quita el PM) sí
+    assert "Super Admin" in vr([trat], [{**trat, "descripcion": "x"}], adm)
+    assert vr([trat], [{**trat, "descripcion": "x"}], _usuario("Super Admin", "SGC")) is None
+    assert vr([trat], [{**trat, "descripcion": "x"}], _usuario("Admin", "SGC", "gescobar@oomapasc.gob.mx")) is None
+    assert vr([trat], [{**trat, "pm_id": None, "plan": [], "estado": "IDENTIFICADO"}], adm) is None
     assert "sigue abierto" in vr([trat], [{**trat, "estado": "CERRADO_EFICAZ", "dictamen": {"resultado": "EFICAZ", "nota": "bajó el nivel claramente"}}], adm, [], [{"id": 9, "estado": "EN_SEGUIMIENTO"}])
     assert vr([trat], [{**trat, "estado": "CERRADO_EFICAZ", "dictamen": {"resultado": "EFICAZ", "nota": "bajó el nivel claramente"}}], adm, [], [{"id": 9, "estado": "CERRADO_EFECTIVO"}]) is None
     assert "nota" in vr([trat], [{**trat, "estado": "CERRADO_EFICAZ", "dictamen": {"resultado": "EFICAZ", "nota": "ok"}}], adm, [], [{"id": 9, "estado": "CERRADO_EFECTIVO"}])

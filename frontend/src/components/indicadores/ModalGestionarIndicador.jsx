@@ -27,6 +27,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
+import { CAMPO_LISTA, CAMPO_TEXTO, opcion, Leyenda, Encabezado, Sub, AvisoBloqueo } from './estilosCampos';
 import { useToast } from '../common/Toast';
 import { mapearResultadosMensualesIndicador } from '../../services/fichaTecnicaExporter';
 import { descargarFormatoOficial, origenFicha } from '../../services/formatosOficiales';
@@ -111,7 +112,7 @@ function AutoTextarea({
       }}
       disabled={disabled}
       placeholder={placeholder}
-      className={`w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 transition-all resize-none leading-relaxed font-medium ${className}`}
+      className={`${CAMPO_TEXTO} resize-none leading-relaxed ${className}`}
     />
   );
 }
@@ -467,52 +468,30 @@ export default function ModalGestionarIndicador({
                   INDICADOR #{numero}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
-                  <CheckCircle2 size={12} /> Ficha Integral Homologada (SGC + PMD)
+                  <CheckCircle2 size={12} /> Cuadro SGC + ficha PMD
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
-                {esEdicion ? 'Configuración Integral de Indicador & Ficha PMD' : 'Alta de Nuevo Indicador Oficial'}
+                {esEdicion ? (nombre || 'Indicador sin nombre') : 'Alta de nuevo indicador'}
               </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {origen && <><button
-              type="button"
-              onClick={handleDescargarWord}
-              disabled={descargandoDocx}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 text-sky-100 border border-sky-300/40 text-xs font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
-              title="Ficha técnica oficial del Ayuntamiento (Word)"
-            >
-              <FileDown size={14} />
-              <span>{descargandoDocx ? 'Generando...' : 'Descargar Word'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDescargarPDF}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-100 border border-rose-300/40 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-              title="Ficha técnica oficial del Ayuntamiento (PDF)"
-            >
-              <Download size={14} />
-              <span>Descargar PDF</span>
-            </button></>}
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer ml-1"
-              title="Cerrar ventana"
-            >
-              <X size={20} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer ml-1"
+            title="Cerrar ventana"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* ============================================================ */}
         {/* CUERPO DEL FORMULARIO CONTINUO (UNA SOLA VISTA SIN PESTAÑAS) */}
         {/* ============================================================ */}
-        <form onSubmit={handleSubmitIntegral} className="overflow-y-auto flex-1 p-6 space-y-6 bg-slate-50/50">
+        <form onSubmit={handleSubmitIntegral} className="overflow-y-auto flex-1 p-6 space-y-6 bg-slate-100">
+          <Leyenda />
           {indicadorAEditar?.proyecto && (
             <p role="note" className="text-sm text-sky-900 bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
               <strong>Este indicador viene del proyecto {indicadorAEditar.proyecto.anio} de {indicadorAEditar.proyecto.area}</strong> ({indicadorAEditar.proyecto.nombre}).
@@ -520,24 +499,14 @@ export default function ModalGestionarIndicador({
             </p>
           )}
 
-          {/* SECCIÓN I: IDENTIFICACIÓN GENERAL Y PARÁMETROS COMPARTIDOS */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#2A78B0]"></span>
-                I. Identificación Oficial, Proceso Institucional y Periodicidad
-              </span>
-              <span className="text-[11px] font-bold text-slate-400">
-                Parámetros Centrales del Catálogo
-              </span>
-            </div>
-
-            {/* Grid Superior: Número, Periodicidad, Unidad, Dirección, Área y Proceso */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              
+          {/* SECCIÓN I: QUÉ INDICADOR ES Y QUIÉN RESPONDE */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4">
+            <Encabezado n="I" titulo="Identificación del indicador" ayuda="Qué indicador es, quién responde por él y a qué proceso del SGC pertenece." color="bg-[#1E3E62]" />
+            <Sub titulo="A. El indicador" ayuda="Número del catálogo y nombre oficial (se usa igual en el Cuadro OOMRSC-05 y en la ficha del Ayuntamiento)." />
+            <div className="grid grid-cols-1 sm:grid-cols-[9rem_1fr] gap-3.5 items-start">
               {/* Número de Indicador */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
                   <Hash size={12} className="text-sky-600" />
                   Número Oficial:
                 </label>
@@ -547,50 +516,33 @@ export default function ModalGestionarIndicador({
                   max="999"
                   value={numero}
                   onChange={(e) => setNumero(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-xs font-mono font-bold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900"
+                  className={`${CAMPO_TEXTO} font-mono font-bold`}
                   required
                 />
               </div>
-
-              {/* Periodicidad de Medición */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1 flex items-center gap-1">
-                  <Calendar size={12} className="text-sky-600" />
-                  Periodicidad:
-                </label>
-                <select
-                  value={periodicidad}
-                  onChange={(e) => setPeriodicidad(e.target.value)}
-                  disabled={deProyecto}
-                  className="w-full px-3 py-2 text-xs font-semibold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
-                >
-                  {PERIODICIDADES.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Unidad de Medida */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1 flex items-center gap-1">
-                  <Percent size={12} className="text-sky-600" />
-                  Unidad de Medida:
-                </label>
-                <select
-                  value={unidad}
-                  onChange={(e) => setUnidad(e.target.value)}
-                  disabled={deProyecto}
-                  className="w-full px-3 py-2 text-xs font-semibold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
-                >
-                  {UNIDADES.map(u => (
-                    <option key={u} value={u}>{u}</option>
-                  ))}
-                </select>
-              </div>
-
+<div>
+              <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
+                <Edit3 size={13} className="text-sky-600" />
+                Nombre / Título Oficial del Indicador:
+              </label>
+              <AutoTextarea
+                minRows={2}
+                value={nombre}
+                onChange={setNombre}
+                disabled={deProyecto}
+                placeholder="Escribe el nombre completo y descriptivo del indicador oficial..."
+                className="font-bold"
+              />
+              <span className="text-xs text-slate-400 block mt-1">
+                Este título se utilizará de forma unificada tanto en el Cuadro OOMRSC-05 como en la Ficha Técnica para el Ayuntamiento.
+              </span>
+            </div>
+            </div>
+            <Sub titulo="B. Responsable y proceso" ayuda="Dirección, unidad que reporta y proceso del SGC." />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Dirección Responsable */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
                   <Building2 size={12} className="text-sky-600" />
                   Dirección Responsable:
                 </label>
@@ -598,17 +550,16 @@ export default function ModalGestionarIndicador({
                   value={direccion}
                   disabled={!puedeReasignar}
                   onChange={(e) => setDireccion(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
+                  className={CAMPO_LISTA}
                 >
                   {direccionesCatalogo.map(d => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
               </div>
-
               {/* Área Operativa (Catálogo Oficial de 33 áreas) */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
                   <Layers size={12} className="text-sky-600" />
                   Responsable (área, subdirección o dirección):
                 </label>
@@ -624,7 +575,7 @@ export default function ModalGestionarIndicador({
                     if (resp.responsable_tipo !== 'unidad' && resp.responsable_tipo !== 'subdireccion') setDireccion(resp.direccion);
                     else if (sub) setDireccion(normalizarDireccion(sub.nombre));
                   }}
-                  className="w-full px-3 py-2 text-xs font-bold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
+                  className={CAMPO_LISTA}
                 >
                   <optgroup label="Áreas">
                     {areasCatalogo.map(a => <option key={a} value={a}>{a}</option>)}
@@ -647,17 +598,16 @@ export default function ModalGestionarIndicador({
                   )}
                 </select>
               </div>
-
               {/* Proceso Institucional (Al lado del indicador) */}
               <div>
-                <label className="block text-[11px] font-bold text-sky-900 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
                   <Activity size={12} className="text-sky-600" />
                   Proceso Institucional Oficial (SGC):
                 </label>
                 <select
                   value={proceso}
                   onChange={(e) => setProceso(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-bold bg-sky-50/60 border border-sky-300 rounded-xl focus:ring-2 focus:ring-sky-500/30 focus:border-sky-600 outline-none text-sky-950 cursor-pointer"
+                  className={CAMPO_LISTA}
                 >
                   {(procesosDisponibles.length > 0 ? procesosDisponibles : [
                     'Responsabilidad de la Dirección',
@@ -673,47 +623,65 @@ export default function ModalGestionarIndicador({
                   ))}
                 </select>
               </div>
-
-            </div>
-
-            {/* Nombre Oficial del Indicador */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                <Edit3 size={13} className="text-sky-600" />
-                Nombre / Título Oficial del Indicador:
-              </label>
-              <AutoTextarea
-                minRows={2}
-                value={nombre}
-                onChange={setNombre}
-                disabled={deProyecto}
-                placeholder="Escribe el nombre completo y descriptivo del indicador oficial..."
-                className="text-xs sm:text-sm font-bold text-slate-900 border-slate-300"
-              />
-              <span className="text-[10px] text-slate-400 block mt-1">
-                Este título se utilizará de forma unificada tanto en el Cuadro OOMRSC-05 como en la Ficha Técnica para el Ayuntamiento.
-              </span>
             </div>
           </div>
 
-          {/* SECCIÓN II: METAS TRIMESTRALES (T1-T4) Y REGLAS SGC (OOMRSC-05) */}
-          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            {deProyecto && <p className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">Sección bloqueada: estos datos vienen del proyecto del área y se modifican en Proyectos y fichas.</p>}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                II. Metas Trimestrales (T1 a T4) y Meta Anual (Cuadro OOMRSC-05)
-              </span>
-              <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Meta Anual: {metaAnual}{unidad === 'Porcentaje' ? '%' : ` ${unidad}`}
-              </span>
+          {/* SECCIÓN II: CÓMO SE MIDE Y CUÁL ES LA META */}
+          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4">
+            <Encabezado n="II" titulo="Medición y metas (Cuadro OOMRSC-05)" ayuda="Cómo se mide, cuánto se espera lograr y qué pasa si no se cumple." color="bg-emerald-700"
+              extra={<span className="text-sm font-bold bg-white/15 px-3 py-1 rounded-full">Meta anual: {metaAnual}{unidad === 'Porcentaje' ? '%' : ` ${unidad}`}</span>} />
+            {deProyecto && <AvisoBloqueo />}
+            <Sub titulo="A. Cómo se mide" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-start">
+              {/* Unidad de Medida */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
+                  <Percent size={12} className="text-sky-600" />
+                  Unidad de Medida:
+                </label>
+                <select
+                  value={unidad}
+                  onChange={(e) => setUnidad(e.target.value)}
+                  disabled={deProyecto}
+                  className={CAMPO_LISTA}
+                >
+                  {UNIDADES.map(u => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Periodicidad de Medición */}
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
+                  <Calendar size={12} className="text-sky-600" />
+                  Periodicidad:
+                </label>
+                <select
+                  value={periodicidad}
+                  onChange={(e) => setPeriodicidad(e.target.value)}
+                  disabled={deProyecto}
+                  className={CAMPO_LISTA}
+                >
+                  {PERIODICIDADES.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-slate-800 mb-1">Sentido del indicador:</span>
+                <div className="grid grid-cols-2 gap-2" role="group" aria-label="Sentido del indicador">
+                  {[['Ascendente', 'Ascendente', 'Más es mejor'], ['Descendente', 'Descendente', 'Menos es mejor (costos, fugas)']].map(([v, t, ayuda]) => (
+                    <button key={v} type="button" aria-pressed={sentidoIndicador === v} onClick={() => { setSentidoIndicador(v); setEsMenor(v === 'Descendente'); }}
+                      className={`${opcion(sentidoIndicador === v)} text-left leading-tight`}>{t}<span className={`block text-xs font-normal ${sentidoIndicador === v ? 'text-white/85' : 'text-slate-500'}`}>{ayuda}</span></button>
+                  ))}
+                </div>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              
+            <Sub titulo="B. Metas" ayuda="La meta anual y su desglose por trimestre." />
+            <div className="grid grid-cols-1 sm:grid-cols-[12rem_1fr] gap-3.5 items-start">
               {/* Meta Anual Oficial */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Meta Anual Oficial:
                 </label>
                 <div className="relative">
@@ -722,7 +690,7 @@ export default function ModalGestionarIndicador({
                     step="any"
                     value={metaAnual}
                     onChange={(e) => setMetaAnual(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-bold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900"
+                    className={`${CAMPO_TEXTO} font-bold`}
                     required
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
@@ -730,62 +698,9 @@ export default function ModalGestionarIndicador({
                   </span>
                 </div>
               </div>
-
-              {/* Sentido del Indicador */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
-                  Sentido del Indicador:
-                </label>
-                <select
-                  value={sentidoIndicador}
-                  onChange={(e) => {
-                    setSentidoIndicador(e.target.value);
-                    setEsMenor(e.target.value === 'Descendente');
-                  }}
-                  className="w-full px-3 py-2 text-xs font-semibold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
-                >
-                  <option value="Ascendente">Ascendente (Mayor valor es mejor)</option>
-                  <option value="Descendente">Descendente (Menor valor es mejor / Costos, Fugas)</option>
-                </select>
-              </div>
-
-              {/* Clasificación de Impacto */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
-                  Impacto ante Desviación:
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setImpacto('Bajo')}
-                    className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                      impacto === 'Bajo'
-                        ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span>Bajo (RC)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setImpacto('Alto')}
-                    className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                      impacto === 'Alto'
-                        ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span>Alto (AC OOMRSC-20)</span>
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
             {/* Metas Trimestrales T1-T4 */}
-            <div className="pt-2">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
                 <Calendar size={13} className="text-emerald-600" />
                 Metas Trimestrales Desglosadas (T1 a T4):
               </label>
@@ -797,10 +712,10 @@ export default function ModalGestionarIndicador({
                   { key: 'T4', label: '4to Trimestre (T4)', desc: 'Oct - Dic' }
                 ].map(trim => (
                   <div key={trim.key} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-[10px] font-mono font-bold text-slate-500 uppercase block">
+                    <span className="text-xs font-mono font-bold text-slate-500 uppercase block">
                       {trim.label}
                     </span>
-                    <span className="text-[9px] text-slate-400 block font-semibold">{trim.desc}</span>
+                    <span className="text-[11px] text-slate-400 block font-semibold">{trim.desc}</span>
                     <input
                       type="number"
                       step="any"
@@ -809,29 +724,30 @@ export default function ModalGestionarIndicador({
                         ...metasTrimestrales,
                         [trim.key]: e.target.value === '' ? '' : Number(e.target.value)
                       })}
-                      className="w-full px-2.5 py-1.5 text-xs font-bold bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-slate-900"
+                      className={`${CAMPO_TEXTO} font-bold`}
                       placeholder="0"
                     />
                   </div>
                 ))}
               </div>
             </div>
+            </div>
+            <Sub titulo="C. Si no se cumple la meta" ayuda="Qué documento se abre cuando el resultado sale bajo." />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl" role="group" aria-label="Impacto ante desviación">
+              <button type="button" aria-pressed={impacto === 'Bajo'} onClick={() => setImpacto('Bajo')} className={`${opcion(impacto === 'Bajo', 'bg-amber-600 border-amber-700')} text-left leading-tight`}>Impacto bajo<span className={`block text-xs font-normal ${impacto === 'Bajo' ? 'text-white/85' : 'text-slate-500'}`}>Reporte de corrección (RC)</span></button>
+              <button type="button" aria-pressed={impacto === 'Alto'} onClick={() => setImpacto('Alto')} className={`${opcion(impacto === 'Alto', 'bg-purple-700 border-purple-800')} text-left leading-tight`}>Impacto alto<span className={`block text-xs font-normal ${impacto === 'Alto' ? 'text-white/85' : 'text-slate-500'}`}>Acción correctiva (AC, OOMRSC-20)</span></button>
+            </div>
           </fieldset>
 
           {/* SECCIÓN III: FÓRMULA OFICIAL Y OBSERVACIÓN DEFAULT */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                III. Método de Cálculo y Observación Técnica
-              </span>
-            </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4">
+            <Encabezado n="III" titulo="Cálculo y observación" ayuda="Cómo se calcula el resultado y el texto que aparece al capturar cada mes." color="bg-indigo-700" />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               {/* Método de Cálculo / Fórmula */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Método de Cálculo / Fórmula Oficial:
                 </label>
                 <AutoTextarea
@@ -845,7 +761,7 @@ export default function ModalGestionarIndicador({
 
               {/* Observación / Criterio Default */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Observación / Criterio por Defecto:
                 </label>
                 <AutoTextarea
@@ -861,28 +777,20 @@ export default function ModalGestionarIndicador({
           </div>
 
           {/* SECCIÓN IV: ALINEACIÓN Y DATOS FICHA PMD (AYUNTAMIENTO DE CAJEME) */}
-          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            {deProyecto && <p className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">Sección bloqueada: estos datos vienen del proyecto del área y se modifican en Proyectos y fichas.</p>}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#2A78B0]"></span>
-                IV. Ficha Técnica PMD (Ayuntamiento de Cajeme)
-              </span>
-              <span className="text-[11px] font-bold text-[#2A78B0] bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
-                Formato Institucional Oficial (Azul)
-              </span>
-            </div>
-
+          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4">
+            <Encabezado n="IV" titulo="Ficha técnica PMD (Ayuntamiento de Cajeme)" ayuda="Alineación al Plan Municipal de Desarrollo y datos de la ficha oficial." color="bg-sky-700" />
+            {deProyecto && <AvisoBloqueo />}
+            <Sub titulo="A. Alineación al Plan Municipal de Desarrollo" />
             {/* Eje y Programa */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Eje Rector PMD:
                 </label>
                 <select
                   value={ejePmd}
                   onChange={(e) => setEjePmd(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
+                  className={CAMPO_LISTA}
                 >
                   <option value="">— Selecciona el eje —</option>
                   {EJES_PMD_CAJEME.map(ej => (
@@ -892,13 +800,13 @@ export default function ModalGestionarIndicador({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Programa PMD:
                 </label>
                 <select
                   value={programaPmd}
                   onChange={(e) => setProgramaPmd(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
+                  className={CAMPO_LISTA}
                 >
                   <option value="">— Selecciona el programa —</option>
                   {PROGRAMAS_PMD_CAJEME.map(pr => (
@@ -911,7 +819,7 @@ export default function ModalGestionarIndicador({
             {/* Objetivos, Estrategia y Línea de Acción (Auto-expandibles) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Objetivo PMD:
                 </label>
                 <AutoTextarea
@@ -923,7 +831,7 @@ export default function ModalGestionarIndicador({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Estrategia PMD:
                 </label>
                 <AutoTextarea
@@ -935,7 +843,7 @@ export default function ModalGestionarIndicador({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Línea de Acción:
                 </label>
                 <AutoTextarea
@@ -948,15 +856,16 @@ export default function ModalGestionarIndicador({
             </div>
 
             {/* Dimensión, Tipo y Supuestos */}
+            <Sub titulo="B. Características del indicador" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Dimensión:
                 </label>
                 <select
                   value={dimension}
                   onChange={(e) => setDimension(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
+                  className={CAMPO_LISTA}
                 >
                   <option value="Eficacia">Eficacia (Cumplimiento de objetivos)</option>
                   <option value="Eficiencia">Eficiencia (Uso de recursos)</option>
@@ -966,13 +875,13 @@ export default function ModalGestionarIndicador({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Tipo de Indicador:
                 </label>
                 <select
                   value={tipoIndicador}
                   onChange={(e) => setTipoIndicador(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-medium bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-slate-900 cursor-pointer"
+                  className={CAMPO_LISTA}
                 >
                   <option value="Gestión">Gestión (Operativo / Proceso)</option>
                   <option value="Estratégico">Estratégico (Institucional)</option>
@@ -981,7 +890,7 @@ export default function ModalGestionarIndicador({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Supuestos:
                 </label>
                 <AutoTextarea
@@ -994,9 +903,10 @@ export default function ModalGestionarIndicador({
             </div>
 
             {/* Fuentes de Información y Medios de Verificación */}
+            <Sub titulo="C. Fuentes y verificación" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Fuente de Información:
                 </label>
                 <AutoTextarea
@@ -1008,7 +918,7 @@ export default function ModalGestionarIndicador({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Medio de Verificación:
                 </label>
                 <AutoTextarea
@@ -1021,13 +931,13 @@ export default function ModalGestionarIndicador({
             </div>
 
             {/* CUMPLIMIENTO MENSUAL OFICIAL (12 MESES CON SEMÁFORO DEL AYUNTAMIENTO) */}
-            <div className="pt-3 border-t border-slate-100 space-y-2">
+            <div className="pt-3 border-t-2 border-slate-200 space-y-2 bg-slate-50 -mx-5 -mb-5 px-5 pb-5 rounded-b-2xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                  <Activity size={13} className="text-[#2A78B0]" />
-                  Cumplimiento Mensual Oficial (Trazabilidad SGC & Ayuntamiento):
-                </label>
-                <div className="flex items-center gap-2 text-[10px] font-mono">
+                <div>
+                  <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5"><Activity size={14} className="text-[#2A78B0]" /> D. Consulta: cumplimiento mensual</h4>
+                  <p className="text-xs text-slate-500">Solo lectura: se llena solo con las mediciones del Cuadro de Control.</p>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-mono">
                   <span className="flex items-center gap-1 text-emerald-700 font-bold">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span> ≥90%
                   </span>
@@ -1044,8 +954,8 @@ export default function ModalGestionarIndicador({
               <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
                 <table className="w-full text-center border-collapse">
                   <thead>
-                    <tr className="bg-[#2A78B0] text-white text-[10px] font-bold font-mono tracking-wider">
-                      <th className="py-2 px-1 border-r border-sky-400/40 text-left pl-3 text-[9.5px]">CONCEPTO</th>
+                    <tr className="bg-[#2A78B0] text-white text-xs font-bold font-mono tracking-wider">
+                      <th className="py-2 px-1 border-r border-sky-400/40 text-left pl-3 text-[11px]">CONCEPTO</th>
                       {mesesSemaforizados.map(m => (
                         <th key={m.mes} className="py-2 px-1 border-r border-sky-400/30 last:border-none">
                           {m.mes}
@@ -1055,7 +965,7 @@ export default function ModalGestionarIndicador({
                   </thead>
                   <tbody>
                     <tr className="bg-slate-50/50 text-[11px] font-bold">
-                      <td className="py-2.5 px-3 border-r border-slate-200 text-left text-slate-700 font-semibold text-[10.5px]">
+                      <td className="py-2.5 px-3 border-r border-slate-200 text-left text-slate-700 font-semibold text-xs">
                         Resultado Oficial
                       </td>
                       {mesesSemaforizados.map(m => (
@@ -1080,7 +990,7 @@ export default function ModalGestionarIndicador({
                   </tbody>
                 </table>
               </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed italic">
+              <p className="text-xs text-slate-400 leading-relaxed italic">
                 * Los porcentajes se calculan y semaforizan automáticamente a partir de las mediciones registradas en el Portal SGC. En los formatos oficiales exportados (PDF y Word), esta cuadrícula se integra con los mismos estándares gráficos del Ayuntamiento.
               </p>
             </div>
@@ -1088,23 +998,15 @@ export default function ModalGestionarIndicador({
           </fieldset>
 
           {/* SECCIÓN V: CRITERIOS DE EVALUACIÓN CREMAA (AYUNTAMIENTO DE CAJEME) */}
-          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            {deProyecto && <p className="text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">Sección bloqueada: estos datos vienen del proyecto del área y se modifican en Proyectos y fichas.</p>}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#2A78B0]"></span>
-                V. Criterios de Evaluación CREMAA (Ayuntamiento de Cajeme)
-              </span>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                <Check size={12} /> Cumple 6/6 atributos
-              </span>
-            </div>
-
+          <fieldset disabled={deProyecto} className="min-w-0 bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4">
+            <Encabezado n="V" titulo="Atributos del indicador (criterios CREMAA)" ayuda="Por qué el indicador es claro, relevante, económico, monitoreable, adecuado y qué aporta." color="bg-violet-700"
+              extra={<span className="text-sm font-bold bg-white/15 px-3 py-1 rounded-full">{['claridad', 'relevancia', 'economia', 'monitoreable', 'adecuado', 'aportacion_marginal'].filter((k) => String(cremaa[k] || '').trim()).length} de 6 con texto</span>} />
+            {deProyecto && <AvisoBloqueo />}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               
               {/* Claro */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Claro (Preciso y sin ambigüedad):
                 </label>
                 <AutoTextarea
@@ -1117,7 +1019,7 @@ export default function ModalGestionarIndicador({
 
               {/* Relevante */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Relevante (Aporta valor público):
                 </label>
                 <AutoTextarea
@@ -1130,7 +1032,7 @@ export default function ModalGestionarIndicador({
 
               {/* Económico */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Económico (Bajo costo de obtención):
                 </label>
                 <AutoTextarea
@@ -1143,7 +1045,7 @@ export default function ModalGestionarIndicador({
 
               {/* Monitoreable */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Monitoreable (Sujeto a comprobación):
                 </label>
                 <AutoTextarea
@@ -1156,7 +1058,7 @@ export default function ModalGestionarIndicador({
 
               {/* Adecuado */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Adecuado (Mide la magnitud exacta):
                 </label>
                 <AutoTextarea
@@ -1169,7 +1071,7 @@ export default function ModalGestionarIndicador({
 
               {/* Aporte Marginal */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Aporte Marginal (Información no redundante):
                 </label>
                 <AutoTextarea
@@ -1230,7 +1132,7 @@ export default function ModalGestionarIndicador({
               className="px-5 py-2.5 text-xs font-black bg-[#002855] hover:bg-[#0B192C] text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border border-sky-400/30"
             >
               <Save size={15} />
-              <span>Guardar Configuración Integral</span>
+              <span>Guardar indicador</span>
             </button>
           </div>
         </div>

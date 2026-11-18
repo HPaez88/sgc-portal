@@ -2,6 +2,15 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-17 — Indicadores: formularios por temas, listas distinguibles, firmas del catálogo y moneda; riesgos con plan solo los ajustan Super Admin y gescobar@
+
+A petición de @human (revisión de flujos de Indicadores):
+
+- **Ventana del indicador (Cuadro de Control):** secciones con franja de color y subtemas (I Identificación: A el indicador, B responsable y proceso · II Medición y metas: A cómo se mide, B metas, C si no se cumple · III Cálculo · IV Ficha PMD: A alineación, B características, C fuentes, D consulta del cumplimiento mensual · V CREMAA con conteo real de atributos llenos). Sentido e impacto como botones de opción con contraste. Leyenda "Lista / Texto / Bloqueado"; las listas tienen fondo azul y borde marcado, los campos libres fondo blanco. Las descargas quedan solo en el pie.
+- **Proyecto anual:** descargas en una tabla plegable (formato, contenido, Word/Excel/PDF con color propio); cada actividad con número grande, "Actividad N de M", más espacio y color alterno (igual en el plan de acción de riesgos); firmas y titular ligados al catálogo de direcciones y áreas (el proyecto nuevo nace con ellos y avisa cuando el catálogo cambia, con botón "Usar este"); presupuesto con formato de moneda (`CampoMoneda`, `estilosCampos.jsx`).
+- **Riesgos:** un registro con plan de mejora solo lo ajustan el Super Admin y gescobar@ (mueve fechas del plan); regla también en el servidor.
+- **Datos:** se quitaron 3 registros de riesgo en blanco de la matriz 2027 (`backend/scripts/quitar_riesgos_vacios.py`, con respaldo en la bitácora del servidor).
+
 ## 2026-11-17 — Indicadores: ficha del proyecto más clara, catálogos y datos del indicador bloqueados
 
 A petición de @human (caso Informática, 3 fichas): no se distinguía qué ficha se estaba llenando ni qué datos ya estaban definidos.

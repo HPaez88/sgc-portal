@@ -10,7 +10,7 @@ import { TIPOS_UNIDAD } from '../../constants/unidades';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
 import { useToast } from '../common/Toast';
 import { asignarFolios } from '../../services/folioService';
-import { formatearFecha } from '../../constants/workflow';
+import { formatearFecha, puedeMoverFechas } from '../../constants/workflow';
 import { CLAVE_MATRIZ, ESTADOS_MATRIZ, nivelDe, puntaje, llevaPM, aceptacionDe, pmSincronizado, idMatriz, faltante } from '../../constants/riesgos';
 
 export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, matrices, guardarMatriz, planesMejora, setPlanesMejora, procesos = [], usuarioLogueado, registrarMovimiento, onVerPM }) {
@@ -21,7 +21,8 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
   const [aceptando, setAceptando] = useState(false);
   const [registro, setRegistro] = useState(null); // id del registro abierto en ventana
   // El SGC ajusta cualquier registro no dictaminado; si ya tiene plan de mejora, el plan refleja el ajuste.
-  const ajustable = (r) => !String(r.estado || '').startsWith('CERRADO');
+  // Con plan de mejora el ajuste mueve fechas: solo Super Admin y gescobar@.
+  const ajustable = (r) => !String(r.estado || '').startsWith('CERRADO') && (!r.pm_id || puedeMoverFechas(usuarioLogueado));
   const actualizar = (r) => {
     setRiesgos((prev) => prev.map((x) => (x.id === r.id ? r : x)));
     if (r.pm_id) setPlanesMejora((prev) => prev.map((p) => (String(p.id) === String(r.pm_id) ? pmSincronizado(p, r) : p)));
@@ -248,7 +249,7 @@ export default function RevisionMatrices({ anio, areas, riesgos, setRiesgos, mat
           <ModalBase isOpen onClose={() => setRegistro(null)} size="2xl" closeOnBackdrop={false} bodyClassName="p-4 sm:p-6 bg-slate-50"
             icono={r.tipo === 'Riesgo' ? <ShieldAlert size={20} /> : <Lightbulb size={20} />}
             titulo={`${r.tipo}: ${r.descripcion || 'sin descripción'}`}
-            subtitulo={`${CLAVE_MATRIZ} ${anio} · ${fila.area} · ${!ajustable(r) ? 'Solo consulta (ya dictaminado)' : r.pm_id ? `Ajuste del SGC: los cambios se reflejan en el Plan de Mejora ${r.pm_folio || ''}` : 'Ajuste del SGC: los cambios se guardan al escribir'}`}
+            subtitulo={`${CLAVE_MATRIZ} ${anio} · ${fila.area} · ${!ajustable(r) ? (r.pm_id && !String(r.estado || '').startsWith('CERRADO') ? 'Solo consulta: con plan de mejora solo lo ajustan el Super Admin y la cuenta autorizada' : 'Solo consulta (ya dictaminado)') : r.pm_id ? `Ajuste del SGC: los cambios se reflejan en el Plan de Mejora ${r.pm_folio || ''}` : 'Ajuste del SGC: los cambios se guardan al escribir'}`}
             footer={<>
               {ajustable(r) && faltante(r) && <span className="mr-auto self-center text-xs font-semibold text-amber-800">Pendiente: {faltante(r)}</span>}
               <button type="button" onClick={() => setRegistro(null)} className="px-5 py-2 text-sm font-bold text-white bg-marca-azul-oscuro rounded-lg hover:opacity-90">Listo, volver a la revisión</button>

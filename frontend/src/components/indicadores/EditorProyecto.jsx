@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Sparkles, AlertTriangle, CheckCircle2, Lock, Pencil } from 'lucide-react';
 import { UNIDADES } from './ModalGestionarIndicador';
+import { CAMPO_LISTA, Leyenda, CampoMoneda, moneda, DelCatalogo } from './estilosCampos';
+import { useSGC } from '../../SGCContext';
+import { normalizarDireccion } from '../../constants/areas';
 import {
   CAPITULOS, TRIMESTRES, LIMITE_PALABRAS, palabras, nuevaActividad, totalesPresupuesto, cumpleTrimestre, justificacionAutomatica,
 } from '../../constants/proyectosIndicadores';
@@ -40,8 +43,8 @@ const TIPOS_OBJETIVO = ['ESTRATÉGICO', 'OPERATIVO', 'DE GESTIÓN'];
 // Campos que el área llena en cada ficha: sirven para decir cuánto lleva cada una.
 const CAMPOS_FICHA = ['definicion', 'tipo_indicador', 'dimension', 'metodo', 'variables', 'linea_base', 'sentido', 'supuestos',
   'claridad', 'relevancia', 'economia', 'monitoreable', 'adecuado', 'aportacion', 'medios', 'recopilacion'];
-const ENTRADA = 'w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-md bg-white focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none disabled:bg-slate-50 disabled:text-slate-600';
-const pesos = (n) => `$${Math.round(n || 0).toLocaleString('es-MX')}`;
+const ENTRADA = 'w-full px-2.5 py-1.5 text-sm border border-slate-400 rounded-md bg-white focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none disabled:bg-slate-50 disabled:text-slate-600';
+const pesos = (n) => moneda(n || 0);
 
 // Campo de catálogo: solo se eligen los valores de la lista (un valor ya capturado fuera de la lista se conserva).
 function Lista({ etiqueta, valor, onChange, opciones, disabled }) {
@@ -50,7 +53,7 @@ function Lista({ etiqueta, valor, onChange, opciones, disabled }) {
   return (
     <label className="block">
       <span className="block text-xs font-bold text-slate-800 mb-1">{etiqueta}</span>
-      <select value={actual} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={ENTRADA}>
+      <select value={actual} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={CAMPO_LISTA}>
         <option value="">— Seleccionar —</option>
         {[...opciones, ...(actual && !opciones.includes(actual) ? [actual] : [])].map((o) => <option key={o}>{o}</option>)}
       </select>
@@ -83,9 +86,19 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
   const setAct = (i, cambios) => set('actividades', acts.map((a, j) => (j === i ? { ...a, ...cambios } : a)));
   const tot = totalesPresupuesto(p.presupuesto);
   const pond = acts.reduce((s, a) => s + (parseFloat(a.ponderado) || 0), 0);
+  // Ligado a los catálogos: Director General, director de la dirección del área y encargado del área.
+  const { areasDetalle = [], direccionesDetalle = [] } = useSGC();
+  const fichaArea = areasDetalle.find((x) => x.nombre === p.area);
+  const dirArea = direccionesDetalle.find((d) => normalizarDireccion(d.nombre) === normalizarDireccion(fichaArea?.direccion || ''));
+  const catalogo = {
+    dg: direccionesDetalle.find((d) => normalizarDireccion(d.nombre) === normalizarDireccion('Dir. General'))?.director || '',
+    director: dirArea?.director || '', direccion: dirArea?.nombre || '', titular: fichaArea?.encargado?.trim() || '',
+  };
+  const setFirma = (quien, campo, v) => set('firmas', { ...p.firmas, [quien]: { ...p.firmas?.[quien], [campo]: v } });
 
   return (
     <div className="space-y-3">
+      {editable && <Leyenda />}
       <nav className="flex flex-wrap gap-1.5" aria-label="Secciones del proyecto">
         {SECCIONES.map(([id, t]) => (
           <button key={id} type="button" aria-pressed={seccion === id} onClick={() => setSeccion(id)}
@@ -136,18 +149,22 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
       )}
 
       {seccion === 'actividades' && (
-        <div className="space-y-2">
+        <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
             <p className="text-xs text-slate-700">Aquí nace cada indicador del área. Su nombre, meta y frecuencia se capturan una sola vez; la ficha técnica se desarrolla en la pestaña 3 y el Cuadro de Control se arma con esto al aprobar el proyecto.</p>
             <span className={`text-xs font-extrabold px-2.5 py-1 rounded-md border ${Math.round(pond) === 100 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>Ponderado total: {pond}% {Math.round(pond) === 100 ? '' : '(debe sumar 100%)'}</span>
           </div>
           {acts.map((a, i) => (
-            <div key={a.id || i} className="rounded-lg border-2 border-marca-azul-oscuro/30 bg-white overflow-hidden">
-              <div className="flex items-center justify-between gap-2 bg-marca-azul-oscuro text-white px-3 py-2">
-                <h4 className="text-sm font-extrabold truncate">Actividad {i + 1}{a.indicador ? ` · ${a.indicador}` : ''}</h4>
+            <div key={a.id || i} className={`rounded-xl border-2 bg-white overflow-hidden shadow-md ${i % 2 ? 'border-teal-700/60' : 'border-marca-azul-oscuro/60'}`}>
+              <div className={`flex items-center justify-between gap-3 text-white px-4 py-3 ${i % 2 ? 'bg-teal-800' : 'bg-marca-azul-oscuro'}`}>
+                <h4 className="flex items-center gap-3 min-w-0">
+                  <span className="w-9 h-9 shrink-0 rounded-full bg-white text-slate-900 text-lg font-black flex items-center justify-center">{i + 1}</span>
+                  <span className="min-w-0"><span className="block text-xs font-bold uppercase tracking-wide text-white/80">Actividad {i + 1} de {acts.length}</span>
+                    <span className="block text-sm font-extrabold truncate">{a.indicador || a.actividad || 'Sin nombre todavía'}</span></span>
+                </h4>
                 {editable && acts.length > 1 && <button type="button" onClick={() => set('actividades', acts.filter((_, j) => j !== i))} className="text-xs text-white/90 inline-flex items-center gap-1 hover:underline shrink-0"><Trash2 size={13} /> Quitar</button>}
               </div>
-              <div className="p-3 space-y-3 bg-slate-50">
+              <div className="p-4 space-y-4 bg-slate-50">
                 <Bloque titulo="A. Actividad e indicador" ayuda="Qué se hace y con qué indicador se mide. El indicador se desarrolla en la pestaña 3 (ficha técnica).">
                   <div className="grid gap-3 md:grid-cols-2">
                     <Campo disabled={!editable} multi etiqueta="Actividad" valor={a.actividad} onChange={(v) => setAct(i, { actividad: v })} />
@@ -163,7 +180,7 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
                         {TRIMESTRES.map((t, ti) => <th key={t} scope="col" className="p-2 text-left min-w-[100px]">Meta {t}<span className="block text-[11px] font-semibold text-slate-600">{['Ene–Mar', 'Abr–Jun', 'Jul–Sep', 'Oct–Dic'][ti]}</span></th>)}
                       </tr></thead>
                       <tbody><tr>
-                        <td className="p-1.5"><select aria-label="Unidad de medida" disabled={!editable} value={a.unidad || ''} onChange={(e) => setAct(i, { unidad: e.target.value })} className={ENTRADA}>
+                        <td className="p-1.5"><select aria-label="Unidad de medida" disabled={!editable} value={a.unidad || ''} onChange={(e) => setAct(i, { unidad: e.target.value })} className={CAMPO_LISTA}>
                           <option value="">— Seleccionar —</option>
                           {[...UNIDADES, ...(a.unidad && !UNIDADES.includes(a.unidad) ? [a.unidad] : [])].map((u) => <option key={u}>{u}</option>)}
                         </select></td>
@@ -182,11 +199,11 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
                   <Bloque titulo="C. Seguimiento en el Cuadro de Control" ayuda="Cada cuánto se reporta el resultado y qué pasa si sale bajo.">
                     <div className="grid gap-3 grid-cols-2">
                       <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Frecuencia</span>
-                        <select disabled={!editable} value={a.periodicidad || 'Mensual'} onChange={(e) => setAct(i, { periodicidad: e.target.value })} className={ENTRADA}>
+                        <select disabled={!editable} value={a.periodicidad || 'Mensual'} onChange={(e) => setAct(i, { periodicidad: e.target.value })} className={CAMPO_LISTA}>
                           {['Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'].map((x) => <option key={x}>{x}</option>)}
                         </select></label>
                       <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Impacto si no cumple</span>
-                        <select disabled={!editable} value={a.impacto || 'Bajo'} onChange={(e) => setAct(i, { impacto: e.target.value })} className={ENTRADA}>
+                        <select disabled={!editable} value={a.impacto || 'Bajo'} onChange={(e) => setAct(i, { impacto: e.target.value })} className={CAMPO_LISTA}>
                           <option value="Bajo">Bajo: Reporte de corrección (RC)</option><option value="Alto">Alto: Acción correctiva (AC)</option>
                         </select></label>
                     </div>
@@ -207,8 +224,10 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
       )}
 
       {seccion === 'presupuesto' && (
+        <div className="space-y-2">
+        <p className="text-xs text-slate-600">Cantidades en pesos mexicanos. Al escribir se ve el número; al salir del campo toma formato de moneda. El anual y los totales se calculan solos.</p>
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-          <table className="w-full text-xs tablas-marcadas">
+          <table className="w-full text-sm tablas-marcadas tabular-nums">
             <caption className="sr-only">Cuantificación de recursos por capítulo</caption>
             <thead><tr><th scope="col" className="p-2 text-left">Capítulo</th><th scope="col" className="p-2 text-right">Anual</th>{['1er.', '2do.', '3er.', '4to.'].map((t) => <th key={t} scope="col" className="p-2 text-right">{t} trimestre</th>)}</tr></thead>
             <tbody>
@@ -220,15 +239,16 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
                     <th scope="row" className="p-2 text-left font-semibold">{c} {nombre}</th>
                     <td className="p-2 text-right font-bold">{pesos(anual)}</td>
                     {q.map((v, ti) => (
-                      <td key={ti} className="p-1"><input inputMode="decimal" disabled={!editable} value={v} aria-label={`${c} trimestre ${ti + 1}`}
-                        onChange={(e) => setSub('presupuesto', c, q.map((x, k) => (k === ti ? e.target.value.replace(/[^\d.]/g, '') : x)))} className={`${ENTRADA} text-right`} /></td>
+                      <td key={ti} className="p-1"><CampoMoneda disabled={!editable} value={v} aria-label={`${c} trimestre ${ti + 1}`}
+                        onChange={(nuevo) => setSub('presupuesto', c, q.map((x, k) => (k === ti ? nuevo : x)))} /></td>
                     ))}
                   </tr>
                 );
               })}
-              <tr className="font-extrabold"><th scope="row" className="p-2 text-left">Monto solicitado total</th><td className="p-2 text-right">{pesos(tot.anual)}</td>{tot.trimestres.map((v, i) => <td key={i} className="p-2 text-right">{pesos(v)}</td>)}</tr>
+              <tr className="font-extrabold bg-emerald-50"><th scope="row" className="p-2 text-left">Monto solicitado total</th><td className="p-2 text-right">{pesos(tot.anual)}</td>{tot.trimestres.map((v, i) => <td key={i} className="p-2 text-right">{pesos(v)}</td>)}</tr>
             </tbody>
           </table>
+        </div>
         </div>
       )}
 
@@ -240,7 +260,10 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
               <Campo disabled={!editable} multi etiqueta="Estrategia PMD" valor={p.estrategia_pmd} onChange={(v) => set('estrategia_pmd', v)} />
               <Campo disabled={!editable} multi etiqueta="Objetivo institucional" valor={p.objetivo_institucional} onChange={(v) => set('objetivo_institucional', v)} />
               <Lista disabled={!editable} etiqueta="Tipo de objetivo" opciones={TIPOS_OBJETIVO} valor={p.tipo_objetivo} onChange={(v) => set('tipo_objetivo', v)} />
+              <div>
               <Campo disabled={!editable} etiqueta="Titular de la unidad responsable" valor={p.titular?.nombre} onChange={(v) => setSub('titular', 'nombre', v)} />
+              <DelCatalogo valor={p.titular?.nombre} catalogo={catalogo.titular} origen={`Catálogo, encargado de ${p.area}`} editable={editable} onUsar={() => setSub('titular', 'nombre', catalogo.titular.toUpperCase())} />
+            </div>
               <Campo disabled={!editable} etiqueta="Cargo del titular" valor={p.titular?.cargo} onChange={(v) => setSub('titular', 'cargo', v)} />
               <Campo disabled={!editable} tipo="date" etiqueta="Fecha de elaboración" valor={p.fecha_elaboracion} onChange={(v) => set('fecha_elaboracion', v)} />
             </div>
@@ -331,12 +354,18 @@ export default function EditorProyecto({ proyecto: p, onCambio, editable, editab
               ))}
             </div>
           </Bloque>
-          <Bloque titulo="B. Firmas del Formato de Presentación de Proyectos" color="bg-emerald-700">
+          <Bloque titulo="B. Firmas del Formato de Presentación de Proyectos" color="bg-emerald-700" ayuda="Los nombres se toman del catálogo de direcciones (Configuración). Si el catálogo cambia, aquí aparece el aviso para actualizar; el título (Lic., Ing.) y el cargo se escriben como van en el formato.">
             <div className="grid gap-3 md:grid-cols-2">
-              <Campo disabled={!editable} etiqueta="Director General (nombre con título)" valor={p.firmas?.director_general?.nombre} onChange={(v) => set('firmas', { ...p.firmas, director_general: { ...p.firmas?.director_general, nombre: v } })} />
-              <Campo disabled={!editable} etiqueta="Cargo del Director General" valor={p.firmas?.director_general?.cargo} onChange={(v) => set('firmas', { ...p.firmas, director_general: { ...p.firmas?.director_general, cargo: v } })} />
-              <Campo disabled={!editable} etiqueta="Director del área (nombre con título)" valor={p.firmas?.director_area?.nombre} onChange={(v) => set('firmas', { ...p.firmas, director_area: { ...p.firmas?.director_area, nombre: v } })} />
-              <Campo disabled={!editable} etiqueta="Cargo del Director del área" valor={p.firmas?.director_area?.cargo} onChange={(v) => set('firmas', { ...p.firmas, director_area: { ...p.firmas?.director_area, cargo: v } })} />
+              <div>
+                <Campo disabled={!editable} etiqueta="Director General (nombre con título)" valor={p.firmas?.director_general?.nombre} onChange={(v) => setFirma('director_general', 'nombre', v)} />
+                <DelCatalogo valor={p.firmas?.director_general?.nombre} catalogo={catalogo.dg} origen="Catálogo, Dirección General" editable={editable} onUsar={() => setFirma('director_general', 'nombre', catalogo.dg.toUpperCase())} />
+              </div>
+              <Campo disabled={!editable} etiqueta="Cargo del Director General" valor={p.firmas?.director_general?.cargo} onChange={(v) => setFirma('director_general', 'cargo', v)} />
+              <div>
+                <Campo disabled={!editable} etiqueta="Director del área (nombre con título)" valor={p.firmas?.director_area?.nombre} onChange={(v) => setFirma('director_area', 'nombre', v)} />
+                <DelCatalogo valor={p.firmas?.director_area?.nombre} catalogo={catalogo.director} origen={`Catálogo, ${catalogo.direccion}`} editable={editable} onUsar={() => setFirma('director_area', 'nombre', catalogo.director.toUpperCase())} />
+              </div>
+              <Campo disabled={!editable} etiqueta="Cargo del Director del área" valor={p.firmas?.director_area?.cargo} onChange={(v) => setFirma('director_area', 'cargo', v)} />
             </div>
           </Bloque>
         </div>

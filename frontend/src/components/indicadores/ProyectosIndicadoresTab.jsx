@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { FolderKanban, Plus, RefreshCw, Lock, FileText, FileSpreadsheet, Send, CheckCircle2, Undo2, Save, Download, ClipboardList } from 'lucide-react';
 import { useLocalStorage } from '../../hooks';
 import { useSGC } from '../../SGCContext';
+import { normalizarDireccion } from '../../constants/areas';
 import { useToast } from '../common/Toast';
 import Dialogos, { useDialogos } from '../common/Dialogos';
 import ModalBase from '../common/ModalBase';
@@ -71,7 +72,7 @@ function Estado({ estado }) {
 }
 
 export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
-  const { areasDetalle = [], usuarioLogueado, registrarMovimiento, indicadoresData = {}, setIndicadoresData } = useSGC();
+  const { areasDetalle = [], direccionesDetalle = [], usuarioLogueado, registrarMovimiento, indicadoresData = {}, setIndicadoresData } = useSGC();
   const toast = useToast();
   const { confirmar, solicitar, props: dialogos } = useDialogos();
   const esAdmin = esAdminSGC(usuarioLogueado);
@@ -135,10 +136,20 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
   const crear = (area) => {
     const ultimo = (proyectos || []).filter((p) => p.area === area).sort((a, b) => b.anio - a.anio)[0];
     const dg = (proyectos || []).find((p) => p.firmas?.director_general?.nombre)?.firmas?.director_general;
-    setBorrador(nuevoProyecto(anio, area, {
-      dependencia: ultimo?.dependencia || 'OOMAPAS DE CAJEME', eje_rector: ultimo?.eje_rector, director_general: dg,
+    // Lo que ya está en los catálogos se toma de ahí: titular (encargado del área) y director de su dirección.
+    const ficha = areasDetalle.find((x) => x.nombre === area);
+    const dir = direccionesDetalle.find((d) => normalizarDireccion(d.nombre) === normalizarDireccion(ficha?.direccion || ''));
+    const dgCatalogo = direccionesDetalle.find((d) => normalizarDireccion(d.nombre) === normalizarDireccion('Dir. General'))?.director;
+    const nuevo = nuevoProyecto(anio, area, {
+      dependencia: ultimo?.dependencia || 'OOMAPAS DE CAJEME', eje_rector: ultimo?.eje_rector,
+      director_general: dg || (dgCatalogo ? { nombre: dgCatalogo.toUpperCase(), cargo: 'DIRECTOR GENERAL' } : undefined),
       objetivo_institucional: ultimo?.objetivo_institucional || OBJETIVO_INSTITUCIONAL_OOMAPASC, pems: ultimo?.pems,
-    }));
+    });
+    setBorrador({
+      ...nuevo,
+      titular: { nombre: (ficha?.encargado || '').trim().toUpperCase(), cargo: ultimo?.titular?.cargo || '' },
+      firmas: { ...nuevo.firmas, director_area: ultimo?.firmas?.director_area?.nombre ? ultimo.firmas.director_area : { nombre: (dir?.director || '').toUpperCase(), cargo: '' } },
+    });
   };
 
   const cargarPiloto = () => {
@@ -196,16 +207,20 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
   let ventanaProyecto = null;
   if (borrador) {
     // Formato oficial: se descarga en su archivo original (Word/Excel) o en PDF; el diseño no se toca.
-    const BotonDescarga = ({ tipo, actividad = 0, children, Icono }) => (
-      <span className="inline-flex items-stretch rounded-lg border border-slate-300 overflow-hidden text-xs">
-        <span className="px-2.5 py-1.5 font-semibold text-slate-800 bg-white inline-flex items-center gap-1.5"><Icono size={14} /> {children}</span>
-        {[['original', tipo === 'pems' ? 'Excel' : 'Word'], ['pdf', 'PDF']].map(([formato, etiqueta]) => (
-          <button key={formato} type="button" disabled={Boolean(descargando)} onClick={() => descargar(tipo, actividad, formato)}
-            className="px-2 py-1.5 font-bold border-l border-slate-300 text-marca-azul-oscuro bg-slate-50 hover:bg-sky-50 disabled:opacity-50">
-            {descargando === `${tipo}-${actividad}-${formato}` ? '…' : etiqueta}
-          </button>
-        ))}
-      </span>
+    const COLOR_ARCHIVO = { Word: 'bg-blue-700 hover:bg-blue-800', Excel: 'bg-emerald-700 hover:bg-emerald-800', PDF: 'bg-rose-700 hover:bg-rose-800' };
+    const FilaDescarga = ({ tipo, actividad = 0, titulo, detalle, Icono }) => (
+      <tr>
+        <th scope="row" className="p-2 text-left align-top"><span className="inline-flex items-center gap-1.5 font-bold text-slate-900"><Icono size={15} /> {titulo}</span></th>
+        <td className="p-2 text-slate-700 align-top">{detalle}</td>
+        <td className="p-2 align-top whitespace-nowrap text-right">
+          {[['original', tipo === 'pems' ? 'Excel' : 'Word'], ['pdf', 'PDF']].map(([formato, etiqueta]) => (
+            <button key={formato} type="button" disabled={Boolean(descargando)} onClick={() => descargar(tipo, actividad, formato)}
+              className={`ml-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-white disabled:opacity-50 inline-flex items-center gap-1 ${COLOR_ARCHIVO[etiqueta]}`}>
+              <Download size={13} /> {descargando === `${tipo}-${actividad}-${formato}` ? 'Generando…' : etiqueta}
+            </button>
+          ))}
+        </td>
+      </tr>
     );
     const ultimaNota = (borrador.historial || []).slice(-1)[0];
     ventanaProyecto = (
@@ -228,13 +243,26 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 inline-flex items-center gap-2"><Lock size={14} /> Proyecto {borrador.estado === 'APROBADO' ? 'aceptado' : 'en revisión'}: la información está cerrada. Solo puedes capturar el avance trimestral. Para modificarlo, pide al SGC que lo abra.</p>
         )}
         {original && (
-          <section aria-label="Formatos oficiales" className="bg-slate-50 rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-slate-800 inline-flex items-center gap-1.5 mr-1"><Download size={14} /> Descargar formatos oficiales del Ayuntamiento (ya llenos, sin modificar):</span>
-            <BotonDescarga tipo="proyecto" Icono={FileText}>Presentación de proyecto</BotonDescarga>
-            <BotonDescarga tipo="pems" Icono={FileSpreadsheet}>PEMS (PEM-1 y PEM-2)</BotonDescarga>
-            {(borrador.actividades || []).map((a, i) => <BotonDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList}>Ficha {i + 1}{a.indicador ? `: ${String(a.indicador).slice(0, 28)}${String(a.indicador).length > 28 ? '…' : ''}` : ''}</BotonDescarga>)}
-            <span className="basis-full text-xs text-slate-600">Estos botones solo descargan. Para llenar cada ficha entra a la sección <strong>3. Fichas técnicas</strong> de abajo y elige la ficha.</span>
-          </section>
+          <details className="group bg-white rounded-xl border border-slate-300 overflow-hidden">
+            <summary className="cursor-pointer list-none px-4 py-2.5 bg-slate-700 text-white flex flex-wrap items-center justify-between gap-2 hover:bg-slate-800">
+              <span className="text-sm font-extrabold inline-flex items-center gap-2"><Download size={16} /> Descargar formatos oficiales del Ayuntamiento ({2 + (borrador.actividades || []).length})</span>
+              <span className="text-xs font-semibold text-white/85"><span className="group-open:hidden">Mostrar ▾</span><span className="hidden group-open:inline">Ocultar ▴</span></span>
+            </summary>
+            <p className="px-4 pt-2 text-xs text-slate-600">Se descargan ya llenos con lo capturado, en el diseño original sin modificar. Aquí solo se descarga; para llenar, usa las secciones de abajo.</p>
+            <div className="p-3 overflow-x-auto">
+              <table className="w-full text-sm tablas-marcadas">
+                <caption className="sr-only">Formatos oficiales para descargar</caption>
+                <thead><tr><th scope="col" className="p-2 text-left">Formato</th><th scope="col" className="p-2 text-left">Qué contiene</th><th scope="col" className="p-2 text-right">Descargar</th></tr></thead>
+                <tbody>
+                  <FilaDescarga tipo="proyecto" Icono={FileText} titulo="Presentación de proyecto" detalle="Datos del proyecto, actividades, metas, presupuesto y firmas (secciones 1, 2, 4 y 6)." />
+                  <FilaDescarga tipo="pems" Icono={FileSpreadsheet} titulo="PEMS (PEM-1 y PEM-2)" detalle="Claves del programa de egresos y avance por actividad (secciones 4 y 5)." />
+                  {(borrador.actividades || []).map((a, i) => (
+                    <FilaDescarga key={a.id || i} tipo="ficha" actividad={i} Icono={ClipboardList} titulo={`Ficha técnica ${i + 1}`} detalle={a.indicador || 'Indicador sin nombre'} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
         )}
         <EditorProyecto proyecto={borrador} onCambio={setBorrador} editable={Boolean(puedeEditar)} editableAvance={Boolean(puedeArea)} resultados={indicadoresData.resultados || {}} />
       </ModalBase>

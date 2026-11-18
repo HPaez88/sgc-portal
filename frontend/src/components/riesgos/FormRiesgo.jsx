@@ -179,14 +179,14 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
                   <p className="text-xs text-slate-500">Actividad, responsable y fecha son obligatorios</p>
                 </div>
                 {plan.length === 0 && <p className="p-4 text-center text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">Agrega al menos una actividad.</p>}
-                <ol className="space-y-3">
+                <ol className="space-y-5">
                   {plan.map((a, i) => (
-                    <li key={i} className="rounded-lg border border-emerald-200 bg-white overflow-hidden">
-                      <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-emerald-50 border-b border-emerald-200">
-                        <span className="text-sm font-extrabold text-emerald-900">Actividad {i + 1}</span>
+                    <li key={i} className="rounded-xl border-2 border-emerald-600/50 bg-white overflow-hidden shadow-md">
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-emerald-700 text-white">
+                        <span className="flex items-center gap-2 text-sm font-extrabold"><span className="w-7 h-7 rounded-full bg-white text-emerald-900 font-black flex items-center justify-center">{i + 1}</span> Actividad {i + 1} de {plan.length}</span>
                         {/* Con plan de mejora ya generado no se quitan actividades: las evidencias se ligan por posición. */}
                         {!soloLectura && !r.pm_id && (
-                          <button type="button" onClick={() => set({ plan: plan.filter((_, k) => k !== i) })} aria-label={`Quitar actividad ${i + 1}`} className="px-2 py-1 rounded-md text-xs font-semibold text-rose-700 hover:bg-rose-50 inline-flex items-center gap-1"><X size={14} /> Quitar</button>
+                          <button type="button" onClick={() => set({ plan: plan.filter((_, k) => k !== i) })} aria-label={`Quitar actividad ${i + 1}`} className="px-2 py-1 rounded-md text-xs font-bold text-white bg-white/15 hover:bg-rose-600 inline-flex items-center gap-1"><X size={14} /> Quitar</button>
                         )}
                       </div>
                       <div className="p-3 space-y-3">

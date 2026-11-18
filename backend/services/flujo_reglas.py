@@ -11,6 +11,11 @@ from typing import Optional
 from backend.models import TRANSICIONES
 from backend.services.permisos import es_admin, puede_area, ve_todas_areas
 
+
+def _mueve_fechas(usuario) -> bool:
+    from backend.auth import puede_restablecer  # import local: evita ciclo con backend.auth
+    return puede_restablecer(usuario)
+
 CLAVE_AC = "sgc-acciones-correctivas"
 CLAVE_PM = "sgc-planes-mejora"
 CLAVE_RC = "sgc-reportes-correccion"
@@ -203,6 +208,9 @@ RIESGO_TIPOS = ("Riesgo", "Oportunidad")
 RIESGO_TRATAMIENTOS = {"Riesgo": ("Mitigar", "Evitar", "Transferir", "Aceptar"), "Oportunidad": ("Aprovechar", "Posponer")}
 RIESGO_IMPACTOS = (2, 4, 6, 8, 10)
 RIESGO_ESTADOS_ADMIN = ("EN_TRATAMIENTO", "MONITOREO", "CERRADO_EFICAZ", "CERRADO_NO_EFICAZ")
+# Contenido del registro: con plan de mejora, cambiarlo mueve fechas del plan (solo Super Admin y gescobar@).
+RIESGO_CONTENIDO = ("tipo", "proceso", "contexto", "contexto_resultado", "descripcion", "causa", "consecuencia", "controles",
+                    "probabilidad", "impacto", "tratamiento", "justificacion_tratamiento", "plan")
 
 
 def _id_matriz(r: dict) -> str:
@@ -283,6 +291,9 @@ def _validar_riesgos(anterior: list, nuevo: list, usuario, areas: list, matrices
                     return "Plan de mejora, dictamen y aceptación los registra solo el SGC."
             if str(r.get("estado") or "IDENTIFICADO") != str((viejo or {}).get("estado") or "IDENTIFICADO") and r.get("estado") in RIESGO_ESTADOS_ADMIN:
                 return "Ese estado del riesgo lo asigna solo el SGC."
+        if (admin and viejo and viejo.get("pm_id") not in (None, "") and r.get("pm_id") not in (None, "")
+                and any(r.get(c) != viejo.get(c) for c in RIESGO_CONTENIDO) and not _mueve_fechas(usuario)):
+            return "Un riesgo con plan de mejora solo lo ajustan el Super Admin y la cuenta autorizada para mover fechas."
         e1 = str(r.get("estado") or "IDENTIFICADO")
         if e1.startswith("CERRADO"):
             d = r.get("dictamen") or {}

@@ -10,7 +10,7 @@ import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionR
 import Dialogos, { useDialogos } from '../common/Dialogos';
 import { useToast } from '../common/Toast';
 import { asignarFolios } from '../../services/folioService';
-import { formatearFecha } from '../../constants/workflow';
+import { formatearFecha, puedeMoverFechas } from '../../constants/workflow';
 import { CLAVE_MATRIZ, ESTADOS_MATRIZ, ESTADOS_RIESGO, nivelDe, puntaje, faltante, nuevoRiesgo, idMatriz, llevaPM, aceptacionDe, pmSincronizado } from '../../constants/riesgos';
 
 const DECLARACION_ACEPTACION = 'como responsable del Sistema de Gestión de la Calidad, declaro que revisé la matriz OOMRSC-37 del área, que sus riesgos y oportunidades están identificados y evaluados conforme a los criterios del formato, y que los planes de mejora que se generan tendrán seguimiento del SGC hasta su cierre y dictamen de eficacia.';
@@ -25,10 +25,11 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
   const items = riesgos.filter((r) => r.area === area && Number(r.anio) === Number(anio));
   const estado = matriz?.estado || 'BORRADOR';
   // El área captura mientras la matriz está en captura u observada y el registro no tiene plan de mejora.
-  // El SGC ajusta cualquier registro que no esté dictaminado; si ya tiene plan de mejora, el plan refleja el ajuste.
+  // El SGC ajusta cualquier registro que no esté dictaminado. Si ya tiene plan de mejora, el ajuste mueve sus fechas,
+  // así que solo lo hacen quienes pueden mover fechas (Super Admin y gescobar@); el plan refleja el ajuste.
   const capturable = puedeEditar && (estado === 'BORRADOR' || estado === 'OBSERVADA');
   const editable = capturable || esAdmin;
-  const editableRegistro = (r) => (esAdmin ? !String(r.estado || '').startsWith('CERRADO') : capturable && !r.pm_id);
+  const editableRegistro = (r) => (esAdmin ? !String(r.estado || '').startsWith('CERRADO') && (!r.pm_id || puedeMoverFechas(usuarioLogueado)) : capturable && !r.pm_id);
 
   const agregar = (tipo) => {
     const r = nuevoRiesgo({ tipo, area, direccion, anio, por: usuarioLogueado?.nombre });
