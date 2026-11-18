@@ -116,11 +116,16 @@ def ejecutar(hoy: date | None = None) -> dict:
         datos_ind = _estado(s, "sgc-indicadores-data", {})
         proyectos = _estado(s, "sgc-proyectos-indicadores", [])
         catalogo = motor.catalogo_vivo(json.load(open(CATALOGO, encoding="utf-8")), datos_ind.get("catalogoPersonalizado") or {}, proyectos, hoy)
-        admins = [u.email for u in s.exec(select(Usuario).where(Usuario.rol.in_(("Super Admin", "Admin")))).all() if u.activo]
+        activos = [u for u in s.exec(select(Usuario)).all() if u.activo]
+        admins = [u.email for u in activos if u.rol in ("Super Admin", "Admin")]
+        # Los responsables escritos en una AC solo reciben aviso si son personas del directorio (auditoría 2026-11-18):
+        # el registro lo edita el área, el catálogo de contactos solo el SGC.
+        directorio = {str(u.email).lower() for u in activos}
 
         pendientes = []
         for a in motor.avisos_acciones(_estado(s, "sgc-acciones-correctivas", []), hoy, arranque, enviadas_ac):
-            para = sorted(set(correo_l for correo_l in [*_correos(a["ac"].get("correos_responsables")), *_contactos(a["area"], areas, direcciones)] if correo_l))
+            responsables = [c for c in _correos(a["ac"].get("correos_responsables")) if c.lower() in directorio]
+            para = sorted(set(correo_l for correo_l in [*responsables, *_contactos(a["area"], areas, direcciones)] if correo_l))
             pendientes.append({"tipo": "AC", "registro": a["folio"], "registro_id": str(a["id"]), "etapa": a["etapa"], "referencia": a["vence"].isoformat(),
                                "para": para, "cc": admins if a["etapa"] == "AVISO_INCUMPLIMIENTO" else [], "mensaje": _mensaje_ac(a), "unidad": a["area"]})
         for x in motor.avisos_indicadores(catalogo, datos_ind.get("resultados") or {}, hoy, enviadas_ind, arranque):

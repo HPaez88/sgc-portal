@@ -433,3 +433,48 @@ def test_falsificar_x_forwarded_for_no_evade_el_limite(cliente):
     cuerpo = {"email": "otra.prueba@oomapasc.gob.mx", "password": "mala-mala"}
     codigos = [cliente.post("/api/v1/auth/login", json=cuerpo, headers={"X-Forwarded-For": f"10.0.0.{i}, 203.0.113.9"}).status_code for i in range(11)]
     assert codigos[-1] == 429
+
+
+def test_avisos_diarios_solo_a_correos_del_directorio(cliente, buzon, monkeypatch):
+    from datetime import date
+    from backend.tareas import avisos_diarios
+    monkeypatch.setenv("AVISOS_MODO", "simulacion")
+    monkeypatch.setenv("AVISOS_ARRANQUE", "2026-11-01")
+    h = {"Authorization": f"Bearer {_token(cliente)}"}
+    cliente.put("/api/v1/estado/sgc-acciones-correctivas", headers=h, json={"valor": [
+        {"id": 78, "folio_codigo": "AC#78/2026", "area": "SGC", "estado": "EN_SEGUIMIENTO", "fecha_seguimiento": "2026-11-30",
+         "correos_responsables": ["externo@example.test", ADMIN]}]})
+    try:
+        avisos_diarios.ejecutar(date(2026, 11, 20))
+        filas = cliente.get("/api/v1/notificaciones/avisos-automaticos", headers=h).json()["avisos"]
+        dest = next(a["destinatarios"] for a in filas if a["registro"] == "AC#78/2026")
+        assert ADMIN in dest and "externo@example.test" not in dest
+    finally:
+        from sqlmodel import Session as _S, select as _sel
+        from backend.database import engine as _eng
+        from backend.models import EstadoPortal as _EP
+        with _S(_eng) as s:
+            f = s.exec(_sel(_EP).where(_EP.clave == "sgc-acciones-correctivas")).first()
+            if f:
+                s.delete(f)
+                s.commit()
+
+
+def test_produccion_exige_la_direccion_publica_del_portal(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("AUTH_SECRET", "x" * 40)
+    monkeypatch.delenv("PORTAL_URL", raising=False)
+    monkeypatch.delenv("DOMAIN", raising=False)
+    with pytest.raises(RuntimeError):
+        auth.validar_configuracion()
+    monkeypatch.setenv("PORTAL_URL", "https://sgc.ejemplo.mx")
+    auth.validar_configuracion()
+
+
+def test_tope_de_claves_de_estado_por_organismo(cliente, monkeypatch):
+    from backend.routers import estado as rutas_estado
+    h = {"Authorization": f"Bearer {_token(cliente)}"}
+    monkeypatch.setattr(rutas_estado, "MAX_CLAVES_ORGANISMO", len(cliente.get("/api/v1/estado", headers=h).json()) + 1)
+    assert cliente.put("/api/v1/estado/sgc-zz-cupo-1", headers=h, json={"valor": 1}).status_code == 200
+    assert cliente.put("/api/v1/estado/sgc-zz-cupo-2", headers=h, json={"valor": 1}).status_code == 413
+    assert cliente.put("/api/v1/estado/sgc-zz-cupo-1", headers=h, json={"valor": 2}).status_code == 200  # actualizar una existente sí

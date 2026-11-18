@@ -2,6 +2,16 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-18T15:00Z · @claude-code · [SECURITY] · Cierre de la auditoría run-1: avisos, dirección del portal y tope de claves
+Prueba primero en los tres (fallaron antes, pasan después).
+- Avisos diarios: los responsables escritos en una AC solo reciben aviso si están en el directorio de usuarios.
+- Arranque en producción exige PORTAL_URL o DOMAIN (los enlaces de los correos nunca salen del encabezado Host).
+- Almacén de estado: máximo 100 secciones por organismo (hoy ~17).
+- Buzón: riesgo aceptado mientras BUZON_MODO=aprobacion (no pasar a automático sin verificar el remitente).
+- Archivos: backend/tareas/avisos_diarios.py, backend/auth.py, backend/routers/estado.py, backend/tests/test_auth.py
+- Tareas STATE: S1
+- Deploy: SÍ
+
 ## 2026-11-18T12:00Z · @claude-code · [SECURITY] · Correcciones de la auditoría run-1 (bloques 1 a 3)
 Cada corrección se hizo con prueba primero (falló antes, pasa después): 9 hallazgos quedaron confirmados y corregidos.
 - Cuentas: el correo con permiso de restablecer solo lo asigna o cambia el Super Admin; el correo de otra cuenta solo lo cambian el Super Admin y la cuenta autorizada (`_validar_correo`).

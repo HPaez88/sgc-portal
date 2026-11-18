@@ -25,6 +25,7 @@ from backend.tenant import get_organismo_id
 
 router = APIRouter(prefix="/api/v1/estado", tags=["Estado del portal"])
 
+MAX_CLAVES_ORGANISMO = 100   # hoy hay ~17; calibrar si el portal crece en módulos
 MAX_BYTES_VALOR = 8 * 1024 * 1024  # 8 MB por clave: suficiente para años de capturas; evita blobs accidentales
 
 
@@ -85,6 +86,10 @@ def guardar(
                      .with_for_update()).first()
     actual = None
     if not f:
+        # Tope de secciones por organismo: cualquiera puede crear claves y todas se cargan en cada inicio de sesión.
+        total = len(session.exec(select(EstadoPortal.id).where(EstadoPortal.organismo_id == organismo_id)).all())
+        if total >= MAX_CLAVES_ORGANISMO:
+            raise HTTPException(status_code=413, detail="Se alcanzó el máximo de secciones guardadas para el organismo.")
         valor = datos.valor
         f = EstadoPortal(organismo_id=organismo_id, clave=clave)
     else:

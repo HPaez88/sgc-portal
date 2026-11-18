@@ -46,8 +46,12 @@ def _secreto() -> str:
 
 
 def validar_configuracion() -> None:
-    """Llamar al arrancar: falla rápido si falta el secreto en producción."""
+    """Llamar al arrancar: falla rápido si falta el secreto o la dirección pública en producción."""
     _secreto()
+    # Sin dirección fija, los enlaces de los correos (recuperación de contraseña) saldrían del encabezado Host,
+    # que el cliente controla (auditoría 2026-11-18).
+    if os.getenv("ENVIRONMENT") == "production" and not (os.getenv("PORTAL_URL") or os.getenv("DOMAIN")):
+        raise RuntimeError("PORTAL_URL (o DOMAIN) es obligatorio en producción.")
 
 
 # ───────────── Contraseñas ─────────────
