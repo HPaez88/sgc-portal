@@ -40,7 +40,6 @@ import { esCerrado, normalizarEstado } from '../../constants/workflow';
 import StatCard from '../ui/StatCard';
 import StatusBadge from '../ui/StatusBadge';
 import ContenedorModal from '../common/ContenedorModal';
-import { exportarInformeDireccionPDF } from '../../services/dashboardExporter';
 import { acDesdeIndicador } from '../../services/flujoService';
 
 // Meses y Períodos de evaluación institucional
@@ -470,7 +469,9 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
   };
 
   // Descargar Informe en PDF
-  const handleDescargarInformePDF = () => {
+  // ponytail: jsPDF se descarga solo al pedir el informe, no al abrir el portal.
+  const handleDescargarInformePDF = async () => {
+    const { exportarInformeDireccionPDF } = await import('../../services/dashboardExporter');
     exportarInformeDireccionPDF({
       ejercicio,
       periodoNombre: periodoActivo.label,
@@ -602,7 +603,7 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
           <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <button
               onClick={handleGenerarDiagnosticoIA}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-bold text-xs shadow-lg shadow-sky-900/30 hover:shadow-sky-700/50 transition-all border border-sky-400/30 active:scale-95 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-700 to-blue-800 hover:from-sky-800 hover:to-blue-900 text-white font-bold text-xs shadow-lg shadow-sky-900/30 hover:shadow-sky-700/50 transition-all border border-sky-400/30 active:scale-95 cursor-pointer"
             >
               <Sparkles size={15} className="text-sky-200 animate-pulse" />
               <span>Diagnóstico Ejecutivo IA</span>
@@ -848,7 +849,7 @@ Sé conciso, riguroso, institucional y fundamenta las decisiones con base en ISO
                         </div>
                         <div>
                           <span className="block text-[10px] text-slate-400">AC Abiertas</span>
-                          <strong className={dir.acAbiertas > 0 ? 'text-amber-600 font-bold' : 'text-slate-700'}>{dir.acAbiertas}</strong>
+                          <strong className={dir.acAbiertas > 0 ? 'text-amber-700 font-bold' : 'text-slate-700'}>{dir.acAbiertas}</strong>
                         </div>
                       </div>
                     </div>

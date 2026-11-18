@@ -536,7 +536,7 @@ export default function AccionesDetalle({
                     </td>
                     <td className="p-3 text-center">
                       {c.es_causa_principal ? (
-                        <span className="text-amber-600 font-bold">✓ SÍ</span>
+                        <span className="text-amber-700 font-bold">✓ SÍ</span>
                       ) : (
                         <span className="text-slate-500">—</span>
                       )}

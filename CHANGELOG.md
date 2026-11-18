@@ -2,6 +2,13 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-18T21:00Z · @claude-code · [PERF] · Informe PDF bajo demanda y contraste del Panel
+- jsPDF se descarga solo al pedir el informe del Panel: el archivo inicial bajó de 263 KB a 113 KB comprimido. El PDF se sigue generando (verificado).
+- Contraste: botón "Diagnóstico Ejecutivo IA" más oscuro (4.1 → 5.9) y cifras en ámbar más legibles (Panel y detalle de AC).
+- Archivos: frontend/src/components/dashboard/DashboardView.jsx, frontend/src/components/acciones/AccionesDetalle.jsx, docs/design/review.md
+- Tareas STATE: H3 (pendientes cerrados)
+- Deploy: SÍ
+
 ## 2026-11-18T20:00Z · @claude-code · [UI] · U1: mismo estilo de formularios en Auditorías, Revisión y Configuración
 - Listas en azul, texto en blanco y datos bloqueados en gris, con la leyenda "Cómo leer el formulario" en cada captura.
 - Auditorías: cada bloque lleva su título en franja de color; las listas de opciones usan el estilo de lista.
