@@ -22,7 +22,7 @@
 - [x] S1 — Auditoría run-1 cerrada: 16 de 17 corregidos con prueba; buzón queda como riesgo aceptado mientras BUZON_MODO=aprobacion
 - [x] S2 — Cabeceras de seguridad (CSP sin violaciones en prueba local), sin /docs en producción, límite de intentos fallidos en /login
 - [x] H3 — Revisión de diseño con hp-design-harness (design-review-gate): gate aprobado, promedio 8 (docs/design/review.md)
-- [ ] U1 — Llevar el estilo de formularios (`common/estilosCampos.jsx`) a Auditorías, Revisión por la Dirección y Configuración
+- [x] U1 — Llevar el estilo de formularios (`common/estilosCampos.jsx`) a Auditorías, Revisión por la Dirección y Configuración
 
 ## Módulo Manual de la Calidad (consulta) 2026-10-13
 

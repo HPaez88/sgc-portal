@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { UserPlus, X } from 'lucide-react';
 import { getRolColor } from '../../constants';
 import { puedeVerTodasAreas } from '../../constants/workflow';
+import { CAMPO_LISTA } from '../common/estilosCampos';
 
 export default function EncargadosSGC({ lista = [], onChange, usuarios = [], onCrear, area }) {
   const [sel, setSel] = useState('');
@@ -53,7 +54,7 @@ export default function EncargadosSGC({ lista = [], onChange, usuarios = [], onC
 
       <div className="flex flex-wrap gap-2">
         <select value={sel} onChange={(e) => setSel(e.target.value)}
-          className="flex-1 min-w-[220px] p-2 bg-white border border-slate-200 rounded-lg text-xs">
+          className={`${CAMPO_LISTA} flex-1 min-w-[220px]`}>
           <option value="">Agregar un usuario existente…</option>
           {disponibles.map((u) => (
             <option key={u.id} value={String(u.email).toLowerCase()}>{u.nombre} · {u.rol} · {u.area || 'sin área'}</option>

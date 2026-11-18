@@ -8,7 +8,8 @@ import { processEvidenceFile } from '../../utils/fileSecurity';
 import { urlArchivo } from '../../services/archivosService';
 import { BANCO_PREGUNTAS } from '../../constants/auditoriaPreguntas';
 import { CAPITULOS, FORMATOS, LETRAS, TIPOS_HALLAZGO, criterioDe, faltanteLista, preguntaExtra, preguntasDeClausula, resumenPreguntas } from '../../constants/auditorias';
-import { Bloque, ENTRADA, Rango, tituloAuditoria } from './ui';
+import { Bloque, ENTRADA, Rango, tituloAuditoria, LISTA } from './ui';
+import { Leyenda } from '../common/estilosCampos';
 import { AnalisisIA } from './Evaluaciones';
 
 const COLOR = { C: 'bg-emerald-600 text-white border-emerald-700', NC: 'bg-rose-600 text-white border-rose-700', OM: 'bg-sky-600 text-white border-sky-700' };
@@ -54,7 +55,7 @@ export default function ListaVerificacion({ lista, auditoria, onCambio, onEntreg
           {!q.estandar && <span className="inline-block mt-1 px-1.5 rounded bg-violet-100 text-violet-800 text-[10px] font-bold">Agregada</span>}</td>
         <td className="p-2 align-top min-w-[240px]">
           {q.estandar && (puede && opciones.length > 1
-            ? <select aria-label={`Pregunta de la cláusula ${q.clausula}`} value={q.pregunta} onChange={(e) => setQ(q.id, { pregunta: e.target.value })} className={ENTRADA}>{opciones.map((p) => <option key={p}>{p}</option>)}</select>
+            ? <select aria-label={`Pregunta de la cláusula ${q.clausula}`} value={q.pregunta} onChange={(e) => setQ(q.id, { pregunta: e.target.value })} className={LISTA}>{opciones.map((p) => <option key={p}>{p}</option>)}</select>
             : <p className="text-sm text-slate-900">{q.pregunta}</p>)}
           {q.estandar && <p className="text-[11px] text-slate-700 mt-1">{puede && opciones.length > 1 ? q.pregunta : ''}</p>}
           {!q.estandar && <textarea aria-label="Pregunta agregada" rows={2} disabled={!puede} value={q.pregunta} onChange={(e) => setQ(q.id, { pregunta: e.target.value })} placeholder="Escribe la pregunta o el requisito a verificar" className={ENTRADA} />}
@@ -112,6 +113,8 @@ export default function ListaVerificacion({ lista, auditoria, onCambio, onEntreg
         </div>
       </header>
 
+      <Leyenda />
+
       {previos.length > 0 && (
         <Bloque titulo={`Antecedentes: hallazgos de auditorías anteriores del área (${previos.length})`} ayuda="Da seguimiento a estos puntos durante la entrevista.">
           <ul className="space-y-1 text-xs text-slate-800">
@@ -140,7 +143,7 @@ export default function ListaVerificacion({ lista, auditoria, onCambio, onEntreg
         <Bloque titulo="Agregar una pregunta a criterio del auditor">
           <div className="flex flex-wrap items-end gap-2">
             <label className="block flex-1 min-w-[220px]"><span className="block text-xs font-bold text-slate-800 mb-1">Cláusula</span>
-              <select value={clausulaExtra} onChange={(e) => setClausulaExtra(e.target.value)} className={ENTRADA}>
+              <select value={clausulaExtra} onChange={(e) => setClausulaExtra(e.target.value)} className={LISTA}>
                 <option value="">Selecciona la cláusula…</option>{BANCO_PREGUNTAS.map((c) => <option key={c.clausula} value={c.clausula}>{c.clausula} {c.titulo}</option>)}</select></label>
             <button type="button" disabled={!clausulaExtra} onClick={() => { onCambio({ ...lista, preguntas: [...preguntas, preguntaExtra(clausulaExtra)] }); setClausulaExtra(''); }}
               className="px-3 py-1.5 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg disabled:opacity-50 inline-flex items-center gap-1.5"><Plus size={14} /> Agregar pregunta</button>

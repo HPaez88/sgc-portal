@@ -5,7 +5,7 @@ import { formatearFecha } from '../../constants/workflow';
 import { exportarInformeIndicadoresPDF } from '../../services/indicadoresExporter';
 import BotonInformePDF from '../indicadores/BotonInformePDF';
 import { BIMESTRES, FORMATOS, RANGOS, TIPOS_HALLAZGO, calendarioAnual, resumenPorCapitulo, resumenPreguntas } from '../../constants/auditorias';
-import { Bloque, ENTRADA, EstadoAuditoria, Rango, tituloAuditoria } from './ui';
+import { Bloque, EstadoAuditoria, Rango, tituloAuditoria, LISTA } from './ui';
 import { AnalisisIA } from './Evaluaciones';
 
 const ref = (a) => (a ? `${a.historico ? 'Informe ' : '#'}${a.numero}/${a.anio}` : '—');
@@ -87,8 +87,8 @@ export function HallazgosPanel({ hallazgos, auditorias, puedeFirmar, onFirmar, a
   return (
     <Bloque titulo={`Reportes de hallazgo (${FORMATOS.hallazgo}) · ${lista.length}`} ayuda="No conformidad: acción correctiva obligatoria, con apertura a más tardar 5 días hábiles después del informe. Corrección menor: reporte de corrección con evidencia. Oportunidad de mejora: recomendación."
       derecha={<div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Filtrar por auditoría" value={filtroAud} onChange={(e) => setFiltroAud(e.target.value)} className={`${ENTRADA} w-auto`}><option value="">Todas las auditorías</option>{auditorias.map((a) => <option key={a.id} value={String(a.id)}>{tituloAuditoria(a)}</option>)}</select>
-        <select aria-label="Filtrar por tipo" value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className={`${ENTRADA} w-auto`}><option value="">Todos los tipos</option>{Object.entries(TIPOS_HALLAZGO).map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}</select>
+        <select aria-label="Filtrar por auditoría" value={filtroAud} onChange={(e) => setFiltroAud(e.target.value)} className={`${LISTA} w-auto`}><option value="">Todas las auditorías</option>{auditorias.map((a) => <option key={a.id} value={String(a.id)}>{tituloAuditoria(a)}</option>)}</select>
+        <select aria-label="Filtrar por tipo" value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className={`${LISTA} w-auto`}><option value="">Todos los tipos</option>{Object.entries(TIPOS_HALLAZGO).map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}</select>
         <BotonInformePDF onClick={pdf} />
       </div>}>
       <div className="overflow-x-auto">
@@ -171,7 +171,7 @@ export function ResultadosPanel({ auditorias, listas, hallazgos, areasVisibles }
   return (
     <div className="space-y-3">
       <Bloque titulo={`A. Resultado general (${FORMATOS.informe})`} derecha={<div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Auditoría" value={String(a.id)} onChange={(e) => setElegida(e.target.value)} className={`${ENTRADA} w-auto`}>{conListas.map((x) => <option key={x.id} value={String(x.id)}>{tituloAuditoria(x)}</option>)}</select>
+        <select aria-label="Auditoría" value={String(a.id)} onChange={(e) => setElegida(e.target.value)} className={`${LISTA} w-auto`}>{conListas.map((x) => <option key={x.id} value={String(x.id)}>{tituloAuditoria(x)}</option>)}</select>
         <BotonInformePDF onClick={pdf} texto="Informe PDF" /></div>}>
         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-900">
           <EstadoAuditoria estado={a.estado} /><Rango rango={general.rango} pct={general.cumplimiento} />

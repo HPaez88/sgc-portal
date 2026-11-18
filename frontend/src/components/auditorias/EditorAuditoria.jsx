@@ -12,7 +12,8 @@ import {
   CLAVE_AUDITORIAS, BIMESTRES, TIPOS_AUDITORIA, CRITERIOS_AUDITORIA, RIESGOS_AUDITORIA, ESTADOS_AUDITORIA, ORDEN_ESTADOS, FORMATOS,
   nuevaAreaAuditada, auditoresRequeridos, proponerEquipo, conflictoDeInteres, faltantePrograma, faltantePlan,
 } from '../../constants/auditorias';
-import { Bloque, Campo, ENTRADA, EstadoAuditoria, Rango, tituloAuditoria } from './ui';
+import { Bloque, Campo, ENTRADA, EstadoAuditoria, Rango, tituloAuditoria, LISTA } from './ui';
+import { Leyenda } from '../common/estilosCampos';
 
 const SECCIONES = [['programa', '1. Programa'], ['areas', '2. Áreas a auditar'], ['equipo', '3. Equipo auditor'], ['plan', '4. Plan de auditoría']];
 
@@ -89,7 +90,7 @@ export default function EditorAuditoria({ auditoria: a, onCambio, editable, area
   };
 
   const SelectAuditor = ({ valor, onElegir, area, etiqueta }) => (
-    <select aria-label={etiqueta} disabled={!puedeEditar} value={valor || ''} onChange={(e) => onElegir(e.target.value)} className={ENTRADA}>
+    <select aria-label={etiqueta} disabled={!puedeEditar} value={valor || ''} onChange={(e) => onElegir(e.target.value)} className={LISTA}>
       <option value="">— Sin asignar —</option>
       {auditores.map((u) => { const c = conflictoDeInteres(u, area, getDireccionDeArea); const conf = confirmaciones.find((x) => x.email === String(u.email).toLowerCase());
         return <option key={u.email} value={String(u.email).toLowerCase()} disabled={Boolean(c)}>{conf ? `${conf.orden}º · ` : ''}{u.nombre}{c ? ` (${c})` : conf ? '' : ' (sin confirmar)'}</option>; })}
@@ -121,14 +122,16 @@ export default function EditorAuditoria({ auditoria: a, onCambio, editable, area
         ))}
       </nav>
 
+      <Leyenda />
+
       {seccion === 'programa' && (
         <div className="space-y-3">
           <Bloque titulo={`A. Datos de la auditoría (${FORMATOS.programa})`}>
             <div className="grid gap-3 md:grid-cols-4">
               <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Tipo</span>
-                <select disabled={!puedeEditar} value={a.tipo} onChange={(e) => set('tipo', e.target.value)} className={ENTRADA}>{TIPOS_AUDITORIA.map((t) => <option key={t}>{t}</option>)}</select></label>
+                <select disabled={!puedeEditar} value={a.tipo} onChange={(e) => set('tipo', e.target.value)} className={LISTA}>{TIPOS_AUDITORIA.map((t) => <option key={t}>{t}</option>)}</select></label>
               <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Bimestre</span>
-                <select disabled={!puedeEditar} value={a.bimestre} onChange={(e) => set('bimestre', Number(e.target.value))} className={ENTRADA}>{BIMESTRES.map((b, i) => <option key={b} value={i}>{b}</option>)}</select></label>
+                <select disabled={!puedeEditar} value={a.bimestre} onChange={(e) => set('bimestre', Number(e.target.value))} className={LISTA}>{BIMESTRES.map((b, i) => <option key={b} value={i}>{b}</option>)}</select></label>
               <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Fecha de inicio</span><CampoFecha disabled={!puedeEditar} value={a.fecha_inicio} onChange={(e) => set('fecha_inicio', e.target.value)} className={ENTRADA} /></label>
               <label className="block"><span className="block text-xs font-bold text-slate-800 mb-1">Fecha de término</span><CampoFecha disabled={!puedeEditar} value={a.fecha_fin} onChange={(e) => set('fecha_fin', e.target.value)} className={ENTRADA} /></label>
             </div>
@@ -156,7 +159,7 @@ export default function EditorAuditoria({ auditoria: a, onCambio, editable, area
       {seccion === 'areas' && (
         <Bloque titulo={`Áreas o procesos a auditar (${(a.areas || []).length})`} ayuda="La cantidad de auditores depende de las áreas. En áreas grandes o muy técnicas se piden dos o más. Se muestran los resultados de la auditoría anterior de cada área."
           derecha={puedeEditar && ['PLANEACION', 'INVITACION'].includes(a.estado) && (
-            <select aria-label="Agregar área" value="" onChange={(e) => agregarArea(e.target.value)} className="px-2 py-1 text-xs font-semibold border border-slate-300 rounded-lg bg-white">
+            <select aria-label="Agregar área" value="" onChange={(e) => agregarArea(e.target.value)} className={`${LISTA} w-auto text-xs`}>
               <option value="">+ Agregar área…</option>{disponibles.map((n) => <option key={n}>{n}</option>)}</select>)}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">

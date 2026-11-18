@@ -1,8 +1,9 @@
 // Subdirecciones de una dirección: nombre, encargado y correo. Las áreas eligen una de esta lista.
 import React from 'react';
+import { CAMPO_TEXTO } from '../common/estilosCampos';
 import { Plus, X } from 'lucide-react';
 
-const campo = 'w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none';
+const campo = CAMPO_TEXTO;
 
 export default function SubdireccionesEditor({ lista = [], onChange }) {
   const cambiar = (id, campoNombre, valor) => onChange(lista.map((s) => (s.id === id ? { ...s, [campoNombre]: valor } : s)));

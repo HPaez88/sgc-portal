@@ -2,6 +2,15 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-18T20:00Z · @claude-code · [UI] · U1: mismo estilo de formularios en Auditorías, Revisión y Configuración
+- Listas en azul, texto en blanco y datos bloqueados en gris, con la leyenda "Cómo leer el formulario" en cada captura.
+- Auditorías: cada bloque lleva su título en franja de color; las listas de opciones usan el estilo de lista.
+- Revisión por la Dirección: la captura de formularios complementarios va en 2 secciones (datos bloqueados / información a capturar); la asignación de responsables usa listas marcadas.
+- Configuración: en los modales de área, dirección, proceso y usuario las listas (dirección, subdirección, rol…) ya no se ven igual que el texto.
+- Archivos: frontend/src/components/auditorias/*, revision/FormularioComplementarioModal.jsx, revision/AsignacionResponsablesModal.jsx, settings/SettingsView.jsx, settings/EncargadosSGC.jsx, settings/SubdireccionesEditor.jsx
+- Tareas STATE: U1
+- Deploy: SÍ
+
 ## 2026-11-18T18:00Z · @claude-code · [DESIGN] · Revisión de diseño H3: letra más legible y carga por módulo
 - Letra base de 15px a 16px; ningún texto menor a 12px (antes había de 9 y 10px).
 - Cada módulo se descarga al abrirlo: el archivo inicial bajó de 2.4 MB a 892 KB (263 KB comprimido).

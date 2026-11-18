@@ -16,6 +16,7 @@ import { ModalRestablecer, ModalAccesosMasivos, AvisoCorreoInactivo } from './Ac
 import ModalCorreo, { puedeMandarCorreo } from '../common/ModalCorreo';
 import { cambioEncargado } from '../../constants/workflow';
 import { useDialogos, Dialogos } from '../common/Dialogos';
+import { CAMPO_LISTA, CAMPO_TEXTO, Leyenda } from '../common/estilosCampos';
 import {
   Users,
   Type,
@@ -1839,7 +1840,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
           <label className="block text-xs font-bold text-slate-700">{catModal.etiqueta}
             <input type="text" autoFocus value={catModal.valor} onChange={(e) => catModal.set(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') catModal.guardar(); }} placeholder={catModal.ejemplo}
-              className="mt-1 w-full p-2 bg-white border border-slate-300 rounded-lg text-sm font-normal" />
+              className={`${CAMPO_TEXTO} mt-1`} />
           </label>
           <p className="text-xs text-slate-600">{catModal.nota}</p>
         </ModalBase>
@@ -1859,6 +1860,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               <button onClick={() => setModalArea({ show: false, esEdicion: false, data: {} })} className="text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
             </div>
 
+            <Leyenda />
             <div className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">
@@ -1869,7 +1871,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   value={modalArea.data.nombre}
                   onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, nombre: e.target.value } })}
                   placeholder="Ej. Control de Calidad"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                  className={CAMPO_TEXTO}
                 />
               </div>
 
@@ -1882,7 +1884,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   value={modalArea.data.encargado}
                   onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, encargado: e.target.value } })}
                   placeholder="Ej. Ing. Juan López"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                  className={CAMPO_TEXTO}
                 />
               </div>
 
@@ -1896,7 +1898,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalArea.data.correo}
                     onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, correo: e.target.value } })}
                     placeholder="encargado@oomapasc.gob.mx"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
 
@@ -1909,7 +1911,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalArea.data.telefono}
                     onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, telefono: e.target.value } })}
                     placeholder="644XXXXXXX / Ext 123"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
               </div>
@@ -1921,7 +1923,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                 <select
                   value={modalArea.data.direccion}
                   onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, direccion: e.target.value, subdireccion: '' } })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                  className={CAMPO_LISTA}
                 >
                   {[...direcciones].sort((x, y) => x.localeCompare(y, 'es')).map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -1937,7 +1939,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   <select
                     value={actual}
                     onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, subdireccion: e.target.value } })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_LISTA}
                   >
                     <option value="">{subs.length ? 'Sin subdirección (depende directo de la dirección)' : 'Esta dirección no tiene subdirecciones'}</option>
                     {[...subs].sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), 'es')).map(sd => <option key={sd.id} value={sd.nombre}>{sd.nombre}{sd.encargado ? ` · ${sd.encargado}` : ''}</option>)}
@@ -1955,7 +1957,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                 maxLength={1200}
                 value={modalArea.data.proposito || ''}
                 onChange={(e) => setModalArea({ ...modalArea, data: { ...modalArea.data, proposito: e.target.value } })}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                className={CAMPO_TEXTO}
               />
               {modalArea.data.proposito_estado === 'borrador' && (
                 <label className="mt-1.5 flex items-center gap-2 text-[11px] text-amber-800">
@@ -2011,6 +2013,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               <button onClick={() => setModalDireccion({ show: false, esEdicion: false, data: {} })} className="text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
             </div>
 
+            <Leyenda />
             <div className="space-y-3.5">
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
@@ -2022,7 +2025,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalDireccion.data.nombre}
                     onChange={(e) => setModalDireccion({ ...modalDireccion, data: { ...modalDireccion.data, nombre: e.target.value } })}
                     placeholder="Ej. Dir. Técnica"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
                 <div>
@@ -2034,7 +2037,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalDireccion.data.siglas}
                     onChange={(e) => setModalDireccion({ ...modalDireccion, data: { ...modalDireccion.data, siglas: e.target.value } })}
                     placeholder="DT"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
               </div>
@@ -2048,7 +2051,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   value={modalDireccion.data.director}
                   onChange={(e) => setModalDireccion({ ...modalDireccion, data: { ...modalDireccion.data, director: e.target.value } })}
                   placeholder="Ej. Ing. Manuel Campas"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                  className={CAMPO_TEXTO}
                 />
               </div>
 
@@ -2062,7 +2065,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalDireccion.data.correo}
                     onChange={(e) => setModalDireccion({ ...modalDireccion, data: { ...modalDireccion.data, correo: e.target.value } })}
                     placeholder="direcciontecnica@oomapasc.gob.mx"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
                 <div>
@@ -2074,7 +2077,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalDireccion.data.telefono}
                     onChange={(e) => setModalDireccion({ ...modalDireccion, data: { ...modalDireccion.data, telefono: e.target.value } })}
                     placeholder="6444102000"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
               </div>
@@ -2124,6 +2127,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               <button onClick={() => setModalProceso({ show: false, esEdicion: false, data: {} })} className="text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
             </div>
 
+            <Leyenda />
             <div className="space-y-4 overflow-y-auto pr-1 flex-1">
               <div className="grid grid-cols-3 gap-3">
                 <div>
@@ -2135,7 +2139,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalProceso.data.clave}
                     onChange={(e) => setModalProceso({ ...modalProceso, data: { ...modalProceso.data, clave: e.target.value } })}
                     placeholder="PR-PROD-02"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
                 <div className="col-span-2">
@@ -2147,7 +2151,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalProceso.data.nombre}
                     onChange={(e) => setModalProceso({ ...modalProceso, data: { ...modalProceso.data, nombre: e.target.value } })}
                     placeholder="Ej. Producción y Potabilización"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
               </div>
@@ -2160,7 +2164,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   <select
                     value={modalProceso.data.tipo}
                     onChange={(e) => setModalProceso({ ...modalProceso, data: { ...modalProceso.data, tipo: e.target.value } })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    className={CAMPO_LISTA}
                   >
                     <option value="Estratégico">Estratégico</option>
                     <option value="Operativo">Operativo (Misional)</option>
@@ -2188,7 +2192,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                         }
                       });
                     }}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                    className={CAMPO_LISTA}
                   >
                     {[...areas].sort((x, y) => x.localeCompare(y, 'es')).map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
@@ -2321,6 +2325,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               <button onClick={() => setModalUsuario({ show: false, esEdicion: false, data: {} })} className="text-slate-400 hover:text-slate-600 text-sm font-bold">✕</button>
             </div>
 
+            <Leyenda />
             <div className="space-y-3.5">
               <div className="grid grid-cols-[7.5rem_1fr] gap-3">
                 <label className="block">
@@ -2328,7 +2333,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   <select
                     value={modalUsuario.data.titulo || ''}
                     onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, titulo: e.target.value } })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_LISTA}
                   >
                     <option value="">(Sin título)</option>
                     {TITULOS.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -2341,7 +2346,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalUsuario.data.nombre}
                     onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, nombre: e.target.value } })}
                     placeholder="Ej. Roberto Valdez Ruiz"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </label>
                 <p className="col-span-2 text-[11px] text-slate-500 -mt-1">Se muestra como «{unirTitulo(modalUsuario.data.titulo, modalUsuario.data.nombre) || '—'}»; las listas se ordenan por el nombre, no por el título.</p>
@@ -2357,7 +2362,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalUsuario.data.email}
                     onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, email: e.target.value } })}
                     placeholder="usuario@oomapasc.gob.mx"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
 
@@ -2370,7 +2375,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     value={modalUsuario.data.telefono}
                     onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, telefono: e.target.value } })}
                     placeholder="644XXXXXXX"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_TEXTO}
                   />
                 </div>
               </div>
@@ -2394,7 +2399,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                         }
                       });
                     }}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_LISTA}
                   >
                     <option value="">-- Seleccionar área --</option>
                     {[...areas].sort((x, y) => x.localeCompare(y, 'es')).map(a => <option key={a} value={a}>{a}</option>)}
@@ -2408,7 +2413,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                   <select
                     value={modalUsuario.data.direccion}
                     onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, direccion: e.target.value } })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                    className={CAMPO_LISTA}
                   >
                     <option value="">-- Seleccionar dirección --</option>
                     {[...direcciones].sort((x, y) => x.localeCompare(y, 'es')).map(d => <option key={d} value={d}>{d}</option>)}
@@ -2423,7 +2428,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                 <select
                   value={modalUsuario.data.rol}
                   onChange={(e) => setModalUsuario({ ...modalUsuario, data: { ...modalUsuario.data, rol: e.target.value } })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none"
+                  className={CAMPO_LISTA}
                 >
                   <option value="Usuario">Usuario (Ver + indicadores/evidencias de su área)</option>
                   <option value="Encargado">Encargado (Su área: AC, PM, indicadores, riesgos)</option>

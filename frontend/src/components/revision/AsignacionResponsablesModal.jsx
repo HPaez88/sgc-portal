@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
+import { CAMPO_LISTA, Leyenda } from '../common/estilosCampos';
 import { FORMULARIOS_COMPLEMENTARIOS_CONFIG } from '../../constants/revisionDireccion';
 
 export default function AsignacionResponsablesModal({
@@ -92,6 +93,7 @@ export default function AsignacionResponsablesModal({
       }
     >
       <div className="space-y-6 p-1">
+        <Leyenda />
         {/* Regla de Plazo de Captura */}
         <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -108,7 +110,7 @@ export default function AsignacionResponsablesModal({
             <select
               value={diaLimite}
               onChange={(e) => setDiaLimite(Number(e.target.value))}
-              className="px-3 py-1.5 text-sm font-bold bg-white border border-purple-300 rounded-lg text-purple-900 focus:ring-2 focus:ring-purple-500"
+              className={`${CAMPO_LISTA} w-auto`}
             >
               {[5, 7, 10, 12, 15, 20].map(dia => (
                 <option key={dia} value={dia}>Día {dia} del mes</option>
@@ -119,8 +121,8 @@ export default function AsignacionResponsablesModal({
 
         {/* Tabla de Formularios y Asignación de Usuarios */}
         <div className="space-y-3">
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-mono">
-            Formularios Complementarios de la Revisión por la Dirección
+          <h4 className="-mx-1 px-4 py-2.5 rounded-xl bg-[#1E3E62] text-white text-sm font-extrabold">
+            Formularios complementarios de la Revisión por la Dirección
           </h4>
 
           <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
@@ -159,7 +161,7 @@ export default function AsignacionResponsablesModal({
                     <select
                       value={usuarioAsignadoId}
                       onChange={(e) => handleUsuarioChange(form.id, e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-purple-500 focus:bg-white"
+                      className={CAMPO_LISTA}
                     >
                       {usuarios.map(u => (
                         <option key={u.id} value={u.id}>

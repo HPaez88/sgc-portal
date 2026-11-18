@@ -2,16 +2,21 @@
 import React from 'react';
 import { ESTADOS_AUDITORIA, RANGOS } from '../../constants/auditorias';
 
-export const ENTRADA = 'w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-md bg-white focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none disabled:bg-slate-50 disabled:text-slate-600';
+// Mismo código visual que el resto del portal: lista (azul) ≠ texto (blanco) ≠ bloqueado (gris).
+import { CAMPO_TEXTO, CAMPO_LISTA } from '../common/estilosCampos';
+export const ENTRADA = CAMPO_TEXTO;
+export const LISTA = CAMPO_LISTA;
 
 export const Bloque = ({ titulo, ayuda, derecha, children, className = '' }) => (
-  <section className={`rounded-lg border border-slate-200 bg-white p-3 ${className}`}>
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-1 mb-2">
-      <h4 className="text-xs font-extrabold uppercase tracking-wide text-marca-azul-oscuro">{titulo}</h4>
+  <section className={`rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden ${className}`}>
+    <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-[#1E3E62] text-white">
+      <h4 className="text-sm font-extrabold">{titulo}</h4>
       {derecha}
     </div>
-    {ayuda && <p className="text-[11px] text-slate-600 mb-2">{ayuda}</p>}
-    {children}
+    <div className="p-3">
+      {ayuda && <p className="text-xs text-slate-600 mb-2">{ayuda}</p>}
+      {children}
+    </div>
   </section>
 );
 
@@ -21,7 +26,7 @@ export const Campo = ({ etiqueta, valor, onChange, multi, disabled, tipo = 'text
     {multi
       ? <textarea rows={2} value={valor || ''} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={ENTRADA} {...resto} />
       : <input type={tipo} value={valor || ''} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={ENTRADA} {...resto} />}
-    {ayuda && <span className="block text-[11px] text-slate-500 mt-0.5">{ayuda}</span>}
+    {ayuda && <span className="block text-xs text-slate-500 mt-0.5">{ayuda}</span>}
   </label>
 );
 

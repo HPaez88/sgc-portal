@@ -7,7 +7,8 @@ import { useToast } from '../common/Toast';
 import ModalBase from '../common/ModalBase';
 import { formatearFecha } from '../../constants/workflow';
 import { ASPECTOS_AUDITOR, ASPECTOS_AUDITORIA, CRITERIOS_BONO, ESCALA_EVALUACION, FORMATOS, MINIMO_BONO, promedioEvaluacion, puntosBono } from '../../constants/auditorias';
-import { Bloque, ENTRADA, tituloAuditoria } from './ui';
+import { Bloque, ENTRADA, tituloAuditoria, LISTA } from './ui';
+import { Leyenda } from '../common/estilosCampos';
 
 const CONTEXTO_IA = 'Eres auditor líder experto en ISO 9001:2015 de un organismo operador de agua. Responde únicamente con JSON válido, en español, sin inventar datos que no estén en la información recibida.';
 
@@ -39,7 +40,7 @@ export function AnalisisIA({ titulo, ayuda, construirPrompt, boton = 'Analizar c
 }
 
 const Escala = ({ valor, onChange, etiqueta }) => (
-  <select aria-label={etiqueta} value={valor || ''} onChange={(e) => onChange(Number(e.target.value) || '')} className={`${ENTRADA} w-auto`}>
+  <select aria-label={etiqueta} value={valor || ''} onChange={(e) => onChange(Number(e.target.value) || '')} className={`${LISTA} w-auto`}>
     <option value="">—</option>{ESCALA_EVALUACION.map(([n, t]) => <option key={n} value={n}>{n} · {t}</option>)}</select>);
 
 function FormularioAuditado({ pendiente, onGuardar, onCerrar }) {
@@ -97,6 +98,7 @@ export default function EvaluacionesPanel({ auditorias, evaluaciones, pendientes
   };
   return (
     <div className="space-y-3">
+      <Leyenda />
       {pendientes.length > 0 && (
         <Bloque titulo={`Evaluaciones pendientes de tu área (${pendientes.length})`} ayuda="Se evalúa cuando se entrega el informe de la auditoría.">
           <ul className="divide-y divide-slate-100">
@@ -121,7 +123,7 @@ export default function EvaluacionesPanel({ auditorias, evaluaciones, pendientes
       </Bloque>
       {esAdmin && a && (
         <Bloque titulo={`B. Evaluación de auditores para el bono (${FORMATOS.bono})`} ayuda={`Total de 10 puntos; el bono procede con ${MINIMO_BONO} o más. Se guarda al capturar.`}
-          derecha={<select aria-label="Auditoría" value={String(a.id)} onChange={(e) => setElegida(e.target.value)} className={`${ENTRADA} w-auto`}>{concluidas.map((x) => <option key={x.id} value={String(x.id)}>{tituloAuditoria(x)}</option>)}</select>}>
+          derecha={<select aria-label="Auditoría" value={String(a.id)} onChange={(e) => setElegida(e.target.value)} className={`${LISTA} w-auto`}>{concluidas.map((x) => <option key={x.id} value={String(x.id)}>{tituloAuditoria(x)}</option>)}</select>}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead><tr><th scope="col" className="p-2 text-left">Auditor</th>{CRITERIOS_BONO.map(([k, t, max]) => <th key={k} scope="col" className="p-2 text-center max-w-[110px]">{t} ({max})</th>)}<th scope="col" className="p-2 text-center">Total</th><th scope="col" className="p-2 text-left">Bono</th><th scope="col" className="p-2 text-right">Acción</th></tr></thead>

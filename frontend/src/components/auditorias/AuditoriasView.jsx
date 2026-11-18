@@ -19,7 +19,7 @@ import {
   CLAVE_AUDITORIAS, CLAVE_LISTAS, CLAVE_HALLAZGOS, CLAVE_EVALUACIONES, CLAVE_HISTORICO, BIMESTRES, FORMATOS, bimestreDe, calendarioAnual, hallazgosDeLista,
   listaAutomatica, nuevaAuditoria, numeroSiguiente, plazoApertura, resumenPreguntas, auditoresRequeridos,
 } from '../../constants/auditorias';
-import { Bloque, ENTRADA, EstadoAuditoria, Rango, tituloAuditoria } from './ui';
+import { Bloque, EstadoAuditoria, Rango, tituloAuditoria, LISTA } from './ui';
 import EditorAuditoria from './EditorAuditoria';
 import ListaVerificacion from './ListaVerificacion';
 import { CalendarioPanel, HallazgosPanel, ResultadosPanel } from './Paneles';
@@ -257,7 +257,7 @@ export default function AuditoriasView() {
           <div><h2 className="text-lg font-extrabold text-slate-900">Auditorías internas</h2><p className="text-xs text-slate-600">ISO 9001:2015 · procedimiento OOMPSC-08</p></div>
         </div>
         <label className="flex items-center gap-2 text-xs font-bold text-slate-800">Año
-          <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={`${ENTRADA} w-auto`}>{anios.map((x) => <option key={x}>{x}</option>)}</select></label>
+          <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={`${LISTA} w-auto`}>{anios.map((x) => <option key={x}>{x}</option>)}</select></label>
       </header>
 
       {invitaciones.map((a) => { const mia = (a.confirmaciones || []).find((c) => minus(c.email) === miCorreo); return (
