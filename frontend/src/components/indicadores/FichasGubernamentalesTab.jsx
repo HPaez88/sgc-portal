@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import {
   FileText,
   Search,
@@ -189,7 +190,7 @@ export default function FichasGubernamentalesTab({
           <select
             value={filtroDireccion}
             onChange={(e) => setFiltroDireccion(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none"
+            className={LISTA_FILTRO}
           >
             <option value="">Todas las Direcciones</option>
             {direccionesUnicas.map(d => (
@@ -200,7 +201,7 @@ export default function FichasGubernamentalesTab({
           <select
             value={filtroProceso}
             onChange={(e) => setFiltroProceso(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none"
+            className={LISTA_FILTRO}
           >
             <option value="">Todos los Procesos</option>
             {procesosUnicos.map(p => (
@@ -211,7 +212,7 @@ export default function FichasGubernamentalesTab({
           <select
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none"
+            className={LISTA_FILTRO}
           >
             <option value="">Todos los Tipos</option>
             <option value="Estratégico">Estratégico</option>

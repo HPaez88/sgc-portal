@@ -1,6 +1,7 @@
 // Auditorías internas ISO 9001:2015 (procedimiento OOMPSC-08): programa, equipo auditor, listas de verificación,
 // hallazgos y resultados. Las reglas viven en constants/auditorias.js y en el servidor (flujo_reglas.py).
 import React, { useEffect, useMemo, useState } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import { ClipboardCheck, Plus, Trash2, Eye, CheckCircle2, MailCheck } from 'lucide-react';
 import { useSGC } from '../../SGCContext';
 import { useLocalStorage } from '../../hooks';
@@ -257,7 +258,7 @@ export default function AuditoriasView() {
           <div><h2 className="text-lg font-extrabold text-slate-900">Auditorías internas</h2><p className="text-xs text-slate-600">ISO 9001:2015 · procedimiento OOMPSC-08</p></div>
         </div>
         <label className="flex items-center gap-2 text-xs font-bold text-slate-800">Año
-          <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={`${LISTA} w-auto`}>{anios.map((x) => <option key={x}>{x}</option>)}</select></label>
+          <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={LISTA_FILTRO}>{anios.map((x) => <option key={x}>{x}</option>)}</select></label>
       </header>
 
       {invitaciones.map((a) => { const mia = (a.confirmaciones || []).find((c) => minus(c.email) === miCorreo); return (

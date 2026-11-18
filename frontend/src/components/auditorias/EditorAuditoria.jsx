@@ -1,5 +1,6 @@
 // Programa (OOMRSC-13), equipo auditor por orden de confirmación y plan (OOMRSC-14) de una auditoría interna.
 import React, { useEffect, useState } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import { Trash2, Send, Users, Wand2, ArrowRight, X, History, Mail, RefreshCw } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { recargarClave, getEstadoSync } from '../../services/estadoService';
@@ -159,7 +160,7 @@ export default function EditorAuditoria({ auditoria: a, onCambio, editable, area
       {seccion === 'areas' && (
         <Bloque titulo={`Áreas o procesos a auditar (${(a.areas || []).length})`} ayuda="La cantidad de auditores depende de las áreas. En áreas grandes o muy técnicas se piden dos o más. Se muestran los resultados de la auditoría anterior de cada área."
           derecha={puedeEditar && ['PLANEACION', 'INVITACION'].includes(a.estado) && (
-            <select aria-label="Agregar área" value="" onChange={(e) => agregarArea(e.target.value)} className={`${LISTA} w-auto text-xs`}>
+            <select aria-label="Agregar área" value="" onChange={(e) => agregarArea(e.target.value)} className={`${LISTA_FILTRO} text-xs`}>
               <option value="">+ Agregar área…</option>{disponibles.map((n) => <option key={n}>{n}</option>)}</select>)}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">

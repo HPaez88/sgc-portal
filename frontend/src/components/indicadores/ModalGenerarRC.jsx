@@ -5,14 +5,17 @@ import { AlertOctagon, X, Save } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
 import CampoFecha from '../common/CampoFecha';
+import { useSGC } from '../../SGCContext';
+import { CAMPO_TEXTO as CAMPO, Leyenda, Seccion } from '../common/estilosCampos';
 import { siguienteHabil } from '../../constants/fechasHabiles';
 import { folioRC, hoyISO, enDiasISO } from '../../constants/reportesCorreccion';
 
 const MESES_LARGOS = { Ene: 'enero', Feb: 'febrero', Mar: 'marzo', Abr: 'abril', May: 'mayo', Jun: 'junio', Jul: 'julio', Ago: 'agosto', Sep: 'septiembre', Oct: 'octubre', Nov: 'noviembre', Dic: 'diciembre' };
-const CAMPO = 'w-full text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none text-slate-900';
 
 export default function ModalGenerarRC({ isOpen, onClose, indicador = null, valorReal = null, semaforo = null, mes = 'Oct', ejercicio = 2026, reportes = [], onConfirmarRC }) {
   const toast = useToast();
+  const { areasDetalle = [] } = useSGC();
+  const encargadoArea = areasDetalle.find((a) => a.nombre === indicador?.area)?.encargado?.trim() || '';
   const [responsable, setResponsable] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [causa, setCausa] = useState('');
@@ -22,7 +25,7 @@ export default function ModalGenerarRC({ isOpen, onClose, indicador = null, valo
 
   useEffect(() => {
     if (!indicador || !isOpen) return;
-    setResponsable('');
+    setResponsable(encargadoArea); // del catálogo de áreas; se cambia si atiende otra persona
     // Descripción con los datos del resultado; el usuario la puede ajustar. Causa y corrección las escribe el área.
     setDescripcion(`El indicador #${indicador.numero ?? indicador.id} "${indicador.nombre}" obtuvo ${valorReal ?? '0'} ${indicador.unidad || ''} en ${MESES_LARGOS[mes] || mes} ${ejercicio}, contra una meta de ${indicador.meta_anual ?? indicador.meta} ${indicador.unidad || ''} (${semaforo?.porcentaje ?? 0}% de cumplimiento).`);
     setCausa('');
@@ -59,8 +62,8 @@ export default function ModalGenerarRC({ isOpen, onClose, indicador = null, valo
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto">
-          <section className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <h4 className="text-xs font-extrabold uppercase tracking-wide text-marca-azul-oscuro border-b border-slate-200 pb-1 mb-2">1. Resultado que origina el reporte</h4>
+          <Leyenda />
+          <Seccion n={1} titulo="Resultado que origina el reporte" ayuda="Viene de la captura del mes; no se edita aquí.">
             <table className="w-full text-sm tablas-marcadas bg-white">
               <thead><tr><th scope="col" className="p-2 text-left">Indicador</th><th scope="col" className="p-2 text-left">Área</th><th scope="col" className="p-2 text-left">Periodo</th><th scope="col" className="p-2 text-left">Meta</th><th scope="col" className="p-2 text-left">Resultado</th><th scope="col" className="p-2 text-left">Cumplimiento</th></tr></thead>
               <tbody><tr>
@@ -69,28 +72,30 @@ export default function ModalGenerarRC({ isOpen, onClose, indicador = null, valo
                 <td className="p-2 whitespace-nowrap font-bold text-rose-700">{valorReal ?? '—'} {indicador.unidad}</td><td className="p-2 font-bold text-rose-700">{semaforo?.porcentaje ?? 0}%</td>
               </tr></tbody>
             </table>
-          </section>
+          </Seccion>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
-            <h4 className="text-xs font-extrabold uppercase tracking-wide text-marca-azul-oscuro border-b border-slate-200 pb-1">2. Corrección del área</h4>
-            <label className="block text-xs font-bold text-slate-800">Descripción de la desviación
-              <textarea rows={2} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required className={`${CAMPO} mt-1`} />
+          <Seccion n={2} titulo="Corrección del área" ayuda="Qué pasó, por qué y qué se hará para subsanarlo." color="bg-amber-700">
+            <label className="block text-sm font-bold text-slate-800">Descripción de la desviación
+              <textarea rows={2} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required className={`${CAMPO} mt-1 font-normal`} />
             </label>
-            <label className="block text-xs font-bold text-slate-800">Causa inmediata identificada *
-              <input value={causa} onChange={(e) => setCausa(e.target.value)} required placeholder="Qué provocó la desviación en este periodo" className={`${CAMPO} mt-1`} />
+            <label className="block text-sm font-bold text-slate-800">Causa inmediata identificada <span className="text-rose-600">*</span>
+              <input value={causa} onChange={(e) => setCausa(e.target.value)} required placeholder="Qué provocó la desviación en este periodo" className={`${CAMPO} mt-1 font-normal`} />
             </label>
-            <label className="block text-xs font-bold text-slate-800">Corrección que se aplicará *
-              <textarea rows={2} value={accion} onChange={(e) => setAccion(e.target.value)} required placeholder="Acción inmediata para subsanar la desviación" className={`${CAMPO} mt-1`} />
+            <label className="block text-sm font-bold text-slate-800">Corrección que se aplicará <span className="text-rose-600">*</span>
+              <textarea rows={2} value={accion} onChange={(e) => setAccion(e.target.value)} required placeholder="Acción inmediata para subsanar la desviación" className={`${CAMPO} mt-1 font-normal`} />
             </label>
+          </Seccion>
+
+          <Seccion n={3} titulo="Responsable y plazo" ayuda="El responsable se toma del encargado del área en el catálogo." color="bg-sky-800">
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="block text-xs font-bold text-slate-800">Responsable de la corrección
-                <input value={responsable} onChange={(e) => setResponsable(e.target.value)} placeholder="Nombre de quien la ejecuta" className={`${CAMPO} mt-1`} />
+              <label className="block text-sm font-bold text-slate-800">Responsable de la corrección
+                <input value={responsable} onChange={(e) => setResponsable(e.target.value)} placeholder="Nombre de quien la ejecuta" className={`${CAMPO} mt-1 font-normal`} />
               </label>
-              <label className="block text-xs font-bold text-slate-800">Fecha límite de corrección *
-                <CampoFecha value={fechaCompromiso} onChange={(e) => setFechaCompromiso(e.target.value)} required className={`${CAMPO} mt-1`} />
+              <label className="block text-sm font-bold text-slate-800">Fecha límite de corrección <span className="text-rose-600">*</span>
+                <CampoFecha value={fechaCompromiso} onChange={(e) => setFechaCompromiso(e.target.value)} required className={`${CAMPO} mt-1 font-normal`} />
               </label>
             </div>
-          </section>
+          </Seccion>
 
           <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
             <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg">Cancelar</button>

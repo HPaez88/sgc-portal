@@ -1,6 +1,7 @@
 // Evaluaciones de la auditoría: la del auditado (OOMRSC-19) y la de auditores para el bono bimestral (OOMRSC-34).
 // También el análisis con IA: solo sugiere; no escribe ni cambia registros.
 import React, { useState } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import { Sparkles, Save, Pencil } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { useToast } from '../common/Toast';
@@ -40,7 +41,7 @@ export function AnalisisIA({ titulo, ayuda, construirPrompt, boton = 'Analizar c
 }
 
 const Escala = ({ valor, onChange, etiqueta }) => (
-  <select aria-label={etiqueta} value={valor || ''} onChange={(e) => onChange(Number(e.target.value) || '')} className={`${LISTA} w-auto`}>
+  <select aria-label={etiqueta} value={valor || ''} onChange={(e) => onChange(Number(e.target.value) || '')} className={LISTA_FILTRO}>
     <option value="">—</option>{ESCALA_EVALUACION.map(([n, t]) => <option key={n} value={n}>{n} · {t}</option>)}</select>);
 
 function FormularioAuditado({ pendiente, onGuardar, onCerrar }) {
@@ -123,7 +124,7 @@ export default function EvaluacionesPanel({ auditorias, evaluaciones, pendientes
       </Bloque>
       {esAdmin && a && (
         <Bloque titulo={`B. Evaluación de auditores para el bono (${FORMATOS.bono})`} ayuda={`Total de 10 puntos; el bono procede con ${MINIMO_BONO} o más. Se guarda al capturar.`}
-          derecha={<select aria-label="Auditoría" value={String(a.id)} onChange={(e) => setElegida(e.target.value)} className={`${LISTA} w-auto`}>{concluidas.map((x) => <option key={x.id} value={String(x.id)}>{tituloAuditoria(x)}</option>)}</select>}>
+          derecha={<select aria-label="Auditoría" value={String(a.id)} onChange={(e) => setElegida(e.target.value)} className={LISTA_FILTRO}>{concluidas.map((x) => <option key={x.id} value={String(x.id)}>{tituloAuditoria(x)}</option>)}</select>}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead><tr><th scope="col" className="p-2 text-left">Auditor</th>{CRITERIOS_BONO.map(([k, t, max]) => <th key={k} scope="col" className="p-2 text-center max-w-[110px]">{t} ({max})</th>)}<th scope="col" className="p-2 text-center">Total</th><th scope="col" className="p-2 text-left">Bono</th><th scope="col" className="p-2 text-right">Acción</th></tr></thead>

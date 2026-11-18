@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import {
   Layers,
   Calendar,
@@ -361,7 +362,7 @@ export default function DesempenoProcesosTab({
                 <select
                   value={mesActivoIndex}
                   onChange={(e) => setMesActivoIndex(Number(e.target.value))}
-                  className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                  className={LISTA_FILTRO}
                 >
                   {MESES.map((m, idx) => (
                     <option key={m.clave} value={idx}>
@@ -372,7 +373,7 @@ export default function DesempenoProcesosTab({
                 <select
                   value={ejercicio}
                   onChange={(e) => setEjercicio?.(Number(e.target.value))}
-                  className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                  className={LISTA_FILTRO}
                 >
                   {[0, 1, 2, 3].map((k) => new Date().getFullYear() - 2 + k).map(y => (
                     <option key={y} value={y}>{y}</option>
@@ -386,7 +387,7 @@ export default function DesempenoProcesosTab({
                 <select
                   value={trimestreSeleccionado}
                   onChange={(e) => setTrimestreSeleccionado(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                  className={LISTA_FILTRO}
                 >
                   {Object.entries(TRIMESTRES_CONFIG).map(([k, v]) => (
                     <option key={k} value={k}>
@@ -397,7 +398,7 @@ export default function DesempenoProcesosTab({
                 <select
                   value={ejercicio}
                   onChange={(e) => setEjercicio?.(Number(e.target.value))}
-                  className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                  className={LISTA_FILTRO}
                 >
                   {[0, 1, 2, 3].map((k) => new Date().getFullYear() - 2 + k).map(y => (
                     <option key={y} value={y}>{y}</option>
@@ -414,7 +415,7 @@ export default function DesempenoProcesosTab({
                 <select
                   value={ejercicio}
                   onChange={(e) => setEjercicio?.(Number(e.target.value))}
-                  className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 text-xs focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                  className={LISTA_FILTRO}
                 >
                   {[0, 1, 2, 3].map((k) => new Date().getFullYear() - 2 + k).map(y => (
                     <option key={y} value={y}>{y}</option>

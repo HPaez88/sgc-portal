@@ -18,6 +18,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
+import { CAMPO_TEXTO, Encabezado } from '../common/estilosCampos';
 import { contactoResponsable, resolverResponsable } from '../../constants/areas';
 import { useToast } from '../common/Toast';
 import { useSGC } from '../../SGCContext';
@@ -195,16 +196,16 @@ OOMAPASC de Cajeme`
         {/* Contenido dividido en 2 columnas: Lista de Áreas con Atraso y Redactor de Correo */}
         <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 max-h-[78vh] overflow-y-auto">
           {/* Columna Izquierda: Áreas con Atraso Detectado */}
-          <div className="md:col-span-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wide flex items-center gap-1.5">
-                <AlertTriangle size={15} className="text-amber-500" />
-                Áreas con Atraso ({areasConAtraso.length})
+          <div className="md:col-span-5 bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4 self-start">
+            <div className="-mx-5 -mt-5 mb-1 px-5 py-3 rounded-t-2xl bg-[#1E3E62] text-white flex items-center justify-between gap-2">
+              <h4 className="text-base font-extrabold flex items-center gap-2">
+                <span className="w-7 h-7 shrink-0 rounded-full bg-white/20 flex items-center justify-center text-xs font-black">1</span>
+                Elige el área ({areasConAtraso.length} con atraso)
               </h4>
               <button
                 type="button"
                 onClick={handlePrepararMensajeGeneral}
-                className="text-[11px] font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
+                className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-bold text-white cursor-pointer"
               >
                 Aviso General
               </button>
@@ -264,7 +265,8 @@ OOMAPASC de Cajeme`
           </div>
 
           {/* Columna Derecha: Redactor y Envio de Notificación */}
-          <div className="md:col-span-7 bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
+          <div className="md:col-span-7 bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4">
+            <Encabezado n={2} titulo="Revisa y envía el aviso" ayuda="El texto se arma solo; puedes ajustarlo antes de enviar." color="bg-sky-800" />
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Destinatario</span>
@@ -290,7 +292,7 @@ OOMAPASC de Cajeme`
                 type="text"
                 value={asuntoCustom}
                 onChange={(e) => setAsuntoCustom(e.target.value)}
-                className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
+                className={CAMPO_TEXTO}
               />
             </div>
 
@@ -303,7 +305,7 @@ OOMAPASC de Cajeme`
                 value={mensajeCustom}
                 onChange={(e) => setMensajeCustom(e.target.value)}
                 rows={11}
-                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-sky-500 outline-none font-mono leading-relaxed resize-none"
+                className={`${CAMPO_TEXTO} leading-relaxed`}
               />
             </div>
 

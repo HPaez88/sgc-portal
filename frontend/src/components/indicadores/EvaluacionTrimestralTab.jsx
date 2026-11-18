@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import {
   BarChart3,
   Calendar,
@@ -445,7 +446,7 @@ export default function EvaluacionTrimestralTab({
         <select
           value={filtroDireccion}
           onChange={(e) => setFiltroDireccion(e.target.value)}
-          className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 outline-none cursor-pointer"
+          className={LISTA_FILTRO}
         >
           <option value="">Todas las Direcciones</option>
           {DIRECCIONES.map(d => (
@@ -456,7 +457,7 @@ export default function EvaluacionTrimestralTab({
         <select
           value={filtroSemaforo}
           onChange={(e) => setFiltroSemaforo(e.target.value)}
-          className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 outline-none"
+          className={LISTA_FILTRO}
         >
           <option value="">Todos los Semáforos</option>
           <option value="ACEPTABLE">🟢 Aceptable (≥90%)</option>

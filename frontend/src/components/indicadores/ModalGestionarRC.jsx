@@ -20,6 +20,7 @@ import ContenedorModal from '../common/ContenedorModal';
 import { useToast } from '../common/Toast';
 import { useSGC } from '../../SGCContext';
 import CampoFecha from '../common/CampoFecha';
+import { CAMPO_TEXTO, Leyenda, Seccion } from '../common/estilosCampos';
 import { acDesdeReporteCorreccion } from '../../services/flujoService';
 import { estadoRC, etiquetaRC, puedeDictaminarRC, hoyISO } from '../../constants/reportesCorreccion';
 import { formatearFecha } from '../../constants/workflow';
@@ -169,129 +170,68 @@ export default function ModalGestionarRC({
         </div>
 
         {/* Cuerpo */}
-        <div className="p-6 sm:p-7 space-y-6 max-h-[80vh] overflow-y-auto">
-          {/* Banner de Estado */}
-          <div className="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-bold bg-slate-50 border-slate-200">
-            <span className="text-slate-700 text-sm">Estatus del Reporte de Corrección:</span>
-            <span className={`px-4 py-1.5 rounded-full font-extrabold text-xs border ${etiquetaRC({ estado }).cls}`}>{etiquetaRC({ estado }).label}</span>
-          </div>
+        <div className="p-5 sm:p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-slate-50">
+          <Leyenda />
 
-          {/* Información del Indicador y Área */}
-          <div className="p-5 bg-sky-50/70 rounded-2xl border border-sky-200 space-y-2.5 text-xs sm:text-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-extrabold text-sky-950 flex items-center gap-2">
-                <Building2 size={16} className="text-sky-700" />
-                Área Responsable: {reporte.area || 'Operativa'}
-              </span>
-              <span className="text-slate-500 font-mono font-bold">
-                Periodo: {[reporte.mes, reporte.ejercicio].filter(Boolean).join(' ') || '—'} · Registrado {formatearFecha(reporte.fechaRegistro) || '—'}
-              </span>
+          <Seccion n={1} titulo="Resultado que originó el reporte" ayuda="Datos registrados al emitir el RC; no se editan aquí."
+            extra={<span className={`px-3 py-1 rounded-full font-extrabold text-xs border ${etiquetaRC({ estado }).cls}`}>{etiquetaRC({ estado }).label}</span>}>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                ['Área responsable', reporte.area || 'Operativa'],
+                ['Periodo', [reporte.mes, reporte.ejercicio].filter(Boolean).join(' ') || '—'],
+                ['Registrado', formatearFecha(reporte.fechaRegistro) || '—'],
+              ].map(([etq, v]) => (
+                <label key={etq} className="block">
+                  <span className="block text-xs font-bold text-slate-800 mb-1">{etq}</span>
+                  <input disabled value={v} className={CAMPO_TEXTO} />
+                </label>
+              ))}
             </div>
-            <p className="text-slate-800 font-medium text-xs sm:text-sm leading-relaxed">
-              <strong className="text-slate-900">Desviación Operativa:</strong> {reporte.descripcion || 'Sin descripción detallada.'}
-            </p>
+            <label className="block">
+              <span className="block text-xs font-bold text-slate-800 mb-1">Desviación</span>
+              <textarea disabled rows={2} value={reporte.descripcion || 'Sin descripción detallada.'} className={CAMPO_TEXTO} />
+            </label>
             {reporte.folio_ac_vinculado && (
-              <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 text-purple-950 font-bold flex items-center gap-2.5">
+              <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 text-purple-950 text-sm font-bold flex items-center gap-2.5">
                 <Sparkles size={16} className="text-purple-600" />
-                <span>Acción Correctiva Oficial Generada: <strong className="font-mono text-purple-800">{reporte.folio_ac_vinculado}</strong></span>
+                <span>Acción Correctiva generada: <strong className="font-mono text-purple-800">{reporte.folio_ac_vinculado}</strong></span>
               </div>
             )}
-          </div>
+          </Seccion>
 
-          {/* Formulario de Análisis y Corrección en 2 Columnas Espaciosas */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                  Causa Inmediata Identificada
-                </label>
-                <textarea
-                  value={causa}
-                  onChange={(e) => setCausa(e.target.value)}
-                  rows={4}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none leading-relaxed"
-                  placeholder="Explicación detallada de por qué no se alcanzó la meta programada..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                  Acción de Corrección Implementada
-                </label>
-                <textarea
-                  value={accion}
-                  onChange={(e) => setAccion(e.target.value)}
-                  rows={4}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none leading-relaxed"
-                  placeholder="Acciones correctivas inmediatas que se aplicaron operativamente..."
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Responsable de Ejecución
-                </label>
-                <input
-                  type="text"
-                  value={responsable}
-                  onChange={(e) => setResponsable(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Fecha Compromiso
-                </label>
-                <CampoFecha
-                  value={fechaCompromiso}
-                  onChange={(e) => setFechaCompromiso(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none font-mono"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Sección de Verificación y Cierre SGC */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-            <h4 className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
-              <ShieldCheck size={15} className="text-emerald-600" />
-              Verificación de Eficacia (Auditoría / Coordinación SGC)
-            </h4>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Dictamen y Notas de Verificación de Eficacia
+          <Seccion n={2} titulo="Corrección del área" ayuda="Por qué no se alcanzó la meta y qué se hizo para subsanarlo." color="bg-amber-700">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block text-sm font-bold text-slate-800">Causa inmediata identificada
+                <textarea disabled={!puedeEditar} value={causa} onChange={(e) => setCausa(e.target.value)} rows={4} className={`${CAMPO_TEXTO} mt-1 font-normal`}
+                  placeholder="Explicación detallada de por qué no se alcanzó la meta programada..." />
               </label>
-              <textarea
-                value={observacionesVerificacion}
-                onChange={(e) => setObservacionesVerificacion(e.target.value)}
-                rows={2}
-                placeholder="Detalla si la corrección resolvió la desviación y si el indicador volvió a parámetros aceptables..."
-                className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
+              <label className="block text-sm font-bold text-slate-800">Acción de corrección implementada
+                <textarea disabled={!puedeEditar} value={accion} onChange={(e) => setAccion(e.target.value)} rows={4} className={`${CAMPO_TEXTO} mt-1 font-normal`}
+                  placeholder="Acciones inmediatas que se aplicaron operativamente..." />
+              </label>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block text-sm font-bold text-slate-800">Responsable de ejecución
+                <input type="text" disabled={!puedeEditar} value={responsable} onChange={(e) => setResponsable(e.target.value)} className={`${CAMPO_TEXTO} mt-1 font-normal`} />
+              </label>
+              <label className="block text-sm font-bold text-slate-800">Fecha compromiso
+                <CampoFecha disabled={!puedeEditar} value={fechaCompromiso} onChange={(e) => setFechaCompromiso(e.target.value)} className={`${CAMPO_TEXTO} mt-1 font-normal`} />
+              </label>
+            </div>
+          </Seccion>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-600 mb-1">Verificado por:</label>
-                <input
-                  type="text"
-                  value={verificadoPor}
-                  onChange={(e) => setVerificadoPor(e.target.value)}
-                  className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-slate-600 mb-1">Fecha de Verificación:</label>
-                <CampoFecha
-                  value={fechaVerificacion}
-                  onChange={(e) => setFechaVerificacion(e.target.value)}
-                  className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-mono"
-                />
-              </div>
+          <Seccion n={3} titulo="Verificación de eficacia" ayuda="La registra el SGC o un auditor: ¿la corrección resolvió la desviación?" color="bg-emerald-700">
+            <label className="block text-sm font-bold text-slate-800">Dictamen y notas de verificación
+              <textarea disabled={!dictamina} value={observacionesVerificacion} onChange={(e) => setObservacionesVerificacion(e.target.value)} rows={2}
+                placeholder="Detalla si la corrección resolvió la desviación y si el indicador volvió a parámetros aceptables..." className={`${CAMPO_TEXTO} mt-1 font-normal`} />
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block text-sm font-bold text-slate-800">Verificado por
+                <input type="text" disabled={!dictamina} value={verificadoPor} onChange={(e) => setVerificadoPor(e.target.value)} className={`${CAMPO_TEXTO} mt-1 font-normal`} />
+              </label>
+              <label className="block text-sm font-bold text-slate-800">Fecha de verificación
+                <CampoFecha disabled={!dictamina} value={fechaVerificacion} onChange={(e) => setFechaVerificacion(e.target.value)} className={`${CAMPO_TEXTO} mt-1 font-normal`} />
+              </label>
             </div>
 
             {/* Botones de dictamen: SGC o auditor, y solo mientras el reporte está en atención */}
@@ -314,7 +254,7 @@ export default function ModalGestionarRC({
                 <AlertTriangle size={14} /> No efectivo: escalar a Acción Correctiva
               </button>
             </div>}
-          </div>
+          </Seccion>
         </div>
 
         {/* Pie */}

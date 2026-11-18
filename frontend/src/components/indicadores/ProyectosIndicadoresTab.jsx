@@ -1,6 +1,7 @@
 // Setup anual de indicadores: proyectos por área (normalmente uno; se permiten varios), con sus fichas, PEMS y avance.
 // Captura: encargado del área o SGC. Aprobación: administradores del SGC. Formatos oficiales: los genera el servidor.
 import React, { useMemo, useState } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import { FolderKanban, Plus, RefreshCw, Lock, FileText, FileSpreadsheet, Send, CheckCircle2, Undo2, Save, Download, ClipboardList } from 'lucide-react';
 import { useLocalStorage } from '../../hooks';
 import { useSGC } from '../../SGCContext';
@@ -281,11 +282,11 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
         <div className="flex flex-wrap items-end gap-2">
           <BotonInformePDF onClick={() => informeProyectosPDF([...lista].sort((a, b) => a.area.localeCompare(b.area, 'es')), anio)} />
           <label className="text-xs font-bold text-slate-800">Año
-            <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className="block mt-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white">
+            <select value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={`${LISTA_FILTRO} block mt-1`}>
               {[hoy.getFullYear() - 1, hoy.getFullYear(), hoy.getFullYear() + 1, hoy.getFullYear() + 2].map((a) => <option key={a}>{a}</option>)}
             </select></label>
           {esAdmin && <label className="text-xs font-bold text-slate-800">Área
-            <select value={filtroArea} onChange={(e) => setFiltroArea(e.target.value)} className="block mt-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white max-w-[220px]">
+            <select value={filtroArea} onChange={(e) => setFiltroArea(e.target.value)} className={`${LISTA_FILTRO} block mt-1 max-w-[220px]`}>
               <option value="">Todas</option>{areas.map((a) => <option key={a}>{a}</option>)}
             </select></label>}
         </div>
@@ -316,7 +317,7 @@ export default function ProyectosIndicadoresTab({ indicadoresCatalogo = [] }) {
       {misAreas.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-end gap-2">
           <label className="text-xs font-bold text-slate-800">Nuevo proyecto {anio} para
-            <select value={nuevaArea} onChange={(e) => setNuevaArea(e.target.value)} className="block mt-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white max-w-[260px]">
+            <select value={nuevaArea} onChange={(e) => setNuevaArea(e.target.value)} className={`${LISTA_FILTRO} block mt-1 max-w-[260px]`}>
               <option value="">Elige el área…</option>{misAreas.map((a) => <option key={a}>{a}</option>)}
             </select></label>
           <button type="button" disabled={!nuevaArea} onClick={() => crear(nuevaArea)} className="px-3 py-2 text-xs font-bold text-white bg-marca-azul-oscuro rounded-lg disabled:opacity-40 inline-flex items-center gap-1.5"><Plus size={14} /> Crear</button>

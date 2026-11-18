@@ -2,6 +2,17 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-18T23:00Z · @claude-code · [UI] · Indicadores: todos los formularios con el mismo estilo y por pasos
+- Captura mensual en 4 pasos con franja de color: 1 Datos del indicador (bloqueados), 2 Resultado del mes, 3 Evaluación automática, 4 Observación (opcional, ya no escondida).
+- Ratificación y justificación de cambio (SGC) con el mismo estilo.
+- Reporte de Corrección: alta en 3 secciones; el responsable se toma del encargado del área en el catálogo. Gestión en 3 secciones; los campos del área se bloquean si no hay permiso y los de verificación solo los llena el SGC o un auditor.
+- Recordatorio de atrasos en 2 pasos (elegir área / revisar y enviar).
+- Filtros de todas las pestañas (y Auditorías) con el estilo de lista.
+- Se quitó código muerto que intentaba guardar las fichas PMD en una sección aparte sin importar la función (fallaba en silencio; las fichas se guardan por indicadoresData).
+- Archivos: frontend/src/components/indicadores/*, frontend/src/components/common/estilosCampos.jsx, frontend/src/components/auditorias/*
+- Tareas STATE: U1 (extensión a Indicadores)
+- Deploy: SÍ
+
 ## 2026-11-18T21:00Z · @claude-code · [PERF] · Informe PDF bajo demanda y contraste del Panel
 - jsPDF se descarga solo al pedir el informe del Panel: el archivo inicial bajó de 263 KB a 113 KB comprimido. El PDF se sigue generando (verificado).
 - Contraste: botón "Diagnóstico Ejecutivo IA" más oscuro (4.1 → 5.9) y cifras en ámbar más legibles (Panel y detalle de AC).

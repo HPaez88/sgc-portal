@@ -5,6 +5,8 @@ import { ChevronDown, PencilLine, Lock } from 'lucide-react';
 
 // Lista: fondo azul claro y borde marcado. Texto libre: fondo blanco. Bloqueado: gris.
 export const CAMPO_LISTA = 'w-full px-3 py-2 text-sm font-semibold bg-sky-50 border-2 border-sky-300 rounded-lg text-sky-950 cursor-pointer hover:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:border-sky-600 outline-none disabled:bg-slate-100 disabled:border-slate-200 disabled:text-slate-600 disabled:cursor-not-allowed';
+// Lista compacta para filtros y barras de herramientas (mismo código de color, sin ancho completo).
+export const LISTA_FILTRO = 'px-2.5 py-1.5 text-xs font-semibold bg-sky-50 border-2 border-sky-300 rounded-lg text-sky-950 cursor-pointer hover:border-sky-500 focus:ring-2 focus:ring-sky-500/30 focus:border-sky-600 outline-none';
 export const CAMPO_TEXTO = 'w-full px-3 py-2 text-sm bg-white border border-slate-400 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none disabled:bg-slate-100 disabled:border-slate-200 disabled:text-slate-600';
 
 // Botón de opción (elegir una entre pocas): la elegida resalta en color sólido.
@@ -35,6 +37,14 @@ export function Encabezado({ n, titulo, ayuda, color = 'bg-[#1E3E62]', extra = n
     </div>
   );
 }
+
+// Sección completa: tarjeta blanca con su franja de color numerada.
+export const Seccion = ({ n, titulo, ayuda, color, extra, children, className = '' }) => (
+  <section className={`bg-white p-5 rounded-2xl border border-slate-300 shadow-sm space-y-4 ${className}`}>
+    <Encabezado n={n} titulo={titulo} ayuda={ayuda} color={color} extra={extra} />
+    {children}
+  </section>
+);
 
 export const Sub = ({ titulo, ayuda }) => (
   <div className="border-b-2 border-slate-200 pb-1 pt-1">

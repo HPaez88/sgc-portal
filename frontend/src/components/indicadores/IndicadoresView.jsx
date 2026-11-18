@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { LISTA_FILTRO } from '../common/estilosCampos';
 import { 
   Target, 
   Search, 
@@ -47,6 +48,7 @@ import {
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import ContenedorModal from '../common/ContenedorModal';
+import { CAMPO_TEXTO, Leyenda, Seccion } from '../common/estilosCampos';
 import { acDesdeIndicador } from '../../services/flujoService';
 import DesempenoProcesosTab from './DesempenoProcesosTab';
 import ModalGestionarIndicador from './ModalGestionarIndicador';
@@ -123,7 +125,6 @@ export default function IndicadoresView({
   const [valorInput, setValorInput] = useState('');
   const [observacionInput, setObservacionInput] = useState('');
   const [accionInput, setAccionInput] = useState('NA');
-  const [mostrarOpcionesAvanzadas, setMostrarOpcionesAvanzadas] = useState(false);
 
   // Estados de Gobernanza (Segunda Confirmación Normal & Modificación Administrador)
   const [modalSegundaConfirmacion, setModalSegundaConfirmacion] = useState(false);
@@ -151,13 +152,8 @@ export default function IndicadoresView({
   const [modalRecordatoriosOpen, setModalRecordatoriosOpen] = useState(false);
 
   // Fichas Técnicas Oficiales Gubernamentales (Ayuntamiento de Cajeme)
-  const [fichasPersonalizadas, setFichasPersonalizadas] = useState(() => {
-    try {
-      const g = leerEstadoTexto('sgc-fichas-gubernamentales');
-      if (g) return JSON.parse(g);
-    } catch (e) { /* ignore */ }
-    return indicadoresData?.fichasPersonalizadas || {};
-  });
+  // Las fichas viajan dentro de indicadoresData (setIndicadoresData); no hay otra copia.
+  const [fichasPersonalizadas, setFichasPersonalizadas] = useState(() => indicadoresData?.fichasPersonalizadas || {});
 
   const [fichaParaModal, setFichaParaModal] = useState(null);
   const [pestanaModalInicial, setPestanaModalInicial] = useState('pmd');
@@ -178,9 +174,6 @@ export default function IndicadoresView({
       [numId]: fichaActualizada
     };
     setFichasPersonalizadas(nuevo);
-    try {
-      escribirEstadoTexto('sgc-fichas-gubernamentales', JSON.stringify(nuevo));
-    } catch (e) { /* ignore */ }
     
     setIndicadoresData?.(prev => ({
       ...prev,
@@ -325,7 +318,6 @@ export default function IndicadoresView({
     setObservacionInput(dataGuardada?.observacion || '');
     setAccionInput(dataGuardada?.accion || '');
     setConfirmacionCheckbox(false);
-    setMostrarOpcionesAvanzadas(false);
   };
 
   // Semáforo dinámico en tiempo real para el modal de captura
@@ -819,7 +811,7 @@ export default function IndicadoresView({
               <label className="text-[11px] font-bold text-slate-700 font-mono uppercase mr-2 shrink-0 flex items-center gap-1.5">
                 <Calendar size={13} className="text-sky-600" /> Año
                 <select value={ejercicio} onChange={(e) => { setEjercicio(Number(e.target.value)); setPagina(1); }}
-                  className="px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900">
+                  className={LISTA_FILTRO}>
                   {[hoy.getFullYear() - 2, hoy.getFullYear() - 1, hoy.getFullYear(), hoy.getFullYear() + 1].map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
               </label>
@@ -929,7 +921,7 @@ export default function IndicadoresView({
               <select
                 value={filtroDireccion}
                 onChange={(e) => { setFiltroDireccion(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                className={LISTA_FILTRO}
               >
                 <option value="">Todas las Direcciones</option>
                 {direccionesUnicas.map(d => <option key={d} value={d}>{d}</option>)}
@@ -938,7 +930,7 @@ export default function IndicadoresView({
               <select
                 value={filtroProceso}
                 onChange={(e) => { setFiltroProceso(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                className={LISTA_FILTRO}
               >
                 <option value="">Todos los Procesos</option>
                 {procesosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
@@ -947,7 +939,7 @@ export default function IndicadoresView({
               <select
                 value={filtroArea}
                 onChange={(e) => { setFiltroArea(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                className={LISTA_FILTRO}
               >
                 <option value="">Todas las Áreas</option>
                 {areasUnicas.map(a => <option key={a} value={a}>{a}</option>)}
@@ -956,7 +948,7 @@ export default function IndicadoresView({
               <select
                 value={filtroImpacto}
                 onChange={(e) => { setFiltroImpacto(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                className={LISTA_FILTRO}
               >
                 <option value="">Todos los Impactos</option>
                 <option value="Alto">Impacto Alto (Detona AC)</option>
@@ -966,7 +958,7 @@ export default function IndicadoresView({
               <select
                 value={filtroSemaforo}
                 onChange={(e) => { setFiltroSemaforo(e.target.value); setPagina(1); }}
-                className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-bold focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                className={LISTA_FILTRO}
               >
                 <option value="">Todos los Semáforos</option>
                 <option value="ACEPTABLE">Aceptables (≥90%)</option>
@@ -1524,74 +1516,54 @@ export default function IndicadoresView({
           }
         >
           <form onSubmit={handleGuardarModal} className="space-y-4 p-1">
-            {/* Metadatos del Indicador */}
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs grid grid-cols-2 gap-3">
-              <div>
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">Dirección / Área:</span>
-                <strong className="text-slate-800 text-[11.5px] block truncate">{indicadorEnEdicion.direccion} · {indicadorEnEdicion.area}</strong>
-                <span className="text-slate-500 text-[10px] block mt-0.5">Proceso: {indicadorEnEdicion.proceso}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">Meta Oficial / Criterio:</span>
-                <strong className="text-sky-700 text-sm font-mono block">
-                  {indicadorEnEdicion.meta_anual || indicadorEnEdicion.meta} {indicadorEnEdicion.unidad}
-                </strong>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                    indicadorEnEdicion.impacto === 'Alto'
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : 'bg-slate-100 text-slate-700 border-slate-200'
-                  }`}>
-                    Impacto: {indicadorEnEdicion.impacto || 'Operativo'}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {indicadorEnEdicion.es_menor ? '≤ Meta' : '≥ Meta'}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <Leyenda />
 
-            {/* Aviso especial para administradores si ya estaba capturado */}
+            <Seccion n={1} titulo="Datos del indicador" ayuda="Vienen de la ficha del indicador; se modifican en Gestionar indicador.">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  ['Dirección / Área', `${indicadorEnEdicion.direccion || ''} · ${indicadorEnEdicion.area || ''}`],
+                  ['Proceso', indicadorEnEdicion.proceso],
+                  ['Meta oficial', `${indicadorEnEdicion.meta_anual || indicadorEnEdicion.meta} ${indicadorEnEdicion.unidad || ''}`],
+                  ['Impacto y criterio', `${indicadorEnEdicion.impacto || 'Operativo'} · ${indicadorEnEdicion.es_menor ? '≤ Meta' : '≥ Meta'}`],
+                ].map(([etq, v]) => (
+                  <label key={etq} className="block">
+                    <span className="block text-xs font-bold text-slate-800 mb-1">{etq}</span>
+                    <input disabled value={v || ''} title={v || ''} className={CAMPO_TEXTO} />
+                  </label>
+                ))}
+              </div>
             {esModificacionAdmin && (
               <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-xs font-bold flex items-center gap-2.5">
                 <ShieldCheck size={18} className="text-purple-600 shrink-0" />
                 <span>Modo Administrador: Modificando medición registrada previamente ({valorOriginalAdmin} {indicadorEnEdicion.unidad}). Se solicitará justificación técnica para la bitácora institucional.</span>
               </div>
             )}
+            </Seccion>
 
-            {/* VALOR REAL OBTENIDO - ÚNICO CAMPO OBLIGATORIO */}
-            <div className="space-y-2 bg-gradient-to-br from-slate-50 to-sky-50/40 p-4 rounded-2xl border border-sky-100">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-black text-slate-800 uppercase tracking-wide">
-                  Valor Real Obtenido ({indicadorEnEdicion.unidad || 'Unidades'}): <span className="text-rose-500">*</span>
-                </label>
-                <span className="text-[11px] font-bold text-sky-700 font-mono">
-                  {MESES_COMPLETOS[MESES.indexOf(mesParaCaptura || mesActivo)] || (mesParaCaptura || mesActivo)} {ejercicio}
-                </span>
-              </div>
-              <div className="relative">
+            <Seccion n={2} titulo={`Resultado de ${(MESES_COMPLETOS[MESES.indexOf(mesParaCaptura || mesActivo)] || (mesParaCaptura || mesActivo))} ${ejercicio}`} ayuda="Es el único dato obligatorio. El sistema evalúa el cumplimiento en cuanto lo escribes." color="bg-sky-800">
+              <label htmlFor="valor-real-indicador" className="block text-sm font-bold text-slate-800">
+                Valor real obtenido ({indicadorEnEdicion.unidad || 'Unidades'}) <span className="text-rose-600">*</span>
+              </label>
+              <div className="relative sm:max-w-md">
                 <input
+                  id="valor-real-indicador"
                   type="number"
                   step="any"
                   value={valorInput}
                   onChange={(e) => setValorInput(e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  className="w-full px-4 py-3 text-2xl font-black bg-white border-2 border-slate-300 rounded-xl focus:border-sky-500 focus:ring-4 focus:ring-sky-100 text-slate-900 font-mono text-center tracking-wider transition-all placeholder:text-slate-300 shadow-inner"
+                  className={`${CAMPO_TEXTO} py-3 pr-24 text-2xl font-black text-center tabular-nums`}
                   placeholder="0.00"
                   required
                   autoFocus
                 />
-                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <span className="text-xs font-extrabold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200 font-mono">
-                    {indicadorEnEdicion.unidad}
-                  </span>
-                </div>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-xs font-extrabold text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                  {indicadorEnEdicion.unidad}
+                </span>
               </div>
-              <p className="text-[10.5px] text-slate-500 text-center">
-                El sistema evalúa de forma automática el cumplimiento del criterio y las acciones requeridas.
-              </p>
-            </div>
+            </Seccion>
 
+            <Seccion n={3} titulo="Evaluación automática" ayuda="Compara el resultado contra la meta y dice qué acción corresponde." color="bg-emerald-700">
             {/* REPORTE AUTOMATIZADO DEL SISTEMA EN TIEMPO REAL */}
             {valorInput === '' ? (
               <div className="p-3.5 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-center text-slate-400 text-xs">
@@ -1689,30 +1661,18 @@ export default function IndicadoresView({
               </div>
             ) : null}
 
-            {/* OPCIONES TÉCNICAS ADICIONALES (OPCIONALES / COLAPSADAS) */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => setMostrarOpcionesAvanzadas(!mostrarOpcionesAvanzadas)}
-                className="text-[11px] font-semibold text-slate-500 hover:text-sky-700 flex items-center gap-1.5 transition-colors cursor-pointer select-none"
-              >
-                <span>{mostrarOpcionesAvanzadas ? '− Ocultar notas complementarias' : '+ Agregar notas u observación técnica complementaria (Opcional)'}</span>
-              </button>
-              {mostrarOpcionesAvanzadas && (
-                <div className="mt-2 space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200 animate-fade-in text-xs">
-                  <label className="block text-[11px] font-bold text-slate-700">
-                    Observación Técnica Manual (Opcional):
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={observacionInput}
-                    onChange={(e) => setObservacionInput(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-900"
-                    placeholder="Si se omite, el sistema generará automáticamente la justificación institucional..."
-                  />
-                </div>
-              )}
-            </div>
+            </Seccion>
+
+            <Seccion n={4} titulo="Observación técnica (opcional)" ayuda="Si la dejas vacía, el sistema redacta la justificación institucional." color="bg-indigo-700">
+              <textarea
+                aria-label="Observación técnica"
+                rows={2}
+                value={observacionInput}
+                onChange={(e) => setObservacionInput(e.target.value)}
+                className={CAMPO_TEXTO}
+                placeholder="Contexto del resultado: causas, fuentes de la medición, ajustes…"
+              />
+            </Seccion>
           </form>
         </ContenedorModal>
       )}
@@ -1856,8 +1816,8 @@ export default function IndicadoresView({
           }
         >
           <div className="space-y-4 p-1 text-xs">
-            {/* Resumen del Indicador y Resultado */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+            <Seccion n={1} titulo="Resumen de la captura" ayuda="Revisa que el resultado sea correcto antes de ratificar.">
+            <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Indicador:</span>
                 <span className="font-bold text-slate-900 text-right">
@@ -1910,6 +1870,9 @@ export default function IndicadoresView({
               )}
             </div>
 
+            </Seccion>
+
+            <Seccion n={2} titulo="Declaración y ratificación" ayuda="Al ratificar, el valor queda bloqueado." color="bg-amber-700">
             {/* Declaración Jurada */}
             <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2 text-amber-950">
               <div className="flex items-center gap-1.5 font-black text-xs text-amber-900 uppercase tracking-wide">
@@ -1933,6 +1896,7 @@ export default function IndicadoresView({
                 He verificado los datos operativos y ratifico la captura de este resultado de forma definitiva en el SGC.
               </span>
             </label>
+            </Seccion>
           </div>
         </ContenedorModal>
       )}
@@ -2011,7 +1975,7 @@ export default function IndicadoresView({
                 value={motivoModificacionAdmin}
                 onChange={(e) => setMotivoModificacionAdmin(e.target.value)}
                 placeholder="Ej. Recálculo por entrega de bitácoras de campo complementarias, corrección de error tipográfico..."
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 text-slate-900 outline-none"
+                className={CAMPO_TEXTO}
                 required
                 autoFocus
               />
