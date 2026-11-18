@@ -7,9 +7,9 @@ color solo con significado (semáforo institucional). Nada de "hero" decorativo 
 a los datos.
 
 ## Escala base
-- `html { font-size: 15px }` fijo en todos los anchos. No se infla por breakpoint.
-- Escala Tailwind estándar: xs 12 · sm 13 · base 15 · lg 17 · xl 19 · 2xl 22 · 3xl 28 (px aprox).
-- Mínimo legible 11px. Los `text-[9px..13px]` se normalizan a 11–13px fijos en `index.css`.
+- `html { font-size: 16px }` fijo en todos los anchos (subió de 15px en la revisión H3 del 2026-11-18). No se infla por breakpoint.
+- Escala Tailwind estándar: xs 12 · sm 14 · base 16 · lg 18 · xl 20 · 2xl 24 · 3xl 30 (px aprox).
+- Mínimo legible 12px. Los `text-[9px]` y `text-[10px]` se suben a 12px en `index.css`.
 - Regla: un título de módulo = `text-lg` máximo. El contenido manda; el encabezado cede altura.
 
 ## Palette (OKLCH tokens)
@@ -23,7 +23,7 @@ a los datos.
 
 ## Type
 Display: Plus Jakarta Sans 700/800 — geométrica, institucional, buena a tamaños pequeños.
-Body: Plus Jakarta Sans 400/500 (Inter como respaldo).
+Body: Plus Jakarta Sans 400/500 (respaldo: fuentes del sistema; Inter se quitó para no cargar una tercera familia).
 Datos y claves: JetBrains Mono 500/600, `font-tabular` en métricas.
 
 ## References

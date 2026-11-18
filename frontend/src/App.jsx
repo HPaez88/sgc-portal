@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { leerPreferencias, aplicarPreferencias } from './constants/accesibilidad';
 import { useSGC } from './SGCContext';
 
@@ -9,28 +9,28 @@ import BackgroundAnimation from './components/layout/BackgroundAnimation';
 
 // Módulos PRIORITARIOS
 import DashboardView from './components/dashboard/DashboardView';
-import AccionCorrectivaViewExternal from './components/AccionCorrectivaView';
-import PlanMejoraViewExternal from './components/PlanMejoraView';
-import IndicadoresView from './components/indicadores';
-import GestorAprobacionesView from './components/aprobaciones';
-import SettingsView from './components/settings';
-import BuzonView from './components/buzon/BuzonView';
+const AccionCorrectivaViewExternal = lazy(() => import('./components/AccionCorrectivaView'));
+const PlanMejoraViewExternal = lazy(() => import('./components/PlanMejoraView'));
+const IndicadoresView = lazy(() => import('./components/indicadores'));
+const GestorAprobacionesView = lazy(() => import('./components/aprobaciones'));
+const SettingsView = lazy(() => import('./components/settings'));
+const BuzonView = lazy(() => import('./components/buzon/BuzonView'));
 
 // Módulos secundarios (para escalar)
-import RiesgosView from './components/riesgos';
-import DocumentosView from './components/documentos';
-import AuditoriasView from './components/auditorias';
-import BitacoraView from './components/bitacora';
-import AgenteISOView from './components/iso/AgenteISOView';
-import ManualCalidadView from './components/manual/ManualCalidadView';
-import RevisionDireccionView from './components/revision/RevisionDireccionView';
+const RiesgosView = lazy(() => import('./components/riesgos'));
+const DocumentosView = lazy(() => import('./components/documentos'));
+const AuditoriasView = lazy(() => import('./components/auditorias'));
+const BitacoraView = lazy(() => import('./components/bitacora'));
+const AgenteISOView = lazy(() => import('./components/iso/AgenteISOView'));
+const ManualCalidadView = lazy(() => import('./components/manual/ManualCalidadView'));
+const RevisionDireccionView = lazy(() => import('./components/revision/RevisionDireccionView'));
 import ModalInactividad from './components/common/ModalInactividad';
 import LoginView from './components/common/LoginView';
 import BannerObligacionesCaptura from './components/common/BannerObligacionesCaptura';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import MobileBottomNav from './components/layout/MobileBottomNav';
 import MobileExecutiveBar from './components/layout/MobileExecutiveBar';
-import MobilePortalView from './components/mobile/MobilePortalView';
+const MobilePortalView = lazy(() => import('./components/mobile/MobilePortalView'));
 import { useIsMobile } from './hooks';
 
 
@@ -119,7 +119,9 @@ function App() {
       <div className="bg-slate-50 min-h-screen font-sans text-slate-800">
         <ModalInactividad />
         <ErrorBoundary>
-          <MobilePortalView onCambiarAModoEscritorio={() => cambiarModoEscritorio(true)} />
+          <Suspense fallback={<div className="p-8 text-sm text-slate-600" role="status">Cargando módulo…</div>}>
+            <MobilePortalView onCambiarAModoEscritorio={() => cambiarModoEscritorio(true)} />
+          </Suspense>
         </ErrorBoundary>
       </div>
     );
@@ -310,7 +312,7 @@ function App() {
               </div>
 
               <ErrorBoundary key={`${activeTab}-${navNonce}`}>
-                {renderModule()}
+                <Suspense fallback={<div className="p-8 text-sm text-slate-600" role="status">Cargando módulo…</div>}>{renderModule()}</Suspense>
               </ErrorBoundary>
             </div>
           </div>

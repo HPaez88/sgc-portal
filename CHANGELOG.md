@@ -2,6 +2,15 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-18T18:00Z · @claude-code · [DESIGN] · Revisión de diseño H3: letra más legible y carga por módulo
+- Letra base de 15px a 16px; ningún texto menor a 12px (antes había de 9 y 10px).
+- Cada módulo se descarga al abrirlo: el archivo inicial bajó de 2.4 MB a 892 KB (263 KB comprimido).
+- Se quitó la fuente Inter (solo quedan 2 familias).
+- Gate de diseño aprobado: 8 categorías en 8, sin desborde en 1440/768/375. Pendientes: U1, separar librerías de PDF, contraste sobre degradados.
+- Archivos: frontend/src/index.css, frontend/src/App.jsx, frontend/index.html, docs/design/review.md, docs/design/direction.md
+- Tareas STATE: H3
+- Deploy: SÍ
+
 ## 2026-11-18T15:00Z · @claude-code · [SECURITY] · Cierre de la auditoría run-1: avisos, dirección del portal y tope de claves
 Prueba primero en los tres (fallaron antes, pasan después).
 - Avisos diarios: los responsables escritos en una AC solo reciben aviso si están en el directorio de usuarios.
