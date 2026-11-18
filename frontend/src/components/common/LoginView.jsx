@@ -64,7 +64,7 @@ export default function LoginView() {
 
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative z-10 animate-scale-up">
         <div className="bg-[#0A1424] text-white p-7 text-center relative border-b-4 border-marca-verde">
-          <img src="/logo-oomapasc-blanco.png" alt="OOMAPAS de Cajeme" className="h-16 w-auto mx-auto mb-4 drop-shadow" />
+          <img src="/logo-oomapasc-blanco.png" alt="OOMAPAS de Cajeme" width={600} height={228} className="h-16 w-auto mx-auto mb-4 drop-shadow" />
           <div className="space-y-1">
             <span className="inline-block px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-marca-verde/15 text-marca-verde-claro border border-marca-verde/40">
               ISO 9001:2015 • SGC OOMAPASC

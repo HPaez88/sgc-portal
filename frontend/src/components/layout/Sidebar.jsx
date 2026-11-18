@@ -83,10 +83,10 @@ const Sidebar = ({
       <div className={`h-16 flex items-center ${sidebarCollapsed ? 'md:justify-center' : ''} justify-between px-5 border-b border-slate-800/80 shrink-0`}>
         <div className="flex items-center gap-3 overflow-hidden">
           {sidebarCollapsed ? (
-            <img src="/logo-oomapasc-icono.png" alt="OOMAPAS de Cajeme" className="h-9 w-auto shrink-0" />
+            <img src="/logo-oomapasc-icono.png" alt="OOMAPAS de Cajeme" width={189} height={228} className="h-9 w-auto shrink-0" />
           ) : (
             <div className="leading-tight flex items-center gap-3 min-w-0">
-              <img src="/logo-oomapasc-blanco.png" alt="OOMAPAS de Cajeme" className="h-10 w-auto shrink-0" />
+              <img src="/logo-oomapasc-blanco.png" alt="OOMAPAS de Cajeme" width={600} height={228} className="h-10 w-auto shrink-0" />
               <span className="border-l border-white/15 pl-3 text-[10px] font-bold text-marca-verde-claro tracking-wider uppercase leading-tight">SGC<br /><span className="text-slate-400 font-normal normal-case tracking-normal">Portal de Calidad</span></span>
             </div>
           )}

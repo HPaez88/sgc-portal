@@ -173,3 +173,20 @@ input::placeholder, textarea::placeholder { color: #64748b; }
 .prosa-sgc a { color: #0369a1; text-decoration: underline; }
 .prosa-sgc blockquote { border-left: 3px solid #bae6fd; padding-left: 0.8rem; color: #475569; margin: 0.6rem 0; }
 .prosa-sgc code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f1f5f9; padding: 0.1em 0.3em; border-radius: 0.25rem; }
+
+
+/* Teclado: foco visible en botones, enlaces y pestañas (los campos ya llevan su sombra de foco). */
+:focus-visible { outline: 2px solid #005B86; outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
+
+/* Quien pide reducir movimiento en su sistema no ve animaciones ni transiciones largas. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* Contraste AA (revisión de diseño 2026-11-18): el gris y el azul claros no alcanzaban 4.5:1 sobre blanco. */
+.text-slate-400 { color: #64748b; }
+.text-sky-600 { color: #0369a1; }

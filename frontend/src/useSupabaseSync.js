@@ -60,7 +60,7 @@ export function useSupabaseSync(key, initialValue, options = {}) {
 
             // Use Supabase data (source of truth)
             setData(mappedData);
-            localStorage.setItem(key, JSON.stringify(mappedData));
+            try { localStorage.setItem(key, JSON.stringify(mappedData)); } catch { /* navegador sin almacenamiento */ }
           }
         }
       } catch (e) {
@@ -81,7 +81,7 @@ export function useSupabaseSync(key, initialValue, options = {}) {
       const newValue = typeof value === 'function' ? value(prev) : value;
 
       // Save to localStorage immediately
-      localStorage.setItem(key, JSON.stringify(newValue));
+      try { localStorage.setItem(key, JSON.stringify(newValue)); } catch { /* navegador sin almacenamiento */ }
 
       // Debounced Supabase sync
       if (!isSupabaseConfigured || !supabase) {

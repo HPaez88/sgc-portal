@@ -418,7 +418,7 @@ export const SGCProvider = ({ children }) => {
           }
 
           setter(remotos);
-          localStorage.setItem(key, JSON.stringify(remotos));
+          try { localStorage.setItem(key, JSON.stringify(remotos)); } catch { /* navegador sin almacenamiento: queda en memoria */ }
         };
 
         const syncObjectTable = async (table, setter, key, localActual) => {
@@ -430,7 +430,7 @@ export const SGCProvider = ({ children }) => {
             return;
           }
           setter(parsed);
-          localStorage.setItem(key, JSON.stringify(parsed));
+          try { localStorage.setItem(key, JSON.stringify(parsed)); } catch { /* navegador sin almacenamiento: queda en memoria */ }
         };
 
         await syncTable('acciones_correctivas', setAccionesCorrectivas, 'sgc-acciones-correctivas', accionesCorrectivas);
