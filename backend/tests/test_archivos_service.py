@@ -133,3 +133,19 @@ def test_antivirus_omitido_solo_fuera_de_produccion(monkeypatch):
     with pytest.raises(HTTPException) as e:
         svc.escanear_antivirus(b"hola")
     assert e.value.status_code == 503
+
+
+def test_docx_bomba_se_rechaza_antes_de_descomprimir(monkeypatch):
+    # Auditoría 2026-11-18: un .docx chico que descomprime en cientos de MB no debe leerse completo.
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml", "<Types/>")
+        z.writestr("word/document.xml", "<w:document/>")
+        z.writestr("word/bomba.xml", b"\x00" * (60 * 1024 * 1024))
+    assert len(buf.getvalue()) < svc.MAX_BYTES_DOCX
+    leidas = []
+    real = zipfile.ZipFile.read
+    monkeypatch.setattr(zipfile.ZipFile, "read", lambda self, n, *a, **k: leidas.append(n) or real(self, n, *a, **k))
+    with pytest.raises(HTTPException) as e:
+        svc.validar_y_sanear("bomba.docx", buf.getvalue())
+    assert e.value.status_code == 413 and "word/bomba.xml" not in leidas

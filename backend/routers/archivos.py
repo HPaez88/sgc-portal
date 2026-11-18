@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
+from backend import auth
 from backend.auth import usuario_actual
 from backend.database import get_session
 from backend.models import Archivo, Usuario
@@ -113,7 +114,9 @@ def abrir_archivo(
     return RedirectResponse(url, status_code=307, headers={"Cache-Control": "private, max-age=600"})
 
 
-@router.delete("/{archivo_id}", status_code=204)
+# Borrar evidencia destruye el soporte de AC/PM (incluso cerradas): solo el SGC (auditoría 2026-11-18).
+# ponytail: el archivo no guarda quién lo subió; si un día lo guarda, permitir también al autor.
+@router.delete("/{archivo_id}", status_code=204, dependencies=[Depends(auth.requiere_rol(*auth.ROLES_ADMIN))])
 def borrar_archivo(archivo_id: int, session: Session = Depends(get_session), organismo_id: int = Depends(get_organismo_id)):
     registro = _obtener(archivo_id, session, organismo_id)
     otros = session.exec(

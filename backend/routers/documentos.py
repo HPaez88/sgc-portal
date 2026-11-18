@@ -110,30 +110,41 @@ def ver(clave: str, session: Session = Depends(get_session), organismo_id: int =
     return ficha
 
 
+def _ve_borradores(usuario: Usuario) -> bool:
+    return usuario.rol in ROLES_EDITAN + ROLES_PUBLICAN
+
+
+def _visible(r: DocumentoRevision, usuario: Usuario) -> bool:
+    """El borrador solo lo ven quienes participan del flujo (misma regla que ver(); auditoría 2026-11-18)."""
+    return r.estado != "BORRADOR" or _ve_borradores(usuario)
+
+
 @router.get("/{clave}/revisiones")
-def historial(clave: str, session: Session = Depends(get_session), organismo_id: int = Depends(get_organismo_id)):
+def historial(clave: str, session: Session = Depends(get_session), organismo_id: int = Depends(get_organismo_id),
+              usuario: Usuario = Depends(auth.usuario_actual)):
     d = _doc(clave, session, organismo_id)
     revs = session.exec(select(DocumentoRevision).where(DocumentoRevision.documento_id == d.id)
                         .order_by(DocumentoRevision.numero.desc(), DocumentoRevision.id.desc())).all()
-    return [_resumen(r) for r in revs]
+    return [_resumen(r) for r in revs if _visible(r, usuario)]
 
 
 @router.get("/{clave}/revisiones/{revision_id}")
 def ver_revision(clave: str, revision_id: int, session: Session = Depends(get_session),
-                 organismo_id: int = Depends(get_organismo_id)):
+                 organismo_id: int = Depends(get_organismo_id), usuario: Usuario = Depends(auth.usuario_actual)):
     d = _doc(clave, session, organismo_id)
     r = session.get(DocumentoRevision, revision_id)
-    if not r or r.documento_id != d.id:
+    if not r or r.documento_id != d.id or not _visible(r, usuario):
         raise HTTPException(status_code=404, detail="Revisión no encontrada.")
     return _resumen(r, con_contenido=True)
 
 
 @router.get("/{clave}/diff")
-def diff(clave: str, de: int, a: int, session: Session = Depends(get_session), organismo_id: int = Depends(get_organismo_id)):
+def diff(clave: str, de: int, a: int, session: Session = Depends(get_session), organismo_id: int = Depends(get_organismo_id),
+         usuario: Usuario = Depends(auth.usuario_actual)):
     """Diferencias por sección entre dos revisiones (ids). Líneas con prefijo '+', '-' o ' '."""
     d = _doc(clave, session, organismo_id)
     r1, r2 = session.get(DocumentoRevision, de), session.get(DocumentoRevision, a)
-    if not r1 or not r2 or r1.documento_id != d.id or r2.documento_id != d.id:
+    if not r1 or not r2 or r1.documento_id != d.id or r2.documento_id != d.id or not (_visible(r1, usuario) and _visible(r2, usuario)):
         raise HTTPException(status_code=404, detail="Revisión no encontrada.")
     s1 = {s["numero"]: s for s in json.loads(r1.contenido)}
     s2 = {s["numero"]: s for s in json.loads(r2.contenido)}

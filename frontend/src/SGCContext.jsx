@@ -578,7 +578,10 @@ export const SGCProvider = ({ children }) => {
   const cambiarPassword = useCallback(async (passwordActual, passwordNueva) => {
     const r = await api.post('/api/v1/auth/cambiar-password', { password_actual: passwordActual, password_nueva: passwordNueva });
     if (!r.ok) return { success: false, error: r.error?.message || r.error?.detail || 'No se pudo cambiar la contraseña.' };
-    setUsuarioSesion(r.data);
+    // El servidor invalida las sesiones anteriores y entrega una nueva para seguir dentro.
+    const { token, ...usuario } = r.data;
+    if (token) setToken(token);
+    setUsuarioSesion(usuario);
     return { success: true };
   }, [setUsuarioSesion]);
 

@@ -34,12 +34,38 @@ async def lifespan(app: FastAPI):
     yield
 
 
+PRODUCCION = os.getenv("ENVIRONMENT") == "production"
 app = FastAPI(
     title="Portal SGC — OOMAPASC de Cajeme",
     description="Sistema de Gestión de Calidad ISO 9001 · Control 6",
     version="3.1.0",
     lifespan=lifespan,
+    # En producción no se publica el mapa de la API (auditoría 2026-11-18).
+    docs_url=None if PRODUCCION else "/docs",
+    redoc_url=None if PRODUCCION else "/redoc",
+    openapi_url=None if PRODUCCION else "/openapi.json",
 )
+
+# Cabeceras de seguridad en toda respuesta. La página solo carga recursos propios y Google Fonts; las imágenes de
+# evidencia vienen de enlaces firmados de B2 (https:). Estilos en línea los usa React (style=...).
+CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+       "font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self'; "
+       "frame-src 'self' blob: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; "
+       "form-action 'self'; frame-ancestors 'none'")
+
+
+@app.middleware("http")
+async def cabeceras_seguridad(request, call_next):
+    respuesta = await call_next(request)
+    h = respuesta.headers
+    h.setdefault("X-Content-Type-Options", "nosniff")
+    h.setdefault("X-Frame-Options", "DENY")
+    h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    h.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=(self)")
+    h.setdefault("Content-Security-Policy", CSP)
+    if PRODUCCION:
+        h.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return respuesta
 
 # Serve static frontend in production
 if os.getenv("ENVIRONMENT") == "production":

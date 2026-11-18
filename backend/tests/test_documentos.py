@@ -108,3 +108,22 @@ def test_rechazo_regresa_a_borrador_editable(cliente, actores):
     assert cliente.put(f"/api/v1/documentos/{CLAVE}/borrador", headers=autor, json={"secciones": secciones}).status_code == 200
     assert cliente.delete(f"/api/v1/documentos/{CLAVE}/borrador", headers=autor).status_code == 204
     assert cliente.get(f"/api/v1/documentos/{CLAVE}", headers=autor).json()["abierta"] is None
+
+
+def test_lector_no_ve_el_contenido_de_un_borrador(cliente, actores):
+    autor, lector = actores["autor"], actores["lector"]
+    r = cliente.post(f"/api/v1/documentos/{CLAVE}/borrador", headers=autor)
+    assert r.status_code == 201, r.text
+    borrador_id, secciones = r.json()["id"], r.json()["secciones"]
+    secciones[1]["markdown"] += "\n\nSECRETO-BORRADOR"
+    assert cliente.put(f"/api/v1/documentos/{CLAVE}/borrador", headers=autor, json={"secciones": secciones}).status_code == 200
+    vigente_id = cliente.get(f"/api/v1/documentos/{CLAVE}", headers=lector).json()["vigente"]["id"]
+    try:
+        ids = [x["id"] for x in cliente.get(f"/api/v1/documentos/{CLAVE}/revisiones", headers=lector).json()]
+        assert borrador_id not in ids
+        assert cliente.get(f"/api/v1/documentos/{CLAVE}/revisiones/{borrador_id}", headers=lector).status_code == 404
+        assert cliente.get(f"/api/v1/documentos/{CLAVE}/diff?de={vigente_id}&a={borrador_id}", headers=lector).status_code == 404
+        # quien edita sí lo ve
+        assert "SECRETO-BORRADOR" in str(cliente.get(f"/api/v1/documentos/{CLAVE}/revisiones/{borrador_id}", headers=autor).json())
+    finally:
+        cliente.delete(f"/api/v1/documentos/{CLAVE}/borrador", headers=autor)

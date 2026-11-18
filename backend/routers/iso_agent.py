@@ -4,7 +4,8 @@ routers/iso_agent.py — Endpoints para el Agente Asesor Normativo ISO
 import os
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from backend import auth
 from backend.services.iso_rag_service import (
     listar_normas_disponibles,
     obtener_clausulas_norma,
@@ -26,8 +27,8 @@ class ConsultaISOInput(BaseModel):
 
 
 class GuardarDocumentoInput(BaseModel):
-    nombre_archivo: str = Field(..., min_length=3, description="Nombre del archivo (ej. guia_auditoria_2026.md)")
-    contenido: str = Field(..., min_length=10, description="Contenido de texto/markdown a incorporar")
+    nombre_archivo: str = Field(..., min_length=3, max_length=120, description="Nombre del archivo (ej. guia_auditoria_2026.md)")
+    contenido: str = Field(..., min_length=10, max_length=300_000, description="Contenido de texto/markdown a incorporar")
 
 
 @router.get("/normas")
@@ -76,7 +77,8 @@ def consultar_iso(body: ConsultaISOInput):
     return resultado
 
 
-@router.post("/guardar-documento")
+# El conocimiento del asesor entra a las respuestas de todos los usuarios: solo el Super Admin lo agrega (auditoría 2026-11-18).
+@router.post("/guardar-documento", dependencies=[Depends(auth.requiere_rol("Super Admin"))])
 def guardar_documento_custom(body: GuardarDocumentoInput):
     """
     Permite agregar un nuevo documento de conocimiento personalizado (.md, .txt, .json).

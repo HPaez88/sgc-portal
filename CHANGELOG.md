@@ -2,6 +2,25 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-18T12:00Z · @claude-code · [SECURITY] · Correcciones de la auditoría run-1 (bloques 1 a 3)
+Cada corrección se hizo con prueba primero (falló antes, pasa después): 9 hallazgos quedaron confirmados y corregidos.
+- Cuentas: el correo con permiso de restablecer solo lo asigna o cambia el Super Admin; el correo de otra cuenta solo lo cambian el Super Admin y la cuenta autorizada (`_validar_correo`).
+- Almacén de estado: secciones con reglas exigen lista de registros con id único; catálogos `sgc-config-*` solo los cambia el SGC; borrar un riesgo propio ya no omite las demás reglas; un hallazgo nuevo exige ser el auditor de su lista de verificación.
+- Archivos: borrar evidencias solo el SGC. Asesor ISO: agregar conocimiento solo el Super Admin, con tope de tamaño.
+- Login: límite de intentos fallidos por correo e IP. Cabeceras de seguridad (CSP, HSTS, nosniff, anti-iframe) y sin `/docs` en producción.
+- Documentos controlados: quien no edita ya no ve borradores en historial, detalle ni diferencias. DOCX: tope de tamaño descomprimido (bomba zip). Enlaces de evidencia: solo esquemas seguros (`utils/urlSegura.js`).
+- Sesiones: el token lleva la huella de la contraseña; al cambiarla o restablecerla, las sesiones anteriores dejan de servir (quien la cambia recibe una nueva). Al desplegar, todos inician sesión una vez.
+- Re-auditoría independiente: sin CRITICAL; se atendieron sus MEDIUM (IP del proxy, memoria del limitador, cuenta autorizada protegida de edición/baja por Admin) y LOW (catálogo nuevo nulo, comparación de área, bloqueo por correo+IP, pruebas aisladas).
+- Archivos: backend/routers/auth.py, backend/routers/estado.py, backend/services/flujo_reglas.py, backend/routers/archivos.py, backend/routers/iso_agent.py, backend/routers/documentos.py, backend/services/archivos_service.py, backend/auth.py, backend/main.py, frontend/src/SGCContext.jsx, frontend/src/utils/urlSegura.js, frontend/src/components/acciones/AccionesDetalle.jsx, frontend/src/components/planes/PlanesDetalle.jsx, pruebas
+- Tareas STATE: S1 (parcial), S2
+- Deploy: SÍ
+
+## 2026-11-18T09:00Z · @claude-code · [AUDIT] · Auditoría de seguridad con hpaez-harness (security-audit run-1) y prelaunch-guard
+[SECURITY-AUDIT]: 0 confirmed, 17 needs_validation, 2 rejected. Perfil standard, 21 unidades, crítico final limpio. El detalle queda fuera del repositorio (carpeta local de la auditoría) hasta corregir.
+- Archivos: docs/prelaunch/2026-11-18.md
+- Tareas STATE: H2
+- Deploy: NO
+
 ## 2026-11-17 — Acciones correctivas y planes de mejora: actividades en bloques
 
 - Las actividades del asistente OOMRSC-20 y del formulario OOMRSC-21 dejan la tabla de 5–6 columnas y pasan a bloques (`common/ActividadesPlan.jsx`): número grande, "Actividad N de M", color alterno, campos rotulados y lo que falta marcado. El responsable sugiere el encargado del área (catálogo) y los responsables ya capturados.

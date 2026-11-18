@@ -26,7 +26,8 @@ CLAVE_AUDITORIAS = "sgc-auditorias-internas"
 CLAVE_AUD_LISTAS = "sgc-auditorias-listas"
 CLAVE_AUD_HALLAZGOS = "sgc-auditorias-hallazgos"
 CLAVE_AUD_EVALUACIONES = "sgc-auditorias-evaluaciones"
-CLAVE_AUD_HISTORICO = "sgc-auditorias-historico"   # informes anteriores al portal: se cargan por script
+CLAVE_AUD_HISTORICO = "sgc-auditorias-historico"
+PREFIJO_CATALOGOS = "sgc-config-"   # catálogos del SGC (áreas, direcciones, procesos…): escritura solo admin   # informes anteriores al portal: se cargan por script
 CLAVES_CON_REGLAS = (CLAVE_AC, CLAVE_PM, CLAVE_RC, CLAVE_RIESGOS, CLAVE_MATRICES,
                      CLAVE_AUDITORIAS, CLAVE_AUD_LISTAS, CLAVE_AUD_HALLAZGOS, CLAVE_AUD_EVALUACIONES, CLAVE_AUD_HISTORICO)
 
@@ -259,10 +260,11 @@ def _validar_riesgos(anterior: list, nuevo: list, usuario, areas: list, matrices
     estado_matriz = {str(m.get("id")): str(m.get("estado") or "BORRADOR") for m in matrices if isinstance(m, dict)}
     pm_por_id = {str(p.get("id")): p for p in planes if isinstance(p, dict)}
     for k, viejo in antes.items():
-        if k not in despues:
-            if not admin:
-                return "Solo el SGC puede quitar un riesgo de una matriz enviada o aceptada." if estado_matriz.get(_id_matriz(viejo)) in ("ENVIADA", "ACEPTADA") else (None if not _sin_acceso(usuario, viejo, areas) else "No puedes quitar riesgos de otra área.")
-            continue
+        if k not in despues and not admin:
+            if estado_matriz.get(_id_matriz(viejo)) in ("ENVIADA", "ACEPTADA"):
+                return "Solo el SGC puede quitar un riesgo de una matriz enviada o aceptada."
+            if _sin_acceso(usuario, viejo, areas):
+                return "No puedes quitar riesgos de otra área."
     for k, r in despues.items():
         if not isinstance(r, dict):
             continue
@@ -361,8 +363,9 @@ def _validar_aud_listas(anterior: list, nuevo: list, usuario) -> Optional[str]:
     return None
 
 
-def _validar_aud_hallazgos(anterior: list, nuevo: list, usuario, areas: list) -> Optional[str]:
+def _validar_aud_hallazgos(anterior: list, nuevo: list, usuario, areas: list, listas: Optional[list] = None) -> Optional[str]:
     antes, despues = _por_id(anterior), _por_id(nuevo)
+    listas_por_id = _por_id(listas or [])
     admin = es_admin(usuario)
     del_auditado = ("aceptado_por", "fecha_aceptacion", "comentario_auditado")
     for k, viejo in antes.items():
@@ -375,6 +378,12 @@ def _validar_aud_hallazgos(anterior: list, nuevo: list, usuario, areas: list) ->
         if viejo == h or admin:
             continue
         es_auditor = _correo(usuario) != "" and _correo(usuario) == str((viejo or h).get("auditor_email") or "").lower()
+        if not viejo:
+            # Un hallazgo nuevo lo levanta el auditor asignado a su lista de verificación (no basta escribir su correo).
+            lista = listas_por_id.get(str(h.get("lista_id")))
+            if not (lista and es_auditor and _auditor_de_lista(usuario, lista) and str(h.get("area") or "").strip() == str(lista.get("area") or "").strip()):
+                return "Solo el auditor asignado a la lista de verificación levanta hallazgos."
+            continue
         if es_auditor:
             if viejo and viejo.get("aceptado_por") and any(h.get(c) != viejo.get(c) for c in ("tipo", "hallazgo", "clausula", "requisito")):
                 return "El hallazgo ya fue firmado por el auditado y no se modifica."
@@ -409,8 +418,19 @@ def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list, co
     """Motivo de rechazo o None. Solo actúa sobre las claves con reglas y cuando ambos valores son listas."""
     if clave == CLAVE_FOLIOS:
         return "Los folios se asignan desde el servidor (POST /api/v1/folios)."
-    if clave not in CLAVES_CON_REGLAS or not isinstance(nuevo, list):
+    if clave.startswith(PREFIJO_CATALOGOS):
+        # Los catálogos definen quién responde por cada área (puede_area) y a quién llegan los avisos: solo el SGC.
+        return None if es_admin(usuario) or (anterior is not None and nuevo == anterior) else "Los catálogos de configuración los administra el SGC."
+    if clave not in CLAVES_CON_REGLAS:
         return None
+    if not isinstance(nuevo, list):
+        return "Esta sección guarda una lista de registros; el valor enviado no es válido."
+    if clave != CLAVE_AUD_HISTORICO:
+        ids = [str(x.get("id")) for x in nuevo if isinstance(x, dict) and x.get("id") not in (None, "")]
+        if len(ids) != len(nuevo):
+            return "Cada registro debe tener identificador."
+        if len(set(ids)) != len(ids):
+            return "Hay registros repetidos con el mismo identificador."
     anterior = anterior if isinstance(anterior, list) else []
     if clave == CLAVE_RC:
         return _validar_rc(anterior, nuevo, usuario, areas_detalle)
@@ -421,7 +441,7 @@ def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list, co
     if clave == CLAVE_AUD_LISTAS:
         return _validar_aud_listas(anterior, nuevo, usuario)
     if clave == CLAVE_AUD_HALLAZGOS:
-        return _validar_aud_hallazgos(anterior, nuevo, usuario, areas_detalle)
+        return _validar_aud_hallazgos(anterior, nuevo, usuario, areas_detalle, (contexto or {}).get("listas"))
     if clave == CLAVE_AUD_EVALUACIONES:
         return _validar_aud_evaluaciones(anterior, nuevo, usuario, areas_detalle)
     if clave == CLAVE_MATRICES:

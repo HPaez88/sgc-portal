@@ -76,8 +76,9 @@ def _limitar(clave: str, maximo: int, ventana: int = 900) -> None:
 
 
 def _ip(request: Request) -> str:
+    # El último valor lo agrega el proxy (Traefik); los anteriores los puede inventar el cliente (auditoría 2026-11-18).
     reenviada = request.headers.get("x-forwarded-for", "")
-    return reenviada.split(",")[0].strip() or (request.client.host if request.client else "?")
+    return reenviada.split(",")[-1].strip() or (request.client.host if request.client else "?")
 
 
 def _correos_admins(session: Session, organismo_id: int) -> list[str]:
@@ -107,11 +108,37 @@ def _publico(u: Usuario) -> UsuarioPublico:
 
 
 # ───────────── Sesión ─────────────
+# Límite de intentos FALLIDOS (auditoría 2026-11-18): por correo y por IP en 15 min. Los aciertos no cuentan,
+# así nadie bloquea a un usuario que entra bien.
+FALLOS_POR_CORREO, FALLOS_POR_IP = 10, 30
+
+
+def _saturado(clave: str, maximo: int, ventana: int = 900) -> bool:
+    cola = _solicitudes.get(clave)  # .get: consultar no crea entradas (la memoria no crece con cada intento)
+    if not cola:
+        return False
+    ahora = time.time()
+    while cola and ahora - cola[0] > ventana:
+        cola.popleft()
+    if not cola:
+        del _solicitudes[clave]
+        return False
+    return len(cola) >= maximo
+
+
 @router.post("/login")
-def login(datos: LoginInput, response: Response, session: Session = Depends(get_session)):
-    usuario = session.exec(select(Usuario).where(Usuario.email == datos.email.lower().strip())).first()
+def login(datos: LoginInput, request: Request, response: Response, session: Session = Depends(get_session)):
+    email = datos.email.lower().strip()
+    ip = _ip(request)
+    # Por correo+IP: nadie bloquea desde fuera la cuenta de otro; por IP: frena a quien prueba muchas cuentas.
+    claves = ((f"login-correo:{email}|{ip}", FALLOS_POR_CORREO), (f"login-ip:{ip}", FALLOS_POR_IP))
+    if any(_saturado(c, m) for c, m in claves):
+        raise HTTPException(status_code=429, detail="Demasiados intentos fallidos. Intenta en unos minutos.")
+    usuario = session.exec(select(Usuario).where(Usuario.email == email)).first()
     # Mismo mensaje exista o no el correo: no revelar cuentas.
     if not usuario or not usuario.activo or not auth.verificar_password(datos.password, usuario.password_hash):
+        for c, _ in claves:
+            _solicitudes[c].append(time.time())
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos.")
     usuario.ultimo_acceso = datetime.utcnow()
     session.add(usuario)
@@ -135,9 +162,10 @@ def yo(usuario: Usuario = Depends(auth.usuario_actual)):
     return _publico(usuario)
 
 
-@router.post("/cambiar-password", response_model=UsuarioPublico)
+@router.post("/cambiar-password")
 def cambiar_password(
     datos: CambioPasswordInput,
+    response: Response,
     usuario: Usuario = Depends(auth.usuario_actual),
     session: Session = Depends(get_session),
 ):
@@ -150,7 +178,11 @@ def cambiar_password(
     session.add(usuario)
     session.commit()
     session.refresh(usuario)
-    return _publico(usuario)
+    # Las sesiones anteriores quedan invalidadas; quien cambió su contraseña recibe una nueva.
+    token = auth.crear_token(usuario)
+    response.set_cookie(auth.COOKIE_SESION, token, max_age=auth.TOKEN_HORAS * 3600, httponly=True,
+                        secure=os.getenv("ENVIRONMENT") == "production", samesite="strict", path="/api/")
+    return {**_publico(usuario).model_dump(), "token": token}
 
 
 # ───────────── Gestión de usuarios (Admin / Super Admin) ─────────────
@@ -177,6 +209,20 @@ def _validar_rol(rol: str, actor: Usuario, objetivo: Optional[Usuario] = None) -
         raise HTTPException(status_code=403, detail="El rol Super Admin es único y no se asigna desde el portal.")
 
 
+def _validar_correo(actor: Usuario, nuevo: str, objetivo: Optional[Usuario] = None) -> None:
+    """El correo es la llave de la recuperación y del permiso de restablecer contraseñas (auditoría 2026-11-18).
+    - Un correo con permiso especial (CORREOS_RESTABLECEN) solo lo asigna o retira el Super Admin.
+    - El correo de OTRA cuenta solo lo cambian quienes pueden restablecer contraseñas; si no, un Admin redirige la
+      recuperación a su buzón y toma la cuenta."""
+    viejo = (objetivo.email if objetivo else "").lower()
+    if objetivo is not None and nuevo == viejo:
+        return
+    if (nuevo in auth.CORREOS_RESTABLECEN or viejo in auth.CORREOS_RESTABLECEN) and actor.rol != "Super Admin":
+        raise HTTPException(status_code=403, detail="Ese correo tiene permisos especiales: solo el Super Admin lo asigna o lo cambia.")
+    if objetivo is not None and objetivo.id != actor.id and not auth.puede_restablecer(actor):
+        raise HTTPException(status_code=403, detail="Solo el Super Admin o la cuenta autorizada cambian el correo de otro usuario.")
+
+
 @router.post("/usuarios", status_code=201)
 def crear_usuario(
     datos: UsuarioInput,
@@ -186,6 +232,7 @@ def crear_usuario(
 ):
     email = datos.email.lower().strip()
     _validar_rol(datos.rol, actor)
+    _validar_correo(actor, email)
     if session.exec(select(Usuario).where(Usuario.email == email)).first():
         raise HTTPException(status_code=409, detail="Ya existe un usuario con ese correo.")
     temporal = auth.password_temporal()
@@ -231,7 +278,7 @@ def asegurar_usuarios(
     creados, existentes = [], []
     for per in datos.personas:
         email = per.email.lower().strip()
-        if not email or "@" not in email or not per.nombre.strip():
+        if not email or "@" not in email or not per.nombre.strip() or email in auth.CORREOS_RESTABLECEN:
             continue
         if session.exec(select(Usuario).where(Usuario.email == email)).first():
             existentes.append(email)
@@ -261,7 +308,10 @@ def actualizar_usuario(
             raise HTTPException(status_code=403, detail="Solo el propio Super Admin puede modificar su cuenta.")
         if datos.rol != "Super Admin" or not datos.activo:
             raise HTTPException(status_code=422, detail="El Super Admin no puede cambiar su rol ni desactivarse.")
+    if u.email.lower() in auth.CORREOS_RESTABLECEN and actor.rol != "Super Admin" and actor.id != u.id:
+        raise HTTPException(status_code=403, detail="Esta cuenta tiene permisos especiales: solo el Super Admin la modifica.")
     email = datos.email.lower().strip()
+    _validar_correo(actor, email, u)
     otro = session.exec(select(Usuario).where(Usuario.email == email, Usuario.id != usuario_id)).first()
     if otro:
         raise HTTPException(status_code=409, detail="Ya existe otro usuario con ese correo.")

@@ -25,6 +25,13 @@ def cliente():
         yield c
 
 
+@pytest.fixture(autouse=True)
+def _sin_limites_previos():
+    from backend.routers import auth as rutas_auth
+    rutas_auth._solicitudes.clear()  # el limitador es global: cada prueba empieza limpia
+    yield
+
+
 def _token(cliente, email=ADMIN, password="ClaveInicial2026"):
     r = cliente.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert r.status_code == 200, r.text
@@ -321,3 +328,108 @@ def test_super_admin_es_unico_e_intocable(cliente):
     assert cliente.put(f"/api/v1/auth/usuarios/{yo['id']}", headers=cab, json={"nombre": yo["nombre"], "email": yo["email"], "area": yo["area"], "rol": "Super Admin", "activo": True}).status_code == 200
     assert cliente.put(f"/api/v1/auth/usuarios/{yo['id']}", headers=cab, json={"nombre": yo["nombre"], "email": yo["email"], "area": yo["area"], "rol": "Admin", "activo": True}).status_code == 422
     cliente.delete(f"/api/v1/auth/usuarios/{uid}", headers=cab)
+
+
+# ── Auditoría de seguridad run-1 (2026-11-18): toma de cuentas por un Admin ─────────────────────
+def _admin_nuevo(cliente, cab_sa, email):
+    r = cliente.post("/api/v1/auth/usuarios", headers=cab_sa, json={"nombre": "Admin " + email, "email": email, "area": "SGC", "rol": "Admin"})
+    assert r.status_code == 201, r.text
+    return r.json()["usuario"], {"Authorization": f"Bearer {_token(cliente, email, r.json()['password_temporal'])}"}
+
+
+def _cuerpo(u, **cambios):
+    return {"nombre": u["nombre"], "email": u["email"], "area": u["area"], "rol": u["rol"], "activo": True, **cambios}
+
+
+def test_admin_no_puede_apropiarse_del_correo_que_restablece(cliente):
+    cab_sa = {"Authorization": f"Bearer {_token(cliente)}"}
+    usuarios = cliente.get("/api/v1/auth/usuarios", headers=cab_sa).json()
+    g = next((u for u in usuarios if u["email"] == "gescobar@oomapasc.gob.mx"), None)
+    if not g:
+        g = cliente.post("/api/v1/auth/usuarios", headers=cab_sa, json={"nombre": "Gladys", "email": "gescobar@oomapasc.gob.mx", "area": "SGC", "rol": "Admin"}).json()["usuario"]
+    a, cab_a = _admin_nuevo(cliente, cab_sa, "a.escala@oomapasc.gob.mx")
+    # quitarle el correo a la cuenta que restablece, o tomarlo para sí, no se permite a un Admin
+    assert cliente.put(f"/api/v1/auth/usuarios/{g['id']}", headers=cab_a, json=_cuerpo(g, email="g.otra@oomapasc.gob.mx")).status_code == 403
+    assert cliente.put(f"/api/v1/auth/usuarios/{a['id']}", headers=cab_a, json=_cuerpo(a, email="gescobar@oomapasc.gob.mx")).status_code == 403
+    assert cliente.get("/api/v1/auth/me", headers=cab_a).json()["puede_restablecer"] is False
+    # tampoco crear una cuenta con ese correo (recibiría su contraseña temporal)
+    r = cliente.post("/api/v1/auth/usuarios", headers=cab_a, json={"nombre": "Cuenta Falsa", "email": "GESCOBAR@oomapasc.gob.mx", "area": "SGC", "rol": "Admin"})
+    assert r.status_code == 403
+
+
+def test_admin_no_puede_cambiar_el_correo_de_otra_cuenta(cliente):
+    cab_sa = {"Authorization": f"Bearer {_token(cliente)}"}
+    a, cab_a = _admin_nuevo(cliente, cab_sa, "a.desvio@oomapasc.gob.mx")
+    v = cliente.post("/api/v1/auth/usuarios", headers=cab_sa, json={"nombre": "Auditor Victima", "email": "v.auditor@oomapasc.gob.mx", "area": "SGC", "rol": "Auditor"}).json()["usuario"]
+    # redirigir el correo de otro (para luego usar "olvidé mi contraseña") no se permite a un Admin
+    assert cliente.put(f"/api/v1/auth/usuarios/{v['id']}", headers=cab_a, json=_cuerpo(v, email="atacante@oomapasc.gob.mx")).status_code == 403
+    # sí puede editar otros datos sin tocar el correo
+    assert cliente.put(f"/api/v1/auth/usuarios/{v['id']}", headers=cab_a, json=_cuerpo(v, nombre="Auditor Renombrado")).status_code == 200
+    # su propio correo sí lo puede cambiar; el Super Admin puede cambiar el de cualquiera
+    assert cliente.put(f"/api/v1/auth/usuarios/{a['id']}", headers=cab_a, json=_cuerpo(a, email="a.desvio2@oomapasc.gob.mx")).status_code == 200
+    assert cliente.put(f"/api/v1/auth/usuarios/{v['id']}", headers=cab_sa, json=_cuerpo(v, email="v.auditor2@oomapasc.gob.mx")).status_code == 200
+
+
+def _usuario_normal(cliente, cab_sa, email):
+    r = cliente.post("/api/v1/auth/usuarios", headers=cab_sa, json={"nombre": "Usuario " + email, "email": email, "area": "Plantas Potabilizadoras", "rol": "Usuario"})
+    assert r.status_code == 201, r.text
+    return {"Authorization": f"Bearer {_token(cliente, email, r.json()['password_temporal'])}"}
+
+
+def test_solo_el_sgc_borra_evidencias(cliente):
+    cab_u = _usuario_normal(cliente, {"Authorization": f"Bearer {_token(cliente)}"}, "u.borra@oomapasc.gob.mx")
+    assert cliente.delete("/api/v1/archivos/999999", headers=cab_u).status_code == 403
+
+
+def test_solo_super_admin_agrega_conocimiento_al_asesor_iso(cliente, monkeypatch, tmp_path):
+    from backend.routers import iso_agent
+    monkeypatch.setattr(iso_agent, "KNOWLEDGE_DIR", str(tmp_path))
+    cab_sa = {"Authorization": f"Bearer {_token(cliente)}"}
+    cab_u = _usuario_normal(cliente, cab_sa, "u.rag@oomapasc.gob.mx")
+    cuerpo = {"nombre_archivo": "poison.md", "contenido": "procedimiento auditoria MARCADOR-XYZ"}
+    assert cliente.post("/api/v1/iso/guardar-documento", headers=cab_u, json=cuerpo).status_code == 403
+    assert not (tmp_path / "custom" / "poison.md").exists()
+    assert cliente.post("/api/v1/iso/guardar-documento", headers=cab_sa, json={**cuerpo, "contenido": "x" * 300_001}).status_code == 422
+    assert cliente.post("/api/v1/iso/guardar-documento", headers=cab_sa, json=cuerpo).status_code == 200
+
+
+def test_login_limita_intentos_fallidos_por_correo(cliente):
+    cuerpo = {"email": "limite.prueba@oomapasc.gob.mx", "password": "mala-mala"}
+    codigos = [cliente.post("/api/v1/auth/login", json=cuerpo).status_code for _ in range(11)]
+    assert codigos[:10] == [401] * 10 and codigos[10] == 429
+    # otra cuenta no queda bloqueada por eso
+    assert cliente.post("/api/v1/auth/login", json={"email": ADMIN, "password": "ClaveInicial2026"}).status_code == 200
+
+
+def test_respuestas_llevan_cabeceras_de_seguridad(cliente):
+    h = cliente.get("/health").headers
+    assert h["x-content-type-options"] == "nosniff" and h["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in h["content-security-policy"] and h["referrer-policy"]
+
+
+def test_cambio_de_password_invalida_sesiones_previas(cliente):
+    cab_sa = {"Authorization": f"Bearer {_token(cliente)}"}
+    r = cliente.post("/api/v1/auth/usuarios", headers=cab_sa, json={"nombre": "Usuario Sesion", "email": "u.sesion@oomapasc.gob.mx", "area": "SGC", "rol": "Usuario"})
+    u_id, temporal = r.json()["usuario"]["id"], r.json()["password_temporal"]
+    t1 = _token(cliente, "u.sesion@oomapasc.gob.mx", temporal)
+    r = cliente.post("/api/v1/auth/cambiar-password", headers={"Authorization": f"Bearer {t1}"}, json={"password_actual": temporal, "password_nueva": "NuevaU2026x"})
+    assert r.status_code == 200 and r.json().get("token")
+    assert cliente.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {t1}"}).status_code == 401
+    t2 = r.json()["token"]  # quien cambió su contraseña sigue dentro con el token nuevo
+    assert cliente.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {t2}"}).status_code == 200
+    # un restablecimiento por el Super Admin también corta la sesión anterior
+    assert cliente.post(f"/api/v1/auth/usuarios/{u_id}/restablecer-password", headers=cab_sa).status_code == 200
+    assert cliente.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {t2}"}).status_code == 401
+
+
+def test_admin_no_desactiva_ni_edita_la_cuenta_que_restablece(cliente):
+    cab_sa = {"Authorization": f"Bearer {_token(cliente)}"}
+    g = next(u for u in cliente.get("/api/v1/auth/usuarios", headers=cab_sa).json() if u["email"] == "gescobar@oomapasc.gob.mx")
+    _, cab_a = _admin_nuevo(cliente, cab_sa, "a.baja@oomapasc.gob.mx")
+    assert cliente.put(f"/api/v1/auth/usuarios/{g['id']}", headers=cab_a, json={**_cuerpo(g), "activo": False}).status_code == 403
+
+
+def test_falsificar_x_forwarded_for_no_evade_el_limite(cliente):
+    cuerpo = {"email": "otra.prueba@oomapasc.gob.mx", "password": "mala-mala"}
+    codigos = [cliente.post("/api/v1/auth/login", json=cuerpo, headers={"X-Forwarded-For": f"10.0.0.{i}, 203.0.113.9"}).status_code for i in range(11)]
+    assert codigos[-1] == 429

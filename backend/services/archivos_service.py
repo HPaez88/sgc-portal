@@ -25,6 +25,10 @@ log = logging.getLogger("sgc.archivos")
 MAX_BYTES_IMAGEN = 15 * 1024 * 1024
 MAX_BYTES_PDF = 25 * 1024 * 1024
 MAX_BYTES_DOCX = 10 * 1024 * 1024
+# Tope de lo que puede ocupar un .docx ya descomprimido (bomba zip; auditoría 2026-11-18). Un Word normal con fotos
+# ronda pocos MB; calibrar si se rechazan documentos reales.
+MAX_DOCX_DESCOMPRIMIDO = 50 * 1024 * 1024
+MAX_DOCX_ENTRADAS = 2000
 IMAGEN_LADO_MAX = 1280          # px, lado mayor
 IMAGEN_CALIDAD_WEBP = 72
 PDF_IMAGEN_LADO_MAX = 1400      # imágenes dentro de PDF escaneados
@@ -154,6 +158,10 @@ def _sanear_docx(contenido: bytes) -> bytes:
         raise HTTPException(status_code=422, detail="El archivo Word está dañado o no es un .docx.") from e
     if "[Content_Types].xml" not in nombres or "word/document.xml" not in nombres:
         raise HTTPException(status_code=422, detail="Solo se admiten documentos Word .docx (no .doc ni otros formatos).")
+    # zipfile no entrega más bytes que el tamaño declarado (y valida el CRC), así que basta revisar lo declarado.
+    infos = zin.infolist()
+    if len(infos) > MAX_DOCX_ENTRADAS or sum(i.file_size for i in infos) > MAX_DOCX_DESCOMPRIMIDO:
+        raise HTTPException(status_code=413, detail="El documento Word es demasiado grande una vez descomprimido.")
     tipos = zin.read("[Content_Types].xml").decode("utf-8", "ignore").lower()
     if "macroenabled" in tipos or "vbaproject" in tipos:
         raise HTTPException(status_code=422, detail="Word rechazado: contiene macros.")

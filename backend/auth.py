@@ -80,6 +80,8 @@ def crear_token(usuario) -> str:
         "org": usuario.organismo_id,
         "rol": usuario.rol,
         "nombre": usuario.nombre,
+        # Huella de la contraseña: al cambiarla o restablecerla, las sesiones anteriores dejan de servir (auditoría 2026-11-18).
+        "pv": _huella(usuario),
         "iat": int(ahora.timestamp()),
         "exp": int((ahora + timedelta(hours=TOKEN_HORAS)).timestamp()),
     }
@@ -177,6 +179,8 @@ def usuario_actual(
     usuario = session.get(Usuario, int(datos["sub"]))
     if not usuario or not usuario.activo:
         raise HTTPException(status_code=401, detail="Usuario inactivo o inexistente.")
+    if datos.get("pv") != _huella(usuario):
+        raise HTTPException(status_code=401, detail="La contraseña cambió: vuelve a iniciar sesión.")
     return usuario
 
 

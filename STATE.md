@@ -18,7 +18,10 @@
 - [x] I3 — Proyecto: descargas en tabla, actividades separadas, firmas y titular ligados al catálogo, presupuesto con formato de moneda
 - [x] A1 — AC y PM: actividades en bloques (`common/ActividadesPlan.jsx`), sugerencia de responsable del catálogo, sin mutación
 - [x] H1 — hpaez-harness v0.17 instalado (`skills/`, `AGENT-SURFACES.md`); la carpeta `hpaez-harness/` (v0.7) queda por retirar con visto bueno de @human
-- [ ] H2 — Auditoría con el harness: `security-audit` (6 fases), `prelaunch-guard` (sondas pasivas, requiere URL autorizada por @human), revisión de diseño
+- [x] H2 — Auditoría con el harness: `security-audit` run-1 (0 confirmados, 17 por validar, 2 descartados; detalle fuera del repo) y `prelaunch-guard` 2026-11-18
+- [~] S1 — Corregir los 17 por validar: 13 corregidos (12 confirmados con prueba que falló antes; enlaces de evidencia corregido preventivo); faltan 4: avisos diarios (texto/destinatarios de AC), enlace de recuperación (revisar PORTAL_URL en servidor), buzón (revisar BUZON_MODO), cuota de claves de estado
+- [x] S2 — Cabeceras de seguridad (CSP sin violaciones en prueba local), sin /docs en producción, límite de intentos fallidos en /login
+- [ ] H3 — Revisión de diseño con hp-design-harness (design-review-gate)
 - [ ] U1 — Llevar el estilo de formularios (`common/estilosCampos.jsx`) a Auditorías, Revisión por la Dirección y Configuración
 
 ## Módulo Manual de la Calidad (consulta) 2026-10-13

@@ -91,7 +91,7 @@ def guardar(
         actual = json.loads(f.valor)
         valor = fusionar(datos.base, datos.valor, actual) if datos.tiene_base else fusionar_sin_base(datos.valor, actual)
     # Reglas de negocio de AC, PM y RC (transiciones, rol, área, evidencia, folios): antes solo las aplicaba la pantalla.
-    if clave in CLAVES_CON_REGLAS or clave == CLAVE_FOLIOS:
+    if clave in CLAVES_CON_REGLAS or clave == CLAVE_FOLIOS or clave.startswith("sgc-config-"):
         areas = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == organismo_id,
                                                          EstadoPortal.clave == "sgc-config-areas-detalle")).first()
         try:
@@ -105,7 +105,8 @@ def guardar(
             except ValueError:
                 v = []
             return v if isinstance(v, list) else []
-        contexto = {"matrices": _otra("sgc-matrices-riesgos"), "planes": _otra("sgc-planes-mejora")} if clave == "sgc-riesgos" else None
+        contexto = ({"matrices": _otra("sgc-matrices-riesgos"), "planes": _otra("sgc-planes-mejora")} if clave == "sgc-riesgos"
+                    else {"listas": _otra("sgc-auditorias-listas")} if clave == "sgc-auditorias-hallazgos" else None)
         motivo = validar_cambio(clave, actual, valor, usuario, areas_detalle if isinstance(areas_detalle, list) else [], contexto)
         if motivo:
             session.rollback()

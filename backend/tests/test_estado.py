@@ -264,8 +264,8 @@ def test_auditorias_reglas_y_confirmacion_en_orden(cliente, cab):
     assert "entregada" in validar_cambio(CLAVE_AUD_LISTAS, [ent], [{**ent, "preguntas": [1]}], aud, [])
     assert validar_cambio(CLAVE_AUD_LISTAS, [ent], [{**ent, "estado": "EN_CAPTURA"}], adm, []) is None
     # hallazgos: el auditor los levanta; el área solo firma; firmado no cambia
-    h = {"id": "H1", "area": "Plantas", "auditor_email": "aud@x.mx", "tipo": "NC", "hallazgo": "No se encontró evidencia", "clausula": "7.5"}
-    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [], [h], aud, []) is None
+    h = {"id": "H1", "lista_id": "L1", "area": "Plantas", "auditor_email": "aud@x.mx", "tipo": "NC", "hallazgo": "No se encontró evidencia", "clausula": "7.5"}
+    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [], [h], aud, [], {"listas": [l]}) is None
     assert validar_cambio(CLAVE_AUD_HALLAZGOS, [h], [{**h, "aceptado_por": "Jefe", "fecha_aceptacion": "2026-11-20"}], enc, []) is None
     assert "Solo el auditor" in validar_cambio(CLAVE_AUD_HALLAZGOS, [h], [{**h, "tipo": "OM"}], enc, [])
     fir = {**h, "aceptado_por": "Jefe"}
@@ -307,3 +307,57 @@ def test_carga_historica_valida_antes_de_guardar():
     from backend.scripts.cargar_informes_auditoria import areas_fuera_de_catalogo
     con_areas = {**bueno, "nc": [{"area": "Padrón de Usuarios"}, {"area": "PP"}], "areas_conformes": ["Contabilidad"]}
     assert areas_fuera_de_catalogo([con_areas], [{"nombre": "Padrón de Usuarios"}, {"nombre": "Contabilidad"}]) == ["PP"]
+
+
+# ── Auditoría de seguridad run-1 (2026-11-18): almacén de estado ────────────────────────────────
+def test_valor_no_lista_no_borra_registros():
+    from backend.services.flujo_reglas import validar_cambio, CLAVES_CON_REGLAS
+    enc, adm = _usuario(), _usuario("Admin", "SGC")
+    ac = {"id": 1, "area": "Plantas", "estado": "EN_SEGUIMIENTO"}
+    for clave in CLAVES_CON_REGLAS:
+        for nuevo in ({}, None, "x", 0):
+            assert validar_cambio(clave, [ac], nuevo, enc, []) is not None, (clave, nuevo)
+            assert validar_cambio(clave, [ac], nuevo, adm, []) is not None, (clave, nuevo)
+
+
+def test_ids_repetidos_o_sin_id_se_rechazan():
+    from backend.services.flujo_reglas import validar_cambio
+    enc = _usuario()
+    otra = {"id": 27, "area": "Redes", "estado": "EN_SEGUIMIENTO", "folio_codigo": "AC#27/2026"}
+    assert validar_cambio("sgc-acciones-correctivas", [otra], [{**otra, "estado": "CERRADO_EFECTIVO"}, otra], enc, []) is not None
+    assert validar_cambio("sgc-acciones-correctivas", [otra], [otra, {"area": "Redes", "estado": "CERRADO_EFECTIVO", "folio_codigo": "AC#5/2026"}], enc, []) is not None
+
+
+def test_borrar_riesgo_propio_no_salta_reglas():
+    from backend.services.flujo_reglas import validar_cambio
+    enc = _usuario()
+    propio = {"id": "p", "area": "Plantas", "anio": 2026, "tipo": "Riesgo"}
+    ajeno = {"id": "a", "area": "Redes", "anio": 2026, "tipo": "Riesgo", "pm_id": 7}
+    ctx = {"matrices": [{"id": "Redes|2026", "area": "Redes", "anio": 2026, "estado": "ACEPTADA"}], "planes": []}
+    assert validar_cambio("sgc-riesgos", [propio, ajeno], [{**ajeno, "estado": "CERRADO_EFICAZ", "pm_id": None, "descripcion": "x"}], enc, [], ctx) is not None
+    # borrar el propio en borrador sigue permitido
+    assert validar_cambio("sgc-riesgos", [propio, ajeno], [ajeno], enc, [], ctx) is None
+
+
+def test_hallazgo_nuevo_solo_auditor_de_su_lista():
+    from backend.services.flujo_reglas import validar_cambio, CLAVE_AUD_HALLAZGOS
+    u, aud = _usuario("Usuario", "Plantas", "u@x.mx"), _usuario("Auditor", "Jurídico", "aud@x.mx")
+    lista = {"id": "L1", "auditoria_id": 1, "area": "Redes", "auditor_email": "aud@x.mx"}
+    ctx = {"listas": [lista]}
+    falso = {"id": "h1", "lista_id": "L1", "area": "Redes", "auditoria_id": 1, "tipo": "NC", "auditor_email": "u@x.mx"}
+    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [], [falso], u, [], ctx) is not None
+    sin_lista = {"id": "h2", "area": "Redes", "auditoria_id": 1, "tipo": "NC", "auditor_email": "u@x.mx"}
+    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [], [sin_lista], u, [], ctx) is not None
+    bueno = {**falso, "id": "h3", "auditor_email": "aud@x.mx"}
+    assert validar_cambio(CLAVE_AUD_HALLAZGOS, [], [bueno], aud, [], ctx) is None
+
+
+def test_catalogos_de_configuracion_solo_los_cambia_el_sgc(cliente, cab):
+    from backend.services.flujo_reglas import validar_cambio
+    enc, adm = _usuario(), _usuario("Admin", "SGC")
+    viejo = [{"nombre": "Redes", "correo": "redes@x.mx"}]
+    nuevo = [{"nombre": "Redes", "correo": "redes@x.mx", "encargados_sgc": ["enc@x.mx"]}]
+    assert validar_cambio("sgc-config-areas-detalle", viejo, nuevo, enc, []) is not None
+    assert validar_cambio("sgc-config-direcciones-detalle", [], [{"nombre": "X"}], enc, []) is not None
+    assert validar_cambio("sgc-config-areas-detalle", viejo, nuevo, adm, []) is None
+    assert validar_cambio("sgc-config-areas-detalle", viejo, viejo, enc, []) is None  # sin cambio, no estorba

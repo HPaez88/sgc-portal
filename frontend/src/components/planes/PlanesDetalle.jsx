@@ -1,4 +1,5 @@
 import { formatearFecha, parseFecha, fechaISO } from '../../constants/workflow';
+import { urlSegura } from '../../utils/urlSegura';
 import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -674,7 +675,7 @@ export default function PlanesDetalle({
                                 <div className="flex items-center gap-2 mt-0.5">
                                   {!esPdf ? (
                                     <img
-                                      src={evObj.preview || evObj.url}
+                                      src={urlSegura(evObj.preview || evObj.url)}
                                       alt="Evidencia"
                                       onClick={() => setPreviewImage(evObj.url || evObj.preview)}
                                       className="w-10 h-10 rounded object-cover border border-slate-200 cursor-pointer hover:opacity-80 flex-shrink-0"
@@ -688,7 +689,7 @@ export default function PlanesDetalle({
 
                                   <div className="overflow-hidden flex-1 text-left">
                                     <a
-                                      href={evObj.url}
+                                      href={urlSegura(evObj.url)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-xs font-bold text-purple-800 hover:text-purple-950 underline truncate block"
@@ -930,10 +931,10 @@ export default function PlanesDetalle({
               <button onClick={() => setPreviewImage(null)} className="text-slate-400 hover:text-white text-base font-bold px-2">✕</button>
             </div>
             <div className="p-2 overflow-auto max-h-[75vh] flex items-center justify-center bg-slate-100">
-              <img src={previewImage} alt="Evidencia ampliada" className="max-w-full max-h-[70vh] object-contain rounded" />
+              <img src={urlSegura(previewImage)} alt="Evidencia ampliada" className="max-w-full max-h-[70vh] object-contain rounded" />
             </div>
             <div className="p-3 bg-white border-t border-slate-200 flex justify-end">
-              <a href={previewImage} target="_blank" rel="noopener noreferrer" download="evidencia.jpg" className="px-4 py-2 bg-[#002855] text-white rounded-lg text-xs font-bold hover:bg-[#001f42]">
+              <a href={urlSegura(previewImage)} target="_blank" rel="noopener noreferrer" download="evidencia.jpg" className="px-4 py-2 bg-[#002855] text-white rounded-lg text-xs font-bold hover:bg-[#001f42]">
                 Abrir en pestaña nueva / Descargar
               </a>
             </div>
