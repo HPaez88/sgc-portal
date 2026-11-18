@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Sparkles, AlertTriangle, CheckCircle2, Lock, Pencil } from 'lucide-react';
 import { UNIDADES } from './ModalGestionarIndicador';
-import { CAMPO_LISTA, Leyenda, CampoMoneda, moneda, DelCatalogo } from './estilosCampos';
+import { CAMPO_LISTA, Leyenda, CampoMoneda, moneda, DelCatalogo } from '../common/estilosCampos';
 import { useSGC } from '../../SGCContext';
 import { normalizarDireccion } from '../../constants/areas';
 import {

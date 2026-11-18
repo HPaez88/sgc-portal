@@ -27,7 +27,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import ContenedorModal from '../common/ContenedorModal';
-import { CAMPO_LISTA, CAMPO_TEXTO, opcion, Leyenda, Encabezado, Sub, AvisoBloqueo } from './estilosCampos';
+import { CAMPO_LISTA, CAMPO_TEXTO, opcion, Leyenda, Encabezado, Sub, AvisoBloqueo } from '../common/estilosCampos';
 import { useToast } from '../common/Toast';
 import { mapearResultadosMensualesIndicador } from '../../services/fichaTecnicaExporter';
 import { descargarFormatoOficial, origenFicha } from '../../services/formatosOficiales';

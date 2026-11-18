@@ -2,6 +2,12 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-17 — Acciones correctivas y planes de mejora: actividades en bloques
+
+- Las actividades del asistente OOMRSC-20 y del formulario OOMRSC-21 dejan la tabla de 5–6 columnas y pasan a bloques (`common/ActividadesPlan.jsx`): número grande, "Actividad N de M", color alterno, campos rotulados y lo que falta marcado. El responsable sugiere el encargado del área (catálogo) y los responsables ya capturados.
+- Cada cambio crea una copia de la actividad (antes se modificaba el objeto original).
+- Los estilos de formulario pasan a `common/estilosCampos.jsx` para usarse en todo el portal.
+
 ## 2026-11-17 — Indicadores: formularios por temas, listas distinguibles, firmas del catálogo y moneda; riesgos con plan solo los ajustan Super Admin y gescobar@
 
 A petición de @human (revisión de flujos de Indicadores):

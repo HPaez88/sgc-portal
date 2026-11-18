@@ -3,6 +3,7 @@ import { CATEGORIAS_MEJORA, PERIODOS, ORIGENES_PM, ROLES_EQUIPO } from '../../co
 import { useSGC } from '../../SGCContext';
 import { generarPlanMejoraIA } from './PlanesAI';
 import BarraActividades from '../common/BarraActividades';
+import ActividadesPlan from '../common/ActividadesPlan';
 import { 
   Sparkles, 
   Target, 
@@ -23,7 +24,7 @@ export default function PlanesForm({
   equipo, setEquipo, actividades, setActividades,
   loading, guardarBorrador, setVista, getBotonesWorkflow
 }) {
-  const { areas, procesos, usuarioLogueado, puedeTodasAreas } = useSGC();
+  const { areas, procesos, usuarioLogueado, puedeTodasAreas, areasDetalle = [] } = useSGC();
   const [generandoIA, setGenerandoIA] = useState(false);
   const [descripcionSA, setDescripcionSA] = useState(form.descripcion_situacion_actual || '');
 
@@ -602,100 +603,9 @@ export default function PlanesForm({
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-slate-200">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-[10px]">
-                  <tr>
-                    <th className="p-3 w-8 text-center">#</th>
-                    <th className="p-3 min-w-[220px]">Actividad / Tarea *</th>
-                    <th className="p-3 min-w-[130px]">Responsable *</th>
-                    <th className="p-3 min-w-[130px]">Indicador de Logro *</th>
-                    <th className="p-3 min-w-[120px]">Fecha Compromiso *</th>
-                    <th className="p-3 min-w-[160px]">Evidencia Esperada *</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {actividades.map((act, i) => (
-                    <tr key={act.id || i} className="hover:bg-slate-50/60">
-                      <td className="p-3 text-center font-mono font-bold text-slate-500">{i + 1}</td>
-                      <td className="p-2">
-                        <textarea 
-                          rows={2} 
-                          value={act.actividad} 
-                          onChange={(e) => {
-                            const nuevo = [...actividades]; 
-                            nuevo[i].actividad = e.target.value; 
-                            setActividades(nuevo);
-                          }} 
-                          className={`w-full p-2 bg-white border rounded text-xs focus:border-emerald-500 outline-none ${
-                            !act.actividad?.trim() ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
-                          }`}
-                          placeholder="Descripción obligatoria de la actividad..."
-                        />
-                      </td>
-                      <td className="p-2">
-                        <input 
-                          type="text" 
-                          value={act.responsable} 
-                          onChange={(e) => {
-                            const nuevo = [...actividades]; 
-                            nuevo[i].responsable = e.target.value; 
-                            setActividades(nuevo);
-                          }} 
-                          className={`w-full p-2 bg-white border rounded text-xs focus:border-emerald-500 outline-none ${
-                            !act.responsable?.trim() ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
-                          }`}
-                          placeholder="Responsable..."
-                        />
-                      </td>
-                      <td className="p-2">
-                        <input 
-                          type="text" 
-                          value={act.indicador} 
-                          onChange={(e) => {
-                            const nuevo = [...actividades]; 
-                            nuevo[i].indicador = e.target.value; 
-                            setActividades(nuevo);
-                          }} 
-                          className={`w-full p-2 bg-white border rounded text-xs focus:border-emerald-500 outline-none ${
-                            !act.indicador?.trim() ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
-                          }`}
-                          placeholder="Indicador..."
-                        />
-                      </td>
-                      <td className="p-2">
-                        <CampoFecha 
-                          value={act.fecha_termino_sugerida} 
-                          onChange={(e) => {
-                            const nuevo = [...actividades]; 
-                            nuevo[i].fecha_termino_sugerida = e.target.value; 
-                            setActividades(nuevo);
-                          }} 
-                          className={`w-full p-2 bg-white border rounded text-xs focus:border-emerald-500 outline-none ${
-                            !act.fecha_termino_sugerida?.trim() ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
-                          }`}
-                        />
-                      </td>
-                      <td className="p-2">
-                        <textarea 
-                          rows={2} 
-                          value={act.evidencia_esperada} 
-                          onChange={(e) => {
-                            const nuevo = [...actividades]; 
-                            nuevo[i].evidencia_esperada = e.target.value; 
-                            setActividades(nuevo);
-                          }} 
-                          className={`w-full p-2 bg-white border rounded text-xs focus:border-emerald-500 outline-none resize-none ${
-                            !act.evidencia_esperada?.trim() ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
-                          }`}
-                          placeholder="Entregable o evidencia objetiva..."
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ActividadesPlan actividades={actividades} setActividades={setActividades} conIndicador
+              sugerenciasResponsable={[...actividades.map((a) => a.responsable), ...(areasDetalle.find((x) => x.nombre === form.area)?.encargado ? [areasDetalle.find((x) => x.nombre === form.area).encargado.trim()] : [])]}
+              placeholders={{ actividad: 'Descripción obligatoria de la actividad', evidencia: 'Entregable o evidencia objetiva' }} />
             <BarraActividades actividades={actividades} setActividades={setActividades} />
           </div>
 
