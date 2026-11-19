@@ -28,7 +28,8 @@ from backend.services import correo_service as correo
 log = logging.getLogger("sgc.avisos")
 ZONA = ZoneInfo("America/Hermosillo")
 CATALOGO = os.path.join(os.path.dirname(__file__), "..", "assets", "indicadores_catalogo.json")
-CLAVE_PREFERENCIAS = "sgc-config-avisos-admin"   # {correo_admin: {tema: bool}} — lo edita el SGC en Configuración
+CLAVE_PREFERENCIAS = "sgc-config-avisos-admin"   # {correo_admin: {tema: bool}} — Configuración → Avisos por correo
+CLAVE_PARAMETROS = "sgc-config-avisos-parametros"  # plazos de recordatorios (ver avisos_calendario.normalizar)
 MAX_DESCRIPCION = 400
 TITULOS = {
     "RECORDATORIO_15": "Recordatorio: faltan 15 días", "RECORDATORIO_10": "Recordatorio: faltan 10 días",
@@ -40,6 +41,19 @@ TITULOS = {
     "RENOVACION_DIC": "Urgente: confirmar el proyecto del año siguiente",
     "AUDITOR_ASIGNADO": "Se te asignó la verificación de eficacia",
 }
+
+
+def titulo(etapa: str) -> str:
+    """Título del aviso; los recordatorios que agregue el SGC (p. ej. 30 días antes, día 8) también tienen nombre."""
+    if etapa in TITULOS:
+        return TITULOS[etapa]
+    if etapa.startswith("RECORDATORIO_D"):
+        return "Recordatorio de entrega de indicadores"
+    if etapa.startswith("RECORDATORIO_"):
+        n = etapa.split("_")[-1]
+        urgente = " urgente" if n.isdigit() and int(n) <= 5 else ""
+        return f"Recordatorio{urgente}: faltan {n} días"
+    return "Aviso del SGC"
 NOMBRE_TIPO = {"AC": "la acción correctiva", "PM": "el plan de mejora"}
 
 
@@ -107,7 +121,8 @@ def _mensaje_ind(x: dict) -> str:
         "AVISO_INCUMPLIMIENTO": (f"No se ha entregado el resultado de {x['mes_texto']} de los indicadores siguientes. Les pedimos capturarlo a la brevedad; "
                                  "de no hacerlo, Dirección General emitirá un oficio de exhorto dirigido al titular del área, con copia a su director, "
                                  "conforme a la Política de sanciones."),
-    }.get(x["etapa"], "")
+        "RECORDATORIO_EXTRA": f"Recordatorio: falta capturar los resultados de {x['mes_texto']}.",
+    }.get("RECORDATORIO_EXTRA" if x["etapa"].startswith("RECORDATORIO_D") else x["etapa"], "")
     return f"{base}\n\n{lista}"
 
 
@@ -119,8 +134,13 @@ def _mensaje_renovacion(x: dict) -> str:
             "o \"Actualizar\" para modificarlo antes de enviarlo. Una vez aceptado por el SGC, el proyecto queda cerrado para cambios.")
 
 
+def parametros(s: Session) -> dict:
+    return cal.normalizar(_estado(s, CLAVE_PARAMETROS, {}))
+
+
 def calcular(s: Session, hoy: date, modo: str) -> tuple[list, list]:
     """(avisos que tocan hoy, administradores que reciben el resumen). No envía ni registra nada."""
+    params = parametros(s)
     arranque = date.fromisoformat(os.getenv("AVISOS_ARRANQUE") or hoy.isoformat())
     previos = s.exec(select(AvisoAutomatico).where(AvisoAutomatico.modo == modo)).all()
     hechas = lambda tipo, por_id=True: {((p.registro_id if por_id else p.registro), p.referencia, p.etapa) for p in previos if p.tipo == tipo}
@@ -140,7 +160,7 @@ def calcular(s: Session, hoy: date, modo: str) -> tuple[list, list]:
     pendientes = []
     registros = {"AC": _estado(s, "sgc-acciones-correctivas", []), "PM": _estado(s, "sgc-planes-mejora", [])}
     for tipo, lista in registros.items():
-        for a in motor.avisos_acciones(lista, hoy, arranque, hechas(tipo)):
+        for a in motor.avisos_acciones(lista, hoy, arranque, hechas(tipo), params):
             para = motor.destinatarios_registro(a["ac"], _contactos(a["area"], areas, direcciones), directorio)
             pendientes.append({"tipo": tipo, "registro": a["folio"], "registro_id": str(a["id"]), "etapa": a["etapa"], "referencia": a["vence"].isoformat(),
                                "para": para, "cc": cc_incumplimiento if a["etapa"] == "AVISO_INCUMPLIMIENTO" else [],
@@ -149,7 +169,7 @@ def calcular(s: Session, hoy: date, modo: str) -> tuple[list, list]:
             para = [x["auditor"]] if str(x["auditor"]).lower() in correos_dir else []
             pendientes.append({"tipo": "AUDITOR", "registro": x["folio"], "registro_id": str(x["id"]), "etapa": "AUDITOR_ASIGNADO",
                                "referencia": x["referencia"], "para": para, "cc": [], "mensaje": _mensaje_auditor(tipo, x), "unidad": x["area"]})
-    for x in motor.avisos_indicadores(catalogo, datos_ind.get("resultados") or {}, hoy, hechas("INDICADORES", False), arranque):
+    for x in motor.avisos_indicadores(catalogo, datos_ind.get("resultados") or {}, hoy, hechas("INDICADORES", False), arranque, params):
         pendientes.append({"tipo": "INDICADORES", "registro": x["unidad"], "registro_id": "", "etapa": x["etapa"], "referencia": x["periodo"],
                            "para": _contactos(x["unidad"], areas, direcciones), "cc": cc_incumplimiento if x["etapa"] == "AVISO_INCUMPLIMIENTO" else [],
                            "mensaje": _mensaje_ind(x), "unidad": x["unidad"]})
@@ -163,7 +183,7 @@ def calcular(s: Session, hoy: date, modo: str) -> tuple[list, list]:
 
 def _resumen(pendientes: list, admins: list, hoy: date, modo: str, url: str) -> None:
     filas = "".join(
-        f"<tr><td style='padding:6px;border-bottom:1px solid #eef2f6'>{html.escape(TITULOS.get(p['etapa'], p['etapa']))}</td>"
+        f"<tr><td style='padding:6px;border-bottom:1px solid #eef2f6'>{html.escape(titulo(p['etapa']))}</td>"
         f"<td style='padding:6px;border-bottom:1px solid #eef2f6'><b>{html.escape(p['registro'])}</b></td>"
         f"<td style='padding:6px;border-bottom:1px solid #eef2f6'>{html.escape(', '.join(p['para']) or '— sin correo —')}</td></tr>" for p in pendientes)
     nota = ("<p><b>Modo simulación:</b> no se envió nada a los responsables. Esto es lo que se habría enviado hoy.</p>" if modo != "activo"
@@ -171,7 +191,7 @@ def _resumen(pendientes: list, admins: list, hoy: date, modo: str, url: str) -> 
     contenido = (f"{nota}<table style='width:100%;border-collapse:collapse;font-size:13px'>"
                  "<tr><th align='left'>Etapa</th><th align='left'>Registro / unidad</th><th align='left'>Para</th></tr>"
                  f"{filas}</table>{correo.boton('Abrir el Portal SGC', url)}")
-    texto = "\n".join(f"{TITULOS.get(p['etapa'], p['etapa'])}: {p['registro']} → {', '.join(p['para']) or 'sin correo'}" for p in pendientes)
+    texto = "\n".join(f"{titulo(p['etapa'])}: {p['registro']} → {', '.join(p['para']) or 'sin correo'}" for p in pendientes)
     try:
         correo.enviar(admins, f"[Avisos SGC] {hoy.strftime('%d/%m/%Y')}: {len(pendientes)} aviso(s){' (simulación)' if modo != 'activo' else ''}",
                       correo.marco("Avisos automáticos", f"Resumen del {hoy.strftime('%d/%m/%Y')}", contenido, url), texto)
@@ -182,10 +202,12 @@ def _resumen(pendientes: list, admins: list, hoy: date, modo: str, url: str) -> 
 def ejecutar(hoy: date | None = None) -> dict:
     modo = os.getenv("AVISOS_MODO", "simulacion").lower()
     hoy = hoy or datetime.now(ZONA).date()
-    if modo == "apagado" or not cal.es_habil(hoy):
+    if modo == "apagado":
         return {"modo": modo, "hoy": hoy.isoformat(), "avisos": 0}
     url = correo.url_portal()
     with Session(engine) as s:
+        if not cal.es_habil(hoy, parametros(s)):  # fin de semana o feriado capturado por el SGC
+            return {"modo": modo, "hoy": hoy.isoformat(), "avisos": 0}
         pendientes, admins_resumen = calcular(s, hoy, modo)
         for p in pendientes:
             enviado, error = False, ""
@@ -195,8 +217,7 @@ def ejecutar(hoy: date | None = None) -> dict:
                 error = "Sin destinatario: revisa el correo del área en el catálogo o que la persona esté en Usuarios del sistema."
             elif modo == "activo":
                 try:
-                    titulo = TITULOS.get(p["etapa"], "Aviso del SGC")
-                    asunto, cuerpo, texto = correo.plantilla_recordatorio(p["unidad"], f"{titulo} — {p['registro']}", p["mensaje"], "Sistema de Gestión de la Calidad", url)
+                    asunto, cuerpo, texto = correo.plantilla_recordatorio(p["unidad"], f"{titulo(p['etapa'])} — {p['registro']}", p["mensaje"], "Sistema de Gestión de la Calidad", url)
                     correo.enviar(p["para"] + p["cc"], asunto, cuerpo, texto, responder_a=os.getenv("BUZON_CORREO"))
                     enviado = True
                 except HTTPException as ex:

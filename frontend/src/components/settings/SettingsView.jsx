@@ -816,7 +816,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
           <Type size={15} />
           Accesibilidad
         </button>
-        {['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) && (
+        {usuarioLogueado?.puede_restablecer && (
           <button
             onClick={() => setTabActiva('avisos')}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
@@ -906,7 +906,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* PESTAÑA 1: CATÁLOGO DE ÁREAS */}
       {/* ============================================================ */}
       {tabActiva === 'accesibilidad' && <AccesibilidadPanel />}
-      {tabActiva === 'avisos' && <AvisosCorreoPanel usuarios={usuariosList} />}
+      {tabActiva === 'avisos' && usuarioLogueado?.puede_restablecer && <AvisosCorreoPanel usuarios={usuariosList} />}
 
       {tabActiva === 'areas' && (
         <div className="bg-white rounded-2xl shadow-card-subtle border border-slate-200/80 overflow-hidden space-y-4">

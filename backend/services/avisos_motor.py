@@ -45,18 +45,18 @@ def ac_en_atencion_de_auditor(ac: dict) -> bool:
     return bool(ac.get("auditor_email") or ac.get("fecha_asignacion_auditor")) or ac.get("estado") in ("REVISION_AUDITOR", "SOLICITUD_CIERRE")
 
 
-def avisos_acciones(acciones: list, hoy: date, arranque: date, enviadas: set) -> list[dict]:
+def avisos_acciones(acciones: list, hoy: date, arranque: date, enviadas: set, p: Optional[dict] = None) -> list[dict]:
     """[{folio, id, area, etapa, vence, ac}] de lo que toca hoy. enviadas = {(id, vence_iso, etapa)}."""
     out = []
     for ac in acciones or []:
         if ac.get("estado") not in ESTADOS_AC_CON_AVISO or ac_en_atencion_de_auditor(ac):
             continue
         vence = vencimiento_ac(ac)
-        if not vence or cal.vencimiento_habil(vence) < arranque:
+        if not vence or cal.vencimiento_habil(vence, p) < arranque:
             continue  # lo ya vencido antes del arranque no entra (decisión de @human)
-        vence = cal.vencimiento_habil(vence)
+        vence = cal.vencimiento_habil(vence, p)
         hechas = {e for (i, v, e) in enviadas if str(i) == str(ac.get("id")) and v == vence.isoformat()}
-        etapa = cal.etapa_de_hoy(cal.etapas_vencimiento(vence), hoy, hechas)
+        etapa = cal.etapa_de_hoy(cal.etapas_vencimiento(vence, p), hoy, hechas, p)
         if etapa:
             out.append({"id": ac.get("id"), "folio": ac.get("folio_codigo") or ac.get("folio") or "AC",
                         "area": ac.get("area") or ac.get("gerencia_coordinacion") or "", "etapa": etapa,
@@ -99,14 +99,15 @@ def unidad_de_indicador(ind: dict) -> str:
     return ind.get("direccion") if ind.get("responsable_tipo") == "direccion" else (ind.get("area") or ind.get("direccion") or "")
 
 
-def avisos_indicadores(catalogo: list, resultados: dict, hoy: date, enviadas: set, arranque: Optional[date] = None) -> list[dict]:
+def avisos_indicadores(catalogo: list, resultados: dict, hoy: date, enviadas: set, arranque: Optional[date] = None,
+                       p: Optional[dict] = None) -> list[dict]:
     """[{unidad, etapa, periodo, indicadores:[...]}] — una entrada por unidad. enviadas = {(unidad, periodo, etapa)}."""
     # El primer ciclo es el primer mes que empieza después del arranque (no se exige lo de meses anteriores).
-    if arranque and cal.siguiente_habil(date(hoy.year, hoy.month, 1)) < arranque:
+    if arranque and cal.siguiente_habil(date(hoy.year, hoy.month, 1), p) < arranque:
         return []
     anio_r, mes_r = mes_reportado(hoy)
     periodo = f"{MESES[mes_r - 1]}-{anio_r}"
-    etapas = cal.etapas_indicadores(hoy.year, hoy.month)
+    etapas = cal.etapas_indicadores(hoy.year, hoy.month, p)
     por_unidad = defaultdict(list)
     for ind in indicadores_del_periodo(catalogo, mes_r):
         por_unidad[unidad_de_indicador(ind)].append(ind)
@@ -115,7 +116,7 @@ def avisos_indicadores(catalogo: list, resultados: dict, hoy: date, enviadas: se
         if not unidad:
             continue
         hechas = {e for (u, p, e) in enviadas if u == unidad and p == periodo}
-        etapa = cal.etapa_de_hoy(etapas, hoy, hechas)
+        etapa = cal.etapa_de_hoy(etapas, hoy, hechas, p)
         if not etapa:
             continue
         pendientes = [i for i in inds if not entregado(resultados, i["id"], anio_r, mes_r)]

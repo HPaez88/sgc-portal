@@ -2,6 +2,16 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-19T21:00Z · @claude-code · [FEATURE] · Avisos por correo: plazos editables y acceso solo Super Admin + cuenta autorizada
+- Configuración → "Avisos por correo" solo la ven y la cambian el Super Admin y la cuenta autorizada (gescobar); el servidor rechaza cambios de cualquier otro (`CLAVES_AVISOS` en flujo_reglas).
+- Nuevos parámetros editables (clave sgc-config-avisos-parametros), con los valores acordados como base:
+  - AC/PM: recordatorios N días antes (se pueden agregar/quitar), aviso el día que vence (sí/no), días para aviso de incumplimiento y para oficio de exhorto.
+  - Indicadores: día del mes del aviso, recordatorio, fecha límite, incumplimiento y oficio, más recordatorios adicionales.
+  - Días feriados: no sale correo y los plazos se recorren.
+- Valores inválidos vuelven al valor base (la tarea nunca se queda sin calendario). Pruebas en test_avisos_calendario.py y test_estado.py.
+- Archivos: backend/services/avisos_calendario.py, avisos_motor.py, backend/tareas/avisos_diarios.py, backend/services/flujo_reglas.py, frontend/src/components/settings/AvisosCorreoPanel.jsx, SettingsView.jsx
+- Deploy: SÍ
+
 ## 2026-11-19T19:00Z · @claude-code · [FEATURE] · Avisos por correo en producción: destinatarios completos, folio y descripción, auditor y temas por administrador
 - Recordatorios de AC y ahora también PM (15, 10, 5 días, vence hoy, incumplimiento): llegan al responsable del área y a quien le ayuda (catálogo de áreas), al equipo de trabajo registrado (buscado por nombre en Usuarios) y a los correos del registro que existan en Usuarios.
 - Cada aviso incluye folio y descripción (no conformidad de la AC, situación actual del PM).

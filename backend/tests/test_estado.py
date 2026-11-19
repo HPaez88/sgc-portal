@@ -403,3 +403,14 @@ def test_contenido_de_ac_pm_vigente_solo_lo_cambia_el_sgc():
           "titulo_mejora": "T", "actividades": json.dumps(acts)}
     assert "SGC" in v([pm], [{**pm, "titulo_mejora": "T2"}], enc, CLAVE_PM)
     assert v([pm], [{**pm, "actividades": js(nuevas)}], enc, CLAVE_PM) is None
+
+
+def test_avisos_por_correo_solo_super_admin_y_cuenta_autorizada():
+    from backend.services.flujo_reglas import validar_cambio
+    adm, sa, gladys = _usuario("Admin", "SGC", "otro@x.mx"), _usuario("Super Admin", "SGC", "h@x.mx"), _usuario("Admin", "SGC", "gescobar@oomapasc.gob.mx")
+    for clave in ("sgc-config-avisos-admin", "sgc-config-avisos-parametros"):
+        nuevo = {"registros": {"recordatorios_antes": [30, 15]}}
+        assert "Super Admin" in validar_cambio(clave, {}, nuevo, adm, [])
+        assert validar_cambio(clave, {}, nuevo, sa, []) is None
+        assert validar_cambio(clave, {}, nuevo, gladys, []) is None
+        assert validar_cambio(clave, nuevo, nuevo, adm, []) is None  # sin cambios: no estorba al resto

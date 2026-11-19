@@ -28,6 +28,7 @@ CLAVE_AUD_LISTAS = "sgc-auditorias-listas"
 CLAVE_AUD_HALLAZGOS = "sgc-auditorias-hallazgos"
 CLAVE_AUD_EVALUACIONES = "sgc-auditorias-evaluaciones"
 CLAVE_AUD_HISTORICO = "sgc-auditorias-historico"
+CLAVES_AVISOS = ("sgc-config-avisos-admin", "sgc-config-avisos-parametros")
 PREFIJO_CATALOGOS = "sgc-config-"   # catálogos del SGC (áreas, direcciones, procesos…): escritura solo admin   # informes anteriores al portal: se cargan por script
 CLAVES_CON_REGLAS = (CLAVE_AC, CLAVE_PM, CLAVE_RC, CLAVE_RIESGOS, CLAVE_MATRICES,
                      CLAVE_AUDITORIAS, CLAVE_AUD_LISTAS, CLAVE_AUD_HALLAZGOS, CLAVE_AUD_EVALUACIONES, CLAVE_AUD_HISTORICO)
@@ -469,6 +470,9 @@ def validar_cambio(clave: str, anterior, nuevo, usuario, areas_detalle: list, co
     """Motivo de rechazo o None. Solo actúa sobre las claves con reglas y cuando ambos valores son listas."""
     if clave == CLAVE_FOLIOS:
         return "Los folios se asignan desde el servidor (POST /api/v1/folios)."
+    if clave in CLAVES_AVISOS:
+        # A quién y cuándo se le escribe por correo: solo el Super Admin y la cuenta autorizada (decisión de @human 2026-11-19).
+        return None if _mueve_fechas(usuario) or (anterior is not None and nuevo == anterior)             else "Los avisos por correo los configuran el Super Admin y la cuenta autorizada."
     if clave.startswith(PREFIJO_CATALOGOS):
         # Los catálogos definen quién responde por cada área (puede_area) y a quién llegan los avisos: solo el SGC.
         return None if es_admin(usuario) or (anterior is not None and nuevo == anterior) else "Los catálogos de configuración los administra el SGC."
