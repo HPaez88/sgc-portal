@@ -8,7 +8,7 @@ import ActividadesPlan from './ActividadesPlan';
 import { CAMPO_LISTA, CAMPO_TEXTO, Leyenda, Seccion, opcion } from './estilosCampos';
 import { leerActividades, normalizarEstado, formatearFecha } from '../../constants/workflow';
 import { puedeCapturarArea } from '../../constants/riesgos';
-import { TIPOS_CAMBIO, leerSolicitudes, nuevaSolicitud } from '../../constants/solicitudesCambio';
+import { TIPOS_CAMBIO, leerSolicitudes, nuevaSolicitud, avisoCambio } from '../../constants/solicitudesCambio';
 
 const VIGENTES = ['APROBADO', 'EN_SEGUIMIENTO', 'SOLICITUD_CIERRE', 'REVISION_AUDITOR'];
 const ESTILO_ESTADO = {
@@ -16,6 +16,13 @@ const ESTILO_ESTADO = {
   APROBADA: 'bg-emerald-50 text-emerald-900 border-emerald-300',
   RECHAZADA: 'bg-rose-50 text-rose-900 border-rose-300',
 };
+// Etiqueta para las listas de AC/PM: cambio pendiente o resuelto hace poco.
+export function EtiquetaCambio({ registro }) {
+  const aviso = avisoCambio(registro);
+  if (!aviso) return null;
+  return <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-xs font-sans font-bold whitespace-nowrap ${aviso.cls}`}>{aviso.texto}</span>;
+}
+
 const vacia = () => ({ id: 'propuesta', actividad: '', responsable: '', fecha_termino_sugerida: '', evidencia_esperada: '', indicador: '' });
 
 export default function SolicitudCambio({ registro, guardar, conIndicador = false }) {

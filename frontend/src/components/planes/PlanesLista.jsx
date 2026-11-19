@@ -3,6 +3,7 @@ import { Search, SlidersHorizontal, RotateCcw, ChevronRight, Eye } from 'lucide-
 import { FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../constants';
 import { getFechaCompromiso, formatearFecha, esPorAbrir } from '../../constants/workflow';
 import PorAbrirPanel from '../common/PorAbrirPanel';
+import { EtiquetaCambio } from '../common/SolicitudCambio';
 
 export default function PlanesLista({ 
   planesMejora, 
@@ -246,6 +247,7 @@ export default function PlanesLista({
                     <span className="font-mono text-xs font-black text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                       {pm.folio || pm.folio_codigo || 'Borrador'}
                     </span>
+                    <EtiquetaCambio registro={pm} />
                     <div className="flex items-center gap-1">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getEstadoColor(pm.estado)}`}>
                         {getEstadoLabel(pm.estado)}
@@ -299,6 +301,7 @@ export default function PlanesLista({
                     <tr key={pm.id || idx} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="p-3 font-mono text-xs font-semibold text-slate-700">
                         {pm.folio || pm.folio_codigo || 'Pendiente'}
+                        <EtiquetaCambio registro={pm} />
                       </td>
                       <td className="p-3 font-semibold text-slate-900 max-w-xs truncate" title={pm.titulo_mejora}>
                         {pm.titulo_mejora || '-'}

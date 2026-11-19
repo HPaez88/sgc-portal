@@ -10,6 +10,7 @@ import ReportesCorreccionPanel from './ReportesCorreccionPanel';
 import { useLocalStorage } from '../../hooks';
 import { CLAVE_RC } from '../../constants/reportesCorreccion';
 import CampoFecha from '../common/CampoFecha';
+import { EtiquetaCambio } from '../common/SolicitudCambio';
 import ModalBase from '../common/ModalBase';
 
 const noConformidadDe = (ac) => ac.descripcion_no_conformidad_final || ac.descripcion_no_conformidad_original || ac.descripcion_problema || '';
@@ -380,6 +381,7 @@ export default function AccionesLista({
                     <span className="font-mono text-xs font-black text-sky-900 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                       {ac.folio_codigo || 'Borrador'}
                     </span>
+                    <EtiquetaCambio registro={ac} />
                     <div className="flex items-center gap-1">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getEstadoColor(ac.estado)}`}>
                         {getEstadoLabel(ac.estado)}
@@ -436,6 +438,7 @@ export default function AccionesLista({
                     <tr key={ac.id || idx} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="p-3 font-mono text-xs font-semibold text-slate-700">
                         {ac.folio_codigo || 'Pendiente'}
+                        <EtiquetaCambio registro={ac} />
                       </td>
                       <td className="p-3 text-slate-800 font-medium">{ac.area || '-'}</td>
                       <td className="p-3 text-slate-700 max-w-sm" title={noConformidadDe(ac)}>

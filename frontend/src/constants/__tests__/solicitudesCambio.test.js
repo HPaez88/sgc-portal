@@ -61,3 +61,23 @@ describe('solicitudes de cambio de AC/PM vigentes', () => {
     expect(solicitudesPendientes(r)).toHaveLength(0);
   });
 });
+
+describe('avisos de solicitudes en listas y bandeja', () => {
+  it('etiqueta pendiente, y la resolución solo durante 15 días', async () => {
+    const { avisoCambio } = await import('../solicitudesCambio');
+    const sol = nuevaSolicitud(ac, { tipo: 'QUITAR', indice: 1, justificacion: 'Ya no aplica al proceso' }, por, ahora).registro;
+    expect(avisoCambio(ac)).toBeNull();
+    expect(avisoCambio(sol).texto).toBe('Cambio pendiente');
+    const rech = rechazarSolicitud(sol, solicitudesPendientes(sol)[0].id, 'SGC', 'No procede', ahora);
+    expect(avisoCambio(rech, Date.parse(ahora) + 86400000).texto).toBe('Cambio rechazado');
+    expect(avisoCambio(rech, Date.parse(ahora) + 16 * 86400000)).toBeNull();
+  });
+
+  it('la bandeja del SGC incluye estados de revisión, prórrogas y cambios pendientes', async () => {
+    const { requiereAtencionSGC } = await import('../solicitudesCambio');
+    expect(requiereAtencionSGC(ac)).toBe(false);
+    expect(requiereAtencionSGC({ ...ac, estado: 'EN_REVISION' })).toBe(true);
+    expect(requiereAtencionSGC({ ...ac, actividades_json: JSON.stringify([{ ...acts[1], solicitud_replanteo: { estado: 'PENDIENTE' } }]) })).toBe(true);
+    expect(requiereAtencionSGC(nuevaSolicitud(ac, { tipo: 'QUITAR', indice: 1, justificacion: 'Ya no aplica al proceso' }, por, ahora).registro)).toBe(true);
+  });
+});

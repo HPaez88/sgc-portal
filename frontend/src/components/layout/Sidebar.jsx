@@ -19,6 +19,10 @@ import {
 , BookOpen, Inbox
 } from 'lucide-react';
 
+import { useSGC } from '../../SGCContext';
+import { can } from '../../constants/workflow';
+import { requiereAtencionSGC } from '../../constants/solicitudesCambio';
+
 const Sidebar = ({ 
   activeTab, 
   setActiveTab, 
@@ -28,6 +32,10 @@ const Sidebar = ({
   setSidebarCollapsed, 
   usuarioLogueado 
 }) => {
+  // Contador de la bandeja: solo para quien decide (SGC).
+  const { accionesCorrectivas = [], planesMejora = [] } = useSGC();
+  const pendientesSGC = can(usuarioLogueado, 'aprobar')
+    ? [...(accionesCorrectivas || []), ...(planesMejora || [])].filter(requiereAtencionSGC).length : 0;
   const navSections = [
     {
       title: 'OPERACIÓN Y MEJORA',
@@ -36,7 +44,7 @@ const Sidebar = ({
         { id: 'riesgos', icon: AlertOctagon, label: 'Matriz de Riesgos y Oportunidades', badge: 'ISO 6.1' },
         { id: 'ac', icon: AlertTriangle, label: 'Acciones Correctivas', badge: 'OOMRSC-20' },
         { id: 'pm', icon: CheckCircle2, label: 'Planes de Mejora', badge: 'OOMRSC-21' },
-        { id: 'gestor', icon: FileEdit, label: 'Aprobaciones' },
+        { id: 'gestor', icon: FileEdit, label: 'Aprobaciones', count: pendientesSGC || null },
       ]
     },
     {

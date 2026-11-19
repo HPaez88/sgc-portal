@@ -2,6 +2,14 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-19T15:00Z · @claude-code · [UI] · Avisos de solicitudes de cambio en listas y contador de la bandeja
+- Menú: "Aprobaciones" muestra cuántas cosas esperan decisión del SGC (folios, cierres, prórrogas y cambios); solo lo ve quien aprueba.
+- Listas de AC y PM: etiqueta "Cambio pendiente", y "Cambio aprobado / rechazado" durante 15 días después de resolverse, para que el área se entere sin abrir el registro.
+- La bandeja y el contador usan la misma regla (`requiereAtencionSGC`), con prueba.
+- Sin correos: el aviso por correo queda a decisión del dueño (AVISOS_MODO en simulación).
+- Archivos: frontend/src/constants/solicitudesCambio.js (+test), components/common/SolicitudCambio.jsx, layout/Sidebar.jsx, aprobaciones/GestorAprobacionesView.jsx, acciones/AccionesLista.jsx, planes/PlanesLista.jsx
+- Deploy: SÍ
+
 ## 2026-11-19T04:00Z · @claude-code · [FEATURE] · Solicitudes de cambio del área (F2) y contenido protegido en el servidor (F3)
 - F2: en una AC/PM aprobada, el área usa "Solicitar cambio" (agregar, corregir o quitar una actividad, con justificación). La solicitud llega a Aprobaciones como "Solicitud de Cambio"; el SGC la aprueba (se aplica a las actividades) o la rechaza con motivo. Todo queda en la bitácora y en el historial del registro.
 - F3 (servidor): en AC/PM aprobadas solo el SGC cambia el contenido (descripción, equipo, causas, análisis y los datos de las actividades); el área sigue subiendo evidencia y pidiendo prórrogas. Las solicitudes de cambio solo las resuelve el SGC. Una actividad con evidencia no se puede quitar (ni el SGC).

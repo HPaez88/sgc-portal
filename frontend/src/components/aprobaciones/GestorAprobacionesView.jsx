@@ -5,7 +5,7 @@ import { getEstadoColor, getEstadoLabel, getVencimiento, can } from '../../const
 import { fechaSeguimientoInicial, formatearFecha, leerActividades } from '../../constants/workflow';
 import { useDialogos, Dialogos } from '../common/Dialogos';
 import { LISTA_FILTRO } from '../common/estilosCampos';
-import { TIPOS_CAMBIO, solicitudesPendientes, aprobarSolicitud, rechazarSolicitud } from '../../constants/solicitudesCambio';
+import { TIPOS_CAMBIO, solicitudesPendientes, aprobarSolicitud, rechazarSolicitud, requiereAtencionSGC } from '../../constants/solicitudesCambio';
 import { asignarFolio } from '../../services/folioService';
 
 export default function GestorAprobacionesView({
@@ -29,12 +29,7 @@ export default function GestorAprobacionesView({
 
   // Agregar los registros de Acciones Correctivas que requieren atención de SGC
   const accionesPendientes = accionesCorrectivas
-    .filter(ac => {
-      if (ac.estado === 'EN_REVISION' || ac.estado === 'SOLICITUD_CIERRE' || ac.estado === 'REVISION_AUDITOR') return true;
-      if (solicitudesPendientes(ac).length) return true;
-      const acts = leerActividades(ac);
-      return acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
-    })
+    .filter(requiereAtencionSGC)
     .map(ac => {
       const acts = leerActividades(ac);
       const tieneReplanteo = acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
@@ -63,12 +58,7 @@ export default function GestorAprobacionesView({
 
   // Agregar los registros de Planes de Mejora que requieren atención de SGC
   const planesPendientes = planesMejora
-    .filter(pm => {
-      if (pm.estado === 'ENVIADO_SGC' || pm.estado === 'EN_REVISION' || pm.estado === 'SOLICITUD_CIERRE' || pm.estado === 'REVISION_AUDITOR') return true;
-      if (solicitudesPendientes(pm).length) return true;
-      const acts = leerActividades(pm);
-      return acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');
-    })
+    .filter(requiereAtencionSGC)
     .map(pm => {
       const acts = leerActividades(pm);
       const tieneReplanteo = acts.some(a => a.solicitud_replanteo?.estado === 'PENDIENTE');

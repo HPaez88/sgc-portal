@@ -73,3 +73,22 @@ export function aprobarSolicitud(registro, id, por, ahora = new Date().toISOStri
 
 export const rechazarSolicitud = (registro, id, por, motivo, ahora = new Date().toISOString()) =>
   resolver(registro, id, { estado: 'RECHAZADA', resuelto_por: por, motivo_rechazo: String(motivo || '').trim(), fecha_resolucion: ahora });
+
+// Etiqueta para las listas: pendiente, o la última resolución durante RECIENTE_DIAS para que el área se entere.
+const RECIENTE_DIAS = 15; // ponytail: ventana fija; si el área pide "marcar como visto", guardar la fecha de lectura.
+const DIA_MS = 24 * 60 * 60 * 1000;
+export function avisoCambio(registro, ahora = Date.now()) {
+  const lista = leerSolicitudes(registro);
+  if (lista.some((s) => s.estado === 'PENDIENTE')) return { texto: 'Cambio pendiente', cls: 'bg-amber-50 text-amber-900 border-amber-300' };
+  const ultima = lista.filter((s) => s.fecha_resolucion).sort((a, b) => Date.parse(a.fecha_resolucion) - Date.parse(b.fecha_resolucion)).pop();
+  if (!ultima || ahora - Date.parse(ultima.fecha_resolucion) > RECIENTE_DIAS * DIA_MS) return null;
+  return ultima.estado === 'APROBADA'
+    ? { texto: 'Cambio aprobado', cls: 'bg-emerald-50 text-emerald-900 border-emerald-300' }
+    : { texto: 'Cambio rechazado', cls: 'bg-rose-50 text-rose-900 border-rose-300' };
+}
+
+// Lo que espera una decisión del SGC (bandeja de Aprobaciones y contador del menú).
+const ESTADOS_ATENCION = ['EN_REVISION', 'ENVIADO_SGC', 'SOLICITUD_CIERRE', 'REVISION_AUDITOR'];
+export const requiereAtencionSGC = (r) => ESTADOS_ATENCION.includes(r?.estado)
+  || leerActividades(r || {}).some((a) => a.solicitud_replanteo?.estado === 'PENDIENTE')
+  || solicitudesPendientes(r).length > 0;
