@@ -202,6 +202,7 @@ function App() {
             puedeTodasAreas={puedeTodasAreas}
             areaUsuario={areaUsuario}
             usuarioLogueado={usuarioLogueado}
+            setActiveTab={setActiveTab}
           />
         );
       case 'documents':

@@ -2,6 +2,13 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-19T16:30Z · @claude-code · [FIX] · Aprobaciones: cada pendiente tiene acción
+- Las filas en solicitud de cierre y en revisión de auditor decían "Solo lectura" o "Asignar auditor en vista del módulo" sin botón: el contador las contaba pero no se podía hacer nada. Ahora tienen "Asignar auditor →" o "Dictaminar →", que abren el registro directo en su módulo.
+- El folio de cada fila abre el registro completo (para revisarlo antes de aprobar).
+- La etiqueta de una AC/PM en revisión de auditor decía "Aprobación de Folio"; ahora dice "Dictamen de Eficacia".
+- Archivos: frontend/src/components/aprobaciones/GestorAprobacionesView.jsx, frontend/src/App.jsx
+- Deploy: SÍ
+
 ## 2026-11-19T15:00Z · @claude-code · [UI] · Avisos de solicitudes de cambio en listas y contador de la bandeja
 - Menú: "Aprobaciones" muestra cuántas cosas esperan decisión del SGC (folios, cierres, prórrogas y cambios); solo lo ve quien aprueba.
 - Listas de AC y PM: etiqueta "Cambio pendiente", y "Cambio aprobado / rechazado" durante 15 días después de resolverse, para que el área se entere sin abrir el registro.

@@ -16,7 +16,8 @@ export default function GestorAprobacionesView({
   usuarios,
   puedeTodasAreas,
   areaUsuario,
-  usuarioLogueado
+  usuarioLogueado,
+  setActiveTab
 }) {
   const { registrarMovimiento } = useSGC();
   const { confirmar, solicitar, props: propsDialogos } = useDialogos();
@@ -40,7 +41,9 @@ export default function GestorAprobacionesView({
           ? 'Prórroga de Actividad' 
           : cambio
             ? 'Solicitud de Cambio'
-            : 'Aprobación de Folio';
+            : ac.estado === 'REVISION_AUDITOR'
+              ? 'Dictamen de Eficacia'
+              : 'Aprobación de Folio';
       return {
         id_original: ac.id,
         documento: ac.folio_codigo || 'Borrador',
@@ -69,7 +72,9 @@ export default function GestorAprobacionesView({
           ? 'Prórroga de Actividad' 
           : cambio
             ? 'Solicitud de Cambio'
-            : 'Aprobación de Folio';
+            : pm.estado === 'REVISION_AUDITOR'
+              ? 'Dictamen de Eficacia'
+              : 'Aprobación de Folio';
       return {
         id_original: pm.id,
         documento: pm.folio_codigo || pm.folio || 'Borrador',
@@ -92,6 +97,18 @@ export default function GestorAprobacionesView({
     if (filtroTipo && a.tipo !== filtroTipo) return false;
     return true;
   });
+
+  // Lo que se resuelve en el módulo (asignar auditor, dictaminar, revisar el documento) se abre directo ahí.
+  const abrirEnModulo = (app) => {
+    const ac = app.tipo === 'Acción Correctiva';
+    try { sessionStorage.setItem(ac ? 'sgc-abrir-ac' : 'sgc-abrir-pm', String(app.id_original)); } catch { /* sin almacenamiento: solo navega */ }
+    setActiveTab?.(ac ? 'ac' : 'pm');
+  };
+  const accionModulo = (app) => (app.estado === 'SOLICITUD_CIERRE'
+    ? { texto: 'Asignar auditor', ayuda: 'Se asigna en el registro' }
+    : app.estado === 'REVISION_AUDITOR'
+      ? { texto: 'Dictaminar', ayuda: 'Dictamen de eficacia del auditor o SGC' }
+      : { texto: 'Abrir registro', ayuda: '' });
 
   const getPrioridadColor = (p) => {
     const colors = { 'Alta': 'bg-red-100 text-red-700 border-red-200', 'Media': 'bg-amber-100 text-amber-700 border-amber-200', 'Baja': 'bg-emerald-100 text-emerald-700 border-emerald-200' };
@@ -405,7 +422,10 @@ export default function GestorAprobacionesView({
                   <tr key={`${app.tipo}-${app.id_original}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="p-4 font-mono font-bold text-slate-800 text-sm">
                       <div className="flex flex-col">
-                        <span>{app.documento}</span>
+                        <button type="button" onClick={() => abrirEnModulo(app)} title="Abrir el registro completo"
+                          className="text-left text-sky-800 underline decoration-sky-300 underline-offset-2 hover:text-sky-950 hover:decoration-sky-700">
+                          {app.documento}
+                        </button>
                         {app.subtipo && (
                           <span className={`inline-block mt-1 w-fit text-[11px] font-sans px-2 py-0.5 rounded-full font-semibold border ${
                             app.subtipo === 'Prórroga de Actividad'
@@ -492,15 +512,14 @@ export default function GestorAprobacionesView({
                             <X size={16} strokeWidth={3} /> Devolver
                           </button>
                         </div>
-                      ) : app.estado === 'SOLICITUD_CIERRE' ? (
-                        <div className="flex flex-col items-center">
-                          <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                            Auditoría Requerida
-                          </span>
-                          <span className="text-[10px] text-slate-500 mt-0.5">Asignar auditor en vista del módulo</span>
-                        </div>
                       ) : (
-                        <span className="text-xs text-slate-500 font-medium italic">Solo lectura</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <button type="button" onClick={() => abrirEnModulo(app)}
+                            className="bg-purple-700 hover:bg-purple-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">
+                            {accionModulo(app).texto} →
+                          </button>
+                          {accionModulo(app).ayuda && <span className="text-xs text-slate-500">{accionModulo(app).ayuda}</span>}
+                        </div>
                       )}
                     </td>
                   </tr>
