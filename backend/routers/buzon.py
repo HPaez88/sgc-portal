@@ -9,6 +9,7 @@ POST /api/v1/buzon/{id}/descartar  Lo archiva sin responder.
 Modo (BUZON_MODO): "aprobacion" (por omisión: la IA solo propone) o "automatico" (envía sola lo que sí puede resolver).
 Sin RESEND_WEBHOOK_SECRET el buzón queda apagado (el webhook responde 503).
 """
+import json
 import logging
 import os
 from datetime import datetime, timedelta
@@ -21,8 +22,9 @@ from sqlmodel import Session, select
 
 from backend import auth
 from backend.database import get_session
-from backend.models import MensajeBuzon, Usuario
+from backend.models import EstadoPortal, MensajeBuzon, Usuario
 from backend.services import buzon_service as bz
+from backend.services.avisos_motor import admins_con_tema
 from backend.services import correo_service as correo
 
 log = logging.getLogger("sgc.buzon")
@@ -130,6 +132,14 @@ async def recibir(request: Request, session: Session = Depends(get_session)):
         except HTTPException as ex:
             log.error("No se pudo enviar la respuesta automática %s: %s", m.id, ex.detail)
     admins = _admins(session, m.organismo_id)
+    # Cada administrador elige en Configuración si recibe los avisos del buzón.
+    fila = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == m.organismo_id,
+                                                   EstadoPortal.clave == "sgc-config-avisos-admin")).first()
+    try:
+        prefs = json.loads(fila.valor) if fila else {}
+    except ValueError:
+        prefs = {}
+    admins = admins_con_tema(admins, prefs, "buzon")
     if admins and m.clasificacion != "AUTOMATICO":
         try:
             asunto, cuerpo, plano = correo.plantilla_aviso_buzon(m, url)

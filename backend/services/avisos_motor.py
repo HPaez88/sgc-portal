@@ -1,11 +1,15 @@
 """
 avisos_motor.py — Qué avisos tocan hoy (lógica pura, probada). El envío y el registro están en tareas/avisos_diarios.py.
 
-Acciones correctivas (por vencimiento): solo EN_SEGUIMIENTO, sin auditor asignado (si ya hay auditor se está
-atendiendo), con vencimiento a partir del arranque del programa. Planes de mejora: todavía no (decisión de @human).
+Acciones correctivas y planes de mejora (por vencimiento): solo EN_SEGUIMIENTO, sin auditor asignado (si ya hay
+auditor se está atendiendo), con vencimiento a partir del arranque del programa. Los PM entran desde 2026-11-19
+(decisión de @human: "cualquier atraso").
 Indicadores (calendario mensual): en el mes M se pide el resultado del mes M-1 de los indicadores que tocan
 según su periodicidad; el aviso del día 1 va a todos los que deben entregar, los demás solo a quien no ha entregado.
 """
+import json
+import re
+import unicodedata
 from collections import defaultdict
 from datetime import date
 from typing import Optional
@@ -54,7 +58,8 @@ def avisos_acciones(acciones: list, hoy: date, arranque: date, enviadas: set) ->
         hechas = {e for (i, v, e) in enviadas if str(i) == str(ac.get("id")) and v == vence.isoformat()}
         etapa = cal.etapa_de_hoy(cal.etapas_vencimiento(vence), hoy, hechas)
         if etapa:
-            out.append({"id": ac.get("id"), "folio": ac.get("folio_codigo") or "AC", "area": ac.get("area") or "", "etapa": etapa,
+            out.append({"id": ac.get("id"), "folio": ac.get("folio_codigo") or ac.get("folio") or "AC",
+                        "area": ac.get("area") or ac.get("gerencia_coordinacion") or "", "etapa": etapa,
                         "vence": vence, "ac": ac})
     return out
 
@@ -140,4 +145,70 @@ def avisos_renovacion(proyectos: list, hoy: date, enviadas: set) -> list[dict]:
         if not area or area in con_siguiente or (area, siguiente, etapa) in enviadas:
             continue
         out.append({"unidad": area, "etapa": etapa, "periodo": siguiente, "proyecto": p.get("nombre") or ""})
+    return out
+
+
+# ── Destinatarios y temas ──────────────────────────────────────────────────────────────────────────────────
+TITULOS_NOMBRE = re.compile(r"\b(lic|ing|c\.?\s?p|mtro|mtra|dr|dra|arq|prof|profa|biol|qfb)\.?\s+", re.I)
+
+
+def _tokens(nombre: str) -> set:
+    t = unicodedata.normalize("NFD", str(nombre or "")).encode("ascii", "ignore").decode().lower()
+    return set(TITULOS_NOMBRE.sub(" ", t + " ").split())
+
+
+def _mismo(a: str, b: str) -> bool:
+    """Mismo nombre aunque uno traiga título, acentos o un apellido de más ("Irasema Moreno" = "Irasema Moreno Espinoza").
+    ponytail: dos palabras en común como mínimo; si hay homónimos en el directorio, pedir el correo en el equipo."""
+    x, y = _tokens(a), _tokens(b)
+    corto = x if len(x) <= len(y) else y
+    return len(corto) >= 2 and corto <= (y if corto is x else x)
+
+
+def _lista(valor) -> list:
+    if isinstance(valor, str):
+        try:
+            valor = json.loads(valor or "[]")
+        except ValueError:
+            return []
+    return valor if isinstance(valor, list) else []
+
+
+def destinatarios_registro(reg: dict, contactos_area: list, usuarios: list) -> list:
+    """Responsable del área y quien le ayuda (catálogo) + integrantes del equipo que estén en el directorio
+    + correos escritos en el registro que también estén en el directorio. usuarios = [{email, nombre}]."""
+    directorio = {str(u["email"]).lower(): u for u in usuarios if u.get("email")}
+    escritos = reg.get("correos_responsables")
+    escritos = re.findall(r"[\w.+-]+@[\w-]+\.[\w.-]+", escritos) if isinstance(escritos, str) else (escritos or [])
+    para = {str(c).lower() for c in contactos_area if c}
+    para |= {str(c).lower() for c in escritos if str(c).lower() in directorio}
+    equipo = _lista(reg.get("equipo_json")) or _lista(reg.get("integrantes"))
+    for m in equipo:
+        nombre = m.get("nombre") if isinstance(m, dict) else None
+        if not nombre:
+            continue
+        para |= {e for e, u in directorio.items() if _mismo(nombre, u.get("nombre", ""))}
+    return sorted(para)
+
+
+TEMAS_ADMIN = ("resumen", "incumplimiento", "renovacion", "buzon")
+
+
+def admins_con_tema(admins: list, prefs: dict, tema: str) -> list:
+    """Administradores que reciben ese tema. Sin preferencia guardada, lo reciben (no se pierde nada por omisión)."""
+    prefs = prefs if isinstance(prefs, dict) else {}
+    return [a for a in admins if (prefs.get(str(a).lower()) or {}).get(tema, True) is not False]
+
+
+def avisos_auditor(registros: list, enviadas: set) -> list:
+    """Una vez por asignación: AC/PM en REVISION_AUDITOR con auditor. enviadas = {(id, fecha_asignacion, etapa)}."""
+    out = []
+    for r in registros or []:
+        if r.get("estado") != "REVISION_AUDITOR" or not r.get("auditor_email"):
+            continue
+        ref = str(r.get("fecha_asignacion_auditor") or "")[:10]
+        if (str(r.get("id")), ref, "AUDITOR_ASIGNADO") in enviadas:
+            continue
+        out.append({"id": r.get("id"), "folio": r.get("folio_codigo") or r.get("folio") or "", "referencia": ref,
+                    "auditor": r["auditor_email"], "area": r.get("area") or r.get("gerencia_coordinacion") or "", "registro": r})
     return out

@@ -8,6 +8,7 @@ import ContenedorModal from '../common/ContenedorModal';
 import ModalBase from '../common/ModalBase';
 import EncargadosSGC from './EncargadosSGC';
 import AccesibilidadPanel from './AccesibilidadPanel';
+import AvisosCorreoPanel from './AvisosCorreoPanel';
 import FodaEditor from '../riesgos/FodaEditor';
 import { normalizarFoda } from '../../constants/foda';
 import { TITULOS, separarTitulo, unirTitulo, compararPorNombre } from '../../constants/titulos';
@@ -815,6 +816,19 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
           <Type size={15} />
           Accesibilidad
         </button>
+        {['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) && (
+          <button
+            onClick={() => setTabActiva('avisos')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+              tabActiva === 'avisos'
+                ? 'bg-[#0B192C] text-white shadow-sm'
+                : 'bg-white text-slate-600 hover:bg-slate-100/80 border border-slate-200/70'
+            }`}
+          >
+            <Mail size={15} />
+            Avisos por correo
+          </button>
+        )}
         <button
           onClick={() => { setTabActiva('areas'); setBusqueda(''); }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
@@ -892,6 +906,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* PESTAÑA 1: CATÁLOGO DE ÁREAS */}
       {/* ============================================================ */}
       {tabActiva === 'accesibilidad' && <AccesibilidadPanel />}
+      {tabActiva === 'avisos' && <AvisosCorreoPanel usuarios={usuariosList} />}
 
       {tabActiva === 'areas' && (
         <div className="bg-white rounded-2xl shadow-card-subtle border border-slate-200/80 overflow-hidden space-y-4">

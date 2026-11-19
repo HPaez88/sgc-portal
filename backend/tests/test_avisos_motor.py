@@ -70,7 +70,46 @@ def test_renovacion_solo_oct_dic_y_una_vez_por_mes():
 
 
 def test_correos_responsables_como_texto_o_lista():
-    from backend.tareas.avisos_diarios import _correos
-    assert _correos("a@x.mx, b@y.gob.mx") == ["a@x.mx", "b@y.gob.mx"]
-    assert _correos(["a@x.mx", "", None]) == ["a@x.mx"]
-    assert _correos(None) == []
+    usuarios = [{"email": "a@x.mx", "nombre": "A"}, {"email": "b@y.gob.mx", "nombre": "B"}]
+    assert m.destinatarios_registro({"correos_responsables": "a@x.mx, b@y.gob.mx"}, [], usuarios) == ["a@x.mx", "b@y.gob.mx"]
+    assert m.destinatarios_registro({"correos_responsables": ["a@x.mx", "", None]}, [], usuarios) == ["a@x.mx"]
+    assert m.destinatarios_registro({"correos_responsables": None}, [], usuarios) == []
+
+
+USUARIOS = [{"email": "jenriquez@x.mx", "nombre": "Ing. Javier Enríquez"}, {"email": "imoreno@x.mx", "nombre": "Irasema Moreno Espinoza"},
+            {"email": "agalvez@x.mx", "nombre": "Aracely Galvez"}]
+
+
+def test_destinatarios_area_apoyo_equipo_y_directorio():
+    import json
+    reg = {"correos_responsables": ["jaenriquez@x.mx", "agalvez@x.mx"],  # el primero no existe en el directorio
+           "equipo_json": json.dumps([{"nombre": "Javier Enriquez"}, {"nombre": "Irasema Moreno"}, {"nombre": "Persona Externa"}])}
+    para = m.destinatarios_registro(reg, ["titular@x.mx", "apoyo@x.mx"], USUARIOS)
+    # área (titular y quien le ayuda) + equipo encontrado en el directorio por nombre (sin títulos ni acentos) + responsables válidos
+    assert para == ["agalvez@x.mx", "apoyo@x.mx", "imoreno@x.mx", "jenriquez@x.mx", "titular@x.mx"]
+    # plan de mejora: el equipo viene en "integrantes"
+    assert m.destinatarios_registro({"integrantes": [{"nombre": "Aracely Gálvez"}]}, [], USUARIOS) == ["agalvez@x.mx"]
+
+
+def test_temas_de_correo_por_administrador():
+    admins = ["a@x.mx", "B@x.mx"]
+    assert m.admins_con_tema(admins, {}, "resumen") == admins           # sin configurar: reciben todo
+    prefs = {"b@x.mx": {"resumen": False}}
+    assert m.admins_con_tema(admins, prefs, "resumen") == ["a@x.mx"]
+    assert m.admins_con_tema(admins, prefs, "incumplimiento") == admins
+
+
+def test_aviso_al_auditor_asignado_una_sola_vez():
+    reg = {"id": 7, "folio_codigo": "AC#18/2026", "estado": "REVISION_AUDITOR", "auditor_email": "agalvez@x.mx",
+           "fecha_asignacion_auditor": "2026-11-10T10:00:00Z"}
+    r = m.avisos_auditor([reg, {**reg, "id": 8, "estado": "EN_SEGUIMIENTO"}], set())
+    assert [(x["id"], x["referencia"]) for x in r] == [(7, "2026-11-10")]
+    assert m.avisos_auditor([reg], {("7", "2026-11-10", "AUDITOR_ASIGNADO")}) == []
+    # reasignado otro día: se avisa al nuevo
+    assert len(m.avisos_auditor([{**reg, "fecha_asignacion_auditor": "2026-11-20"}], {("7", "2026-11-10", "AUDITOR_ASIGNADO")})) == 1
+
+
+def test_planes_de_mejora_usan_area_o_gerencia():
+    pm = {"id": 3, "folio_codigo": "OM#2/2026", "gerencia_coordinacion": "Jurídico", "estado": "EN_SEGUIMIENTO", "fecha_seguimiento": "2026-11-30"}
+    r = m.avisos_acciones([pm], date(2026, 11, 20), date(2026, 11, 14), set())
+    assert r[0]["area"] == "Jurídico"
