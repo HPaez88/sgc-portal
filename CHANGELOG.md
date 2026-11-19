@@ -2,6 +2,16 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-19T19:00Z · @claude-code · [FEATURE] · Avisos por correo en producción: destinatarios completos, folio y descripción, auditor y temas por administrador
+- Recordatorios de AC y ahora también PM (15, 10, 5 días, vence hoy, incumplimiento): llegan al responsable del área y a quien le ayuda (catálogo de áreas), al equipo de trabajo registrado (buscado por nombre en Usuarios) y a los correos del registro que existan en Usuarios.
+- Cada aviso incluye folio y descripción (no conformidad de la AC, situación actual del PM).
+- Nuevo aviso al auditor cuando se le asigna la verificación de eficacia (una vez por asignación); la AC#18/2026 recibe el suyo en la siguiente corrida.
+- Configuración → "Avisos por correo": qué temas recibe cada administrador (resumen diario, copia de incumplimiento, confirmación del proyecto anual, buzón). Sin marcar = lo recibe.
+- Tarea diaria con vista previa sin enviar: `python -m backend.tareas.avisos_diarios --vista-previa [fecha]`.
+- AVISOS_MODO cambia de simulación a activo (pedido del dueño 2026-11-19).
+- Archivos: backend/services/avisos_motor.py, backend/tareas/avisos_diarios.py, backend/routers/buzon.py, frontend/src/components/settings/AvisosCorreoPanel.jsx, SettingsView.jsx, pruebas en backend/tests/test_avisos_motor.py
+- Deploy: SÍ
+
 ## 2026-11-19T16:30Z · @claude-code · [FIX] · Aprobaciones: cada pendiente tiene acción
 - Las filas en solicitud de cierre y en revisión de auditor decían "Solo lectura" o "Asignar auditor en vista del módulo" sin botón: el contador las contaba pero no se podía hacer nada. Ahora tienen "Asignar auditor →" o "Dictaminar →", que abren el registro directo en su módulo.
 - El folio de cada fila abre el registro completo (para revisarlo antes de aprobar).

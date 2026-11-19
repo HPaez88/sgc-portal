@@ -67,7 +67,9 @@ def _contactos(unidad: str, areas: list, direcciones: list) -> list[str]:
 
 def _descripcion(tipo: str, reg: dict) -> str:
     if tipo == "PM":
-        texto = " — ".join(t for t in [reg.get("titulo_mejora"), reg.get("descripcion_situacion_actual")] if t)
+        titulo, situacion = str(reg.get("titulo_mejora") or "").strip(), str(reg.get("descripcion_situacion_actual") or "").strip()
+        # Los PM del Control 6 repiten el título en la situación actual: no se duplica.
+        texto = situacion if titulo and situacion.startswith(titulo[:60]) else " — ".join(t for t in [titulo, situacion] if t)
     else:
         texto = reg.get("descripcion_no_conformidad_final") or reg.get("descripcion_no_conformidad_original") or ""
     texto = " ".join(str(texto).split())
