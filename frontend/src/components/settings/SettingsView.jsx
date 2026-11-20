@@ -10,6 +10,7 @@ import EncargadosSGC from './EncargadosSGC';
 import AccesibilidadPanel from './AccesibilidadPanel';
 import AvisosCorreoPanel from './AvisosCorreoPanel';
 import BitacoraServidor from '../bitacora/BitacoraServidor';
+import BitacoraView from '../bitacora/BitacoraView';
 import FodaEditor from '../riesgos/FodaEditor';
 import { normalizarFoda } from '../../constants/foda';
 import { TITULOS, separarTitulo, unirTitulo, compararPorNombre } from '../../constants/titulos';
@@ -31,6 +32,7 @@ import {
   Edit,
   Mail,
   ServerCog,
+  History,
   Phone,
   Search,
   CheckCircle2,
@@ -831,6 +833,19 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
             Avisos por correo
           </button>
         )}
+        {['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) && (
+          <button
+            onClick={() => setTabActiva('bitacora')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+              tabActiva === 'bitacora'
+                ? 'bg-[#0B192C] text-white shadow-sm'
+                : 'bg-white text-slate-600 hover:bg-slate-100/80 border border-slate-200/70'
+            }`}
+          >
+            <History size={15} />
+            Bitácora
+          </button>
+        )}
         {usuarioLogueado?.rol === 'Super Admin' && (
           <button
             onClick={() => setTabActiva('registro')}
@@ -923,6 +938,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {tabActiva === 'accesibilidad' && <AccesibilidadPanel />}
       {tabActiva === 'avisos' && usuarioLogueado?.puede_restablecer && <AvisosCorreoPanel usuarios={usuariosList} />}
       {tabActiva === 'registro' && usuarioLogueado?.rol === 'Super Admin' && <BitacoraServidor />}
+      {tabActiva === 'bitacora' && ['Super Admin', 'Admin'].includes(usuarioLogueado?.rol) && <BitacoraView />}
 
       {tabActiva === 'areas' && (
         <div className="bg-white rounded-2xl shadow-card-subtle border border-slate-200/80 overflow-hidden space-y-4">

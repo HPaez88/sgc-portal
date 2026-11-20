@@ -25,7 +25,6 @@ import {
   History,
   Sparkles
 } from 'lucide-react';
-import BitacoraView from '../bitacora/BitacoraView';
 import GobernanzaIAView from './GobernanzaIAView';
 import ModalConfirmacionEliminar from '../common/ModalConfirmacionEliminar';
 import { useToast } from '../common/Toast';
@@ -545,17 +544,6 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
           >
             <Network size={14} className={vistaActiva === 'matriz' ? 'text-sky-300' : 'text-sky-600'} />
             <span>Matriz de Trazabilidad</span>
-          </button>
-
-          <button
-            onClick={() => setVistaActiva('bitacora')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${vistaActiva === 'bitacora'
-              ? 'bg-gradient-to-r from-[#0B192C] to-[#1E3E62] text-white shadow-md scale-[1.02]'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-              }`}
-          >
-            <History size={14} className={vistaActiva === 'bitacora' ? 'text-amber-300' : 'text-amber-600'} />
-            <span>Bitácora</span>
           </button>
 
           <button
@@ -1080,13 +1068,6 @@ Fecha y hora de descarga: ${new Date().toLocaleString('es-MX')}
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* VISTA 3: BITÁCORA DE MOVIMIENTOS Y AUDITORÍA INTEGRADA */}
-      {vistaActiva === 'bitacora' && (
-        <div className="space-y-4">
-          <BitacoraView />
         </div>
       )}
 

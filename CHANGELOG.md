@@ -2,6 +2,13 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-20T18:00Z · @claude-code · [UI] · Bitácora de movimientos en Configuración, apilada por día/mes/año
+- La Bitácora de Movimientos pasa de Control Documental a Configuración → "Bitácora" (Super Admin y Admin).
+- Ya no es una lista de miles de renglones: se apila en días del mes en curso, meses cerrados del año y años anteriores; cada periodo se abre con 25 movimientos por página y la lista de periodos también se pagina. Filtros, indicadores, exportación CSV/PDF y detalle se conservan.
+- Agrupación pura en `constants/periodos.js` (+test), componente `bitacora/PeriodosBitacora.jsx`.
+- Archivos: frontend/src/components/bitacora/BitacoraView.jsx, PeriodosBitacora.jsx, settings/SettingsView.jsx, documentos/DocumentosView.jsx, constants/periodos.js
+- Deploy: SÍ
+
 ## 2026-11-20T17:00Z · @claude-code · [UI] · Registro del servidor pasa a Configuración
 - Nueva pestaña Configuración → "Registro del servidor" (solo Super Admin). Se quitó de la Bitácora de Control Documental, que sigue para todos los administradores.
 - Archivos: frontend/src/components/settings/SettingsView.jsx, frontend/src/components/bitacora/BitacoraView.jsx

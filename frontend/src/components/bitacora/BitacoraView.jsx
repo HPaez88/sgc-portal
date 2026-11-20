@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   History, 
@@ -20,8 +20,6 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   Calendar,
   FileEdit,
   ArrowDownToLine,
@@ -31,11 +29,11 @@ import { useSGC } from '../../SGCContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import CampoFecha from '../common/CampoFecha';
+import PeriodosBitacora from './PeriodosBitacora';
 
-const REGISTROS_POR_PAGINA = 30;
 
 export default function BitacoraView() {
-  const { bitacora, usuariosConPresencia, usuarios, usuarioLogueado } = useSGC();
+  const { bitacora, usuariosConPresencia, usuarios } = useSGC();
 
   // Estados de filtros
   const [filtroUsuario, setFiltroUsuario] = useState('');
@@ -47,8 +45,6 @@ export default function BitacoraView() {
   const [filtroSoloOnline, setFiltroSoloOnline] = useState(false);
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState(null);
 
-  // Estado de paginación (30 registros máximo por página)
-  const [paginaActual, setPaginaActual] = useState(1);
 
   // Módulos conocidos para filtro
   const MODULOS = [
@@ -72,10 +68,6 @@ export default function BitacoraView() {
     { id: 'CIERRE_SESION', label: 'Cierres de Sesión 🚪' },
   ];
 
-  // Restablecer a página 1 cada vez que cambie cualquier filtro
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [filtroUsuario, filtroModulo, filtroAccion, busqueda, fechaDesde, fechaHasta, filtroSoloOnline]);
 
   // Botones rápidos de rango de fechas
   const aplicarRangoRapido = (tipo) => {
@@ -175,14 +167,7 @@ export default function BitacoraView() {
     });
   }, [bitacora, filtroUsuario, filtroModulo, filtroAccion, fechaDesde, fechaHasta, filtroSoloOnline, busqueda, usuariosConPresencia]);
 
-  // Paginación estricta a 30 registros
   const totalRegistros = movimientosFiltrados.length;
-  const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA) || 1;
-  const indiceInicio = (paginaActual - 1) * REGISTROS_POR_PAGINA;
-  const indiceFin = Math.min(indiceInicio + REGISTROS_POR_PAGINA, totalRegistros);
-  const registrosPagina = useMemo(() => {
-    return movimientosFiltrados.slice(indiceInicio, indiceFin);
-  }, [movimientosFiltrados, indiceInicio, indiceFin]);
 
   // Contadores para KPIs ejecutivos
   const hoyStr = new Date().toISOString().slice(0, 10);
@@ -320,6 +305,89 @@ export default function BitacoraView() {
     }
   };
 
+  // Un renglón de la tabla de movimientos (lo usa cada periodo de PeriodosBitacora).
+  const renderFila = (mov) => {
+                  const esEliminacion = mov.accion === 'ELIMINACION';
+    return (
+      <tr 
+        key={mov.id} 
+        className={`hover:bg-slate-50/70 transition-colors ${esEliminacion ? 'bg-rose-50/20' : ''}`}
+      >
+        {/* Fecha y Hora */}
+        <td className="py-3.5 px-4 whitespace-nowrap">
+          <div className="font-mono text-slate-800 font-bold text-xs">
+            {new Date(mov.timestamp).toLocaleDateString('es-MX', {
+              day: '2-digit', month: 'short', year: 'numeric'
+            })}
+          </div>
+          <div className="font-mono text-slate-400 text-[10px]">
+            {new Date(mov.timestamp).toLocaleTimeString('es-MX', {
+              hour: '2-digit', minute: '2-digit', second: '2-digit'
+            })}
+          </div>
+        </td>
+
+        {/* Badge de Acción */}
+        <td className="py-3.5 px-4 whitespace-nowrap">
+          {getAccionBadge(mov.accion)}
+        </td>
+
+        {/* Módulo y Folio */}
+        <td className="py-3.5 px-4">
+          <span className="font-mono text-[10px] font-bold text-slate-500 uppercase block tracking-wider">
+            {mov.modulo}
+          </span>
+          {mov.folio ? (
+            <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[11px] font-extrabold bg-slate-100 text-slate-800 border border-slate-200 font-mono">
+              {mov.folio}
+            </span>
+          ) : (
+            <span className="text-[11px] text-slate-400">-</span>
+          )}
+        </td>
+
+        {/* Descripción y motivo */}
+        <td className="py-3.5 px-4 max-w-md">
+          <p className="font-bold text-slate-900 leading-snug">{mov.descripcion}</p>
+          {mov.detalles && (
+            <div className={`mt-1 text-[11px] leading-relaxed p-2 rounded-lg ${
+              esEliminacion 
+                ? 'bg-rose-50 text-rose-900 border border-rose-200' 
+                : 'bg-slate-50 text-slate-600 border border-slate-200/80'
+            }`}>
+              {esEliminacion && <strong className="text-rose-700">Justificación: </strong>}
+              {mov.detalles}
+            </div>
+          )}
+        </td>
+
+        {/* Usuario Responsable */}
+        <td className="py-3.5 px-4 whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+              {mov.usuario_nombre?.charAt(0) || 'U'}
+            </div>
+            <div>
+              <p className="font-bold text-slate-900 text-xs">{mov.usuario_nombre || 'Sistema'}</p>
+              <p className="text-[10px] text-slate-500">{mov.usuario_rol} • {mov.usuario_area || 'OOMAPASC'}</p>
+            </div>
+          </div>
+        </td>
+
+        {/* Botón Ver Detalle */}
+        <td className="py-3.5 px-4 text-center">
+          <button
+            onClick={() => setMovimientoSeleccionado(mov)}
+            className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
+            title="Inspeccionar movimiento"
+          >
+            <Eye size={16} />
+          </button>
+        </td>
+      </tr>
+    );
+  };
+
   const hayFiltrosActivos = filtroUsuario || filtroModulo || filtroAccion || busqueda || fechaDesde || fechaHasta || filtroSoloOnline;
 
   return (
@@ -335,7 +403,7 @@ export default function BitacoraView() {
                 Auditoría ISO 9001:2015 • Cláusulas 7.5 y 9.2
               </span>
               <span className="text-slate-400 text-xs">•</span>
-              <span className="text-slate-300 text-xs">Paginación a 30 registros</span>
+              <span className="text-slate-300 text-xs">Agrupada por día, mes y año · 25 por página</span>
             </div>
             <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
               <History className="text-sky-400" size={26} />
@@ -554,7 +622,7 @@ export default function BitacoraView() {
         <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100 font-medium">
           <div className="flex items-center gap-2">
             <span>
-              Mostrando <strong>{totalRegistros === 0 ? 0 : indiceInicio + 1} - {indiceFin}</strong> de <strong>{totalRegistros}</strong> registros (Página {paginaActual} de {totalPaginas})
+              <strong>{totalRegistros}</strong> movimientos con los filtros actuales, agrupados por día, mes y año
             </span>
             {filtroUsuario && (
               <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 text-[11px] font-bold">
@@ -587,188 +655,8 @@ export default function BitacoraView() {
         </div>
       </div>
 
-      {/* Tabla Principal Paginada a 30 Registros */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-extrabold uppercase text-slate-500 font-mono tracking-wider">
-                <th className="py-3 px-4">Fecha y Hora</th>
-                <th className="py-3 px-4">Acción</th>
-                <th className="py-3 px-4">Módulo / Folio</th>
-                <th className="py-3 px-4">Descripción del Movimiento</th>
-                <th className="py-3 px-4">Usuario Responsable</th>
-                <th className="py-3 px-4 text-center">Detalle</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {registrosPagina.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-14 text-center text-slate-400">
-                    <History size={38} className="mx-auto mb-2 text-slate-300" />
-                    <p className="font-bold text-sm text-slate-700">No se encontraron movimientos registrados</p>
-                    <p className="text-xs text-slate-400 mt-1">Ajuste los filtros de búsqueda o el rango de fechas para consultar.</p>
-                  </td>
-                </tr>
-              ) : (
-                registrosPagina.map((mov) => {
-                  const esEliminacion = mov.accion === 'ELIMINACION';
-                  return (
-                    <tr 
-                      key={mov.id} 
-                      className={`hover:bg-slate-50/70 transition-colors ${esEliminacion ? 'bg-rose-50/20' : ''}`}
-                    >
-                      {/* Fecha y Hora */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-mono text-slate-800 font-bold text-xs">
-                          {new Date(mov.timestamp).toLocaleDateString('es-MX', {
-                            day: '2-digit', month: 'short', year: 'numeric'
-                          })}
-                        </div>
-                        <div className="font-mono text-slate-400 text-[10px]">
-                          {new Date(mov.timestamp).toLocaleTimeString('es-MX', {
-                            hour: '2-digit', minute: '2-digit', second: '2-digit'
-                          })}
-                        </div>
-                      </td>
-
-                      {/* Badge de Acción */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getAccionBadge(mov.accion)}
-                      </td>
-
-                      {/* Módulo y Folio */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono text-[10px] font-bold text-slate-500 uppercase block tracking-wider">
-                          {mov.modulo}
-                        </span>
-                        {mov.folio ? (
-                          <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[11px] font-extrabold bg-slate-100 text-slate-800 border border-slate-200 font-mono">
-                            {mov.folio}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-slate-400">-</span>
-                        )}
-                      </td>
-
-                      {/* Descripción y motivo */}
-                      <td className="py-3.5 px-4 max-w-md">
-                        <p className="font-bold text-slate-900 leading-snug">{mov.descripcion}</p>
-                        {mov.detalles && (
-                          <div className={`mt-1 text-[11px] leading-relaxed p-2 rounded-lg ${
-                            esEliminacion 
-                              ? 'bg-rose-50 text-rose-900 border border-rose-200' 
-                              : 'bg-slate-50 text-slate-600 border border-slate-200/80'
-                          }`}>
-                            {esEliminacion && <strong className="text-rose-700">Justificación: </strong>}
-                            {mov.detalles}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Usuario Responsable */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {mov.usuario_nombre?.charAt(0) || 'U'}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 text-xs">{mov.usuario_nombre || 'Sistema'}</p>
-                            <p className="text-[10px] text-slate-500">{mov.usuario_rol} • {mov.usuario_area || 'OOMAPASC'}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Botón Ver Detalle */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => setMovimientoSeleccionado(mov)}
-                          className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
-                          title="Inspeccionar movimiento"
-                        >
-                          <Eye size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Barra de Paginación Estricta a 30 Registros */}
-        {totalPaginas > 1 && (
-          <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <span className="text-slate-500 font-medium">
-              Página <strong>{paginaActual}</strong> de <strong>{totalPaginas}</strong> (Mostrando {registrosPagina.length} de {totalRegistros} movimientos)
-            </span>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPaginaActual(1)}
-                disabled={paginaActual === 1}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Primera página"
-              >
-                <ChevronsLeft size={16} />
-              </button>
-              <button
-                onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
-                disabled={paginaActual === 1}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1 font-semibold"
-                title="Página anterior"
-              >
-                <ChevronLeft size={16} />
-                <span className="hidden sm:inline">Anterior</span>
-              </button>
-
-              {/* Botones de páginas numéricas */}
-              <div className="flex items-center gap-1 px-1">
-                {Array.from({ length: Math.min(totalPaginas, 7) }, (_, idx) => {
-                  let numeroPagina = idx + 1;
-                  if (totalPaginas > 7 && paginaActual > 4) {
-                    numeroPagina = paginaActual - 3 + idx;
-                    if (numeroPagina > totalPaginas) return null;
-                  }
-                  const isActiva = numeroPagina === paginaActual;
-                  return (
-                    <button
-                      key={numeroPagina}
-                      onClick={() => setPaginaActual(numeroPagina)}
-                      className={`w-8 h-8 rounded-lg font-bold transition-all text-xs ${
-                        isActiva 
-                          ? 'bg-[#0B192C] text-white shadow-xs' 
-                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      {numeroPagina}
-                    </button>
-                  );
-                }).filter(Boolean)}
-              </div>
-
-              <button
-                onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
-                disabled={paginaActual === totalPaginas}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1 font-semibold"
-                title="Página siguiente"
-              >
-                <span className="hidden sm:inline">Siguiente</span>
-                <ChevronRight size={16} />
-              </button>
-              <button
-                onClick={() => setPaginaActual(totalPaginas)}
-                disabled={paginaActual === totalPaginas}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Última página"
-              >
-                <ChevronsRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Movimientos apilados por día / mes / año, paginados */}
+      <PeriodosBitacora movimientos={movimientosFiltrados} renderFila={renderFila} />
 
       {/* Modal Detalle de Movimiento */}
       {movimientoSeleccionado && typeof document !== 'undefined' && createPortal(
