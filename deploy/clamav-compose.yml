@@ -1,0 +1,29 @@
+# Antivirus compartido del VPS (ClamAV). Instalar en /opt/clamav/docker-compose.yml.
+# Cualquier stack lo usa uniéndose a la red externa "antivirus" y apuntando a clamav:3310.
+#   docker network create antivirus   (una sola vez)
+name: clamav
+
+services:
+  clamav:
+    image: clamav/clamav:stable
+    container_name: clamav
+    restart: unless-stopped
+    volumes:
+      - clamav-db:/var/lib/clamav
+    networks:
+      - antivirus
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 240s
+
+volumes:
+  clamav-db:
+    name: sgc-clamav-db   # reutiliza las firmas ya descargadas
+
+networks:
+  antivirus:
+    name: antivirus
+    external: true
