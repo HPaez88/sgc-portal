@@ -9,6 +9,7 @@ import ModalBase from '../common/ModalBase';
 import EncargadosSGC from './EncargadosSGC';
 import AccesibilidadPanel from './AccesibilidadPanel';
 import AvisosCorreoPanel from './AvisosCorreoPanel';
+import BitacoraServidor from '../bitacora/BitacoraServidor';
 import FodaEditor from '../riesgos/FodaEditor';
 import { normalizarFoda } from '../../constants/foda';
 import { TITULOS, separarTitulo, unirTitulo, compararPorNombre } from '../../constants/titulos';
@@ -29,6 +30,7 @@ import {
   Trash2,
   Edit,
   Mail,
+  ServerCog,
   Phone,
   Search,
   CheckCircle2,
@@ -829,6 +831,19 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
             Avisos por correo
           </button>
         )}
+        {usuarioLogueado?.rol === 'Super Admin' && (
+          <button
+            onClick={() => setTabActiva('registro')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+              tabActiva === 'registro'
+                ? 'bg-[#0B192C] text-white shadow-sm'
+                : 'bg-white text-slate-600 hover:bg-slate-100/80 border border-slate-200/70'
+            }`}
+          >
+            <ServerCog size={15} />
+            Registro del servidor
+          </button>
+        )}
         <button
           onClick={() => { setTabActiva('areas'); setBusqueda(''); }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
@@ -907,6 +922,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
       {/* ============================================================ */}
       {tabActiva === 'accesibilidad' && <AccesibilidadPanel />}
       {tabActiva === 'avisos' && usuarioLogueado?.puede_restablecer && <AvisosCorreoPanel usuarios={usuariosList} />}
+      {tabActiva === 'registro' && usuarioLogueado?.rol === 'Super Admin' && <BitacoraServidor />}
 
       {tabActiva === 'areas' && (
         <div className="bg-white rounded-2xl shadow-card-subtle border border-slate-200/80 overflow-hidden space-y-4">

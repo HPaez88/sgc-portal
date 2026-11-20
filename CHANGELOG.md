@@ -2,6 +2,11 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-20T17:00Z · @claude-code · [UI] · Registro del servidor pasa a Configuración
+- Nueva pestaña Configuración → "Registro del servidor" (solo Super Admin). Se quitó de la Bitácora de Control Documental, que sigue para todos los administradores.
+- Archivos: frontend/src/components/settings/SettingsView.jsx, frontend/src/components/bitacora/BitacoraView.jsx
+- Deploy: SÍ
+
 ## 2026-11-20T16:00Z · @claude-code · [UI] · Registro del servidor apilado por día/mes/año, paginado y solo para el Super Admin
 - El registro del servidor (cambios de datos) solo lo ve el Super Admin (pantalla y servidor: `SOLO_SUPER_ADMIN`). La bitácora de movimientos sigue para todos los administradores.
 - Se apila: días del mes en curso; los meses cerrados del año se juntan por mes; los años anteriores, por año. Cada periodo muestra sus totales y al abrirlo trae sus cambios en páginas de 25.
