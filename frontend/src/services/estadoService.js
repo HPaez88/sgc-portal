@@ -16,6 +16,31 @@ const REINTENTO_MS = 15000;
 // parpadear el indicador de sincronización sin aportar datos del SGC.
 const CLAVES_LOCALES = new Set(['sgc-token', 'sgc-usuario-sesion', 'sgc-sesion-activa', 'sgc-usuario-activo', 'sgc-usuarios-actividad']);
 
+// Evidencia que solo crece (el servidor también lo hace así, ver solo_agregar en backend/services/fusion_estado.py).
+const CLAVES_SOLO_AGREGAR = new Set(['sgc-bitacora-movimientos']);
+
+/** Une listas de registros por id (la primera gana) y las ordena del más reciente al más antiguo. */
+export function unirPorId(...listas) {
+  const porId = new Map();
+  for (const lista of listas) {
+    if (!Array.isArray(lista)) continue;
+    for (const x of lista) if (x && typeof x === 'object' && x.id != null && !porId.has(String(x.id))) porId.set(String(x.id), x);
+  }
+  return [...porId.values()].sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+}
+
+// Copias que este equipo tiene de una clave: la caché y los respaldos que se guardan al llegar una versión distinta.
+function copiasLocales(clave) {
+  const copias = [leerCache(clave)];
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith(`respaldo:${clave}:`)) copias.push(JSON.parse(window.localStorage.getItem(k)));
+    }
+  } catch { /* sin almacenamiento */ }
+  return copias;
+}
+
 export const esClaveSincronizada = (clave) => typeof clave === 'string' && clave.startsWith('sgc-') && !CLAVES_LOCALES.has(clave);
 
 let servidor = null;            // Map clave -> valor (lo último conocido del servidor); null = aún no cargado
@@ -127,7 +152,15 @@ export async function cargarDesdeServidor() {
   servidor = new Map(Object.entries(r.data || {}).map(([k, v]) => [k, v.valor]));
   for (const [clave, fns] of setters) {
     if (servidor.has(clave)) {
-      const valor = servidor.get(clave);
+      let valor = servidor.get(clave);
+      if (CLAVES_SOLO_AGREGAR.has(clave)) {
+        // Lo que este equipo registró y el servidor no tiene (p. ej. movimientos perdidos antes del 2026-11-20) se devuelve.
+        const unido = unirPorId(valor, ...copiasLocales(clave));
+        if (unido.length > (Array.isArray(valor) ? valor.length : 0)) {
+          valor = unido;
+          guardar(clave, unido);
+        }
+      }
       const local = leerCache(clave);
       // Red de seguridad: si este equipo tenía algo distinto, se conserva una copia local antes de que mande el servidor.
       if (local !== undefined && JSON.stringify(local) !== JSON.stringify(valor)) {

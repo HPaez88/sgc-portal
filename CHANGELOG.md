@@ -2,6 +2,12 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-20T22:00Z · @claude-code · [FIX] · Bitácora: cada equipo devuelve los movimientos que el servidor perdió
+- Lo registrado después del último respaldo (23:25) no estaba en ningún respaldo. Al iniciar sesión, el portal une la bitácora del servidor con la copia y los respaldos locales del navegador (`respaldo:sgc-bitacora-movimientos:*`) y sube lo que falte; el servidor solo agrega.
+- Prueba: services/__tests__/unirPorId.test.js; probado de punta a punta en copia local.
+- Archivos: frontend/src/services/estadoService.js
+- Deploy: SÍ
+
 ## 2026-11-20T21:00Z · @claude-code · [FIX] · Bitácora de movimientos: ya no se pierden registros; recuperados 89 de los respaldos
 - Causa: el movimiento de "inicio/cierre de sesión" se anotaba sobre la copia vieja del navegador antes de cargar la del servidor; al guardar, la fusión a 3 vías tomaba lo que faltaba como borrado. La bitácora se recortó varias veces (p. ej. 95 → 26 → 17).
 - Servidor: la bitácora es evidencia y solo se le agregan registros (`solo_agregar`, CLAVES_SOLO_AGREGAR en routers/estado.py); nada se modifica ni se borra aunque llegue una copia recortada. Pruebas en test_fusion_estado.py y test_estado.py.
