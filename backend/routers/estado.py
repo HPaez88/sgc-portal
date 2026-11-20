@@ -12,13 +12,14 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from backend import auth
 from backend.auth import usuario_actual
 from backend.database import get_session
 from backend.models import BitacoraServidor, EstadoPortal, Usuario
 from backend.services import auditoria
+from backend.services.bitacora_grupos import DESFASE, agrupar, rango_utc
 from backend.services.flujo_reglas import CLAVES_CON_REGLAS, CLAVE_FOLIOS, validar_cambio
 from backend.services.fusion_estado import fusionar, fusionar_sin_base
 from backend.tenant import get_organismo_id
@@ -49,19 +50,48 @@ def obtener_todo(session: Session = Depends(get_session), organismo_id: int = De
     return {f.clave: {"valor": json.loads(f.valor), "actualizado": f.actualizado, "actualizado_por": f.actualizado_por} for f in filas}
 
 
+POR_PAGINA_BITACORA = 25
+SOLO_SUPER_ADMIN = auth.requiere_rol("Super Admin")  # decisión de @human 2026-11-20: el registro del servidor solo lo ve él
+
+
+def _q_bitacora(usuario, clave: str):
+    q = select(BitacoraServidor).where(BitacoraServidor.organismo_id == usuario.organismo_id)
+    return q.where(BitacoraServidor.clave == clave) if clave else q
+
+
+@router.get("/bitacora/servidor/grupos")
+def bitacora_servidor_grupos(clave: str = "", session: Session = Depends(get_session), usuario: Usuario = Depends(SOLO_SUPER_ADMIN)):
+    """Totales por día (mes en curso), por mes (meses cerrados del año) y por año (años anteriores)."""
+    # ponytail: se agrupa en Python leyendo 4 columnas; si el registro pasa de ~500 mil filas, agrupar en SQL.
+    q = select(BitacoraServidor.fecha, BitacoraServidor.agregados, BitacoraServidor.modificados, BitacoraServidor.eliminados)         .where(BitacoraServidor.organismo_id == usuario.organismo_id)
+    if clave:
+        q = q.where(BitacoraServidor.clave == clave)
+    filas = session.exec(q.order_by(BitacoraServidor.fecha.desc())).all()
+    return agrupar(filas, (datetime.utcnow() - DESFASE).date())
+
+
 @router.get("/bitacora/servidor")
 def bitacora_servidor(
     clave: str = "",
-    limite: int = 300,
+    grupo: str = "",
+    pagina: int = 1,
+    por_pagina: int = POR_PAGINA_BITACORA,
     session: Session = Depends(get_session),
-    usuario: Usuario = Depends(auth.requiere_rol(*auth.ROLES_ADMIN)),
+    usuario: Usuario = Depends(SOLO_SUPER_ADMIN),
 ):
-    """Registro de cambios de datos (solo administradores del SGC)."""
-    q = select(BitacoraServidor).where(BitacoraServidor.organismo_id == usuario.organismo_id)
-    if clave:
-        q = q.where(BitacoraServidor.clave == clave)
-    filas = session.exec(q.order_by(BitacoraServidor.fecha.desc()).limit(max(1, min(limite, 1000)))).all()
-    return [{**f.model_dump(exclude={"detalle"}), "detalle": json.loads(f.detalle or "[]")} for f in filas]
+    """Registro de cambios de datos, paginado; con grupo ('aaaa-mm-dd', 'aaaa-mm' o 'aaaa') solo ese periodo."""
+    q = _q_bitacora(usuario, clave)
+    if grupo:
+        try:
+            desde, hasta = rango_utc(grupo)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=422, detail="Periodo inválido.")
+        q = q.where(BitacoraServidor.fecha >= desde, BitacoraServidor.fecha < hasta)
+    por_pagina = max(1, min(por_pagina, 100))
+    total = session.exec(select(func.count()).select_from(q.subquery())).one()
+    filas = session.exec(q.order_by(BitacoraServidor.fecha.desc()).offset((max(1, pagina) - 1) * por_pagina).limit(por_pagina)).all()
+    return {"total": total, "pagina": max(1, pagina), "por_pagina": por_pagina,
+            "filas": [{**f.model_dump(exclude={"detalle"}), "detalle": json.loads(f.detalle or "[]")} for f in filas]}
 
 
 @router.get("/{clave}")

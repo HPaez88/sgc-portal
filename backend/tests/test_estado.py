@@ -75,8 +75,14 @@ def test_bitacora_del_servidor_registra_cambios(cliente, cab):
     assert cliente.put(url, headers=cab, json={"valor": nuevo, "base": base, "tiene_base": True}).status_code == 200
     # guardar lo mismo no ensucia la bitácora
     cliente.put(url, headers=cab, json={"valor": nuevo, "base": nuevo, "tiene_base": True})
-    filas = cliente.get("/api/v1/estado/bitacora/servidor?clave=sgc-prueba-bitacora", headers=cab).json()
+    r = cliente.get("/api/v1/estado/bitacora/servidor?clave=sgc-prueba-bitacora&por_pagina=1", headers=cab).json()
+    assert r["total"] == 2 and len(r["filas"]) == 1   # paginado
+    filas = cliente.get("/api/v1/estado/bitacora/servidor?clave=sgc-prueba-bitacora", headers=cab).json()["filas"]
     assert len(filas) == 2
+    grupos = cliente.get("/api/v1/estado/bitacora/servidor/grupos?clave=sgc-prueba-bitacora", headers=cab).json()
+    assert sum(g["cambios"] for g in grupos) == 2
+    desde = cliente.get(f"/api/v1/estado/bitacora/servidor?clave=sgc-prueba-bitacora&grupo={grupos[0]['id']}", headers=cab).json()
+    assert desde["total"] == grupos[0]["cambios"]
     assert filas[0]["modificados"] == 1 and filas[0]["detalle"][0]["campos"] == ["estado"]
     assert filas[1]["agregados"] == 1
     assert cliente.get("/api/v1/estado/bitacora/servidor", headers={"Authorization": "Bearer x"}).status_code == 401

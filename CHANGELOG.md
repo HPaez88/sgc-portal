@@ -2,6 +2,14 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-20T16:00Z · @claude-code · [UI] · Registro del servidor apilado por día/mes/año, paginado y solo para el Super Admin
+- El registro del servidor (cambios de datos) solo lo ve el Super Admin (pantalla y servidor: `SOLO_SUPER_ADMIN`). La bitácora de movimientos sigue para todos los administradores.
+- Se apila: días del mes en curso; los meses cerrados del año se juntan por mes; los años anteriores, por año. Cada periodo muestra sus totales y al abrirlo trae sus cambios en páginas de 25.
+- Nuevo componente común `Paginacion` (regla del portal: tablas grandes siempre paginadas, sin scroll infinito).
+- Servidor: GET /api/v1/estado/bitacora/servidor/grupos y /bitacora/servidor?grupo=&pagina=&por_pagina= ({total, filas}).
+- Archivos: backend/services/bitacora_grupos.py (+test), backend/routers/estado.py, frontend/src/components/bitacora/BitacoraServidor.jsx, BitacoraView.jsx, components/common/Paginacion.jsx (+test)
+- Deploy: SÍ
+
 ## 2026-11-19T21:00Z · @claude-code · [FEATURE] · Avisos por correo: plazos editables y acceso solo Super Admin + cuenta autorizada
 - Configuración → "Avisos por correo" solo la ven y la cambian el Super Admin y la cuenta autorizada (gescobar); el servidor rechaza cambios de cualquier otro (`CLAVES_AVISOS` en flujo_reglas).
 - Nuevos parámetros editables (clave sgc-config-avisos-parametros), con los valores acordados como base:
