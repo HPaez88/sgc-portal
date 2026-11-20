@@ -2,6 +2,14 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-20T21:00Z · @claude-code · [FIX] · Bitácora de movimientos: ya no se pierden registros; recuperados 89 de los respaldos
+- Causa: el movimiento de "inicio/cierre de sesión" se anotaba sobre la copia vieja del navegador antes de cargar la del servidor; al guardar, la fusión a 3 vías tomaba lo que faltaba como borrado. La bitácora se recortó varias veces (p. ej. 95 → 26 → 17).
+- Servidor: la bitácora es evidencia y solo se le agregan registros (`solo_agregar`, CLAVES_SOLO_AGREGAR en routers/estado.py); nada se modifica ni se borra aunque llegue una copia recortada. Pruebas en test_fusion_estado.py y test_estado.py.
+- Recuperación: backend/scripts/recuperar_bitacora.py une los movimientos de los respaldos diarios (11 al 20 de noviembre) sin borrar nada.
+- Pantalla: al abrir otro día ya no se cierra y regresa al de hoy (se reiniciaba con cada actualización de usuarios en línea).
+- Archivos: backend/services/fusion_estado.py, backend/routers/estado.py, backend/scripts/recuperar_bitacora.py, frontend/src/components/bitacora/PeriodosBitacora.jsx
+- Deploy: SÍ
+
 ## 2026-11-20T18:00Z · @claude-code · [UI] · Bitácora de movimientos en Configuración, apilada por día/mes/año
 - La Bitácora de Movimientos pasa de Control Documental a Configuración → "Bitácora" (Super Admin y Admin).
 - Ya no es una lista de miles de renglones: se apila en días del mes en curso, meses cerrados del año y años anteriores; cada periodo se abre con 25 movimientos por página y la lista de periodos también se pagina. Filtros, indicadores, exportación CSV/PDF y detalle se conservan.

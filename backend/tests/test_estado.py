@@ -420,3 +420,13 @@ def test_avisos_por_correo_solo_super_admin_y_cuenta_autorizada():
         assert validar_cambio(clave, {}, nuevo, sa, []) is None
         assert validar_cambio(clave, {}, nuevo, gladys, []) is None
         assert validar_cambio(clave, nuevo, nuevo, adm, []) is None  # sin cambios: no estorba al resto
+
+
+def test_bitacora_de_movimientos_no_se_recorta_con_copia_vieja(cliente, cab):
+    url = "/api/v1/estado/sgc-bitacora-movimientos"
+    dos = [{"id": "M2", "timestamp": "2026-11-19T10:00:00Z"}, {"id": "M1", "timestamp": "2026-11-18T10:00:00Z"}]
+    cliente.put(url, headers=cab, json={"valor": dos})
+    # navegador con copia vieja (solo M1) agrega su movimiento: base = lo que tiene el servidor
+    r = cliente.put(url, headers=cab, json={"valor": [{"id": "M3", "timestamp": "2026-11-20T10:00:00Z"}, dos[1]], "base": dos, "tiene_base": True})
+    assert r.status_code == 200
+    assert [x["id"] for x in cliente.get(url, headers=cab).json()["valor"]][:3] == ["M3", "M2", "M1"]

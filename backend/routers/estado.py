@@ -21,7 +21,7 @@ from backend.models import BitacoraServidor, EstadoPortal, Usuario
 from backend.services import auditoria
 from backend.services.bitacora_grupos import DESFASE, agrupar, rango_utc
 from backend.services.flujo_reglas import CLAVES_CON_REGLAS, CLAVE_FOLIOS, validar_cambio
-from backend.services.fusion_estado import fusionar, fusionar_sin_base
+from backend.services.fusion_estado import fusionar, fusionar_sin_base, solo_agregar
 from backend.tenant import get_organismo_id
 
 router = APIRouter(prefix="/api/v1/estado", tags=["Estado del portal"])
@@ -50,6 +50,7 @@ def obtener_todo(session: Session = Depends(get_session), organismo_id: int = De
     return {f.clave: {"valor": json.loads(f.valor), "actualizado": f.actualizado, "actualizado_por": f.actualizado_por} for f in filas}
 
 
+CLAVES_SOLO_AGREGAR = frozenset({"sgc-bitacora-movimientos"})
 POR_PAGINA_BITACORA = 25
 SOLO_SUPER_ADMIN = auth.requiere_rol("Super Admin")  # decisión de @human 2026-11-20: el registro del servidor solo lo ve él
 
@@ -125,6 +126,8 @@ def guardar(
     else:
         actual = json.loads(f.valor)
         valor = fusionar(datos.base, datos.valor, actual) if datos.tiene_base else fusionar_sin_base(datos.valor, actual)
+        if clave in CLAVES_SOLO_AGREGAR:  # evidencia: nunca se recorta (2026-11-20, se perdían movimientos por copias viejas)
+            valor = solo_agregar(actual, datos.valor)
     # Reglas de negocio de AC, PM y RC (transiciones, rol, área, evidencia, folios): antes solo las aplicaba la pantalla.
     if clave in CLAVES_CON_REGLAS or clave == CLAVE_FOLIOS or clave.startswith("sgc-config-"):
         areas = session.exec(select(EstadoPortal).where(EstadoPortal.organismo_id == organismo_id,

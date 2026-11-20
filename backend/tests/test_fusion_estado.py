@@ -30,3 +30,15 @@ def test_diccionarios_por_clave():
 
 def test_sin_base_no_borra_registros_ajenos():
     assert fusionar_sin_base([{"id": 1, "x": 2}], [{"id": 1, "x": 1}, {"id": 2}]) == [{"id": 1, "x": 2}, {"id": 2}]
+
+
+def test_bitacora_solo_agrega_nunca_borra():
+    from backend.services.fusion_estado import solo_agregar
+    actual = [{"id": "B", "timestamp": "2026-11-19T10:00:00Z"}, {"id": "A", "timestamp": "2026-11-18T10:00:00Z"}]
+    # un navegador con copia vieja manda solo su movimiento nuevo + "A": "B" no se pierde
+    nuevo = [{"id": "C", "timestamp": "2026-11-20T10:00:00Z"}, {"id": "A", "timestamp": "2026-11-18T10:00:00Z", "descripcion": "alterada"}]
+    r = solo_agregar(actual, nuevo)
+    assert [x["id"] for x in r] == ["C", "B", "A"]
+    assert "descripcion" not in r[2]          # lo ya registrado no se modifica
+    assert solo_agregar(actual, []) == actual  # mandar vacío no borra nada
+    assert solo_agregar(None, nuevo)[0]["id"] == "C"

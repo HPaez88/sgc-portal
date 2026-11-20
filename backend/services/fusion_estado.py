@@ -57,3 +57,13 @@ def fusionar_sin_base(mio: Any, suyo: Any) -> Any:
     if isinstance(mio, dict) and isinstance(suyo, dict):
         return {**suyo, **mio}
     return mio
+
+
+def solo_agregar(actual, nuevo) -> list:
+    """Secciones que son evidencia (bitácora de movimientos): solo se agregan registros nuevos por id; lo ya
+    registrado no se modifica ni se borra, aunque un navegador mande una copia vieja o recortada.
+    Orden: más reciente primero (timestamp)."""
+    base = [x for x in (actual if isinstance(actual, list) else []) if isinstance(x, dict)]
+    ids = {str(x.get("id")) for x in base}
+    nuevos = [x for x in (nuevo if isinstance(nuevo, list) else []) if isinstance(x, dict) and x.get("id") is not None and str(x.get("id")) not in ids]
+    return sorted(base + nuevos, key=lambda x: str(x.get("timestamp") or ""), reverse=True)

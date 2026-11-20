@@ -1,6 +1,6 @@
 // Bitácora apilada por periodo: días del mes en curso, meses cerrados y años anteriores. Cada periodo se abre
 // y muestra sus movimientos de 25 en 25; la lista de periodos también se pagina (nada de scroll infinito).
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { History, ChevronDown, ChevronRight } from 'lucide-react';
 import Paginacion from '../common/Paginacion';
 import { agruparPorPeriodo } from '../../constants/periodos';
@@ -10,8 +10,9 @@ const TIPO = { dia: 'Día', mes: 'Mes', anio: 'Año' };
 const FONDO = { dia: 'bg-white', mes: 'bg-slate-50', anio: 'bg-slate-100' };
 
 function Periodo({ grupo, abierto, onAlternar, renderFila }) {
-  const [pagina, setPagina] = useState(1);
-  useEffect(() => setPagina(1), [grupo.items.length]);
+  const [paginaElegida, setPagina] = useState(1);
+  // La lista se recalcula seguido (presencia de usuarios); no se reinicia, solo se ajusta si la página ya no existe.
+  const pagina = Math.min(paginaElegida, Math.max(1, Math.ceil(grupo.items.length / POR_PAGINA)));
   const eliminaciones = grupo.items.filter((m) => m.accion === 'ELIMINACION').length;
   const visibles = grupo.items.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
   return (
@@ -55,10 +56,10 @@ function Periodo({ grupo, abierto, onAlternar, renderFila }) {
 
 export default function PeriodosBitacora({ movimientos, renderFila }) {
   const grupos = useMemo(() => agruparPorPeriodo(movimientos, (m) => m.timestamp), [movimientos]);
-  const [abierto, setAbierto] = useState(null);
-  const [pagina, setPagina] = useState(1);
-  useEffect(() => { setPagina(1); setAbierto(null); }, [movimientos]);
-  const actual = abierto ?? grupos[0]?.id; // el periodo más reciente abierto
+  const [abierto, setAbierto] = useState(null);  // null = el más reciente; '' = todos cerrados
+  const [paginaElegida, setPagina] = useState(1);
+  const pagina = Math.min(paginaElegida, Math.max(1, Math.ceil(grupos.length / POR_PAGINA)));
+  const actual = abierto === null || (abierto && !grupos.some((g) => g.id === abierto)) ? grupos[0]?.id : abierto;
   const visibles = grupos.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   if (!grupos.length) {
