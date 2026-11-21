@@ -134,6 +134,27 @@ def _mensaje_renovacion(x: dict) -> str:
             "o \"Actualizar\" para modificarlo antes de enviarlo. Una vez aceptado por el SGC, el proyecto queda cerrado para cambios.")
 
 
+def _unidades(areas: list, direcciones: list) -> list[str]:
+    """Las mismas unidades que capturan matriz en el portal (unidadesDeRiesgo): direcciones, subdirecciones y áreas."""
+    nombres = []
+    for d in direcciones:
+        nombres += [d.get("nombre")] + [sd.get("nombre") for sd in d.get("subdirecciones") or []]
+    nombres += [a.get("nombre") for a in areas]
+    return [n for n in dict.fromkeys(nombres) if n]
+
+
+def _mensaje_matriz(x: dict) -> str:
+    limite = x["fecha_limite"].strftime("%d/%m/%Y")
+    anio = x["periodo"]
+    if x["etapa"] == "AVISO_INCUMPLIMIENTO":
+        return (f"La fecha límite para entregar la matriz de riesgos y oportunidades {anio} (OOMRSC-37) fue el {limite} y su área aún no la envía.\n"
+                "Les pedimos capturarla y enviarla al SGC a la brevedad.")
+    cuando = f"hoy {limite}" if x["etapa"] == "VENCE_HOY" else f"el {limite} (faltan {x['etapa'].split('_')[-1]} días)"
+    return (f"La matriz de riesgos y oportunidades {anio} (OOMRSC-37) de su área debe enviarse al SGC a más tardar {cuando}.\n\n"
+            f"En el portal, en Matriz de Riesgos → Matriz por área, elijan {anio}. Con \"Traer de {int(anio) - 1}\" pueden partir de los "
+            "riesgos del año anterior y volver a evaluarlos; al terminar, envíen la matriz a revisión del SGC.")
+
+
 def parametros(s: Session) -> dict:
     return cal.normalizar(_estado(s, CLAVE_PARAMETROS, {}))
 
@@ -178,6 +199,11 @@ def calcular(s: Session, hoy: date, modo: str) -> tuple[list, list]:
         pendientes.append({"tipo": "RENOVACION", "registro": x["unidad"], "registro_id": "", "etapa": x["etapa"], "referencia": x["periodo"],
                            "para": _contactos(x["unidad"], areas, direcciones), "cc": motor.admins_con_tema(admins, prefs, "renovacion"),
                            "mensaje": _mensaje_renovacion(x), "unidad": x["unidad"]})
+    # Matriz de riesgos del año siguiente: solo si el SGC capturó la fecha límite (Configuración → Avisos por correo).
+    for x in motor.avisos_matrices(_unidades(areas, direcciones), _estado(s, "sgc-matrices-riesgos", []), hoy, hechas("MATRIZ", False), params):
+        pendientes.append({"tipo": "MATRIZ", "registro": x["unidad"], "registro_id": "", "etapa": x["etapa"], "referencia": x["periodo"],
+                           "para": _contactos(x["unidad"], areas, direcciones), "cc": cc_incumplimiento if x["etapa"] == "AVISO_INCUMPLIMIENTO" else [],
+                           "mensaje": _mensaje_matriz(x), "unidad": x["unidad"], "asunto": f"Matriz de riesgos y oportunidades {x['periodo']}"})
     return pendientes, motor.admins_con_tema(admins, prefs, "resumen")
 
 
@@ -217,7 +243,7 @@ def ejecutar(hoy: date | None = None) -> dict:
                 error = "Sin destinatario: revisa el correo del área en el catálogo o que la persona esté en Usuarios del sistema."
             elif modo == "activo":
                 try:
-                    asunto, cuerpo, texto = correo.plantilla_recordatorio(p["unidad"], f"{titulo(p['etapa'])} — {p['registro']}", p["mensaje"], "Sistema de Gestión de la Calidad", url)
+                    asunto, cuerpo, texto = correo.plantilla_recordatorio(p["unidad"], f"{titulo(p['etapa'])} — {p.get('asunto') or p['registro']}", p["mensaje"], "Sistema de Gestión de la Calidad", url)
                     correo.enviar(p["para"] + p["cc"], asunto, cuerpo, texto, responder_a=os.getenv("BUZON_CORREO"))
                     enviado = True
                 except HTTPException as ex:

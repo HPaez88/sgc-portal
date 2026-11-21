@@ -2,6 +2,15 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-21T21:00Z · @claude-code · [FEATURE] · Riesgos: fecha límite de entrega de la matriz y sus avisos (C23, parte 2)
+- Configuración → Avisos por correo: sección "Entrega de la matriz de riesgos y oportunidades" (año, fecha límite, recordatorios N días antes). Sin fecha no se avisa nada (no se supone una fecha).
+- Tarea diaria: tipo MATRIZ a las unidades (direcciones, subdirecciones y áreas) que no han enviado su matriz del año: recordatorios, día límite y aviso de incumplimiento (con copia a quien lo tenga activado). El mensaje invita a usar "Traer de AAAA".
+- Matriz del área: etiqueta "Fecha límite de entrega: dd/mm/aaaa · faltan N días".
+- Pruebas: test_avisos_calendario.py y test_avisos_motor.py.
+- Archivos: backend/services/avisos_calendario.py, avisos_motor.py, backend/tareas/avisos_diarios.py, frontend/src/components/settings/AvisosCorreoPanel.jsx, riesgos/MatrizArea.jsx, buzon/AvisosAutomaticos.jsx
+- Tareas STATE: C23 (parte 2 de 4)
+- Deploy: SÍ
+
 ## 2026-11-21T19:00Z · @claude-code · [FEATURE] · Riesgos: traer los registros del año anterior con reevaluación anual (C23, parte 1)
 - En la matriz del año nuevo (en captura), botón "Traer de AAAA (N)": ventana con los riesgos y oportunidades del año anterior del área (nivel, estado, plan); los cerrados como eficaces vienen sin marcar.
 - La copia lleva descripción, causa, consecuencia, controles, proceso y contexto; la evaluación se rehace (ISO 9001 §6.1) y la anterior queda como referencia en el formulario. Ligada al original (origen_id) y no se trae dos veces.

@@ -213,3 +213,26 @@ def avisos_auditor(registros: list, enviadas: set) -> list:
         out.append({"id": r.get("id"), "folio": r.get("folio_codigo") or r.get("folio") or "", "referencia": ref,
                     "auditor": r["auditor_email"], "area": r.get("area") or r.get("gerencia_coordinacion") or "", "registro": r})
     return out
+
+
+ESTADOS_MATRIZ_ENTREGADA = ("ENVIADA", "ACEPTADA")
+
+
+def avisos_matrices(unidades: list, matrices: list, hoy: date, enviadas: set, p: Optional[dict] = None) -> list[dict]:
+    """Unidades que aún no envían su matriz del año configurado. [{unidad, etapa, periodo, fecha_limite}].
+    enviadas = {(unidad, anio, etapa)}. Sin fecha límite capturada no hay avisos."""
+    params = p if p is not None else cal.normalizar({})
+    anio, limite = params["matrices"]["anio"], params["matrices"]["fecha_limite"]
+    etapas = cal.etapas_matriz(params)
+    if not etapas:
+        return []
+    estado = {str(x.get("id")): str(x.get("estado") or "BORRADOR") for x in matrices or [] if isinstance(x, dict)}
+    out = []
+    for u in sorted(set(unidades)):
+        if estado.get(f"{u}|{anio}") in ESTADOS_MATRIZ_ENTREGADA:
+            continue
+        hechas = {e for (x, a, e) in enviadas if x == u and a == str(anio)}
+        etapa = cal.etapa_de_hoy(etapas, hoy, hechas, params)
+        if etapa:
+            out.append({"unidad": u, "etapa": etapa, "periodo": str(anio), "fecha_limite": limite})
+    return out

@@ -4,6 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Send, CheckCircle2, Trash2, MessageSquareWarning, ShieldAlert, Lightbulb, Pencil, Eye, History } from 'lucide-react';
 import ModalBase from '../common/ModalBase';
+import { useLocalStorage } from '../../hooks';
 import FormRiesgo from './FormRiesgo';
 import PanelSugerenciasIA from './PanelSugerenciasIA';
 import ModalConfirmacionResponsabilidadHumana from '../common/ModalConfirmacionResponsabilidadHumana';
@@ -23,6 +24,10 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
   const [confirmar, setConfirmar] = useState(null); // 'enviar' | 'aceptar'
   const [aceptando, setAceptando] = useState(false);
   const items = riesgos.filter((r) => r.area === area && Number(r.anio) === Number(anio));
+  // Fecha límite de entrega (la fija el SGC en Configuración → Avisos por correo); solo se lee aquí.
+  const [paramsAvisos] = useLocalStorage('sgc-config-avisos-parametros', {});
+  const limite = paramsAvisos?.matrices?.fecha_limite && Number(paramsAvisos.matrices.anio) === Number(anio) ? paramsAvisos.matrices.fecha_limite : null;
+  const diasLimite = limite ? Math.round((new Date(`${limite}T00:00:00`) - new Date(new Date().toDateString())) / 86400000) : null;
   const estado = matriz?.estado || 'BORRADOR';
   // El área captura mientras la matriz está en captura u observada y el registro no tiene plan de mejora.
   // El SGC ajusta cualquier registro que no esté dictaminado. Si ya tiene plan de mejora, el ajuste mueve sus fechas,
@@ -140,6 +145,11 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
           <h3 className="text-lg font-extrabold text-slate-900">{area}</h3>
           <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-bold border ${ESTADOS_MATRIZ[estado].color}`}>{ESTADOS_MATRIZ[estado].label}</span>
           {matriz?.fecha_envio && <span className="ml-2 text-xs text-slate-500">Enviada {formatearFecha(matriz.fecha_envio)}</span>}
+          {limite && !['ENVIADA', 'ACEPTADA'].includes(estado) && (
+            <span className={`ml-2 inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-bold border ${diasLimite < 0 ? 'bg-rose-50 text-rose-800 border-rose-300' : diasLimite <= 5 ? 'bg-amber-50 text-amber-900 border-amber-300' : 'bg-sky-50 text-sky-900 border-sky-300'}`}>
+              Fecha límite de entrega: {formatearFecha(limite)} · {diasLimite < 0 ? `vencida hace ${-diasLimite} día(s)` : diasLimite === 0 ? 'hoy' : `faltan ${diasLimite} día(s)`}
+            </span>
+          )}
         </div>
         {editable && (
           <div className="flex flex-wrap gap-2 justify-end">

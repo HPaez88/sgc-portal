@@ -17,7 +17,7 @@ const ETAPAS = {
 const etapa = (e) => ETAPAS[e] || (/^RECORDATORIO_D\d+$/.test(e) ? `Recordatorio de entrega (día ${e.slice(14)})`
   : /^RECORDATORIO_\d+$/.test(e) ? `Recordatorio (${e.slice(13)} días)` : e);
 const referencia = (a) => (['AC', 'PM'].includes(a.tipo) ? `vence ${formatearFecha(a.referencia)}`
-  : a.tipo === 'AUDITOR' ? `asignado ${formatearFecha(a.referencia)}` : `periodo ${a.referencia}`);
+  : a.tipo === 'AUDITOR' ? `asignado ${formatearFecha(a.referencia)}` : a.tipo === 'MATRIZ' ? `matriz de riesgos ${a.referencia}` : `periodo ${a.referencia}`);
 const FILTROS = [['', 'Todos'], ['OFICIO_EXHORTO', 'Oficios por emitir'], ['AVISO_INCUMPLIMIENTO', 'Incumplimientos'], ['AC', 'Acciones'], ['INDICADORES', 'Indicadores']];
 
 export default function AvisosAutomaticos() {

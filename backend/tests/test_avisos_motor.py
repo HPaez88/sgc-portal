@@ -113,3 +113,15 @@ def test_planes_de_mejora_usan_area_o_gerencia():
     pm = {"id": 3, "folio_codigo": "OM#2/2026", "gerencia_coordinacion": "Jurídico", "estado": "EN_SEGUIMIENTO", "fecha_seguimiento": "2026-11-30"}
     r = m.avisos_acciones([pm], date(2026, 11, 20), date(2026, 11, 14), set())
     assert r[0]["area"] == "Jurídico"
+
+
+def test_avisos_de_matriz_solo_a_unidades_que_no_la_enviaron():
+    from backend.services import avisos_calendario as cal
+    p = cal.normalizar({"matrices": {"anio": 2027, "fecha_limite": "2026-12-15", "recordatorios_antes": [15, 5]}})
+    unidades = ["Plantas", "Jurídico", "Comercial"]
+    matrices = [{"id": "Plantas|2027", "estado": "ENVIADA"}, {"id": "Jurídico|2027", "estado": "OBSERVADA"}]
+    r = m.avisos_matrices(unidades, matrices, date(2026, 11, 30), set(), p)
+    assert [(x["unidad"], x["etapa"]) for x in r] == [("Comercial", "RECORDATORIO_15"), ("Jurídico", "RECORDATORIO_15")]
+    assert r[0]["periodo"] == "2027"
+    assert m.avisos_matrices(unidades, matrices, date(2026, 11, 30), {("Comercial", "2027", "RECORDATORIO_15")}, p)[0]["unidad"] == "Jurídico"
+    assert m.avisos_matrices(unidades, matrices, date(2026, 11, 30), set(), cal.normalizar({})) == []

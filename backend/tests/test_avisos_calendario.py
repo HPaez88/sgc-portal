@@ -78,3 +78,19 @@ def test_parametros_invalidos_vuelven_al_valor_base():
     assert p["registros"]["dias_aviso_despues"] == 1
     assert p["indicadores"]["AVISO"] == 1
     assert p["feriados"] == frozenset()
+
+
+def test_matriz_sin_fecha_limite_no_genera_avisos():
+    p = cal.normalizar({})
+    assert p["matrices"]["fecha_limite"] is None and cal.etapas_matriz(p) == []
+
+
+def test_etapas_de_la_matriz_con_fecha_limite():
+    p = cal.normalizar({"matrices": {"anio": 2027, "fecha_limite": "2026-12-15", "recordatorios_antes": [15, 5]}})
+    e = dict(cal.etapas_matriz(p))
+    assert e["RECORDATORIO_15"] == date(2026, 11, 30)
+    assert e["RECORDATORIO_5"] == date(2026, 12, 10)
+    assert e["VENCE_HOY"] == date(2026, 12, 15)
+    assert e["AVISO_INCUMPLIMIENTO"] == date(2026, 12, 16)
+    # fecha inválida o año fuera de rango: sin avisos
+    assert cal.etapas_matriz(cal.normalizar({"matrices": {"anio": 2027, "fecha_limite": "15/12/2026"}})) == []

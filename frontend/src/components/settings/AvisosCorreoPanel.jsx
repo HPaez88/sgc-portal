@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { useLocalStorage } from '../../hooks';
 import CampoFecha from '../common/CampoFecha';
-import { CAMPO_TEXTO, Seccion, Sub } from '../common/estilosCampos';
+import { CAMPO_LISTA, CAMPO_TEXTO, Seccion, Sub } from '../common/estilosCampos';
 import { formatearFecha } from '../../constants/workflow';
 
 const TEMAS = [
@@ -20,6 +20,7 @@ const TEMAS = [
 const BASE = {
   registros: { recordatorios_antes: [15, 10, 5], vence_hoy: true, dias_aviso_despues: 1, dias_oficio_despues_aviso: 5 },
   indicadores: { AVISO: 1, RECORDATORIO: 5, ULTIMO_RECORDATORIO: 10, AVISO_INCUMPLIMIENTO: 11, OFICIO_EXHORTO: 16, recordatorios_extra: [] },
+  matrices: { anio: null, fecha_limite: '', recordatorios_antes: [15, 5] },
   feriados: [],
 };
 const DIAS_IND = [
@@ -102,6 +103,9 @@ export default function AvisosCorreoPanel({ usuarios = [] }) {
   const cambiarFeriados = (lista) => setGuardados((prev) => ({ ...(prev || {}), feriados: [...new Set(lista)].sort() }));
   const antes = [...(reg.recordatorios_antes || [])].sort((a, b) => b - a);
   const extra = [...(ind.recordatorios_extra || [])].sort((a, b) => a - b);
+  const mat = { ...BASE.matrices, ...(g.matrices || {}) };
+  const anioMatriz = mat.anio || new Date().getFullYear() + 1;
+  const antesMatriz = [...(mat.recordatorios_antes || [])].sort((a, b) => b - a);
 
   return (
     <div className="space-y-5">
@@ -181,7 +185,33 @@ export default function AvisosCorreoPanel({ usuarios = [] }) {
           onCambiar={(l) => cambiar('indicadores', 'recordatorios_extra', l)} />
       </Seccion>
 
-      <Seccion n={5} titulo="Días feriados" ayuda="En estos días no sale ningún correo y los plazos se recorren al día hábil." color="bg-indigo-700">
+      <Seccion n={5} titulo="Entrega de la matriz de riesgos y oportunidades" ayuda="Avisa a las unidades que aún no envían su matriz OOMRSC-37 del año siguiente. Sin fecha límite no se envía nada." color="bg-rose-800">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="block text-xs font-bold text-slate-800 mb-1">Matriz del año</span>
+            <select value={anioMatriz} onChange={(e) => cambiar('matrices', 'anio', Number(e.target.value))} className={CAMPO_LISTA}>
+              {[0, 1, 2].map((n) => new Date().getFullYear() + n).map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="block text-xs font-bold text-slate-800 mb-1">Fecha límite de entrega</span>
+            <CampoFecha value={mat.fecha_limite || ''} onChange={(e) => setGuardados((prev) => {
+              const p = prev && typeof prev === 'object' ? prev : {};
+              return { ...p, matrices: { ...BASE.matrices, ...(p.matrices || {}), anio: anioMatriz, fecha_limite: e.target.value } };
+            })} className={CAMPO_TEXTO} />
+            <span className="block text-xs text-slate-500 mt-1">{mat.fecha_limite ? `Se avisa ${antesMatriz.map((n) => `${n}`).join(', ')} días antes, el día límite y al día siguiente si no la enviaron.` : 'Sin fecha: no hay avisos de matriz.'}</span>
+          </label>
+        </div>
+        <Sub titulo="Recordatorios antes de la fecha límite" />
+        <ListaDias valores={antesMatriz} min={1} max={60} texto={(n) => `${n} días antes`} etiquetaAgregar="Agregar recordatorio"
+          onCambiar={(l) => cambiar('matrices', 'recordatorios_antes', l)} />
+        {mat.fecha_limite && (
+          <button type="button" onClick={() => cambiar('matrices', 'fecha_limite', '')}
+            className="text-sm font-semibold text-rose-800 underline">Quitar la fecha límite (detener estos avisos)</button>
+        )}
+      </Seccion>
+
+      <Seccion n={6} titulo="Días feriados" ayuda="En estos días no sale ningún correo y los plazos se recorren al día hábil." color="bg-indigo-700">
         <ul className="flex flex-wrap gap-2">
           {feriados.length === 0 && <li className="text-sm text-slate-500">No hay feriados capturados.</li>}
           {feriados.map((f) => (
