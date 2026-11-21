@@ -1,5 +1,5 @@
 // Paginación común para tablas grandes (regla del portal: nada de scroll vertical infinito).
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Páginas a mostrar: primera, última y dos alrededor de la actual, con "…" entre huecos.
@@ -8,6 +8,18 @@ export const paginasVisibles = (actual, totalPaginas) => {
   const lista = [...set].sort((a, b) => a - b);
   return lista.flatMap((n, i) => (i > 0 && n - lista[i - 1] > 1 ? ['…', n] : [n]));
 };
+
+export const POR_PAGINA = 25;
+
+/** Página visible de una lista. Vuelve a la página 1 cuando cambia el total (p. ej. al filtrar). */
+export function usePaginado(lista, porPagina = POR_PAGINA) {
+  const total = Array.isArray(lista) ? lista.length : 0;
+  const [estado, setEstado] = useState({ pagina: 1, total });
+  const pagina = estado.total === total ? Math.min(estado.pagina, Math.max(1, Math.ceil(total / porPagina))) : 1;
+  const visibles = (lista || []).slice((pagina - 1) * porPagina, pagina * porPagina);
+  const setPagina = (n) => setEstado({ pagina: n, total });
+  return { pagina, setPagina, visibles, total, porPagina, inicio: (pagina - 1) * porPagina };
+}
 
 export default function Paginacion({ pagina, total, porPagina, onCambiar, etiqueta = 'registros' }) {
   const totalPaginas = Math.max(1, Math.ceil(total / porPagina));

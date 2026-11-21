@@ -9,6 +9,7 @@ import { useToast } from '../common/Toast';
 import { getVencimiento, formatearFecha, esAdminSGC } from '../../constants/workflow';
 import { getEstadoLabel } from '../../constants';
 import { ESCALAS, ESTADOS_RIESGO, nivelDe, puntaje, estadoRiesgo, sugerirEficacia, actividadesPM } from '../../constants/riesgos';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 function Chips({ titulo, opciones, valor, onElegir }) {
   return (
@@ -76,6 +77,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
 
   const enAvance = todas.find((f) => f.r.id === avance) || null;
 
+  const pag = usePaginado(filas);
   return (
     <div className="space-y-3">
       {enCaptura > 0 && (
@@ -114,7 +116,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
                 ) : <p className="text-sm text-slate-500">No hay registros con este filtro.</p>}
               </td></tr>
             )}
-            {filas.map(({ r, pm, acts, hechas, estado, venc }) => (
+            {pag.visibles.map(({ r, pm, acts, hechas, estado, venc }) => (
               <tr key={r.id} className={estado === 'PENDIENTE_DICTAMEN' ? 'bg-violet-50/50' : ''}>
                 <td className="p-3"><span className={`inline-block w-14 text-center px-1.5 py-0.5 rounded-md font-black border ${nivelDe(r)?.suave || ''}`}>{puntaje(r)}<span className="block text-[11px] font-bold">{nivelDe(r)?.nivel || ''}</span></span></td>
                 <td className="p-3 max-w-md"><span className="text-[11px] font-bold uppercase text-slate-500">{r.tipo}</span><br /><span className="text-slate-900 font-medium">{r.descripcion}</span></td>
@@ -155,6 +157,7 @@ export default function SeguimientoRiesgos({ items, setRiesgos, planesMejora, us
           </tbody>
         </table>
       </div>
+      <div className="mt-3"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="riesgos" /></div>
 
       {enAvance && (
         <ModalBase isOpen onClose={() => setAvance(null)} size="xl" icono={<ListChecks size={20} />} bodyClassName="p-5 space-y-4 bg-slate-50"

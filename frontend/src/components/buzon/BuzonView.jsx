@@ -7,6 +7,7 @@ import { useToast } from '../common/Toast';
 import ModalBase from '../common/ModalBase';
 import { formatearFecha } from '../../constants/workflow';
 import AvisosAutomaticos from './AvisosAutomaticos';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 const FILTROS = [['PENDIENTE', 'Pendientes'], ['RESPONDIDO', 'Respondidos'], ['DESCARTADO', 'Descartados'], ['', 'Todos']];
 const CLASES = {
@@ -51,6 +52,7 @@ export default function BuzonView() {
   };
 
   const mensajes = datos?.mensajes || [];
+  const pag = usePaginado(mensajes);
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -111,7 +113,7 @@ export default function BuzonView() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {datos && mensajes.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-500">No hay mensajes {filtro ? 'con este filtro' : ''}.</td></tr>}
-            {mensajes.map((m) => (
+            {pag.visibles.map((m) => (
               <tr key={m.id} className={abierto?.id === m.id ? 'bg-sky-50/60' : ''}>
                 <td className="p-3 whitespace-nowrap text-slate-700">{hora(m.recibido)}</td>
                 <td className="p-3"><span className="font-semibold text-slate-900">{m.de_nombre || '—'}</span><span className="block text-[11px] text-slate-500">{m.de}</span></td>
@@ -123,6 +125,7 @@ export default function BuzonView() {
           </tbody>
         </table>
       </div>
+      <div className="mt-3"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="mensajes" /></div>
 
       <AvisosAutomaticos />
     </div>

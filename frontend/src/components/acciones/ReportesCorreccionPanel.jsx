@@ -10,6 +10,7 @@ import { useLocalStorage } from '../../hooks';
 import { useSGC } from '../../SGCContext';
 import { formatearFecha } from '../../constants/workflow';
 import { CLAVE_RC, RC_ESTADOS, estadoRC, etiquetaRC, puedeCrearRCManual, puedeVerRC } from '../../constants/reportesCorreccion';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 const SEMAFORO_PDF = { CERRADO_EFECTIVO: 'ACEPTABLE', EN_ATENCION: 'PREVENTIVO', CERRADO_NO_EFECTIVO: 'CRITICO', ESCALADO_A_AC: 'CRITICO' };
 const FILTROS = [['TODOS', 'Todos los estados'], ...Object.entries(RC_ESTADOS).map(([k, v]) => [k, v.label])];
@@ -51,6 +52,7 @@ export default function ReportesCorreccionPanel({ usuarioLogueado }) {
     leyenda: 'OOMAPAS de Cajeme · Bitácora de Reportes de Corrección',
   }, 'Bitacora_Reportes_de_Correccion');
 
+  const pag = usePaginado(lista);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -92,7 +94,7 @@ export default function ReportesCorreccionPanel({ usuarioLogueado }) {
             </tr></thead>
             <tbody>
               {lista.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-slate-500">Sin reportes con ese filtro.</td></tr>}
-              {lista.map((rc) => {
+              {pag.visibles.map((rc) => {
                 const et = etiquetaRC(rc);
                 return (
                   <tr key={rc.id || rc.folio}>
@@ -109,6 +111,7 @@ export default function ReportesCorreccionPanel({ usuarioLogueado }) {
             </tbody>
           </table>
         </div>
+        <div className="mt-3"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="reportes" /></div>
       </div>
 
       {rcAbierto && <ModalGestionarRC isOpen reporte={(reportes || []).find((r) => r.id === rcAbierto.id) || rcAbierto} onClose={() => setRcAbierto(null)} onActualizarReporte={actualizar} usuarioLogueado={usuarioLogueado} />}

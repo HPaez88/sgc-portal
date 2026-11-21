@@ -8,6 +8,7 @@ import BotonInformePDF from '../indicadores/BotonInformePDF';
 import { BIMESTRES, FORMATOS, RANGOS, TIPOS_HALLAZGO, calendarioAnual, resumenPorCapitulo, resumenPreguntas } from '../../constants/auditorias';
 import { Bloque, EstadoAuditoria, Rango, tituloAuditoria, LISTA } from './ui';
 import { AnalisisIA } from './Evaluaciones';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 const ref = (a) => (a ? `${a.historico ? 'Informe ' : '#'}${a.numero}/${a.anio}` : '—');
 const etiquetaRango = (r, pct) => (r ? `${pct}% ${RANGOS[r].label}` : 'Sin datos');
@@ -85,6 +86,7 @@ export function HallazgosPanel({ hallazgos, auditorias, puedeFirmar, onFirmar, a
     secciones: [{ titulo: 'Hallazgos', head: ['Auditoría', 'Área', 'Tipo', 'Cláusula', 'Hallazgo', 'Auditor', 'Seguimiento', 'Enterado'],
       body: lista.map((h) => [ref(audDe(h)), h.area, TIPOS_HALLAZGO[h.tipo]?.label || h.tipo, h.clausula, h.hallazgo, h.auditor, seguimiento(h), h.aceptado_por ? `${h.aceptado_por} ${formatearFecha(h.fecha_aceptacion)}` : 'Pendiente']) }],
   }, 'Hallazgos_auditoria');
+  const pag = usePaginado(lista);
   return (
     <Bloque titulo={`Reportes de hallazgo (${FORMATOS.hallazgo}) · ${lista.length}`} ayuda="No conformidad: acción correctiva obligatoria, con apertura a más tardar 5 días hábiles después del informe. Corrección menor: reporte de corrección con evidencia. Oportunidad de mejora: recomendación."
       derecha={<div className="flex flex-wrap items-center gap-2">
@@ -98,7 +100,7 @@ export function HallazgosPanel({ hallazgos, auditorias, puedeFirmar, onFirmar, a
             <th scope="col" className="p-2 text-left min-w-[240px]">Hallazgo</th><th scope="col" className="p-2 text-left">Auditor</th><th scope="col" className="p-2 text-left">Seguimiento</th><th scope="col" className="p-2 text-left">Enterado del área</th></tr></thead>
           <tbody>
             {lista.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-slate-500">Sin hallazgos registrados. Aparecen cuando el auditor entrega su lista de verificación.</td></tr>}
-            {lista.map((h) => (
+            {pag.visibles.map((h) => (
               <tr key={h.id}>
                 <td className="p-2 whitespace-nowrap font-semibold">{ref(audDe(h))}</td>
                 <td className="p-2">{h.area}</td>
@@ -115,6 +117,7 @@ export function HallazgosPanel({ hallazgos, auditorias, puedeFirmar, onFirmar, a
           </tbody>
         </table>
       </div>
+        <div className="mt-3"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="hallazgos" /></div>
     </Bloque>
   );
 }

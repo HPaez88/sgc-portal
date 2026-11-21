@@ -12,6 +12,7 @@ import { CLAVE_RC } from '../../constants/reportesCorreccion';
 import CampoFecha from '../common/CampoFecha';
 import { EtiquetaCambio } from '../common/SolicitudCambio';
 import ModalBase from '../common/ModalBase';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 const noConformidadDe = (ac) => ac.descripcion_no_conformidad_final || ac.descripcion_no_conformidad_original || ac.descripcion_problema || '';
 
@@ -171,6 +172,7 @@ export default function AccionesLista({
 
   const filtrosActivosCount = [filtroAnio, filtroEstado !== 'GRUPO_ABIERTOS' && filtroEstado, filtroOrigen, filtroVencimiento].filter(Boolean).length;
 
+  const pag = usePaginado(accionesFiltradas);
   return (
     <div className="space-y-3 animate-fade-in-up">
       {/* Encabezado compacto */}
@@ -369,7 +371,7 @@ export default function AccionesLista({
               VISTA MÓVIL (< md): TARJETAS ERGONÓMICAS TÁCTILES
               ════════════════════════════════════════════════════════════ */}
           <div className="md:hidden space-y-2.5">
-            {accionesFiltradas.map((ac, idx) => {
+            {pag.visibles.map((ac, idx) => {
               const venc = getVencimiento(ac);
               return (
                 <div
@@ -434,7 +436,7 @@ export default function AccionesLista({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {accionesFiltradas.map((ac, idx) => (
+                  {pag.visibles.map((ac, idx) => (
                     <tr key={ac.id || idx} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="p-3 font-mono text-xs font-semibold text-slate-700">
                         {ac.folio_codigo || 'Pendiente'}
@@ -494,6 +496,7 @@ export default function AccionesLista({
               </table>
             </div>
           </div>
+          <div className="mt-3"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="acciones" /></div>
         </>
       )}
       </>)}

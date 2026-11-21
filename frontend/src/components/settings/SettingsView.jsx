@@ -9,6 +9,7 @@ import ModalBase from '../common/ModalBase';
 import EncargadosSGC from './EncargadosSGC';
 import AccesibilidadPanel from './AccesibilidadPanel';
 import AvisosCorreoPanel from './AvisosCorreoPanel';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 import BitacoraServidor from '../bitacora/BitacoraServidor';
 import BitacoraView from '../bitacora/BitacoraView';
 import FodaEditor from '../riesgos/FodaEditor';
@@ -737,6 +738,8 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
   const direccionesFiltradas = alfabetico(direccionesDetalle.filter((d) => coincide(d.nombre, d.director, d.correo, d.siglas)));
   const procesosFiltrados = alfabetico(procesosDetalle.filter((p) => coincide(p.nombre, p.clave, p.tipo, p.areaResponsable)));
   const usuariosFiltrados = usuariosList.filter((u) => coincide(u.nombre, u.email, u.area, u.direccion, u.rol)).sort(compararPorNombre);
+  const pagAreas = usePaginado(areasFiltradas);
+  const pagUsuarios = usePaginado(usuariosFiltrados);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -997,7 +1000,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     </td>
                   </tr>
                 ) : (
-                  areasFiltradas.map((a) => (
+                  pagAreas.visibles.map((a) => (
                     <tr key={a.id || a.nombre} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3 px-4 font-bold text-slate-900">
                         {a.nombre}
@@ -1061,6 +1064,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               </tbody>
             </table>
           </div>
+          <div className="px-4 py-3 border-t border-slate-200"><Paginacion pagina={pagAreas.pagina} total={pagAreas.total} porPagina={pagAreas.porPagina} onCambiar={pagAreas.setPagina} etiqueta="áreas" /></div>
         </div>
       )}
 
@@ -1419,7 +1423,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
                     </td>
                   </tr>
                 ) : (
-                  usuariosFiltrados.map((u) => {
+                  pagUsuarios.visibles.map((u) => {
                     const esSuperAdmin = u.rol === 'Super Admin';
                     const esEncargado = u.rol === 'Encargado';
                     const esAuditor = u.rol === 'Auditor';
@@ -1509,6 +1513,7 @@ export default function SettingsView({ usuarios = [], setUsuarios }) {
               </tbody>
             </table>
           </div>
+          <div className="px-4 py-3 border-t border-slate-200"><Paginacion pagina={pagUsuarios.pagina} total={pagUsuarios.total} porPagina={pagUsuarios.porPagina} onCambiar={pagUsuarios.setPagina} etiqueta="usuarios" /></div>
         </div>
       )}
 

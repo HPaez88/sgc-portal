@@ -4,6 +4,7 @@ import { FILTROS_ESTADO, cumpleFiltroEstado, getVencimiento, can } from '../../c
 import { getFechaCompromiso, formatearFecha, esPorAbrir } from '../../constants/workflow';
 import PorAbrirPanel from '../common/PorAbrirPanel';
 import { EtiquetaCambio } from '../common/SolicitudCambio';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 export default function PlanesLista({ 
   planesMejora, 
@@ -60,6 +61,7 @@ export default function PlanesLista({
 
   const filtrosActivosCount = [filtroArea, filtroEstado !== 'GRUPO_ABIERTOS' && filtroEstado, filtroVencimiento].filter(Boolean).length;
 
+  const pag = usePaginado(planesFiltrados);
   return (
     <div className="space-y-3 animate-fade-in-up">
       {/* Encabezado compacto */}
@@ -235,7 +237,7 @@ export default function PlanesLista({
               VISTA MÓVIL (< md): TARJETAS ERGONÓMICAS TÁCTILES
               ════════════════════════════════════════════════════════════ */}
           <div className="md:hidden space-y-2.5">
-            {planesFiltrados.map((pm, idx) => {
+            {pag.visibles.map((pm, idx) => {
               const venc = getVencimiento(pm);
               return (
                 <div
@@ -297,7 +299,7 @@ export default function PlanesLista({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {planesFiltrados.map((pm, idx) => (
+                  {pag.visibles.map((pm, idx) => (
                     <tr key={pm.id || idx} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="p-3 font-mono text-xs font-semibold text-slate-700">
                         {pm.folio || pm.folio_codigo || 'Pendiente'}
@@ -343,6 +345,7 @@ export default function PlanesLista({
               </table>
             </div>
           </div>
+          <div className="mt-3"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="planes" /></div>
         </>
       )}
       </>)}

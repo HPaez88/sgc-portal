@@ -7,6 +7,7 @@ import { useDialogos, Dialogos } from '../common/Dialogos';
 import { LISTA_FILTRO } from '../common/estilosCampos';
 import { TIPOS_CAMBIO, solicitudesPendientes, aprobarSolicitud, rechazarSolicitud, requiereAtencionSGC } from '../../constants/solicitudesCambio';
 import { asignarFolio } from '../../services/folioService';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 export default function GestorAprobacionesView({
   accionesCorrectivas,
@@ -372,6 +373,7 @@ export default function GestorAprobacionesView({
     setTimeout(() => setMensaje(''), 4000);
   };
 
+  const pag = usePaginado(appsFiltradas);
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -418,7 +420,7 @@ export default function GestorAprobacionesView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {appsFiltradas.map(app => (
+                {pag.visibles.map((app) => (
                   <tr key={`${app.tipo}-${app.id_original}`} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="p-4 font-mono font-bold text-slate-800 text-sm">
                       <div className="flex flex-col">
@@ -527,6 +529,7 @@ export default function GestorAprobacionesView({
               </tbody>
             </table>
           </div>
+          <div className="px-4 py-3 border-t border-slate-200"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="pendientes" /></div>
         </div>
       )}
       <Dialogos {...propsDialogos} />

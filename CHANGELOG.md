@@ -2,6 +2,13 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-21T16:00Z · @claude-code · [UI] · Paginación en todas las listas que crecen
+- Nuevo `usePaginado(lista)` en common/Paginacion.jsx (25 por página; vuelve a la página 1 al filtrar).
+- Paginadas: listas de AC y PM (tabla y tarjetas móviles), Reportes de corrección, Aprobaciones, Buzón, Avisos automáticos, Configuración (usuarios y catálogo de áreas), Hallazgos de auditoría y Seguimiento de riesgos. Ya lo estaban: Indicadores, Control documental, Bitácora y Registro del servidor.
+- Avisos automáticos: nombres de las etapas nuevas (aviso al auditor, recordatorios agregados, proyecto anual) y referencia "vence" también para PM.
+- Sin paginar a propósito: tablas fijas o chicas (detalle de un registro, matrices, direcciones y procesos).
+- Deploy: SÍ
+
 ## 2026-11-20T22:00Z · @claude-code · [FIX] · Bitácora: cada equipo devuelve los movimientos que el servidor perdió
 - Lo registrado después del último respaldo (23:25) no estaba en ningún respaldo. Al iniciar sesión, el portal une la bitácora del servidor con la copia y los respaldos locales del navegador (`respaldo:sgc-bitacora-movimientos:*`) y sube lo que falte; el servidor solo agrega.
 - Prueba: services/__tests__/unirPorId.test.js; probado de punta a punta en copia local.

@@ -4,12 +4,20 @@ import React, { useEffect, useState } from 'react';
 import { BellRing, RefreshCw } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { formatearFecha } from '../../constants/workflow';
+import Paginacion, { usePaginado } from '../common/Paginacion';
 
 const ETAPAS = {
   RECORDATORIO_15: 'Recordatorio (15 días)', RECORDATORIO_10: 'Recordatorio (10 días)', RECORDATORIO_5: 'Recordatorio (5 días)', VENCE_HOY: 'Vence hoy',
   AVISO_INCUMPLIMIENTO: 'Aviso de incumplimiento', OFICIO_EXHORTO: 'Oficio de exhorto por emitir',
-  AVISO: 'Aviso de entrega (día 1)', RECORDATORIO: 'Recordatorio (día 5)', ULTIMO_RECORDATORIO: 'Vence la entrega (día 10)',
+  AVISO: 'Aviso de entrega de indicadores', RECORDATORIO: 'Recordatorio de entrega', ULTIMO_RECORDATORIO: 'Vence la entrega de indicadores',
+  AUDITOR_ASIGNADO: 'Aviso al auditor asignado',
+  RENOVACION_OCT: 'Confirmar proyecto anual', RENOVACION_NOV: 'Confirmar proyecto anual (recordatorio)', RENOVACION_DIC: 'Confirmar proyecto anual (urgente)',
 };
+// Los plazos son editables (Configuración → Avisos por correo): los recordatorios agregados también tienen nombre.
+const etapa = (e) => ETAPAS[e] || (/^RECORDATORIO_D\d+$/.test(e) ? `Recordatorio de entrega (día ${e.slice(14)})`
+  : /^RECORDATORIO_\d+$/.test(e) ? `Recordatorio (${e.slice(13)} días)` : e);
+const referencia = (a) => (['AC', 'PM'].includes(a.tipo) ? `vence ${formatearFecha(a.referencia)}`
+  : a.tipo === 'AUDITOR' ? `asignado ${formatearFecha(a.referencia)}` : `periodo ${a.referencia}`);
 const FILTROS = [['', 'Todos'], ['OFICIO_EXHORTO', 'Oficios por emitir'], ['AVISO_INCUMPLIMIENTO', 'Incumplimientos'], ['AC', 'Acciones'], ['INDICADORES', 'Indicadores']];
 
 export default function AvisosAutomaticos() {
@@ -20,6 +28,7 @@ export default function AvisosAutomaticos() {
   const avisos = (datos?.avisos || []).filter((a) => !filtro || a.etapa === filtro || a.tipo === filtro);
   const cuenta = (id) => (datos?.avisos || []).filter((a) => !id || a.etapa === id || a.tipo === id).length;
 
+  const pag = usePaginado(avisos);
   return (
     <section className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
       <header className="flex flex-wrap items-center justify-between gap-2">
@@ -46,11 +55,11 @@ export default function AvisosAutomaticos() {
           <thead className="text-left"><tr><th scope="col" className="p-2">Fecha</th><th scope="col" className="p-2">Etapa</th><th scope="col" className="p-2">Registro / unidad</th><th scope="col" className="p-2">Para</th><th scope="col" className="p-2">Resultado</th></tr></thead>
           <tbody>
             {datos && !avisos.length && <tr><td colSpan={5} className="p-6 text-center text-slate-500">Aún no hay avisos generados.</td></tr>}
-            {avisos.map((a) => (
+            {pag.visibles.map((a) => (
               <tr key={a.id} className="align-top">
                 <td className="p-2 whitespace-nowrap">{formatearFecha(a.fecha)}</td>
-                <td className="p-2 font-semibold">{ETAPAS[a.etapa] || a.etapa}</td>
-                <td className="p-2"><strong>{a.registro}</strong><span className="block text-[11px] text-slate-500">{a.tipo === 'AC' ? `vence ${formatearFecha(a.referencia)}` : `periodo ${a.referencia}`}</span></td>
+                <td className="p-2 font-semibold">{etapa(a.etapa)}</td>
+                <td className="p-2"><strong>{a.registro}</strong><span className="block text-[11px] text-slate-500">{referencia(a)}</span></td>
                 <td className="p-2 text-slate-600 max-w-xs">{a.destinatarios || '—'}</td>
                 <td className="p-2">{a.enviado ? <span className="text-emerald-700 font-bold">Enviado</span> : <span className={a.error ? 'text-amber-800' : 'text-slate-600'}>{a.error || (a.modo === 'simulacion' ? 'Simulado' : 'No enviado')}</span>}</td>
               </tr>
@@ -58,6 +67,7 @@ export default function AvisosAutomaticos() {
           </tbody>
         </table>
       </div>
+      <div className="mt-3"><Paginacion pagina={pag.pagina} total={pag.total} porPagina={pag.porPagina} onCambiar={pag.setPagina} etiqueta="avisos" /></div>
     </section>
   );
 }
