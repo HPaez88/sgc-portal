@@ -4,6 +4,11 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { Plus, X, CheckCircle2, CircleDashed, ArrowRight, Info } from 'lucide-react';
 import CampoFecha from '../common/CampoFecha';
+import { useSGC } from '../../SGCContext';
+import { CAMPO_LISTA } from '../common/estilosCampos';
+import { INDICADORES } from '../../constants/indicadores';
+import { resolverResponsable } from '../../constants/areas';
+import { catalogoBase } from '../../constants/catalogoIndicadores';
 import { ESCALAS, TRATAMIENTOS, CONTEXTOS, nivelDe, puntaje, requierePlan, llevaPM } from '../../constants/riesgos';
 
 const base = 'w-full px-3 py-2 bg-white border rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-marca-azul/25 focus:border-marca-azul outline-none disabled:bg-slate-50 disabled:text-slate-700';
@@ -75,6 +80,47 @@ function Escala({ titulo, opciones, valor, onElegir, deshabilitado }) {
       </div>
       <p className="text-xs text-slate-500 mt-1 min-h-[1rem]">{elegido ? elegido[2] : 'Elige una opción'}</p>
     </fieldset>
+  );
+}
+
+// Ligas opcionales del riesgo: indicadores que lo miden y acciones correctivas relacionadas (del área).
+function Ligas({ r, set, soloLectura }) {
+  const { indicadoresData = {}, accionesCorrectivas = [] } = useSGC();
+  const indicadores = catalogoBase(INDICADORES, indicadoresData?.catalogoPersonalizado || {}, resolverResponsable)
+    .filter((i) => i.area === r.area || i.direccion === r.area || (i.direccion === r.direccion && !i.area));
+  const acciones = (accionesCorrectivas || []).filter((a) => a.area === r.area && a.folio_codigo && !/^Pendiente/i.test(a.folio_codigo));
+  const ids = (k) => (Array.isArray(r[k]) ? r[k].map(String) : []);
+  const grupos = [
+    ['indicadores_ids', 'Indicadores que miden este registro', indicadores.map((i) => [String(i.id), `#${i.numero ?? i.id} ${i.nombre}`]), 'Agregar indicador…'],
+    ['acciones_ids', 'Acciones correctivas relacionadas', acciones.map((a) => [String(a.id), `${a.folio_codigo} · ${String(a.descripcion_no_conformidad_final || a.descripcion_no_conformidad_original || '').slice(0, 70)}`]), 'Agregar acción correctiva…'],
+  ];
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {grupos.map(([k, titulo, opciones, placeholder]) => {
+        const elegidos = ids(k);
+        const nombre = Object.fromEntries(opciones);
+        return (
+          <div key={k} className="space-y-2">
+            <span className="block text-xs font-bold text-slate-800">{titulo}</span>
+            <ul className="flex flex-wrap gap-2">
+              {elegidos.length === 0 && <li className="text-sm text-slate-500">Sin ligar.</li>}
+              {elegidos.map((id) => (
+                <li key={id} className="inline-flex items-center gap-1 rounded-full border-2 border-sky-300 bg-sky-50 pl-3 pr-1 py-1 text-xs font-bold text-sky-950 max-w-full">
+                  <span className="truncate">{nombre[id] || `Registro ${id}`}</span>
+                  {!soloLectura && <button type="button" aria-label={`Quitar ${nombre[id] || id}`} onClick={() => set({ [k]: elegidos.filter((x) => x !== id) })} className="p-0.5 rounded-full hover:bg-sky-200"><X size={12} /></button>}
+                </li>
+              ))}
+            </ul>
+            {!soloLectura && (
+              <select value="" onChange={(e) => e.target.value && set({ [k]: [...elegidos, e.target.value] })} className={CAMPO_LISTA} aria-label={placeholder}>
+                <option value="">{opciones.length ? placeholder : 'El área no tiene registros para ligar'}</option>
+                {opciones.filter(([id]) => !elegidos.includes(id)).map(([id, t]) => <option key={id} value={id}>{t}</option>)}
+              </select>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -241,6 +287,10 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
             )}
           </>
         )}
+      </Seccion>
+
+      <Seccion n={5} titulo="Ligas (opcional)" ayuda="Indicadores que miden este registro y acciones correctivas relacionadas. Sirve para ver en la revisión por la dirección si el riesgo se está materializando." completo={null}>
+        <Ligas r={r} set={set} soloLectura={soloLectura} />
       </Seccion>
     </div>
   );

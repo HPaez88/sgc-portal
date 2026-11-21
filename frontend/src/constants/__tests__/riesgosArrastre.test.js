@@ -32,3 +32,13 @@ describe('traer riesgos del año anterior (reevaluación anual)', () => {
     expect(traerDelAnioAnterior(ya, [1, 4], { area: 'Plantas', anio: 2027 })).toEqual([]);
   });
 });
+
+describe('ligas de riesgos con indicadores y acciones correctivas', () => {
+  it('encuentra los riesgos ligados a un indicador o a una AC (ids como texto o número)', async () => {
+    const { riesgosLigados } = await import('../riesgos');
+    const rs = [{ id: 1, indicadores_ids: ['7'], acciones_ids: [] }, { id: 2, indicadores_ids: [7, 8], acciones_ids: ['55'] }, { id: 3 }];
+    expect(riesgosLigados(rs, 'indicadores_ids', 7).map((r) => r.id)).toEqual([1, 2]);
+    expect(riesgosLigados(rs, 'acciones_ids', '55').map((r) => r.id)).toEqual([2]);
+    expect(riesgosLigados(undefined, 'acciones_ids', 1)).toEqual([]);
+  });
+});

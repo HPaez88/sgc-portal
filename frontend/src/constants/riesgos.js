@@ -299,3 +299,7 @@ export const traerDelAnioAnterior = (riesgos, ids, { area, anio, por = '' }) => 
       },
     }));
 };
+
+// Riesgos ligados a un indicador (indicadores_ids) o a una acción correctiva (acciones_ids).
+export const riesgosLigados = (riesgos, campo, id) => (Array.isArray(riesgos) ? riesgos : [])
+  .filter((r) => Array.isArray(r?.[campo]) && r[campo].map(String).includes(String(id)));

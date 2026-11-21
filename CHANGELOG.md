@@ -2,6 +2,15 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-22T01:00Z · @claude-code · [FEATURE] · Riesgos ligados a indicadores y acciones correctivas (C23, parte 3)
+- Formulario del riesgo, sección 5 "Ligas (opcional)": indicadores del área que lo miden y acciones correctivas del área relacionadas (se eligen de catálogo; se quitan con un clic).
+- La liga se ve del otro lado: en la captura mensual del indicador y en el detalle de la AC aparece "Riesgos y oportunidades ligados" con su nivel.
+- Catálogo de indicadores extraído a `catalogoBase` (constants/catalogoIndicadores.js) para usarlo en Indicadores y Riesgos.
+- Pruebas: riesgosArrastre.test.js (riesgosLigados). Probado en copia local de punta a punta.
+- Archivos: constants/riesgos.js, constants/catalogoIndicadores.js, components/riesgos/FormRiesgo.jsx, components/riesgos/RiesgosLigados.jsx, components/acciones/AccionesDetalle.jsx, components/indicadores/IndicadoresView.jsx
+- Tareas STATE: C23 (parte 3 de 4)
+- Deploy: SÍ
+
 ## 2026-11-21T23:00Z · @claude-code · [FEATURE] · Riesgos: captura de la matriz en enero-febrero y solo las áreas la entregan
 - Regla de @human: la matriz de cada año se captura en enero y febrero de ese año. Avisos automáticos: inicio (primer hábil de enero), recordatorios 15 y 5 días antes, día límite (último hábil de febrero) e incumplimiento (hábil siguiente). Fuera de ese periodo no sale nada. Se puede apagar y ajustar los recordatorios en Configuración → Avisos por correo.
 - Solo las áreas entregan matriz (avisos, lista de matrices, cobertura del informe); la vista por dirección y organismo se arma con las de sus áreas. Una dirección con riesgos ya capturados (Dir. General, 2) sigue visible.

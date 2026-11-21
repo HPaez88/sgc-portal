@@ -111,3 +111,17 @@ export function promedioTrimestreCuadro(resultados = {}, indicadorId, anio, ti, 
   if (!vals.length) return null;
   return Math.round((vals.reduce((s, v) => s + Number(v), 0) / vals.length) * 10) / 10;
 }
+
+/** Catálogo vigente: base oficial + cambios y altas del administrador, con el responsable resuelto. Orden por número. */
+export function catalogoBase(base = [], personalizado = {}, resolver = () => ({})) {
+  const mapa = new Map();
+  base.forEach((ind) => {
+    const c = personalizado[ind.id];
+    const b = c ? { ...ind, ...c } : ind;
+    mapa.set(ind.id, { ...b, ...resolver(b.area, b.direccion) });
+  });
+  Object.values(personalizado || {}).forEach((ind) => {
+    if (ind && !mapa.has(ind.id)) mapa.set(ind.id, { ...ind, ...resolver(ind.area, ind.direccion) });
+  });
+  return Array.from(mapa.values()).sort((a, b) => (a.numero ?? a.id) - (b.numero ?? b.id));
+}

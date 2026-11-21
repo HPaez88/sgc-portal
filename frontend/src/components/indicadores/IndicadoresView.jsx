@@ -48,6 +48,7 @@ import {
 import { useSGC } from '../../SGCContext';
 import { useToast } from '../common/Toast';
 import ContenedorModal from '../common/ContenedorModal';
+import RiesgosLigados from '../riesgos/RiesgosLigados';
 import { CAMPO_TEXTO, Leyenda, Seccion } from '../common/estilosCampos';
 import { acDesdeIndicador } from '../../services/flujoService';
 import DesempenoProcesosTab from './DesempenoProcesosTab';
@@ -64,7 +65,7 @@ import { AREAS, DIRECCIONES, resolverResponsable } from '../../constants/areas';
 import { useIsMobile, useLocalStorage } from '../../hooks';
 import { puedeCapturarArea } from '../../constants/riesgos';
 import { CLAVE_PROYECTOS } from '../../constants/proyectosIndicadores';
-import { aplicarProyectos, fichasConProyecto, tocaReportar } from '../../constants/catalogoIndicadores';
+import { aplicarProyectos, catalogoBase, fichasConProyecto, tocaReportar } from '../../constants/catalogoIndicadores';
 import { esCerrado, esAdminSGC, getVencimiento, getFechaCompromiso, formatearFecha } from '../../constants/workflow';
 
 import { CLAVE_RC, esRCAbierto, rcDelPeriodo } from '../../constants/reportesCorreccion';
@@ -195,17 +196,7 @@ export default function IndicadoresView({
   const catalogoCustom = indicadoresData?.catalogoPersonalizado || {};
   const listaIndicadores = useMemo(() => {
     // El responsable se respeta como lo dice el Cuadro de Control o la reasignación del administrador.
-    const mapa = new Map();
-    INDICADORES.forEach(ind => {
-      const custom = catalogoCustom[ind.id];
-      const base = custom ? { ...ind, ...custom } : ind;
-      mapa.set(ind.id, { ...base, ...resolverResponsable(base.area, base.direccion) });
-    });
-    Object.values(catalogoCustom).forEach(ind => {
-      if (!mapa.has(ind.id)) mapa.set(ind.id, { ...ind, ...resolverResponsable(ind.area, ind.direccion) });
-    });
-    const lista = Array.from(mapa.values()).sort((a, b) => (a.numero ?? a.id) - (b.numero ?? b.id));
-    return aplicarProyectos(lista, proyectosAnuales, ejercicio);
+    return aplicarProyectos(catalogoBase(INDICADORES, catalogoCustom, resolverResponsable), proyectosAnuales, ejercicio);
   }, [catalogoCustom, proyectosAnuales, ejercicio]);
   const fichasEfectivas = useMemo(() => fichasConProyecto(fichasPersonalizadas, proyectosAnuales, ejercicio, listaIndicadores),
     [fichasPersonalizadas, proyectosAnuales, ejercicio, listaIndicadores]);
@@ -1538,6 +1529,7 @@ export default function IndicadoresView({
                 <span>Modo Administrador: Modificando medición registrada previamente ({valorOriginalAdmin} {indicadorEnEdicion.unidad}). Se solicitará justificación técnica para la bitácora institucional.</span>
               </div>
             )}
+              <RiesgosLigados campo="indicadores_ids" id={indicadorEnEdicion.id} />
             </Seccion>
 
             <Seccion n={2} titulo={`Resultado de ${(MESES_COMPLETOS[MESES.indexOf(mesParaCaptura || mesActivo)] || (mesParaCaptura || mesActivo))} ${ejercicio}`} ayuda="Es el único dato obligatorio. El sistema evalúa el cumplimiento en cuanto lo escribes." color="bg-sky-800">
