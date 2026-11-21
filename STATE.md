@@ -92,7 +92,7 @@
 - [x] C20 — Riesgos etapa 2: IA que sugiere riesgos/oportunidades con el propósito del área (probado en real 2026-11-14).
 - [x] C21 — Riesgos etapa 3: informes por área, dirección y organismo, comparativo anual, hallazgos y PDF (2026-11-14).
 - [x] C22 — Riesgos: auditoría del módulo y corrección de errores (2026-11-14).
-- [ ] C23 — Riesgos, siguiente vuelta: fecha límite de captura y avisos, traer riesgos del año anterior, ligar con indicadores y AC, reevaluación anual de los que están en monitoreo, Tablero operativo vs Informes de análisis.
+- [x] C23 — Riesgos, siguiente vuelta (2026-11-21/22): traer del año anterior con reevaluación, captura enero-febrero con avisos (solo áreas), ligas con indicadores y AC, pendientes operativos discretos en el Tablero.
 - [ ] C4 — Completar causas, equipo y actividades de cada folio con los Excel individuales (@human los envía)
 - [ ] C5 — Revisar en Control 6: AC#20/2026 replanteo #3 con fecha anterior; AC#24/2026 sin fecha de cierre; responsable de AC#1/2026; proceso de Jurídico (OM#5, OM#9)
 

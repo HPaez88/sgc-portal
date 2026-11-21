@@ -11,7 +11,7 @@ import { useSGC } from '../../SGCContext';
 import { useLocalStorage } from '../../hooks';
 import { esAdminSGC, can } from '../../constants/workflow';
 import { normalizarDireccion } from '../../constants/areas';
-import { CLAVE_MATRIZ, ESTADOS_MATRIZ, idMatriz, esOficial, estadoRiesgo, puedeCapturarArea } from '../../constants/riesgos';
+import { CLAVE_MATRIZ, ESTADOS_MATRIZ, idMatriz, esOficial, estadoRiesgo, puedeCapturarArea, pendientesOperativos } from '../../constants/riesgos';
 import MatrizArea from './MatrizArea';
 import MatrizPorArea from './MatrizPorArea';
 import TableroRiesgos from './TableroRiesgos';
@@ -163,7 +163,8 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
           accionInicial={accionAlta} onAccionHecha={() => setAccionAlta(null)} />
       ) : <p className="text-sm text-slate-600">Tu usuario no tiene un área asignada. Pide al SGC que te la asigne.</p>)}
 
-      {actual.id === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} enCaptura={enCaptura} />}
+      {actual.id === 'tablero' && <TableroRiesgos items={delAnio} planesMejora={planesMejora} areasDetalle={areasDetalle} anio={anio} itemsAnioAnterior={anioAnterior} enCaptura={enCaptura}
+        pendientes={pendientesOperativos({ areas: unidades.filter((u) => u.tipo === 'area').map((u) => u.nombre), matrices: listaMatrices, riesgos: lista, planes: planesMejora, anio })} />}
 
       {actual.id === 'seguimiento' && (puedeTodasAreas ? esAdmin : (puedeCapturarArea(usuarioLogueado, areaUsuario, areasDetalle) && can(usuarioLogueado, 'editar'))) && (
         <section aria-label="Dar de alta" className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 border-l-4 border-l-marca-verde rounded-xl px-4 py-3">

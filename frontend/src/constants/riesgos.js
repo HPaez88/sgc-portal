@@ -6,7 +6,7 @@
 // reevaluando el riesgo (segunda confirmación).
 // ═══════════════════════════════════════════════════════════════
 
-import { fechaSeguimientoInicial } from './workflow';
+import { fechaSeguimientoInicial, getVencimiento } from './workflow';
 
 export const CLAVE_MATRIZ = 'OOMRSC-37';
 export const CLAVE_CONTROL = 'OOMRSC-51';
@@ -303,3 +303,21 @@ export const traerDelAnioAnterior = (riesgos, ids, { area, anio, por = '' }) => 
 // Riesgos ligados a un indicador (indicadores_ids) o a una acción correctiva (acciones_ids).
 export const riesgosLigados = (riesgos, campo, id) => (Array.isArray(riesgos) ? riesgos : [])
   .filter((r) => Array.isArray(r?.[campo]) && r[campo].map(String).includes(String(id)));
+
+// Pendientes del día a día para el tablero (discreto): matrices del año sin enviar o en revisión del SGC,
+// planes de mejora de riesgos vencidos o por vencer, y riesgos que esperan dictamen de eficacia.
+export const pendientesOperativos = ({ areas = [], matrices = [], riesgos = [], planes = [], anio }) => {
+  const estadoM = Object.fromEntries((matrices || []).map((m) => [String(m.id), m.estado]));
+  const deAnio = (riesgos || []).filter((r) => Number(r.anio) === Number(anio));
+  const pmDeR = (r) => (planes || []).find((p) => String(p.id) === String(r.pm_id));
+  const conPM = deAnio.filter((r) => r.pm_id && pmDeR(r) && !/^CERRADO/.test(String(pmDeR(r).estado || '')));
+  const venc = (r) => getVencimiento(pmDeR(r)).nivel;
+  const p = {
+    sinEnviar: areas.filter((a) => !['ENVIADA', 'ACEPTADA'].includes(estadoM[idMatriz(a, anio)])),
+    enRevision: areas.filter((a) => estadoM[idMatriz(a, anio)] === 'ENVIADA'),
+    vencidos: conPM.filter((r) => venc(r) === 'vencido'),
+    porVencer: conPM.filter((r) => venc(r) === 'por_vencer'),
+    porDictaminar: deAnio.filter((r) => estadoRiesgo(r, planes) === 'PENDIENTE_DICTAMEN'),
+  };
+  return { ...p, total: p.sinEnviar.length + p.enRevision.length + p.vencidos.length + p.porVencer.length + p.porDictaminar.length };
+};

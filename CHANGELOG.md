@@ -2,6 +2,13 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-22T02:00Z · @claude-code · [UI] · Riesgos: pendientes operativos discretos en el Tablero (C23, parte 4)
+- Línea plegada "Pendientes operativos" al inicio del Tablero (también cuando aún no hay nada aceptado): matrices del año sin enviar, en revisión SGC, planes de mejora vencidos o por vencer y riesgos por dictaminar. Se abre solo si se quiere ver el detalle; no se movieron pestañas ni contenido (pedido de @human: que no sea vistoso).
+- Lógica pura `pendientesOperativos` (constants/riesgos.js) con prueba.
+- Archivos: constants/riesgos.js, components/riesgos/PendientesOperativos.jsx, TableroRiesgos.jsx, RiesgosView.jsx
+- Tareas STATE: C23 completa
+- Deploy: SÍ
+
 ## 2026-11-22T01:00Z · @claude-code · [FEATURE] · Riesgos ligados a indicadores y acciones correctivas (C23, parte 3)
 - Formulario del riesgo, sección 5 "Ligas (opcional)": indicadores del área que lo miden y acciones correctivas del área relacionadas (se eligen de catálogo; se quitan con un clic).
 - La liga se ve del otro lado: en la captura mensual del indicador y en el detalle de la AC aparece "Riesgos y oportunidades ligados" con su nivel.

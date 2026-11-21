@@ -2,6 +2,7 @@
 // Clic en una celda del mapa → lista de lo que cae ahí.
 import React, { useMemo, useState } from 'react';
 import MapaCalor from './MapaCalor';
+import PendientesOperativos from './PendientesOperativos';
 import { nivelDe, puntaje, estadoRiesgo, ESTADOS_RIESGO, dictamenesDe } from '../../constants/riesgos';
 import { direccionDeRegistro } from '../../constants/areas';
 import { getVencimiento } from '../../constants/workflow';
@@ -16,7 +17,7 @@ function Cifra({ valor, etiqueta, nota, tono = 'text-slate-900' }) {
   );
 }
 
-export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio, itemsAnioAnterior = [], enCaptura = 0 }) {
+export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio, itemsAnioAnterior = [], enCaptura = 0, pendientes = null }) {
   const [celda, setCelda] = useState(null); // { tipo, p, i }
   const riesgos = items.filter((r) => r.tipo === 'Riesgo');
   const oportunidades = items.filter((r) => r.tipo === 'Oportunidad');
@@ -50,11 +51,17 @@ export default function TableroRiesgos({ items, planesMejora, areasDetalle, anio
   const enCelda = celda ? items.filter((r) => r.tipo === celda.tipo && Number(r.probabilidad) === celda.p && Number(r.impacto) === celda.i) : [];
 
   if (!items.length) {
-    return <div className="bg-white rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Aún no hay riesgos ni oportunidades aceptados por el SGC para {anio}.{enCaptura ? ` Hay ${enCaptura} registro(s) en captura o revisión.` : ''}</div>;
+    return (
+      <div className="space-y-4">
+        <PendientesOperativos pendientes={pendientes} anio={anio} />
+        <div className="bg-white rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">Aún no hay riesgos ni oportunidades aceptados por el SGC para {anio}.{enCaptura ? ` Hay ${enCaptura} registro(s) en captura o revisión.` : ''}</div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
+      <PendientesOperativos pendientes={pendientes} anio={anio} />
       {enCaptura > 0 && <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">Solo cuenta lo aceptado por el SGC. {enCaptura} registro(s) de {anio} siguen en captura o revisión y no se incluyen.</p>}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Cifra valor={riesgos.length} etiqueta="Riesgos" nota={`${oportunidades.length} oportunidades`} />

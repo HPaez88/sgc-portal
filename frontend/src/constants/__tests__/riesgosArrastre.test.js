@@ -42,3 +42,24 @@ describe('ligas de riesgos con indicadores y acciones correctivas', () => {
     expect(riesgosLigados(undefined, 'acciones_ids', 1)).toEqual([]);
   });
 });
+
+describe('pendientes operativos del tablero', () => {
+  it('cuenta matrices sin enviar y en revisión, planes vencidos/por vencer y riesgos por dictaminar', async () => {
+    const { pendientesOperativos } = await import('../riesgos');
+    const planes = [
+      { id: 1, estado: 'EN_SEGUIMIENTO', fecha_seguimiento: '2020-01-01' },        // vencido
+      { id: 2, estado: 'CERRADO_EFECTIVO' },                                         // cerrado: el riesgo espera dictamen
+    ];
+    const riesgos = [
+      { id: 10, anio: 2027, area: 'Plantas', estado: 'EN_TRATAMIENTO', pm_id: 1 },
+      { id: 11, anio: 2027, area: 'Plantas', estado: 'EN_TRATAMIENTO', pm_id: 2 },
+    ];
+    const matrices = [{ id: 'Plantas|2027', estado: 'ENVIADA' }, { id: 'Comercial|2027', estado: 'ACEPTADA' }];
+    const p = pendientesOperativos({ areas: ['Plantas', 'Comercial', 'Jurídico'], matrices, riesgos, planes, anio: 2027 });
+    expect(p.sinEnviar).toEqual(['Jurídico']);
+    expect(p.enRevision).toEqual(['Plantas']);
+    expect(p.vencidos.map((r) => r.id)).toEqual([10]);
+    expect(p.porDictaminar.map((r) => r.id)).toEqual([11]);
+    expect(p.total).toBe(4);
+  });
+});
