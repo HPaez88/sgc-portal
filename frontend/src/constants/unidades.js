@@ -24,3 +24,10 @@ export function unidadesDeRiesgo(areasDetalle = [], direccionesDetalle = []) {
   return out.filter((u) => (vistos.has(u.nombre) ? false : vistos.add(u.nombre)))
     .sort((a, b) => ORDEN[a.tipo] - ORDEN[b.tipo] || a.nombre.localeCompare(b.nombre, 'es'));
 }
+
+// Hoy solo las áreas entregan matriz de riesgos (decisión de @human 2026-11-21); las vistas por dirección y
+// organismo se arman con las de sus áreas. Una dirección o subdirección que ya tenga riesgos sigue visible.
+export const unidadesQueEntregan = (unidades = [], riesgos = []) => {
+  const conRiesgos = new Set((riesgos || []).map((r) => r?.area).filter(Boolean));
+  return unidades.filter((u) => u.tipo === 'area' || conRiesgos.has(u.nombre));
+};

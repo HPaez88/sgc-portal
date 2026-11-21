@@ -117,11 +117,15 @@ def test_planes_de_mejora_usan_area_o_gerencia():
 
 def test_avisos_de_matriz_solo_a_unidades_que_no_la_enviaron():
     from backend.services import avisos_calendario as cal
-    p = cal.normalizar({"matrices": {"anio": 2027, "fecha_limite": "2026-12-15", "recordatorios_antes": [15, 5]}})
+    p = cal.normalizar({})
     unidades = ["Plantas", "Jurídico", "Comercial"]
     matrices = [{"id": "Plantas|2027", "estado": "ENVIADA"}, {"id": "Jurídico|2027", "estado": "OBSERVADA"}]
-    r = m.avisos_matrices(unidades, matrices, date(2026, 11, 30), set(), p)
+    r = m.avisos_matrices(unidades, matrices, date(2027, 2, 11), set(), p)
     assert [(x["unidad"], x["etapa"]) for x in r] == [("Comercial", "RECORDATORIO_15"), ("Jurídico", "RECORDATORIO_15")]
-    assert r[0]["periodo"] == "2027"
-    assert m.avisos_matrices(unidades, matrices, date(2026, 11, 30), {("Comercial", "2027", "RECORDATORIO_15")}, p)[0]["unidad"] == "Jurídico"
-    assert m.avisos_matrices(unidades, matrices, date(2026, 11, 30), set(), cal.normalizar({})) == []
+    assert r[0]["periodo"] == "2027" and r[0]["fecha_limite"] == date(2027, 2, 26)
+    assert m.avisos_matrices(unidades, matrices, date(2027, 2, 11), {("Comercial", "2027", "RECORDATORIO_15")}, p)[0]["unidad"] == "Jurídico"
+    # fuera del periodo (p. ej. noviembre) no sale nada, ni siquiera el incumplimiento atrasado
+    assert m.avisos_matrices(unidades, matrices, date(2026, 11, 30), set(), p) == []
+    assert m.avisos_matrices(unidades, [], date(2027, 3, 10), set(), p) == []
+    # un periodo que terminó antes del arranque de los avisos no entra
+    assert m.avisos_matrices(unidades, [], date(2027, 1, 4), set(), p, arranque=date(2027, 3, 5)) == []

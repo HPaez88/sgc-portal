@@ -20,8 +20,8 @@ BASE = {
     "registros": {"recordatorios_antes": [15, 10, 5], "vence_hoy": True, "dias_aviso_despues": 1, "dias_oficio_despues_aviso": 5},
     "indicadores": {"AVISO": 1, "RECORDATORIO": 5, "ULTIMO_RECORDATORIO": 10, "AVISO_INCUMPLIMIENTO": 11, "OFICIO_EXHORTO": 16,
                     "recordatorios_extra": []},
-    # Matriz de riesgos del año siguiente: sin fecha límite capturada por el SGC no se avisa nada.
-    "matrices": {"anio": None, "fecha_limite": None, "recordatorios_antes": [15, 5]},
+    # Matriz de riesgos: la de cada año se captura en enero y febrero de ese año (decisión de @human 2026-11-21).
+    "matrices": {"activo": True, "recordatorios_antes": [15, 5]},
     "feriados": [],
 }
 MAX_DIAS_ANTES = 90
@@ -55,14 +55,7 @@ def normalizar(guardado) -> dict:
     ind = {k: _entero(i0.get(k), 1, 28) or b_i[k] for k in DIAS_INDICADORES}
     ind["recordatorios_extra"] = sorted({n for n in (_entero(x, 1, 28) for x in i0.get("recordatorios_extra") or []) if n})
     m0 = g.get("matrices") if isinstance(g.get("matrices"), dict) else {}
-    try:
-        limite = date.fromisoformat(str(m0.get("fecha_limite") or ""))
-    except ValueError:
-        limite = None
-    anio_m = _entero(m0.get("anio"), 2020, 2100)
-    if not anio_m or not limite or abs(anio_m - limite.year) > 1:  # sin fecha válida no hay avisos de matriz
-        limite, anio_m = None, None
-    matrices = {"anio": anio_m, "fecha_limite": limite,
+    matrices = {"activo": m0.get("activo", True) is not False,
                 "recordatorios_antes": sorted({n for n in (_entero(x, 1, 60) for x in m0.get("recordatorios_antes") or []) if n}, reverse=True)
                 or list(BASE["matrices"]["recordatorios_antes"])}
     feriados = set()
@@ -121,15 +114,23 @@ def etapas_indicadores(anio: int, mes: int, p: Optional[dict] = None) -> list[tu
     return sorted(out, key=lambda x: x[1])
 
 
-def etapas_matriz(p: Optional[dict] = None) -> list[tuple[str, date]]:
-    """Recordatorios antes de la fecha límite de la matriz, el día límite y el aviso de incumplimiento."""
+def limite_matriz(anio: int, p: Optional[dict] = None) -> date:
+    """Último día hábil de febrero del año de la matriz."""
+    return anterior_habil(date(anio, 3, 1) - timedelta(days=1), p)
+
+
+def etapas_matriz(anio: int, p: Optional[dict] = None) -> list[tuple[str, date]]:
+    """Periodo de captura de la matriz del año: aviso de inicio (primer hábil de enero), recordatorios antes del
+    cierre, el día límite (último hábil de febrero) y el aviso de incumplimiento (siguiente hábil)."""
     m = _p(p)["matrices"]
-    limite = m["fecha_limite"]
-    if not limite:
+    if not m["activo"]:
         return []
-    limite = anterior_habil(limite, p)
+    limite = limite_matriz(anio, p)
+    inicio = siguiente_habil(date(anio, 1, 1), p)
     etapas = [(f"RECORDATORIO_{n}", anterior_habil(limite - timedelta(days=n), p)) for n in m["recordatorios_antes"]]
-    return etapas + [("VENCE_HOY", limite), ("AVISO_INCUMPLIMIENTO", siguiente_habil(limite + timedelta(days=1), p))]
+    etapas = [(e, max(f, inicio)) for e, f in etapas]
+    return sorted([("INICIO_CAPTURA", inicio)] + etapas, key=lambda x: x[1]) + [
+        ("VENCE_HOY", limite), ("AVISO_INCUMPLIMIENTO", siguiente_habil(limite + timedelta(days=1), p))]
 
 
 def etapa_de_hoy(etapas: Iterable[tuple[str, date]], hoy: date, enviadas: Iterable[str] = (), p: Optional[dict] = None) -> Optional[str]:

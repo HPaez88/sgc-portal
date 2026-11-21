@@ -6,7 +6,7 @@
 import React, { useMemo, useState } from 'react';
 import { ShieldAlert, ListChecks, Grid3x3, LayoutDashboard, FileBarChart2, ClipboardCheck, Plus, Sparkles, Compass } from 'lucide-react';
 import FodaArea from './FodaArea';
-import { unidadesDeRiesgo, TIPOS_UNIDAD } from '../../constants/unidades';
+import { unidadesDeRiesgo, unidadesQueEntregan, TIPOS_UNIDAD } from '../../constants/unidades';
 import { useSGC } from '../../SGCContext';
 import { useLocalStorage } from '../../hooks';
 import { esAdminSGC, can } from '../../constants/workflow';
@@ -20,7 +20,7 @@ import RevisionMatrices from './RevisionMatrices';
 import InformeRiesgos from './InformeRiesgos';
 
 const ANIO_ACTUAL = new Date().getFullYear();
-// Desde noviembre ya se captura la matriz del año siguiente.
+// La matriz de cada año se captura en enero y febrero de ese año; desde noviembre ya se puede preparar la del siguiente.
 const PRIMER_ANIO = Math.min(2025, ANIO_ACTUAL - 1);
 const ANIOS = Array.from({ length: ANIO_ACTUAL + 2 - PRIMER_ANIO }, (_, i) => PRIMER_ANIO + i);
 
@@ -40,7 +40,8 @@ export default function RiesgosView({ riesgos = [], setRiesgos, puedeTodasAreas,
   const setAnio = anioDeMatriz ? setAnioMatriz : setAnioSeguimiento;
   const areasCatalogo = useMemo(() => [...areasDetalle].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')), [areasDetalle]);
   // Unidades con matriz: direcciones, subdirecciones y áreas (el FODA es solo de áreas).
-  const unidades = useMemo(() => unidadesDeRiesgo(areasDetalle, direccionesDetalle), [areasDetalle, direccionesDetalle]);
+  // Solo las áreas entregan matriz; direcciones/subdirecciones aparecen únicamente si ya tienen riesgos capturados.
+  const unidades = useMemo(() => unidadesQueEntregan(unidadesDeRiesgo(areasDetalle, direccionesDetalle), riesgos), [areasDetalle, direccionesDetalle, riesgos]);
   const [areaSel, setAreaSel] = useState(areaUsuario && areasDetalle.some((a) => a.nombre === areaUsuario) ? areaUsuario : (areasCatalogo[0]?.nombre || ''));
   // Si el catálogo llega después del primer render, se toma la primera área.
   const area = puedeTodasAreas ? (areaSel || areasCatalogo[0]?.nombre || '') : areaUsuario;

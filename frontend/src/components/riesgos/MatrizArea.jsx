@@ -25,8 +25,13 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
   const [aceptando, setAceptando] = useState(false);
   const items = riesgos.filter((r) => r.area === area && Number(r.anio) === Number(anio));
   // Fecha límite de entrega (la fija el SGC en Configuración → Avisos por correo); solo se lee aquí.
+  // Se captura en enero y febrero del año de la matriz: el límite es el último día hábil de febrero.
   const [paramsAvisos] = useLocalStorage('sgc-config-avisos-parametros', {});
-  const limite = paramsAvisos?.matrices?.fecha_limite && Number(paramsAvisos.matrices.anio) === Number(anio) ? paramsAvisos.matrices.fecha_limite : null;
+  const limite = paramsAvisos?.matrices?.activo === false ? null : (() => {
+    const d = new Date(Number(anio), 2, 0); // último día de febrero
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
   const diasLimite = limite ? Math.round((new Date(`${limite}T00:00:00`) - new Date(new Date().toDateString())) / 86400000) : null;
   const estado = matriz?.estado || 'BORRADOR';
   // El área captura mientras la matriz está en captura u observada y el registro no tiene plan de mejora.

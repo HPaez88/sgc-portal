@@ -18,3 +18,12 @@ describe('unidades con matriz', () => {
     expect(puedeCapturarArea({ email: 'nadie@x.mx', area: 'Otra' }, 'Dir. Técnica', u)).toBe(false);
   });
 });
+
+describe('quién entrega matriz de riesgos', () => {
+  it('solo las áreas; una dirección o subdirección aparece si ya tiene riesgos capturados', async () => {
+    const { unidadesQueEntregan } = await import('../unidades');
+    const unidades = [{ nombre: 'Dir. General', tipo: 'direccion' }, { nombre: 'Subdir. X', tipo: 'subdireccion' }, { nombre: 'Plantas', tipo: 'area' }];
+    expect(unidadesQueEntregan(unidades, []).map((u) => u.nombre)).toEqual(['Plantas']);
+    expect(unidadesQueEntregan(unidades, [{ area: 'Dir. General', anio: 2027 }]).map((u) => u.nombre)).toEqual(['Dir. General', 'Plantas']);
+  });
+});

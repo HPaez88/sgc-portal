@@ -80,17 +80,14 @@ def test_parametros_invalidos_vuelven_al_valor_base():
     assert p["feriados"] == frozenset()
 
 
-def test_matriz_sin_fecha_limite_no_genera_avisos():
+def test_matriz_se_captura_en_enero_y_febrero():
     p = cal.normalizar({})
-    assert p["matrices"]["fecha_limite"] is None and cal.etapas_matriz(p) == []
-
-
-def test_etapas_de_la_matriz_con_fecha_limite():
-    p = cal.normalizar({"matrices": {"anio": 2027, "fecha_limite": "2026-12-15", "recordatorios_antes": [15, 5]}})
-    e = dict(cal.etapas_matriz(p))
-    assert e["RECORDATORIO_15"] == date(2026, 11, 30)
-    assert e["RECORDATORIO_5"] == date(2026, 12, 10)
-    assert e["VENCE_HOY"] == date(2026, 12, 15)
-    assert e["AVISO_INCUMPLIMIENTO"] == date(2026, 12, 16)
-    # fecha inválida o año fuera de rango: sin avisos
-    assert cal.etapas_matriz(cal.normalizar({"matrices": {"anio": 2027, "fecha_limite": "15/12/2026"}})) == []
+    e = dict(cal.etapas_matriz(2027, p))
+    assert e["INICIO_CAPTURA"] == date(2027, 1, 1)          # viernes 1 de enero
+    assert e["VENCE_HOY"] == date(2027, 2, 26)              # 28/feb/2027 es domingo -> viernes 26
+    assert e["RECORDATORIO_15"] == date(2027, 2, 11)
+    assert e["RECORDATORIO_5"] == date(2027, 2, 19)
+    assert e["AVISO_INCUMPLIMIENTO"] == date(2027, 3, 1)
+    assert dict(cal.etapas_matriz(2028, p))["VENCE_HOY"] == date(2028, 2, 29)   # bisiesto
+    # apagado desde Configuración: sin avisos
+    assert cal.etapas_matriz(2027, cal.normalizar({"matrices": {"activo": False}})) == []

@@ -218,14 +218,22 @@ def avisos_auditor(registros: list, enviadas: set) -> list:
 ESTADOS_MATRIZ_ENTREGADA = ("ENVIADA", "ACEPTADA")
 
 
-def avisos_matrices(unidades: list, matrices: list, hoy: date, enviadas: set, p: Optional[dict] = None) -> list[dict]:
-    """Unidades que aún no envían su matriz del año configurado. [{unidad, etapa, periodo, fecha_limite}].
-    enviadas = {(unidad, anio, etapa)}. Sin fecha límite capturada no hay avisos."""
+DIAS_TOLERANCIA_MATRIZ = 5  # si la tarea no corrió el día del aviso, se manda en los días hábiles siguientes; después ya no
+
+
+def avisos_matrices(unidades: list, matrices: list, hoy: date, enviadas: set, p: Optional[dict] = None,
+                    arranque: Optional[date] = None) -> list[dict]:
+    """Áreas que aún no envían la matriz del año en curso, durante su periodo de captura (enero-febrero).
+    [{unidad, etapa, periodo, fecha_limite}] — enviadas = {(unidad, anio, etapa)}."""
     params = p if p is not None else cal.normalizar({})
-    anio, limite = params["matrices"]["anio"], params["matrices"]["fecha_limite"]
-    etapas = cal.etapas_matriz(params)
+    anio = hoy.year
+    etapas = cal.etapas_matriz(anio, params)
     if not etapas:
         return []
+    fin = etapas[-1][1]
+    if hoy < etapas[0][1] or (hoy - fin).days > DIAS_TOLERANCIA_MATRIZ or (arranque and fin < arranque):
+        return []  # fuera del periodo de captura: nada (ni incumplimientos atrasados)
+    limite = cal.limite_matriz(anio, params)
     estado = {str(x.get("id")): str(x.get("estado") or "BORRADOR") for x in matrices or [] if isinstance(x, dict)}
     out = []
     for u in sorted(set(unidades)):

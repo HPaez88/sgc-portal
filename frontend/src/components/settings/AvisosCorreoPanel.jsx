@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { useLocalStorage } from '../../hooks';
 import CampoFecha from '../common/CampoFecha';
-import { CAMPO_LISTA, CAMPO_TEXTO, Seccion, Sub } from '../common/estilosCampos';
+import { CAMPO_TEXTO, Seccion, Sub } from '../common/estilosCampos';
 import { formatearFecha } from '../../constants/workflow';
 
 const TEMAS = [
@@ -20,7 +20,7 @@ const TEMAS = [
 const BASE = {
   registros: { recordatorios_antes: [15, 10, 5], vence_hoy: true, dias_aviso_despues: 1, dias_oficio_despues_aviso: 5 },
   indicadores: { AVISO: 1, RECORDATORIO: 5, ULTIMO_RECORDATORIO: 10, AVISO_INCUMPLIMIENTO: 11, OFICIO_EXHORTO: 16, recordatorios_extra: [] },
-  matrices: { anio: null, fecha_limite: '', recordatorios_antes: [15, 5] },
+  matrices: { activo: true, recordatorios_antes: [15, 5] },
   feriados: [],
 };
 const DIAS_IND = [
@@ -104,7 +104,6 @@ export default function AvisosCorreoPanel({ usuarios = [] }) {
   const antes = [...(reg.recordatorios_antes || [])].sort((a, b) => b - a);
   const extra = [...(ind.recordatorios_extra || [])].sort((a, b) => a - b);
   const mat = { ...BASE.matrices, ...(g.matrices || {}) };
-  const anioMatriz = mat.anio || new Date().getFullYear() + 1;
   const antesMatriz = [...(mat.recordatorios_antes || [])].sort((a, b) => b - a);
 
   return (
@@ -185,30 +184,20 @@ export default function AvisosCorreoPanel({ usuarios = [] }) {
           onCambiar={(l) => cambiar('indicadores', 'recordatorios_extra', l)} />
       </Seccion>
 
-      <Seccion n={5} titulo="Entrega de la matriz de riesgos y oportunidades" ayuda="Avisa a las unidades que aún no envían su matriz OOMRSC-37 del año siguiente. Sin fecha límite no se envía nada." color="bg-rose-800">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="block text-xs font-bold text-slate-800 mb-1">Matriz del año</span>
-            <select value={anioMatriz} onChange={(e) => cambiar('matrices', 'anio', Number(e.target.value))} className={CAMPO_LISTA}>
-              {[0, 1, 2].map((n) => new Date().getFullYear() + n).map((a) => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </label>
-          <label className="block">
-            <span className="block text-xs font-bold text-slate-800 mb-1">Fecha límite de entrega</span>
-            <CampoFecha value={mat.fecha_limite || ''} onChange={(e) => setGuardados((prev) => {
-              const p = prev && typeof prev === 'object' ? prev : {};
-              return { ...p, matrices: { ...BASE.matrices, ...(p.matrices || {}), anio: anioMatriz, fecha_limite: e.target.value } };
-            })} className={CAMPO_TEXTO} />
-            <span className="block text-xs text-slate-500 mt-1">{mat.fecha_limite ? `Se avisa ${antesMatriz.map((n) => `${n}`).join(', ')} días antes, el día límite y al día siguiente si no la enviaron.` : 'Sin fecha: no hay avisos de matriz.'}</span>
-          </label>
-        </div>
+      <Seccion n={5} titulo="Entrega de la matriz de riesgos y oportunidades" ayuda="La matriz de cada año se captura en enero y febrero de ese año. Solo las áreas la entregan; la vista por dirección y del organismo se arma con las de sus áreas." color="bg-rose-800">
+        <ul className="text-sm text-slate-800 list-disc pl-5 space-y-1">
+          <li><strong>Inicio:</strong> primer día hábil de enero (aviso de inicio de captura).</li>
+          <li><strong>Fecha límite:</strong> último día hábil de febrero.</li>
+          <li><strong>Después:</strong> aviso de incumplimiento al día hábil siguiente, con copia a quien lo tenga activado.</li>
+          <li>Solo a las áreas que aún no envían su matriz del año.</li>
+        </ul>
+        <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <input type="checkbox" className="w-5 h-5 accent-sky-700" checked={mat.activo !== false} onChange={(e) => cambiar('matrices', 'activo', e.target.checked)} />
+          Enviar estos avisos
+        </label>
         <Sub titulo="Recordatorios antes de la fecha límite" />
-        <ListaDias valores={antesMatriz} min={1} max={60} texto={(n) => `${n} días antes`} etiquetaAgregar="Agregar recordatorio"
+        <ListaDias valores={antesMatriz} min={1} max={45} texto={(n) => `${n} días antes`} etiquetaAgregar="Agregar recordatorio"
           onCambiar={(l) => cambiar('matrices', 'recordatorios_antes', l)} />
-        {mat.fecha_limite && (
-          <button type="button" onClick={() => cambiar('matrices', 'fecha_limite', '')}
-            className="text-sm font-semibold text-rose-800 underline">Quitar la fecha límite (detener estos avisos)</button>
-        )}
       </Seccion>
 
       <Seccion n={6} titulo="Días feriados" ayuda="En estos días no sale ningún correo y los plazos se recorren al día hábil." color="bg-indigo-700">

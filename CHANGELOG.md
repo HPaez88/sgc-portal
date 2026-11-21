@@ -2,6 +2,14 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-21T23:00Z · @claude-code · [FEATURE] · Riesgos: captura de la matriz en enero-febrero y solo las áreas la entregan
+- Regla de @human: la matriz de cada año se captura en enero y febrero de ese año. Avisos automáticos: inicio (primer hábil de enero), recordatorios 15 y 5 días antes, día límite (último hábil de febrero) e incumplimiento (hábil siguiente). Fuera de ese periodo no sale nada. Se puede apagar y ajustar los recordatorios en Configuración → Avisos por correo.
+- Solo las áreas entregan matriz (avisos, lista de matrices, cobertura del informe); la vista por dirección y organismo se arma con las de sus áreas. Una dirección con riesgos ya capturados (Dir. General, 2) sigue visible.
+- Matriz del área: "Fecha límite de entrega" calculada (último hábil de febrero del año de la matriz).
+- Pruebas: test_avisos_calendario.py, test_avisos_motor.py, constants/__tests__/unidades.test.js.
+- Tareas STATE: C23 (parte 2 de 4)
+- Deploy: SÍ
+
 ## 2026-11-21T21:00Z · @claude-code · [FEATURE] · Riesgos: fecha límite de entrega de la matriz y sus avisos (C23, parte 2)
 - Configuración → Avisos por correo: sección "Entrega de la matriz de riesgos y oportunidades" (año, fecha límite, recordatorios N días antes). Sin fecha no se avisa nada (no se supone una fecha).
 - Tarea diaria: tipo MATRIZ a las unidades (direcciones, subdirecciones y áreas) que no han enviado su matriz del año: recordatorios, día límite y aviso de incumplimiento (con copia a quien lo tenga activado). El mensaje invita a usar "Traer de AAAA".
