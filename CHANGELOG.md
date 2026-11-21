@@ -2,6 +2,14 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-21T19:00Z · @claude-code · [FEATURE] · Riesgos: traer los registros del año anterior con reevaluación anual (C23, parte 1)
+- En la matriz del año nuevo (en captura), botón "Traer de AAAA (N)": ventana con los riesgos y oportunidades del año anterior del área (nivel, estado, plan); los cerrados como eficaces vienen sin marcar.
+- La copia lleva descripción, causa, consecuencia, controles, proceso y contexto; la evaluación se rehace (ISO 9001 §6.1) y la anterior queda como referencia en el formulario. Ligada al original (origen_id) y no se trae dos veces.
+- Pruebas: constants/__tests__/riesgosArrastre.test.js. Probado en copia local.
+- Archivos: frontend/src/constants/riesgos.js, components/riesgos/MatrizArea.jsx, components/riesgos/FormRiesgo.jsx
+- Tareas STATE: C23 (parte 1 de 4)
+- Deploy: SÍ
+
 ## 2026-11-21T16:00Z · @claude-code · [UI] · Paginación en todas las listas que crecen
 - Nuevo `usePaginado(lista)` en common/Paginacion.jsx (25 por página; vuelve a la página 1 al filtrar).
 - Paginadas: listas de AC y PM (tabla y tarjetas móviles), Reportes de corrección, Aprobaciones, Buzón, Avisos automáticos, Configuración (usuarios y catálogo de áreas), Hallazgos de auditoría y Seguimiento de riesgos. Ya lo estaban: Indicadores, Control documental, Bitácora y Registro del servidor.

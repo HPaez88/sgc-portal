@@ -2,7 +2,7 @@
 // La matriz solo enlista (tabla por tipo); cada registro se captura o consulta en una ventana emergente.
 // El SGC puede ajustar cualquier registro no dictaminado y aceptar la matriz aquí mismo (genera los planes de mejora).
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, Send, CheckCircle2, Trash2, MessageSquareWarning, ShieldAlert, Lightbulb, Pencil, Eye } from 'lucide-react';
+import { Plus, Send, CheckCircle2, Trash2, MessageSquareWarning, ShieldAlert, Lightbulb, Pencil, Eye, History } from 'lucide-react';
 import ModalBase from '../common/ModalBase';
 import FormRiesgo from './FormRiesgo';
 import PanelSugerenciasIA from './PanelSugerenciasIA';
@@ -11,7 +11,7 @@ import Dialogos, { useDialogos } from '../common/Dialogos';
 import { useToast } from '../common/Toast';
 import { asignarFolios } from '../../services/folioService';
 import { formatearFecha, puedeMoverFechas } from '../../constants/workflow';
-import { CLAVE_MATRIZ, ESTADOS_MATRIZ, ESTADOS_RIESGO, nivelDe, puntaje, faltante, nuevoRiesgo, idMatriz, llevaPM, aceptacionDe, pmSincronizado } from '../../constants/riesgos';
+import { CLAVE_MATRIZ, ESTADOS_MATRIZ, ESTADOS_RIESGO, nivelDe, puntaje, faltante, nuevoRiesgo, idMatriz, llevaPM, aceptacionDe, pmSincronizado, candidatosAnioAnterior, traerDelAnioAnterior } from '../../constants/riesgos';
 
 const DECLARACION_ACEPTACION = 'como responsable del Sistema de Gestión de la Calidad, declaro que revisé la matriz OOMRSC-37 del área, que sus riesgos y oportunidades están identificados y evaluados conforme a los criterios del formato, y que los planes de mejora que se generan tendrán seguimiento del SGC hasta su cierre y dictamen de eficacia.';
 
@@ -42,6 +42,19 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
     if (r.pm_id) setPlanesMejora?.((prev) => prev.map((p) => (String(p.id) === String(r.pm_id) ? pmSincronizado(p, r) : p)));
   };
   const cerrarVentana = () => { setAbierto(null); setBorrador(null); };
+
+  // Reevaluación anual: la matriz nueva parte de los registros del año anterior (se vuelven a evaluar).
+  const candidatos = capturable ? candidatosAnioAnterior(riesgos, area, anio) : [];
+  const [traer, setTraer] = useState(null); // Set de ids marcados mientras la ventana está abierta
+  const abrirTraer = () => setTraer(new Set(candidatos.filter((c) => c.sugerido).map((c) => String(c.r.id))));
+  const confirmarTraer = () => {
+    const nuevos = traerDelAnioAnterior(riesgos, [...traer], { area, anio, por: usuarioLogueado?.nombre });
+    setTraer(null);
+    if (!nuevos.length) return;
+    setRiesgos((prev) => [...prev, ...nuevos]);
+    toast.success(`${nuevos.length} registro(s) traído(s) de ${anio - 1}. Vuelve a evaluarlos para este año.`);
+    registrarMovimiento?.({ modulo: 'RIESGOS', accion: 'TRAER_ANIO_ANTERIOR', descripcion: `${nuevos.length} registro(s) de ${anio - 1} traídos a la matriz ${anio} de ${area} para reevaluación`, folio: `${CLAVE_MATRIZ}-${anio}` });
+  };
   const quitar = async (r) => {
     if ((r.historial_pm || []).length) { toast.warning('Este registro ya tuvo planes de mejora; no se quita, se replantea.'); return; }
     const { ok } = await pedirConfirmacion({ titulo: `Quitar ${r.tipo.toLowerCase()}`, mensaje: `¿Quitar "${r.descripcion || 'sin descripción'}" de la matriz ${anio}?`, textoAceptar: 'Quitar', peligro: true });
@@ -132,6 +145,11 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
           <div className="flex flex-wrap gap-2 justify-end">
             <PanelSugerenciasIA area={area} direccion={direccion} anio={anio} riesgos={riesgos} setRiesgos={setRiesgos}
               procesos={procesos} usuarioLogueado={usuarioLogueado} registrarMovimiento={registrarMovimiento} autoIniciar={iaAuto} />
+            {candidatos.length > 0 && (
+              <button type="button" onClick={abrirTraer} className="px-3 py-2 text-sm font-bold text-sky-900 bg-sky-50 border-2 border-sky-300 rounded-lg hover:bg-sky-100 inline-flex items-center gap-1">
+                <History size={15} /> Traer de {anio - 1} ({candidatos.length})
+              </button>
+            )}
             <button type="button" onClick={() => agregar('Riesgo')} className="px-3 py-2 text-sm font-bold text-rose-800 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 inline-flex items-center gap-1"><Plus size={15} /> Riesgo</button>
             <button type="button" onClick={() => agregar('Oportunidad')} className="px-3 py-2 text-sm font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 inline-flex items-center gap-1"><Plus size={15} /> Oportunidad</button>
             {porAceptar ? (
@@ -241,6 +259,41 @@ export default function MatrizArea({ area, direccion, anio, riesgos, setRiesgos,
         </ModalBase>
       )}
 
+      {traer && (
+        <ModalBase isOpen onClose={() => setTraer(null)} size="3xl" titulo={`Traer registros de ${anio - 1}`} subtitulo={`${area} · matriz ${anio}`}
+          bodyClassName="p-5 space-y-3 bg-slate-50"
+          footer={(
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setTraer(null)} className="px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg">Cancelar</button>
+              <button type="button" disabled={!traer.size} onClick={confirmarTraer} className="px-5 py-2 text-sm font-bold bg-sky-700 hover:bg-sky-800 disabled:opacity-40 text-white rounded-lg">Traer {traer.size} registro(s)</button>
+            </div>
+          )}>
+          <p className="text-sm text-slate-700">Se copia la descripción, causa, consecuencia, controles, proceso y contexto. La evaluación <strong>se vuelve a hacer</strong> para {anio} (ISO 9001 §6.1); la del año anterior queda como referencia. Los cerrados como eficaces vienen sin marcar.</p>
+          <ul className="space-y-2">
+            {candidatos.map(({ r }) => {
+              const id = String(r.id); const marcado = traer.has(id); const nv = nivelDe(r);
+              return (
+                <li key={id}>
+                  <label className={`flex items-start gap-3 rounded-lg border-2 p-3 cursor-pointer ${marcado ? 'border-sky-400 bg-white' : 'border-slate-200 bg-white/60'}`}>
+                    <input type="checkbox" className="mt-1 w-5 h-5 accent-sky-700" checked={marcado}
+                      onChange={(e) => setTraer((prev) => { const n = new Set(prev); if (e.target.checked) n.add(id); else n.delete(id); return n; })} />
+                    <span className="min-w-0">
+                      <span className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                        <span className={r.tipo === 'Oportunidad' ? 'text-emerald-800' : 'text-rose-800'}>{r.tipo}</span>
+                        {nv && <span className={`px-2 py-0.5 rounded-full border ${nv.suave}`}>{nv.nivel} ({puntaje(r)})</span>}
+                        <span className={`px-2 py-0.5 rounded-full border ${(ESTADOS_RIESGO[r.estado] || ESTADOS_RIESGO.IDENTIFICADO).color}`}>{(ESTADOS_RIESGO[r.estado] || ESTADOS_RIESGO.IDENTIFICADO).label}</span>
+                        {r.pm_folio && <span className="text-slate-600">{r.pm_folio}</span>}
+                      </span>
+                      <span className="block text-sm text-slate-900 mt-1">{r.descripcion || 'Sin descripción'}</span>
+                      {r.proceso && <span className="block text-xs text-slate-600">Proceso: {r.proceso}</span>}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </ModalBase>
+      )}
       <Dialogos {...propsDialogos} />
       <ModalConfirmacionResponsabilidadHumana
         isOpen={Boolean(confirmar)}

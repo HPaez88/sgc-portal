@@ -271,3 +271,31 @@ export const puedeCapturarArea = (usuario, area, areasDetalle = [], esAdmin = fa
   return usuario.area === area || (correo && (String(ficha?.correo || '').toLowerCase() === correo
     || (ficha?.encargados_sgc || []).map((c) => String(c).toLowerCase()).includes(correo)));
 };
+
+// ── Reevaluación anual (ISO 9001 §6.1): la matriz nueva parte de la del año anterior ──
+// Se copia lo que describe el riesgo; la evaluación se rehace (queda la anterior como referencia).
+const CAMPOS_ARRASTRE = ['tipo', 'area', 'direccion', 'proceso', 'contexto', 'contexto_resultado', 'descripcion', 'causa', 'consecuencia', 'controles'];
+
+export const candidatosAnioAnterior = (riesgos, area, anio) => {
+  const lista = Array.isArray(riesgos) ? riesgos : [];
+  const traidos = new Set(lista.filter((r) => Number(r.anio) === Number(anio) && r.area === area && r.origen_id != null).map((r) => String(r.origen_id)));
+  return lista
+    .filter((r) => r.area === area && Number(r.anio) === Number(anio) - 1 && !traidos.has(String(r.id)))
+    .map((r) => ({ r, sugerido: r.estado !== 'CERRADO_EFICAZ' }));
+};
+
+export const traerDelAnioAnterior = (riesgos, ids, { area, anio, por = '' }) => {
+  const elegidos = new Set((ids || []).map(String));
+  return candidatosAnioAnterior(riesgos, area, anio)
+    .filter(({ r }) => elegidos.has(String(r.id)))
+    .map(({ r }) => ({
+      ...nuevoRiesgo({ tipo: r.tipo, area, direccion: r.direccion, anio, por }),
+      ...Object.fromEntries(CAMPOS_ARRASTRE.filter((c) => r[c] !== undefined).map((c) => [c, r[c]])),
+      area, anio,
+      origen_id: r.id, origen_anio: Number(r.anio),
+      evaluacion_anterior: {
+        anio: Number(r.anio), probabilidad: Number(r.probabilidad) || 0, impacto: Number(r.impacto) || 0,
+        nivel: nivelDe(r)?.nivel || '', estado: r.estado || 'IDENTIFICADO', tratamiento: r.tratamiento || '', pm_folio: r.pm_folio || '',
+      },
+    }));
+};

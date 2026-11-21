@@ -136,6 +136,13 @@ export default function FormRiesgo({ valor, onChange, procesos = [], soloLectura
       </Seccion>
 
       <Seccion n={3} titulo="Evaluación" ayuda={`Nivel = ${escala.ejeY.toLowerCase()} × ${escala.ejeX.toLowerCase()} (formato ${'OOMRSC-37'})`} completo={pide ? okEval : null}>
+        {r.evaluacion_anterior && (
+          <p className="text-sm text-sky-950 bg-sky-50 border-2 border-sky-200 rounded-lg px-3 py-2">
+            <strong>Reevaluación anual.</strong> En {r.evaluacion_anterior.anio} se evaluó con {escala.ejeY.toLowerCase()} {r.evaluacion_anterior.probabilidad} × {escala.ejeX.toLowerCase()} {r.evaluacion_anterior.impacto} = {r.evaluacion_anterior.probabilidad * r.evaluacion_anterior.impacto} ({r.evaluacion_anterior.nivel || 'sin nivel'})
+            {r.evaluacion_anterior.tratamiento ? `, tratamiento "${r.evaluacion_anterior.tratamiento}"` : ''}{r.evaluacion_anterior.pm_folio ? `, plan ${r.evaluacion_anterior.pm_folio}` : ''}.
+            {' '}Evalúalo de nuevo con la situación actual.
+          </p>
+        )}
         <div className="grid grid-cols-1 2xl:grid-cols-[1fr_1fr_160px] md:grid-cols-2 gap-4 items-start">
           <Escala titulo={escala.ejeY} opciones={escala.probabilidad} valor={Number(r.probabilidad)} deshabilitado={soloLectura} onElegir={(n) => set({ probabilidad: n })} />
           <Escala titulo={escala.ejeX} opciones={escala.impacto} valor={Number(r.impacto)} deshabilitado={soloLectura} onElegir={(n) => set({ impacto: n })} />
