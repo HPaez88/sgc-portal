@@ -18,7 +18,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlmodel import Session, select
@@ -93,9 +93,11 @@ def _prueba():
 
 def _a_pdf(ruta: Path) -> Path:
     with tempfile.TemporaryDirectory() as tmp:
-        subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", tmp, str(ruta)], check=True, timeout=180,
-                       capture_output=True)
-        pdf = next(Path(tmp).glob("*.pdf"))
+        r = subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", tmp, str(ruta)], timeout=600,
+                           capture_output=True, text=True)
+        pdf = next(Path(tmp).glob("*.pdf"), None)
+        if not pdf:
+            raise RuntimeError(f"LibreOffice no pudo convertirlo: {(r.stderr or r.stdout).strip()[:300]}")
         destino = ruta.with_suffix(".pdf")
         destino.write_bytes(pdf.read_bytes())
         return destino
@@ -104,7 +106,15 @@ def _a_pdf(ruta: Path) -> Path:
 def _subir(s, ruta: Path, nombre_original: str, folio: str, descripcion: str, svc, Archivo, aplicar: bool):
     contenido = ruta.read_bytes()
     svc.escanear_antivirus(contenido)
-    sane = svc.validar_y_sanear(ruta.name, contenido)
+    try:
+        sane = svc.validar_y_sanear(ruta.name, contenido)
+    except Exception:
+        if ruta.suffix.lower() != ".docx":
+            raise
+        # Word con vínculos externos (imágenes enlazadas): se guarda como PDF, que ya no trae el vínculo
+        ruta = _a_pdf(ruta)
+        contenido = ruta.read_bytes()
+        sane = svc.validar_y_sanear(ruta.name, contenido)
     if not aplicar:
         return None, len(contenido), len(sane.contenido)
     existente = s.exec(select(Archivo).where(Archivo.organismo_id == 1, Archivo.sha256 == sane.sha256)).first()
@@ -146,7 +156,7 @@ if __name__ == "__main__":
             desc = f.get("descripcion") or ""
             if len(desc) > len(ac.get("descripcion_no_conformidad_original") or ""):
                 nuevo["descripcion_no_conformidad_original"] = nuevo["descripcion_no_conformidad_final"] = desc
-            nuevo["formato_importado"] = {"archivo": f.get("archivo"), "carpeta": f.get("carpeta"), "fecha": datetime.utcnow().isoformat()}
+            nuevo["formato_importado"] = {"archivo": f.get("archivo"), "carpeta": f.get("carpeta"), "fecha": datetime.now(UTC).replace(tzinfo=None).isoformat()}
             acts = json.loads(nuevo["actividades_json"])
             subidas, kb0, kb1 = 0, 0, 0
             for ev in f.get("evidencias", []):
@@ -163,10 +173,10 @@ if __name__ == "__main__":
                         acts[n - 1].update(evidencia_real=url, evidencia_cargada=reg.nombre_original, evidencia_obj={
                             "url": url, "archivo_id": reg.id, "sha256": reg.sha256, "preview": "", "nombre": reg.nombre_original,
                             "tipo": "image" if reg.tipo == "imagen" else reg.tipo, "tamano_kb": round(reg.bytes / 1024),
-                            "tamano_original_kb": round(reg.bytes_original / 1024), "fecha_subida": datetime.utcnow().isoformat(),
+                            "tamano_original_kb": round(reg.bytes_original / 1024), "fecha_subida": datetime.now(UTC).replace(tzinfo=None).isoformat(),
                             "subido_por": "Importación de formatos"})
                 except Exception as e:  # una evidencia que falla no detiene el folio; se informa
-                    print(f"   ! {ev['original']}: {getattr(e, 'detail', e)}")
+                    print(f"   ! {ev['original']}: {getattr(e, 'detail', None) or repr(e)}")
             nuevo["actividades_json"] = json.dumps(acts, ensure_ascii=False)
             ligadas = sum(1 for a in acts if a.get("evidencia_real"))
             print(f"{folio}: equipo {len(json.loads(nuevo['equipo_json']))} · causas {len(json.loads(nuevo['causas_json']))} · "
@@ -178,7 +188,7 @@ if __name__ == "__main__":
             print("Solo muestra; agrega --aplicar para hacerlo.")
             sys.exit(0)
         fila.valor = json.dumps(lista, ensure_ascii=False)
-        fila.actualizado, fila.actualizado_por = datetime.utcnow(), "script importar_formatos_ac"
+        fila.actualizado, fila.actualizado_por = datetime.now(UTC).replace(tzinfo=None), "script importar_formatos_ac"
         s.add(fila)
         s.add(BitacoraServidor(organismo_id=1, usuario="script importar_formatos_ac", rol="Sistema", clave=CLAVE, modificados=len(bitacora),
                                detalle=json.dumps(bitacora, ensure_ascii=False)))

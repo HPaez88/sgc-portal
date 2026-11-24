@@ -149,3 +149,14 @@ def test_docx_bomba_se_rechaza_antes_de_descomprimir(monkeypatch):
     with pytest.raises(HTTPException) as e:
         svc.validar_y_sanear("bomba.docx", buf.getvalue())
     assert e.value.status_code == 413 and "word/bomba.xml" not in leidas
+
+
+def test_pdf_con_destino_de_apertura_pasa_sin_el():
+    """LibreOffice escribe /OpenAction [pág /XYZ ...]: es solo un destino, se quita y el PDF pasa."""
+    pdf = pikepdf.new()
+    pdf.add_blank_page(page_size=(200, 200))
+    pdf.Root.OpenAction = pikepdf.Array([pdf.pages[0].obj, pikepdf.Name.XYZ, None, None, 0])
+    buf = io.BytesIO()
+    pdf.save(buf)
+    limpio = svc.validar_y_sanear("exportado.pdf", buf.getvalue())
+    assert "/OpenAction" not in pikepdf.open(io.BytesIO(limpio.contenido)).Root

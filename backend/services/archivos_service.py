@@ -125,6 +125,10 @@ def _sanear_pdf(contenido: bytes) -> bytes:
         raise HTTPException(status_code=422, detail=f"PDF inválido o cifrado: {e}") from e
     with pdf:
         raiz = pdf.Root
+        # Una /OpenAction que es solo un destino ([página /XYZ ...], lo que escriben LibreOffice y otros exportadores) no
+        # ejecuta nada: se quita. Una acción (diccionario con /S) sigue rechazándose.
+        if isinstance(raiz.get("/OpenAction"), pikepdf.Array):
+            del raiz["/OpenAction"]
         if "/OpenAction" in raiz or "/AA" in raiz or ("/AcroForm" in raiz and "/XFA" in raiz.AcroForm):
             raise HTTPException(status_code=422, detail="PDF rechazado: contiene acciones automáticas al abrir.")
         nombres = raiz.get("/Names", {})
