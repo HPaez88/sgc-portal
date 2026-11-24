@@ -12,7 +12,8 @@
 - [x] AC#28/2026 fusionada en AC#22/2026 (`fusionar_ac`), contador AC 2026 en 27
 - [x] 16 formatos OOMRSC-20 + 85 evidencias importados (`importar_formatos_ac`); Expediente en el detalle de AC
 - [ ] AC#10/2025 y AC#10/2026: el Excel de la carpeta no corresponde a la AC del portal — esperar confirmación de @human
-- [ ] Sin acción de contención en el Excel: AC#3, 4, 5/2026, AC#14, 17, 20/2025 — las áreas la capturan
+- [ ] Sin acción de contención en el Excel: AC#3, 4, 5/2026, AC#14, 20/2025 — las áreas la capturan (AC#17/2025 cerrada, formato dado por completo)
+- [ ] AC#15/2025: @human revisa el encabezado del Excel (folio 8 / Auditoría Externa)
 - [ ] Sin carpeta: AVM-07 y AC#19/2026
 
 ## Riesgos, Indicadores, AC/PM y harness v0.17 — 2026-11-17
