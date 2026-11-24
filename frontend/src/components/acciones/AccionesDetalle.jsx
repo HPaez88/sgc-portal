@@ -12,6 +12,7 @@ import ReplanteoFinal from '../common/ReplanteoFinal';
 import SolicitudCambio from '../common/SolicitudCambio';
 import RiesgosLigados from '../riesgos/RiesgosLigados';
 import CampoFecha from '../common/CampoFecha';
+import ExpedienteAC from './ExpedienteAC';
 
 export default function AccionesDetalle({
   abrirDictamenNoEficaz,
@@ -119,6 +120,26 @@ export default function AccionesDetalle({
     } finally {
       setSubiendoIndex(null);
     }
+  };
+
+  // Liga un archivo del expediente a una actividad (mismo formato que una evidencia recién subida).
+  const handleLigarExpediente = async (index, a) => {
+    if (evidenciaCongelada) return;
+    const url = `/api/v1/archivos/${a.id}/url`;
+    const nuevo = [...actividades];
+    nuevo[index] = {
+      ...nuevo[index],
+      evidencia_real: url,
+      evidencia_obj: {
+        url, archivo_id: a.id, sha256: a.sha256, preview: '', nombre: a.nombre_original,
+        tipo: a.tipo === 'imagen' ? 'image' : a.tipo, tamano_kb: Math.round(a.bytes / 1024),
+        tamano_original_kb: Math.round(a.bytes_original / 1024), fecha_subida: new Date().toISOString(),
+        subido_por: usuarioLogueado?.nombre || 'Usuario',
+      },
+    };
+    setActividades(nuevo);
+    await guardarBorrador({ actividades_json: JSON.stringify(nuevo) });
+    if (setMensaje) setMensaje(`✓ ${a.nombre_original} ligado a la actividad ${index + 1}`);
   };
 
   const handleEliminarEvidencia = async (index) => {
@@ -858,6 +879,10 @@ export default function AccionesDetalle({
             </div>
           )}
         </div>
+      )}
+
+      {tieneFolio && (
+        <ExpedienteAC folio={form.folio_codigo} actividades={actividades} puedeLigar={!evidenciaCongelada} onLigar={handleLigarExpediente} />
       )}
 
       {/* ═══════════════ AUDITOR ASIGNADO ═══════════════ */}

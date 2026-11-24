@@ -3,9 +3,17 @@
 > Fuente de verdad del avance. El tracker interno del agente no cuenta: **lo que está en disco es lo que vale**.
 > Regla de 3 archivos: cada tarea tocada actualiza el código + `STATE.md` + `CHANGELOG.md`.
 
-**Última actualización:** 2026-11-17 · @claude-code
+**Última actualización:** 2026-11-24 · @claude-code
 
 ---
+
+## Formatos de AC importados — 2026-11-24
+
+- [x] AC#28/2026 fusionada en AC#22/2026 (`fusionar_ac`), contador AC 2026 en 27
+- [x] 16 formatos OOMRSC-20 + 85 evidencias importados (`importar_formatos_ac`); Expediente en el detalle de AC
+- [ ] AC#10/2025 y AC#10/2026: el Excel de la carpeta no corresponde a la AC del portal — esperar confirmación de @human
+- [ ] Sin acción de contención en el Excel: AC#3, 4, 5/2026, AC#14, 17, 20/2025 — las áreas la capturan
+- [ ] Sin carpeta: AVM-07 y AC#19/2026
 
 ## Riesgos, Indicadores, AC/PM y harness v0.17 — 2026-11-17
 

@@ -2,6 +2,12 @@
 
 > Timeline append-only. Entradas nuevas **arriba**, nunca se borra ni reordena el historial.
 
+## 2026-11-24 — Formatos de acciones correctivas importados al portal
+- `backend/scripts/importar_formatos_ac.py`: pasa al portal los formatos OOMRSC-20 llenados en Excel (equipo, causas con la principal, contención, herramienta, actividades con replanteos y avance, revisión del auditor) y sus evidencias. Solo llena AC con formato pendiente; conserva folio, apertura, estado y fechas de seguimiento; bitácora del servidor con el registro anterior.
+- Evidencias: antivirus + saneo/compresión de siempre; Excel/Word viejo/PowerPoint pasan a PDF. 16 folios, 85 archivos, 360 MB → 31 MB.
+- Saneo de PDF: una `/OpenAction` que solo es un destino de página (la que escribe LibreOffice) se quita en vez de rechazar el PDF; las acciones reales siguen rechazándose (prueba nueva).
+- Detalle de AC: sección **Expediente** (archivos con el folio, paginada) con opción de ligar un archivo a una actividad como evidencia.
+
 ## 2026-11-22T02:00Z · @claude-code · [UI] · Riesgos: pendientes operativos discretos en el Tablero (C23, parte 4)
 - Línea plegada "Pendientes operativos" al inicio del Tablero (también cuando aún no hay nada aceptado): matrices del año sin enviar, en revisión SGC, planes de mejora vencidos o por vencer y riesgos por dictaminar. Se abre solo si se quiere ver el detalle; no se movieron pestañas ni contenido (pedido de @human: que no sea vistoso).
 - Lógica pura `pendientesOperativos` (constants/riesgos.js) con prueba.
