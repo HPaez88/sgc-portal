@@ -7,6 +7,7 @@
 - Evidencias: antivirus + saneo/compresión de siempre; Excel/Word viejo/PowerPoint pasan a PDF. 16 folios, 85 archivos, 360 MB → 31 MB.
 - Saneo de PDF: una `/OpenAction` que solo es un destino de página (la que escribe LibreOffice) se quita en vez de rechazar el PDF; las acciones reales siguen rechazándose (prueba nueva).
 - `backend/scripts/cerrar_formato_ac.py`: AC#17/2025 (cerrada efectiva por el auditor) queda con formato completo y su actividad 4 como completada.
+- AC#18/2026 cerrada EFECTIVA con el dictamen de Mariana Pérez Chávez (correo del 2026-11-19); `cerrar_formato_ac --dictamen` registra un dictamen emitido fuera del portal.
 - Detalle de AC: sección **Expediente** (archivos con el folio, paginada) con opción de ligar un archivo a una actividad como evidencia.
 
 ## 2026-11-22T02:00Z · @claude-code · [UI] · Riesgos: pendientes operativos discretos en el Tablero (C23, parte 4)
