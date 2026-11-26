@@ -370,7 +370,7 @@ export default function AccionesLista({
           {/* ════════════════════════════════════════════════════════════
               VISTA MÓVIL (< md): TARJETAS ERGONÓMICAS TÁCTILES
               ════════════════════════════════════════════════════════════ */}
-          <div className="md:hidden space-y-2.5">
+          <div className="xl:hidden grid gap-2.5 md:grid-cols-2">
             {pag.visibles.map((ac, idx) => {
               const venc = getVencimiento(ac);
               return (
@@ -420,9 +420,14 @@ export default function AccionesLista({
           {/* ════════════════════════════════════════════════════════════
               VISTA ESCRITORIO (>= md): TABLA COMPLETA
               ════════════════════════════════════════════════════════════ */}
-          <div className="hidden md:block bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
+          <div className="hidden xl:block bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
+            <div>
+              {/* Anchos fijos: "No conformidad" toma el resto; nada se sale de la pantalla */}
+              <table className="w-full table-fixed text-xs text-left">
+                <colgroup>
+                  <col className="w-28" /><col className="w-36" /><col /><col className="w-32" />
+                  <col className="w-32" /><col className="w-28" /><col className="w-28" /><col className="w-24" />
+                </colgroup>
                 <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3 font-mono">Folio</th>
@@ -438,26 +443,26 @@ export default function AccionesLista({
                 <tbody className="divide-y divide-slate-100">
                   {pag.visibles.map((ac, idx) => (
                     <tr key={ac.id || idx} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="p-3 font-mono text-xs font-semibold text-slate-700">
+                      <td className="p-3 font-mono text-xs font-semibold text-slate-700 break-words">
                         {ac.folio_codigo || 'Pendiente'}
                         <EtiquetaCambio registro={ac} />
                       </td>
                       <td className="p-3 text-slate-800 font-medium">{ac.area || '-'}</td>
-                      <td className="p-3 text-slate-700 max-w-sm" title={noConformidadDe(ac)}>
-                        <span className="line-clamp-2">{noConformidadDe(ac) || '-'}</span>
+                      <td className="p-3 text-slate-700" title={noConformidadDe(ac)}>
+                        <span className="line-clamp-3">{noConformidadDe(ac) || '-'}</span>
                       </td>
-                      <td className="p-3 text-slate-500 whitespace-nowrap">{etiquetaOrigen(ac)}</td>
+                      <td className="p-3 text-[11px] leading-snug text-slate-500 break-words">{etiquetaOrigen(ac)}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getEstadoColor(ac.estado)}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-xl text-[11px] font-bold border ${getEstadoColor(ac.estado)}`}>
                           {getEstadoLabel(ac.estado)}
                         </span>
                       </td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getVencimiento(ac).color}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-xl text-[11px] font-bold border ${getVencimiento(ac).color}`}>
                           {getVencimiento(ac).label}
                         </span>
                       </td>
-                      <td className="p-3 text-slate-500 font-medium whitespace-nowrap">
+                      <td className="p-3 text-slate-500 font-medium">
                           <span className="inline-flex items-center gap-1.5">
                             <span title={`Apertura: ${formatearFecha(ac.fecha_apertura || ac.fecha_creacion_borrador)}`}>
                               {formatearFecha(ac.fecha_cierre || getFechaCompromiso(ac))}
@@ -472,9 +477,9 @@ export default function AccionesLista({
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-1.5 justify-center">
-                          <button onClick={() => handleVer(ac)}
+                          <button onClick={() => handleVer(ac)} title="Ver detalle"
                             className="text-cyan-700 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-md font-bold transition-colors flex items-center gap-1">
-                            <Eye size={12} /> Ver
+                            <Eye size={12} /><span className="sr-only">Ver {ac.folio_codigo}</span>
                           </button>
                           {esAdmin && (
                             <button onClick={() => setCorreoPara(ac)} title="Mandar correo"
