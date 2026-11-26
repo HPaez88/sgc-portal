@@ -1,0 +1,15 @@
+.git
+**/node_modules
+**/dist
+**/__pycache__
+*.db
+*.sqlite
+.env*
+!.env.example
+hpaez-harness
+docs
+formatos
+agents
+*.bat
+/*.md
+qa-*.png
