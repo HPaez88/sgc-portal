@@ -16,7 +16,7 @@
 - [ ] AC#15/2025: @human revisa el encabezado del Excel (folio 8 / Auditoría Externa)
 - [ ] Sin carpeta: AVM-07 y AC#19/2026
 - [x] AC#18/2026 cerrada efectiva (dictamen de Mariana Pérez)
-- [x] Lista de AC adaptable a pantalla/zoom (anchos fijos, tarjetas < 1280 px)
+- [x] Listas de AC y PM adaptables a pantalla/zoom (anchos fijos, tarjetas < 1280 px con todas las opciones)
 
 ## Riesgos, Indicadores, AC/PM y harness v0.17 — 2026-11-17
 

@@ -368,7 +368,7 @@ export default function AccionesLista({
       ) : (
         <>
           {/* ════════════════════════════════════════════════════════════
-              VISTA MÓVIL (< md): TARJETAS ERGONÓMICAS TÁCTILES
+              VISTA ANGOSTA O CON ZOOM (< xl): TARJETAS CON TODAS LAS OPCIONES
               ════════════════════════════════════════════════════════════ */}
           <div className="xl:hidden grid gap-2.5 md:grid-cols-2">
             {pag.visibles.map((ac, idx) => {
@@ -406,11 +406,32 @@ export default function AccionesLista({
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400">
-                    <span>Origen: <strong className="text-slate-600 font-semibold">{etiquetaOrigen(ac)}</strong></span>
-                    <span className="text-sky-700 font-bold flex items-center gap-0.5">
-                      Ver detalle <ChevronRight size={12} />
-                    </span>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                    <span>Origen: <strong className="text-slate-700 font-semibold">{etiquetaOrigen(ac)}</strong></span>
+                    <span>Fecha de cierre: <strong className="text-slate-700 font-semibold">{formatearFecha(ac.fecha_cierre || getFechaCompromiso(ac))}</strong></span>
+                  </div>
+
+                  {/* Mismas opciones que en la tabla: nada queda escondido con zoom o pantalla chica */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => handleVer(ac)} className="text-sky-800 bg-sky-50 hover:bg-sky-100 px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+                      <Eye size={12} /> Ver detalle
+                    </button>
+                    {moverFechas && !esCerrado(normalizarEstado(ac.estado)) && (
+                      <button onClick={() => setFechaEdit({ ac, fecha: fechaISO(getFechaCompromiso(ac)) || '' })}
+                        className="text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
+                        <CalendarClock size={12} /> Cambiar fecha
+                      </button>
+                    )}
+                    {esAdmin && (
+                      <button onClick={() => setCorreoPara(ac)} className="text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
+                        <Mail size={12} /> Correo
+                      </button>
+                    )}
+                    {can(usuarioLogueado, 'eliminar') && (
+                      <button onClick={() => eliminarAC(ac.id)} className="text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-md text-xs font-semibold ml-auto">
+                        🗑️ Eliminar
+                      </button>
+                    )}
                   </div>
                 </div>
               );

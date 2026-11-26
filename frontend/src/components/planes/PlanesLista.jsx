@@ -234,9 +234,9 @@ export default function PlanesLista({
       ) : (
         <>
           {/* ════════════════════════════════════════════════════════════
-              VISTA MÓVIL (< md): TARJETAS ERGONÓMICAS TÁCTILES
+              VISTA ANGOSTA O CON ZOOM (< xl): TARJETAS CON TODAS LAS OPCIONES
               ════════════════════════════════════════════════════════════ */}
-          <div className="md:hidden space-y-2.5">
+          <div className="xl:hidden grid gap-2.5 md:grid-cols-2">
             {pag.visibles.map((pm, idx) => {
               const venc = getVencimiento(pm);
               return (
@@ -269,11 +269,21 @@ export default function PlanesLista({
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[10px] text-slate-400">
-                    <span>Categoría: <strong className="text-slate-600 font-semibold">{pm.categoria_mejora || 'General'}</strong></span>
-                    <span className="text-emerald-700 font-bold flex items-center gap-0.5">
-                      Ver detalle <ChevronRight size={12} />
-                    </span>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                    <span>Categoría: <strong className="text-slate-700 font-semibold">{pm.categoria_mejora || 'General'}</strong></span>
+                    <span>Fecha de cierre: <strong className="text-slate-700 font-semibold">{formatearFecha(pm.fecha_cierre || getFechaCompromiso(pm))}</strong></span>
+                  </div>
+
+                  {/* Mismas opciones que en la tabla: nada queda escondido con zoom o pantalla chica */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => handleVer(pm)} className="text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+                      <Eye size={12} /> Ver detalle
+                    </button>
+                    {can(usuarioLogueado, 'eliminar') && (
+                      <button onClick={() => eliminarPM(pm.id)} className="text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-md text-xs font-semibold ml-auto">
+                        🗑️ Eliminar
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -283,9 +293,14 @@ export default function PlanesLista({
           {/* ════════════════════════════════════════════════════════════
               VISTA ESCRITORIO (>= md): TABLA COMPLETA
               ════════════════════════════════════════════════════════════ */}
-          <div className="hidden md:block bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
+          <div className="hidden xl:block bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
+            <div>
+              {/* Anchos fijos: "Título" toma el resto; nada se sale de la pantalla */}
+              <table className="w-full table-fixed text-xs text-left">
+                <colgroup>
+                  <col className="w-28" /><col /><col className="w-36" /><col className="w-32" />
+                  <col className="w-32" /><col className="w-28" /><col className="w-28" /><col className="w-24" />
+                </colgroup>
                 <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
                     <th className="p-3 font-mono">Folio</th>
@@ -301,22 +316,22 @@ export default function PlanesLista({
                 <tbody className="divide-y divide-slate-100">
                   {pag.visibles.map((pm, idx) => (
                     <tr key={pm.id || idx} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="p-3 font-mono text-xs font-semibold text-slate-700">
+                      <td className="p-3 font-mono text-xs font-semibold text-slate-700 break-words">
                         {pm.folio || pm.folio_codigo || 'Pendiente'}
                         <EtiquetaCambio registro={pm} />
                       </td>
-                      <td className="p-3 font-semibold text-slate-900 max-w-xs truncate" title={pm.titulo_mejora}>
-                        {pm.titulo_mejora || '-'}
+                      <td className="p-3 font-semibold text-slate-900" title={pm.titulo_mejora}>
+                        <span className="line-clamp-3">{pm.titulo_mejora || '-'}</span>
                       </td>
                       <td className="p-3 text-slate-700">{pm.area || pm.gerencia_coordinacion || '-'}</td>
-                      <td className="p-3 text-slate-500">{pm.categoria_mejora || '-'}</td>
+                      <td className="p-3 text-[11px] leading-snug text-slate-500 break-words">{pm.categoria_mejora || '-'}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getEstadoColor(pm.estado)}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-xl text-[11px] font-bold border ${getEstadoColor(pm.estado)}`}>
                           {getEstadoLabel(pm.estado)}
                         </span>
                       </td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getVencimiento(pm).color}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-xl text-[11px] font-bold border ${getVencimiento(pm).color}`}>
                           {getVencimiento(pm).label}
                         </span>
                       </td>
@@ -327,9 +342,9 @@ export default function PlanesLista({
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-1.5 justify-center">
-                          <button onClick={() => handleVer(pm)}
+                          <button onClick={() => handleVer(pm)} title="Ver detalle"
                             className="text-cyan-700 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-md font-bold transition-colors flex items-center gap-1">
-                            <Eye size={12} /> Ver
+                            <Eye size={12} /><span className="sr-only">Ver {pm.folio || pm.folio_codigo}</span>
                           </button>
                           {can(usuarioLogueado, 'eliminar') && (
                             <button onClick={() => eliminarPM(pm.id)}
