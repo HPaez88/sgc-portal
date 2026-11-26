@@ -5,6 +5,7 @@
 ## 2026-11-26 — Lista de acciones correctivas se adapta a la pantalla
 - Tabla con anchos fijos (`table-fixed`): "No conformidad" toma el espacio restante (hasta 3 renglones); "Origen" del ancho de "Estado" y en letra menor; botón "Ver" solo con ícono. Ya no hay desplazamiento horizontal que esconda columnas.
 - Con pantalla angosta o zoom (menos de 1280 px) la lista pasa a tarjetas (2 columnas en tableta) en lugar de cortar columnas; las tarjetas traen fecha de cierre y TODAS las opciones de la tabla (ver, cambiar fecha, correo, eliminar), para que nada quede escondido.
+- Tabla de AC: los 4 botones (ver, cambiar fecha, correo, eliminar) en un cuadro de 2×2 dentro de "Acciones"; el de cambiar fecha sale de la columna de fecha.
 - Lo mismo en Planes de Mejora: "Título" toma el resto del ancho (3 renglones), "Categoría" compacta.
 
 ## 2026-11-24 — Formatos de acciones correctivas importados al portal

@@ -488,29 +488,31 @@ export default function AccionesLista({
                             <span title={`Apertura: ${formatearFecha(ac.fecha_apertura || ac.fecha_creacion_borrador)}`}>
                               {formatearFecha(ac.fecha_cierre || getFechaCompromiso(ac))}
                             </span>
-                            {moverFechas && !esCerrado(normalizarEstado(ac.estado)) && (
-                              <button onClick={() => setFechaEdit({ ac, fecha: fechaISO(getFechaCompromiso(ac)) || '' })}
-                                title="Cambiar fecha de cierre" className="p-1 text-slate-400 hover:text-sky-700 hover:bg-sky-50 rounded">
-                                <CalendarClock size={13} />
-                              </button>
-                            )}
                           </span>
                       </td>
                       <td className="p-3 text-center">
-                        <div className="flex gap-1.5 justify-center">
-                          <button onClick={() => handleVer(ac)} title="Ver detalle"
-                            className="text-cyan-700 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-md font-bold transition-colors flex items-center gap-1">
-                            <Eye size={12} /><span className="sr-only">Ver {ac.folio_codigo}</span>
+                        {/* Cuadro de 2×2: Ver · Fecha / Correo · Eliminar */}
+                        <div className="grid grid-cols-2 gap-1 w-fit mx-auto">
+                          <button onClick={() => handleVer(ac)} title="Ver detalle" aria-label={`Ver ${ac.folio_codigo || 'acción'}`}
+                            className="w-8 h-8 inline-flex items-center justify-center rounded-md transition-colors text-cyan-700 bg-cyan-50 hover:bg-cyan-100">
+                            <Eye size={14} />
                           </button>
+                          {moverFechas && !esCerrado(normalizarEstado(ac.estado)) && (
+                            <button onClick={() => setFechaEdit({ ac, fecha: fechaISO(getFechaCompromiso(ac)) || '' })}
+                              title="Cambiar fecha de cierre" aria-label="Cambiar fecha de cierre"
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-md transition-colors text-sky-700 bg-sky-50 hover:bg-sky-100">
+                              <CalendarClock size={14} />
+                            </button>
+                          )}
                           {esAdmin && (
-                            <button onClick={() => setCorreoPara(ac)} title="Mandar correo"
-                              className="text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md transition-colors">
-                              <Mail size={12} />
+                            <button onClick={() => setCorreoPara(ac)} title="Mandar correo" aria-label="Mandar correo"
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-md transition-colors text-slate-600 bg-slate-100 hover:bg-slate-200">
+                              <Mail size={14} />
                             </button>
                           )}
                           {can(usuarioLogueado, 'eliminar') && (
-                            <button onClick={() => eliminarAC(ac.id)}
-                              className="text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md transition-colors">
+                            <button onClick={() => eliminarAC(ac.id)} title="Eliminar" aria-label="Eliminar"
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-md transition-colors text-red-600 bg-red-50 hover:bg-red-100">
                               🗑️
                             </button>
                           )}
